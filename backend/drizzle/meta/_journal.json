@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1766651997148,
+      "tag": "0000_needy_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766652000000,
+      "tag": "0001_schema_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766652100000,
+      "tag": "0002_postgis_geometry",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766652200000,
+      "tag": "0003_drop_geometry_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1766652300000,
+      "tag": "0004_geometry_source",
+      "breakpoints": true
+    }
+  ]
+}

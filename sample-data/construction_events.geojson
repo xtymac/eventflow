@@ -1,0 +1,559 @@
+{
+  "type": "FeatureCollection",
+  "name": "construction_events",
+  "crs": {
+    "type": "name",
+    "properties": { "name": "EPSG:4326" }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-001",
+        "name": "Nagoya Station East Exit Pavement Repair",
+        "status": "planned",
+        "startDate": "2025-02-10",
+        "endDate": "2025-03-05",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-001"],
+        "ward": "Nakamura-ku",
+        "department": "Road Maintenance Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.8806, 35.1714],
+            [136.8822, 35.1714],
+            [136.8822, 35.1702],
+            [136.8806, 35.1702],
+            [136.8806, 35.1714]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-002",
+        "name": "Sakae Utility Vault Works",
+        "status": "active",
+        "startDate": "2025-02-01",
+        "endDate": "2025-02-28",
+        "restrictionType": "full",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-006"],
+        "ward": "Naka-ku",
+        "department": "Underground Infrastructure Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9086, 35.1722],
+            [136.9108, 35.1722],
+            [136.9108, 35.1708],
+            [136.9086, 35.1708],
+            [136.9086, 35.1722]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-003",
+        "name": "Nagoya Castle Moat-side Resurfacing",
+        "status": "ended",
+        "startDate": "2024-11-05",
+        "endDate": "2024-11-20",
+        "restrictionType": "partial",
+        "postEndDecision": "no-change",
+        "affectedRoadAssetIds": ["RA-004"],
+        "ward": "Naka-ku",
+        "department": "Road Maintenance Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8978, 35.1868],
+          [136.9010, 35.1860]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-004",
+        "name": "Atsuta Shrine Approach Lane Reconfiguration",
+        "status": "ended",
+        "startDate": "2024-10-01",
+        "endDate": "2024-11-10",
+        "restrictionType": "workzone",
+        "postEndDecision": "permanent-change",
+        "affectedRoadAssetIds": ["RA-008"],
+        "ward": "Atsuta-ku",
+        "department": "Cultural Heritage Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9105, 35.1280],
+            [136.9145, 35.1280],
+            [136.9145, 35.1263],
+            [136.9105, 35.1263],
+            [136.9105, 35.1280]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-005",
+        "name": "Nagoya Port Access Road Bridge Inspection",
+        "status": "active",
+        "startDate": "2025-02-18",
+        "endDate": "2025-02-25",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-009"],
+        "ward": "Minato-ku",
+        "department": "Bridge & Tunnel Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8830, 35.0928],
+          [136.8895, 35.0910]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-006",
+        "name": "Kanayama Station Plaza Works",
+        "status": "planned",
+        "startDate": "2025-03-10",
+        "endDate": "2025-03-28",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-013"],
+        "ward": "Naka-ku",
+        "department": "Urban Development Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9024, 35.1454],
+            [136.9050, 35.1454],
+            [136.9050, 35.1436],
+            [136.9024, 35.1436],
+            [136.9024, 35.1454]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-007",
+        "name": "Meijo Park Drainage Upgrade",
+        "status": "active",
+        "startDate": "2025-02-05",
+        "endDate": "2025-02-26",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-021"],
+        "ward": "Kita-ku",
+        "department": "Parks & Recreation Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9000, 35.1902],
+          [136.9032, 35.1892]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-008",
+        "name": "Osu Shopping Street Utility Trench",
+        "status": "active",
+        "startDate": "2025-02-15",
+        "endDate": "2025-03-10",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-016"],
+        "ward": "Naka-ku",
+        "department": "Underground Infrastructure Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9018, 35.1578],
+            [136.9044, 35.1578],
+            [136.9044, 35.1558],
+            [136.9018, 35.1558],
+            [136.9018, 35.1578]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-009",
+        "name": "Shirotori Garden Gate Renewal",
+        "status": "ended",
+        "startDate": "2024-12-01",
+        "endDate": "2024-12-20",
+        "restrictionType": "partial",
+        "postEndDecision": "no-change",
+        "affectedRoadAssetIds": ["RA-014"],
+        "ward": "Atsuta-ku",
+        "department": "Parks & Recreation Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9072, 35.1258],
+            [136.9094, 35.1258],
+            [136.9094, 35.1238],
+            [136.9072, 35.1238],
+            [136.9072, 35.1258]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-010",
+        "name": "Fushimi Signal Upgrade",
+        "status": "active",
+        "startDate": "2025-02-12",
+        "endDate": "2025-02-19",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-023"],
+        "ward": "Naka-ku",
+        "department": "Traffic Management Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8990, 35.1685],
+          [136.9015, 35.1670]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-011",
+        "name": "Nakamura Park Approach Realignment",
+        "status": "ended",
+        "startDate": "2024-09-10",
+        "endDate": "2024-10-12",
+        "restrictionType": "full",
+        "postEndDecision": "permanent-change",
+        "affectedRoadAssetIds": ["RA-022"],
+        "ward": "Nakamura-ku",
+        "department": "Parks & Recreation Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.8530, 35.1669],
+            [136.8562, 35.1669],
+            [136.8562, 35.1646],
+            [136.8530, 35.1646],
+            [136.8530, 35.1669]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-012",
+        "name": "Nagoya University Sidewalk Expansion",
+        "status": "planned",
+        "startDate": "2025-04-01",
+        "endDate": "2025-05-05",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-019"],
+        "ward": "Chikusa-ku",
+        "department": "Transportation Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9660, 35.1548],
+          [136.9685, 35.1532]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-013",
+        "name": "Higashiyama Zoo Access Road Repair",
+        "status": "active",
+        "startDate": "2025-12-01",
+        "endDate": "2025-12-20",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Chikusa-ku",
+        "department": "Parks & Recreation Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9748, 35.1595],
+            [136.9768, 35.1595],
+            [136.9768, 35.1575],
+            [136.9748, 35.1575],
+            [136.9748, 35.1595]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-014",
+        "name": "Tsurumai Park Winter Festival Prep",
+        "status": "planned",
+        "startDate": "2025-12-15",
+        "endDate": "2025-12-25",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Showa-ku",
+        "department": "Tourism & Events Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9202, 35.1570],
+            [136.9222, 35.1570],
+            [136.9222, 35.1550],
+            [136.9202, 35.1550],
+            [136.9202, 35.1570]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-015",
+        "name": "Meitetsu Kanayama Underground Works",
+        "status": "active",
+        "startDate": "2025-11-20",
+        "endDate": "2025-12-15",
+        "restrictionType": "full",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Naka-ku",
+        "department": "Underground Infrastructure Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9010, 35.1458],
+          [136.9030, 35.1438]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-016",
+        "name": "Aeon Mall Atsuta Parking Expansion",
+        "status": "planned",
+        "startDate": "2025-12-20",
+        "endDate": "2026-01-15",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Atsuta-ku",
+        "department": "Commercial Development Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9040, 35.1330],
+            [136.9060, 35.1330],
+            [136.9060, 35.1310],
+            [136.9040, 35.1310],
+            [136.9040, 35.1330]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-017",
+        "name": "Nagoya Dome Event Road Setup",
+        "status": "active",
+        "startDate": "2025-12-10",
+        "endDate": "2025-12-12",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Higashi-ku",
+        "department": "Sports Facilities Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9465, 35.1870],
+          [136.9485, 35.1850]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-018",
+        "name": "Midland Square Plaza Renovation",
+        "status": "ended",
+        "startDate": "2025-11-01",
+        "endDate": "2025-11-30",
+        "restrictionType": "full",
+        "postEndDecision": "permanent-change",
+        "affectedRoadAssetIds": [],
+        "ward": "Nakamura-ku",
+        "department": "Urban Development Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.8770, 35.1716],
+            [136.8790, 35.1716],
+            [136.8790, 35.1696],
+            [136.8770, 35.1696],
+            [136.8770, 35.1716]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-019",
+        "name": "Hisaya Odori Park Light Installation",
+        "status": "ended",
+        "startDate": "2025-12-01",
+        "endDate": "2025-12-10",
+        "restrictionType": "partial",
+        "postEndDecision": "no-change",
+        "affectedRoadAssetIds": [],
+        "ward": "Naka-ku",
+        "department": "Parks & Recreation Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9076, 35.1732],
+          [136.9096, 35.1712]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-020",
+        "name": "JR Chikusa Station Barrier-Free",
+        "status": "planned",
+        "startDate": "2025-12-28",
+        "endDate": "2026-02-28",
+        "restrictionType": "full",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Chikusa-ku",
+        "department": "Transportation Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9390, 35.1680],
+            [136.9410, 35.1680],
+            [136.9410, 35.1660],
+            [136.9390, 35.1660],
+            [136.9390, 35.1680]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-021",
+        "name": "Tokugawa Garden North Gate Restoration",
+        "status": "ended",
+        "startDate": "2025-10-15",
+        "endDate": "2025-11-20",
+        "restrictionType": "workzone",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Higashi-ku",
+        "department": "Cultural Heritage Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [136.9340, 35.1820],
+            [136.9360, 35.1820],
+            [136.9360, 35.1800],
+            [136.9340, 35.1800],
+            [136.9340, 35.1820]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "CE-022",
+        "name": "Sasashima Live District Road Works",
+        "status": "active",
+        "startDate": "2025-12-05",
+        "endDate": "2025-12-30",
+        "restrictionType": "partial",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": [],
+        "ward": "Nakamura-ku",
+        "department": "Redevelopment Dept"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8840, 35.1660],
+          [136.8860, 35.1640]
+        ]
+      }
+    }
+  ]
+}

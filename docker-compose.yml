@@ -1,0 +1,100 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: nagoya-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nagoya_construction
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:4.4
+    container_name: nagoya-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orion-ld:
+    image: fiware/orion-ld:1.5.1
+    platform: linux/amd64
+    container_name: nagoya-orion-ld
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "1026:1026"
+    environment:
+      ORIONLD_MONGO_HOST: mongo
+      ORIONLD_MONGO_DB: orionld
+      ORIONLD_LOG_LEVEL: DEBUG
+    command: -dbhost mongo -logLevel DEBUG
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:1026/version > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nagoya-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      orion-ld:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      ORION_LD_URL: http://orion-ld:1026
+      PORT: 3000
+      TZ: Asia/Tokyo
+    volumes:
+      - ./backend/src:/app/src:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nagoya-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000
+    volumes:
+      - ./frontend/src:/app/src:ro
+
+volumes:
+  postgres_data:
+  mongo_data:

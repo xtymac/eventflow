@@ -1,0 +1,514 @@
+{
+  "type": "FeatureCollection",
+  "name": "road_assets",
+  "crs": {
+    "type": "name",
+    "properties": { "name": "EPSG:4326" }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-001",
+        "name": "Nagoya Station East Exit Road",
+        "roadType": "arterial",
+        "lanes": 4,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2020-01-01",
+        "landmark": "Nagoya Station",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8810, 35.1712],
+          [136.8830, 35.1704]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-002",
+        "name": "Meieki West Access Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2020-01-01",
+        "landmark": "Nagoya Station",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8765, 35.1709],
+          [136.8780, 35.1687]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-003",
+        "name": "Noritake Garden Front Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2019-01-01",
+        "landmark": "Toyota Commemorative Museum",
+        "ward": "Nishi-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8780, 35.1815],
+          [136.8805, 35.1825]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-004",
+        "name": "Castle North Moat Road",
+        "roadType": "arterial",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2018-01-01",
+        "landmark": "Nagoya Castle",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8985, 35.1878],
+          [136.9015, 35.1872]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-005",
+        "name": "City Hall South Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2017-01-01",
+        "landmark": "Nagoya City Hall",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9060, 35.1796],
+          [136.9075, 35.1785]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-006",
+        "name": "Sakae Central Avenue",
+        "roadType": "arterial",
+        "lanes": 4,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2016-01-01",
+        "landmark": "Sakae / Oasis 21",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9082, 35.1718],
+          [136.9070, 35.1700]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-007",
+        "name": "Osu Kannon Approach",
+        "roadType": "local",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2015-01-01",
+        "landmark": "Osu Kannon",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9038, 35.1591],
+          [136.9015, 35.1578]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-008",
+        "name": "Atsuta Shrine West Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2014-01-01",
+        "landmark": "Atsuta Shrine",
+        "ward": "Atsuta-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9100, 35.1285],
+          [136.9140, 35.1260]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-009",
+        "name": "Nagoya Port Access Road",
+        "roadType": "arterial",
+        "lanes": 4,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2013-01-01",
+        "landmark": "Nagoya Port Aquarium",
+        "ward": "Minato-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8808, 35.0942],
+          [136.8855, 35.0930]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-010",
+        "name": "Dome South Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2012-01-01",
+        "landmark": "Vantelin Dome Nagoya",
+        "ward": "Higashi-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9460, 35.1860],
+          [136.9485, 35.1845]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-011",
+        "name": "Congress Center Avenue",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2011-01-01",
+        "landmark": "Nagoya Congress Center",
+        "ward": "Atsuta-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9070, 35.1515],
+          [136.9105, 35.1495]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-012",
+        "name": "Higashiyama Zoo Road",
+        "roadType": "local",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2010-01-01",
+        "landmark": "Higashiyama Zoo",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9780, 35.1590],
+          [136.9805, 35.1570]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-013",
+        "name": "Kanayama Station Front Road",
+        "roadType": "arterial",
+        "lanes": 4,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2018-06-01",
+        "landmark": "Kanayama Station",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9028, 35.1452],
+          [136.9048, 35.1438]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-014",
+        "name": "Shirotori Garden Gate Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2016-04-01",
+        "landmark": "Shirotori Garden",
+        "ward": "Atsuta-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9075, 35.1256],
+          [136.9090, 35.1240]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-015",
+        "name": "Mirai Tower Plaza Road",
+        "roadType": "local",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2015-03-01",
+        "landmark": "Nagoya TV Tower",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9097, 35.1719],
+          [136.9108, 35.1706]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-016",
+        "name": "Osu Shopping Street South",
+        "roadType": "local",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2014-05-01",
+        "landmark": "Osu Shopping District",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9020, 35.1575],
+          [136.9042, 35.1560]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-017",
+        "name": "Higashiyama Sky Tower Access",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2013-05-01",
+        "landmark": "Higashiyama Sky Tower",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9865, 35.1585],
+          [136.9888, 35.1572]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-018",
+        "name": "Garden Pier Loop",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2012-07-01",
+        "landmark": "Garden Pier",
+        "ward": "Minato-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8820, 35.0918],
+          [136.8846, 35.0908]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-019",
+        "name": "Nagoya University North Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2011-09-01",
+        "landmark": "Nagoya University",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9660, 35.1548],
+          [136.9685, 35.1532]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-020",
+        "name": "Aeon Mall Atsuta East Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2010-11-01",
+        "landmark": "Aeon Mall Atsuta",
+        "ward": "Atsuta-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9048, 35.1325],
+          [136.9065, 35.1310]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-021",
+        "name": "Meijo Park West Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2009-05-01",
+        "landmark": "Meijo Park",
+        "ward": "Kita-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9000, 35.1902],
+          [136.9032, 35.1892]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-022",
+        "name": "Nakamura Park Approach",
+        "roadType": "local",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2008-04-01",
+        "landmark": "Nakamura Park",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8535, 35.1665],
+          [136.8558, 35.1650]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-023",
+        "name": "Fushimi Business District Road",
+        "roadType": "arterial",
+        "lanes": 3,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2007-03-01",
+        "landmark": "Fushimi",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8990, 35.1685],
+          [136.9015, 35.1670]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RA-024",
+        "name": "Shonai River Riverside Road",
+        "roadType": "collector",
+        "lanes": 2,
+        "direction": "two-way",
+        "status": "active",
+        "validFrom": "2006-02-01",
+        "landmark": "Shonai River",
+        "ward": "Nishi-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.8840, 35.1910],
+          [136.8870, 35.1900]
+        ]
+      }
+    }
+  ]
+}

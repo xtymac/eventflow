@@ -1,0 +1,62 @@
+{
+  "@context": {
+    "ngsi-ld": "https://uri.etsi.org/ngsi-ld/",
+    "fiware": "https://uri.fiware.org/ns/data-models#",
+    "schema": "https://schema.org/",
+    "geojson": "https://purl.org/geojson/vocab#",
+
+    "ConstructionEvent": "fiware:ConstructionEvent",
+    "RoadAsset": "fiware:RoadAsset",
+    "RoadAssetChange": "fiware:RoadAssetChange",
+    "InspectionRecord": "fiware:InspectionRecord",
+
+    "name": "schema:name",
+    "status": "fiware:status",
+    "startDate": "schema:startDate",
+    "endDate": "schema:endDate",
+    "restrictionType": "fiware:restrictionType",
+    "location": "ngsi-ld:location",
+    "postEndDecision": "fiware:postEndDecision",
+    "department": "fiware:department",
+    "ward": "fiware:ward",
+    "affectedRoadAssets": {
+      "@id": "fiware:affectedRoadAssets",
+      "@type": "@id"
+    },
+
+    "roadType": "fiware:roadType",
+    "lanes": "fiware:lanes",
+    "direction": "fiware:direction",
+    "validFrom": "schema:validFrom",
+    "validTo": "schema:validTo",
+    "replacedBy": {
+      "@id": "fiware:replacedBy",
+      "@type": "@id"
+    },
+    "ownerDepartment": "fiware:ownerDepartment",
+    "landmark": "fiware:landmark",
+
+    "eventId": {
+      "@id": "fiware:eventId",
+      "@type": "@id"
+    },
+    "changeType": "fiware:changeType",
+    "oldRoadAsset": {
+      "@id": "fiware:oldRoadAsset",
+      "@type": "@id"
+    },
+    "newRoadAsset": {
+      "@id": "fiware:newRoadAsset",
+      "@type": "@id"
+    },
+
+    "relatedType": "fiware:relatedType",
+    "relatedId": "fiware:relatedId",
+    "inspectionDate": "schema:datePublished",
+    "result": "fiware:result",
+    "notes": "fiware:notes",
+
+    "modifiedAt": "ngsi-ld:modifiedAt",
+    "createdAt": "ngsi-ld:createdAt"
+  }
+}
