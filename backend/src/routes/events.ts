@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { constructionEvents, eventRoadAssets, roadAssets } from '../db/schema.js';
-import { eq, and, gte, lte, like, inArray, sql, isNotNull } from 'drizzle-orm';
+import { eq, and, gte, lte, like, inArray, sql, isNotNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
@@ -113,7 +113,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       conditions.push(eq(constructionEvents.status, status));
     }
     if (department) {
-      conditions.push(eq(constructionEvents.department, department));
+      conditions.push(like(constructionEvents.department, `%${department}%`));
     }
     if (ward) {
       conditions.push(eq(constructionEvents.ward, ward));
@@ -151,9 +151,20 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       updatedAt: constructionEvents.updatedAt,
     };
 
+    // Sort: Active first, then Planned (by startDate ASC), then Ended (by endDate DESC)
+    const orderByClause = [
+      sql`CASE ${constructionEvents.status}
+        WHEN 'active' THEN 1
+        WHEN 'planned' THEN 2
+        WHEN 'ended' THEN 3
+      END`,
+      sql`CASE WHEN ${constructionEvents.status} = 'ended' THEN ${constructionEvents.endDate} END DESC`,
+      asc(constructionEvents.startDate),
+    ];
+
     const query = conditions.length > 0
-      ? db.select(eventSelect).from(constructionEvents).where(and(...conditions))
-      : db.select(eventSelect).from(constructionEvents);
+      ? db.select(eventSelect).from(constructionEvents).where(and(...conditions)).orderBy(...orderByClause)
+      : db.select(eventSelect).from(constructionEvents).orderBy(...orderByClause);
 
     const events = await query;
 
