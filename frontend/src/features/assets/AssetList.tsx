@@ -112,9 +112,19 @@ export function AssetList() {
   const displayList = useMemo(() => {
     const selectedAsset = selectedAssetData?.data;
 
-    // Merge selected asset into list if not already present
+    // Check if selected asset matches current filters
+    const selectedAssetMatchesFilters = (asset: typeof selectedAsset): boolean => {
+      if (!asset) return false;
+      if (statusFilter && asset.status !== statusFilter) return false;
+      if (roadTypeFilter && asset.roadType !== roadTypeFilter) return false;
+      if (wardFilter && asset.ward !== wardFilter) return false;
+      if (unnamedFilter && asset.name) return false;
+      return true;
+    };
+
+    // Merge selected asset into list only if it matches current filters
     let assets = [...loadedAssets];
-    if (selectedAsset && !assets.some((a) => a.id === selectedAsset.id)) {
+    if (selectedAsset && !assets.some((a) => a.id === selectedAsset.id) && selectedAssetMatchesFilters(selectedAsset)) {
       assets.push(selectedAsset);
     }
 
@@ -129,7 +139,7 @@ export function AssetList() {
         return 0;
       }
     });
-  }, [loadedAssets, mapCenter, selectedAssetData?.data]);
+  }, [loadedAssets, mapCenter, selectedAssetData?.data, statusFilter, roadTypeFilter, wardFilter, unnamedFilter]);
 
   // Sync sidebar assets to store for map markers
   useEffect(() => {
