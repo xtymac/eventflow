@@ -41,3 +41,9 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
+/* Asset card hover effect */
+.asset-card-hover:hover {
+  background-color: var(--mantine-color-gray-0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

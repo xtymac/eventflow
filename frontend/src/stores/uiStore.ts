@@ -27,7 +27,13 @@ interface UIState {
 
   // Map state for asset filtering
   mapBbox: string | null;           // Current map viewport bounds
+  mapCenter: [number, number] | null;  // Current map center [lng, lat] for distance sorting
+  mapZoom: number;                  // Current map zoom level
   hoveredAssetId: string | null;    // Asset being hovered in list (for map highlight)
+  sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
+
+  // Filter panel state (persisted across tab switches)
+  filtersOpen: boolean;
 
   // Filter state (persisted across tab switches)
   assetFilters: {
@@ -75,13 +81,18 @@ interface UIState {
   clearFormState: () => void;
 
   // Filter actions
+  setFiltersOpen: (open: boolean) => void;
+  toggleFilters: () => void;
   setAssetFilter: <K extends keyof UIState['assetFilters']>(key: K, value: UIState['assetFilters'][K]) => void;
   resetEventFilters: () => void;
   setEventFilter: <K extends keyof UIState['eventFilters']>(key: K, value: UIState['eventFilters'][K]) => void;
 
   // Map actions
   setMapBbox: (bbox: string | null) => void;
+  setMapCenter: (center: [number, number] | null) => void;
+  setMapZoom: (zoom: number) => void;
   setHoveredAsset: (id: string | null) => void;
+  setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -108,7 +119,13 @@ export const useUIStore = create<UIState>((set) => ({
 
   // Map state
   mapBbox: null,
+  mapCenter: null,
+  mapZoom: 0,
   hoveredAssetId: null,
+  sidebarAssets: [],
+
+  // Filter panel state
+  filtersOpen: false,
 
   // Filter state
   assetFilters: {
@@ -117,7 +134,7 @@ export const useUIStore = create<UIState>((set) => ({
     ward: null,
     search: '',
     unnamed: false,
-    filterByMapView: false,
+    filterByMapView: true,
   },
   eventFilters: {
     status: null,
@@ -170,6 +187,8 @@ export const useUIStore = create<UIState>((set) => ({
   }),
 
   // Filter actions
+  setFiltersOpen: (open) => set({ filtersOpen: open }),
+  toggleFilters: () => set((state) => ({ filtersOpen: !state.filtersOpen })),
   setAssetFilter: (key, value) => set((state) => ({
     assetFilters: { ...state.assetFilters, [key]: value },
   })),
@@ -187,5 +206,8 @@ export const useUIStore = create<UIState>((set) => ({
 
   // Map actions
   setMapBbox: (bbox) => set({ mapBbox: bbox }),
+  setMapCenter: (center) => set({ mapCenter: center }),
+  setMapZoom: (zoom) => set({ mapZoom: zoom }),
   setHoveredAsset: (id) => set({ hoveredAssetId: id }),
+  setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
 }));

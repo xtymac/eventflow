@@ -17,8 +17,10 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconX } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import * as turf from '@turf/turf';
 import { useAssets, useAsset, useWards } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
+import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
 import type { RoadAsset, RoadType, AssetStatus } from '@nagoya/shared';
 
 const LIMIT = 200;
@@ -46,8 +48,8 @@ export function AssetList() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Persisted filter state from store (including filtersOpen)
-  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, setHoveredAsset, filtersOpen, setFiltersOpen } = useUIStore();
-  const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter, filterByMapView } = assetFilters;
+  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, mapCenter, setHoveredAsset, setSidebarAssets, filtersOpen, setFiltersOpen } = useUIStore();
+  const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter } = assetFilters;
   const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
   const { data: wardsData } = useWards();
@@ -57,8 +59,7 @@ export function AssetList() {
     ward: wardFilter || undefined,
     q: debouncedSearch || undefined,
     unnamed: unnamedFilter || undefined,
-    bbox: filterByMapView ? mapBbox ?? undefined : undefined,  // Filter by visible area when enabled
-    filterByMapView: filterByMapView || undefined,
+    bbox: mapBbox ?? undefined,  // Always filter by visible area
     limit: LIMIT,
     offset: offset,
     includeTotal: true,
@@ -67,8 +68,8 @@ export function AssetList() {
   // Always fetch selected asset individually to pin it at top until deselected
   const { data: selectedAssetData } = useAsset(selectedAssetId);
 
-  // Compute active filter count (include unnamed and filterByMapView toggles)
-  const activeFilterCount = [roadTypeFilter, statusFilter, wardFilter, unnamedFilter, filterByMapView].filter(Boolean).length;
+  // Compute active filter count (include unnamed toggle)
+  const activeFilterCount = [roadTypeFilter, statusFilter, wardFilter, unnamedFilter].filter(Boolean).length;
 
   // Toggle handler
   const handleToggleFilters = () => {
@@ -107,40 +108,58 @@ export function AssetList() {
       ? loadedAssets.length < data.meta.total
       : data?.data?.length === LIMIT;
 
-  // Compute display list: always pin selected asset at top until deselected
+  // Compute display list: sort by distance from map center, include selected asset if not in list
   const displayList = useMemo(() => {
     const selectedAsset = selectedAssetData?.data;
-    if (selectedAsset) {
-      // Remove from natural position (if present) and prepend to top
-      const filtered = loadedAssets.filter((a) => a.id !== selectedAsset.id);
-      return [selectedAsset, ...filtered];
+
+    // Merge selected asset into list if not already present
+    let assets = [...loadedAssets];
+    if (selectedAsset && !assets.some((a) => a.id === selectedAsset.id)) {
+      assets.push(selectedAsset);
     }
-    return loadedAssets;
-  }, [loadedAssets, selectedAssetData?.data]);
 
-  // Track previous selectedAssetId to detect actual selection changes
-  const prevSelectedAssetIdRef = useRef<string | null>(null);
+    return assets.sort((a, b) => {
+      if (!mapCenter) return 0;
+      try {
+        const centerPoint = turf.point(mapCenter);
+        const centerA = turf.center(a.geometry);
+        const centerB = turf.center(b.geometry);
+        return turf.distance(centerPoint, centerA) - turf.distance(centerPoint, centerB);
+      } catch {
+        return 0;
+      }
+    });
+  }, [loadedAssets, mapCenter, selectedAssetData?.data]);
 
-  // Scroll to selected asset only when selection changes (not on zoom/pan)
+  // Sync sidebar assets to store for map markers
+  useEffect(() => {
+    setSidebarAssets(displayList.map((a) => ({ id: a.id, name: a.name ?? null, geometry: a.geometry })));
+  }, [displayList, setSidebarAssets]);
+
+  // Track scroll state to avoid duplicate scrolls
+  const hasScrolledToAssetRef = useRef<string | null>(null);
+
+  // Scroll to selected asset when it becomes available in the list
   useEffect(() => {
     if (!selectedAssetId) {
-      prevSelectedAssetIdRef.current = null;
+      hasScrolledToAssetRef.current = null;
       return;
     }
 
-    // Only scroll if this is a new selection
-    if (prevSelectedAssetIdRef.current === selectedAssetId) return;
-    prevSelectedAssetIdRef.current = selectedAssetId;
+    // Already scrolled to this asset
+    if (hasScrolledToAssetRef.current === selectedAssetId) return;
 
     // Small delay to ensure card is rendered after state update
     const scrollToCard = () => {
       const card = cardRefs.current.get(selectedAssetId);
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasScrolledToAssetRef.current = selectedAssetId;
       }
+      // If card not found, don't mark as scrolled - will retry when selectedAssetData loads
     };
 
-    const timer = setTimeout(scrollToCard, 100);
+    const timer = setTimeout(scrollToCard, 150);
     return () => clearTimeout(timer);
   }, [selectedAssetId, selectedAssetData?.data]);
 
@@ -337,28 +356,13 @@ export function AssetList() {
             </Chip.Group>
           </div>
 
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Map</Text>
-            <Chip.Group
-              multiple
-              value={filterByMapView ? ['mapView'] : []}
-              onChange={(val) => setAssetFilter('filterByMapView', val.includes('mapView'))}
-            >
-              <Group gap="xs">
-                <Chip value="mapView" size="xs">Visible Area Only</Chip>
-              </Group>
-            </Chip.Group>
-          </div>
         </Stack>
       </Collapse>
 
       <Stack gap="xs">
         {displayList.map((asset: RoadAsset) => {
-          // Use displayName from API (already has fallback chain: name || nameJa || ref || localRef)
-          // 'Unnamed Road' appears ONLY in UI when displayName is also null
-          const displayText = asset.displayName || 'Unnamed Road';
-          // Check if road is truly unnamed (no name, nameJa, ref, or localRef)
-          const isUnnamed = !asset.displayName;
+          const displayText = getRoadAssetLabel(asset);
+          const isUnnamed = isRoadAssetUnnamed(asset);
 
           return (
             <Card
@@ -373,93 +377,100 @@ export function AssetList() {
                 cursor: 'pointer',
                 borderColor: selectedAssetId === asset.id ? 'var(--mantine-color-blue-5)' : undefined,
                 backgroundColor: selectedAssetId === asset.id ? 'var(--mantine-color-blue-0)' : undefined,
+                transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
               }}
+              className="asset-card-hover"
               onClick={() => selectAsset(asset.id, asset.geometry)}
               onMouseEnter={() => setHoveredAsset(asset.id)}
               onMouseLeave={() => setHoveredAsset(null)}
             >
-              <Group justify="space-between" mb={4}>
-                <Text fw={500} size="sm" lineClamp={1}>
-                  {displayText}{asset.ward ? ` · ${asset.ward}` : ''}
-                </Text>
-                <Badge color={ROAD_TYPE_COLORS[asset.roadType]} size="sm">
-                  {ROAD_TYPE_LABELS[asset.roadType]}
-                </Badge>
-              </Group>
+              <Group gap="sm" wrap="nowrap" align="center">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Group justify="space-between" wrap="nowrap" gap="xs">
+                    <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                      {displayText}{asset.ward ? ` · ${asset.ward}` : ''}
+                    </Text>
+                    <Badge color={ROAD_TYPE_COLORS[asset.roadType]} size="sm" style={{ flexShrink: 0 }}>
+                      {ROAD_TYPE_LABELS[asset.roadType]}
+                    </Badge>
+                  </Group>
 
-              <Group gap="xs" mb={4}>
-                <Badge
-                  variant="outline"
-                  size="xs"
-                  color={asset.status === 'active' ? 'green' : 'gray'}
-                >
-                  {asset.status}
-                </Badge>
-                <Badge variant="outline" size="xs" color="gray">
-                  {asset.lanes} lanes
-                </Badge>
-                {!isUnnamed && asset.nameSource && (
-                  <Badge
-                    variant="light"
+                  <Group gap="xs" mt={4}>
+                    <Badge
+                      variant="outline"
+                      size="xs"
+                      color={asset.status === 'active' ? 'green' : 'gray'}
+                    >
+                      {asset.status}
+                    </Badge>
+                    <Badge variant="outline" size="xs" color="gray">
+                      {asset.lanes} lanes
+                    </Badge>
+                    {!isUnnamed && asset.nameSource && (
+                      <Badge
+                        variant="light"
+                        size="xs"
+                        color={asset.nameSource === 'osm' ? 'blue' : 'teal'}
+                      >
+                        {asset.nameSource === 'osm' ? 'OSM' : '手動'}
+                      </Badge>
+                    )}
+                  </Group>
+
+                  {asset.landmark && (
+                    <Text size="xs" c="dimmed" mt={4}>
+                      Near: {asset.landmark}
+                    </Text>
+                  )}
+
+                  <Text
                     size="xs"
-                    color={asset.nameSource === 'osm' ? 'blue' : 'teal'}
+                    c={isUnnamed ? 'dark' : 'dimmed'}
+                    fw={isUnnamed ? 500 : undefined}
+                    ff="monospace"
+                    mt={4}
                   >
-                    {asset.nameSource === 'osm' ? 'OSM' : '手動'}
-                  </Badge>
-                )}
+                    ID: {asset.id}
+                  </Text>
+
+                  {/* Inline edit for selected unnamed roads */}
+                  {selectedAssetId === asset.id && isUnnamed && (
+                    <Group mt="xs" gap="xs" onClick={(e) => e.stopPropagation()}>
+                      <TextInput
+                        size="xs"
+                        placeholder="Enter road name..."
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveName(asset.id);
+                          if (e.key === 'Escape') setEditName('');
+                        }}
+                        style={{ flex: 1 }}
+                        disabled={isSaving}
+                      />
+                      <ActionIcon
+                        variant="filled"
+                        color="green"
+                        size="sm"
+                        onClick={() => handleSaveName(asset.id)}
+                        loading={isSaving}
+                        disabled={!editName.trim()}
+                      >
+                        <IconCheck size={14} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="sm"
+                        onClick={() => setEditName('')}
+                        disabled={isSaving}
+                      >
+                        <IconX size={14} />
+                      </ActionIcon>
+                    </Group>
+                  )}
+                </div>
               </Group>
-
-              {asset.landmark && (
-                <Text size="xs" c="dimmed">
-                  Near: {asset.landmark}
-                </Text>
-              )}
-
-              <Text
-                size="xs"
-                c={isUnnamed ? 'dark' : 'dimmed'}
-                fw={isUnnamed ? 500 : undefined}
-                ff="monospace"
-              >
-                ID: {asset.id}
-              </Text>
-
-              {/* Inline edit for selected unnamed roads */}
-              {selectedAssetId === asset.id && isUnnamed && (
-                <Group mt="xs" gap="xs" onClick={(e) => e.stopPropagation()}>
-                  <TextInput
-                    size="xs"
-                    placeholder="Enter road name..."
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveName(asset.id);
-                      if (e.key === 'Escape') setEditName('');
-                    }}
-                    style={{ flex: 1 }}
-                    disabled={isSaving}
-                  />
-                  <ActionIcon
-                    variant="filled"
-                    color="green"
-                    size="sm"
-                    onClick={() => handleSaveName(asset.id)}
-                    loading={isSaving}
-                    disabled={!editName.trim()}
-                  >
-                    <IconCheck size={14} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="sm"
-                    onClick={() => setEditName('')}
-                    disabled={isSaving}
-                  >
-                    <IconX size={14} />
-                  </ActionIcon>
-                </Group>
-              )}
             </Card>
           );
         })}

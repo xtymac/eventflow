@@ -6,6 +6,7 @@ import { Box, Paper, Stack, Switch, Text, Group } from '@mantine/core';
 import { useEvents, useAssets, useInspections } from '../hooks/useApi';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
+import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
 import type { ConstructionEvent, RoadAsset, InspectionRecord } from '@nagoya/shared';
 import { EventMapTooltip } from './EventMapTooltip';
 
@@ -96,8 +97,7 @@ export function MapView() {
     toggleInspections,
     toggleOsmLabels,
   } = useMapStore();
-  const { selectedEventId, selectedAssetId, selectedAssetGeometry, selectEvent, selectAsset, setCurrentView, previewGeometry, isEventFormOpen, openEventDetailModal, hoveredAssetId, assetFilters, setAssetFilter, setMapBbox: setMapBboxStore } = useUIStore();
-  const { filterByMapView } = assetFilters;
+  const { selectedEventId, selectedAssetId, selectedAssetGeometry, selectEvent, selectAsset, setCurrentView, previewGeometry, isEventFormOpen, openEventDetailModal, hoveredAssetId, setMapBbox: setMapBboxStore } = useUIStore();
   const popup = useRef<maplibregl.Popup | null>(null);
 
   // Event hover tooltip state
@@ -130,8 +130,8 @@ export function MapView() {
       container: mapContainer.current,
       style: {
         version: 8,
-        // Glyphs URL for text labels (using MapTiler's open fonts)
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+        // Glyphs URL for text labels
+        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
         sources: {
           osm: {
             type: 'raster',
@@ -175,6 +175,19 @@ export function MapView() {
         },
       });
 
+      // Invisible hit area layer for easier clicking (wider than visible line)
+      // Note: opacity must be > 0 for MapLibre to render and make it clickable
+      map.current.addLayer({
+        id: 'assets-hit-area',
+        type: 'line',
+        source: 'assets',
+        paint: {
+          'line-color': '#000000',
+          'line-width': 20,
+          'line-opacity': 0.001,
+        },
+      });
+
       // Assets label layer (high zoom: 15+, where API data is available)
       map.current.addLayer({
         id: 'assets-label',
@@ -183,13 +196,8 @@ export function MapView() {
         minzoom: 15,
         layout: {
           'text-field': [
-            'coalesce',
-            ['get', 'displayName'],
-            ['get', 'name'],
-            ['get', 'nameJa'],
-            ['get', 'ref'],
-            ['get', 'localRef'],
-            '',
+            'get',
+            'labelText',
           ],
           'text-font': ['Open Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 15, 11, 18, 14],
@@ -238,7 +246,13 @@ export function MapView() {
         minzoom: 14,
         maxzoom: 15,  // Exclusive - shows at zoom 14-14.99, then assets-label takes over
         layout: {
-          'text-field': ['coalesce', ['get', 'displayName'], ['get', 'name'], ['get', 'ref'], ''],
+          'text-field': [
+            'coalesce',
+            ['get', 'displayName'],
+            ['get', 'name'],
+            ['get', 'ref'],
+            ['case', ['has', 'id'], ['concat', 'ID ', ['get', 'id']], ''],
+          ],
           'text-font': ['Open Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11],
           'text-anchor': 'center',
@@ -277,6 +291,18 @@ export function MapView() {
         paint: {
           'line-color': ['get', 'color'],
           'line-width': 3,
+        },
+      });
+
+      // Invisible hit area layer for events (wider clickable area for lines)
+      map.current.addLayer({
+        id: 'events-hit-area',
+        type: 'line',
+        source: 'events',
+        paint: {
+          'line-color': '#000000',
+          'line-width': 20,
+          'line-opacity': 0.001,
         },
       });
 
@@ -330,13 +356,27 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
+      // Glow layer (outer) for selected asset
+      map.current.addLayer({
+        id: 'selected-asset-glow',
+        type: 'line',
+        source: 'selected-asset',
+        paint: {
+          'line-color': '#EF4444',
+          'line-width': 20,
+          'line-blur': 8,
+          'line-opacity': 0.6,
+        },
+      });
+
+      // Main line for selected asset
       map.current.addLayer({
         id: 'selected-asset-line',
         type: 'line',
         source: 'selected-asset',
         paint: {
           'line-color': '#EF4444',
-          'line-width': 8,
+          'line-width': 10,
         },
       });
 
@@ -420,7 +460,7 @@ export function MapView() {
       map.current.on('click', (e) => {
         // Check if we clicked on any features
         const features = map.current?.queryRenderedFeatures(e.point, {
-          layers: ['events-fill', 'events-line', 'assets-line', 'inspections-point']
+          layers: ['events-fill', 'events-line', 'events-hit-area', 'assets-hit-area', 'inspections-point']
         });
 
         // If no features were clicked, clear selection and tooltip
@@ -525,19 +565,41 @@ export function MapView() {
         }
       });
 
-      map.current.on('click', 'assets-line', (e) => {
+      // Events hit area click handler (for easier clicking on thin lines)
+      map.current.on('click', 'events-hit-area', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
+          const eventId = e.features[0].properties?.id;
+          const props = e.features[0].properties;
 
-          // Block asset click when event is selected (consistent with hover behavior)
+          const state = useUIStore.getState();
+          if (eventId === state.selectedEventId) {
+            currentHoveredEventIdRef.current = null;
+          }
+
+          selectEvent(eventId);
+          setCurrentView('events');
+          isTooltipLockedRef.current = true;
+          lockedEventIdRef.current = eventId;
+
+          if (props) {
+            showEventTooltip(e, props);
+          }
+        }
+      });
+
+      map.current.on('click', 'assets-hit-area', (e) => {
+        if (e.features && e.features[0]) {
+          // Don't allow road selection when event is selected (unless in assets view or road update mode)
           if (!shouldAllowRoadInteraction()) {
             return;
           }
 
+          e.originalEvent.stopPropagation();
+
+          // Allow asset selection - this will clear any selected event
           selectAsset(e.features[0].properties?.id);
           setCurrentView('assets');
-          // Enable "Visible Area Only" filter so the selected road appears in sidebar
-          setAssetFilter('filterByMapView', true);
         }
       });
 
@@ -557,12 +619,18 @@ export function MapView() {
       map.current.on('mouseleave', 'events-line', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
-      map.current.on('mouseenter', 'assets-line', () => {
+      map.current.on('mouseenter', 'events-hit-area', () => {
+        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+      });
+      map.current.on('mouseleave', 'events-hit-area', () => {
+        if (map.current) map.current.getCanvas().style.cursor = '';
+      });
+      map.current.on('mouseenter', 'assets-hit-area', () => {
         if (map.current && shouldAllowRoadHover()) {
           map.current.getCanvas().style.cursor = 'pointer';
         }
       });
-      map.current.on('mouseleave', 'assets-line', () => {
+      map.current.on('mouseleave', 'assets-hit-area', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
 
@@ -572,14 +640,14 @@ export function MapView() {
           const props = e.features[0].properties;
           const eventId = props?.id;
 
+          // If tooltip is locked (from click or auto-show), don't update anything
+          // The locked tooltip should stay in place until user interacts with it
+          if (isTooltipLockedRef.current) {
+            return;
+          }
+
           // Only update position when hovering a NEW event (not on every mouse move)
           if (eventId !== currentHoveredEventIdRef.current) {
-            // If tooltip is locked (user clicked), don't update to a different event
-            // This prevents accidental tooltip dismissal when mouse passes over adjacent events
-            if (isTooltipLockedRef.current && lockedEventIdRef.current && eventId !== lockedEventIdRef.current) {
-              return;
-            }
-
             currentHoveredEventIdRef.current = eventId;
 
             // Get map container's position to calculate viewport coordinates
@@ -604,9 +672,14 @@ export function MapView() {
       };
 
       const handleEventMouseLeave = () => {
+        // Don't do anything if tooltip is locked
+        if (isTooltipLockedRef.current) {
+          return;
+        }
+
         // Reset tracked event ID
         currentHoveredEventIdRef.current = null;
-        // Only hide if tooltip is not being hovered or locked - longer delay for better UX
+        // Only hide if tooltip is not being hovered - longer delay for better UX
         setTimeout(() => {
           if (!isTooltipHoveredRef.current && !isTooltipLockedRef.current) {
             setHoveredEvent(null);
@@ -619,9 +692,11 @@ export function MapView() {
       map.current.on('mouseleave', 'events-fill', handleEventMouseLeave);
       map.current.on('mousemove', 'events-line', handleEventMouseMove);
       map.current.on('mouseleave', 'events-line', handleEventMouseLeave);
+      map.current.on('mousemove', 'events-hit-area', handleEventMouseMove);
+      map.current.on('mouseleave', 'events-hit-area', handleEventMouseLeave);
 
       // Hover popup for assets
-      map.current.on('mousemove', 'assets-line', (e) => {
+      map.current.on('mousemove', 'assets-hit-area', (e) => {
         // Skip hover when event is selected (unless in assets view or road update mode)
         if (!shouldAllowRoadHover()) {
           if (map.current) map.current.getCanvas().style.cursor = '';
@@ -631,9 +706,12 @@ export function MapView() {
 
         if (map.current && popup.current && e.features && e.features[0]) {
           const props = e.features[0].properties;
+          const assetLabel = props
+            ? getRoadAssetLabel(props as RoadAssetLabelFields)
+            : 'Unnamed Road';
           const html = `
             <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 2px;">
-              <div style="font-weight: 700; margin-bottom: 4px; font-size: 14px; color: #000;">${props?.name}</div>
+              <div style="font-weight: 700; margin-bottom: 4px; font-size: 14px; color: #000;">${assetLabel}</div>
               <div style="font-size: 12px; color: #222; display: flex; align-items: center;">
                 <span style="display:inline-block; width: 8px; height: 8px; background-color: ${props?.color}; border-radius: 50%; margin-right: 6px;"></span>
                 <span style="text-transform: capitalize; font-weight: 600;">${props?.roadType}</span>
@@ -643,7 +721,7 @@ export function MapView() {
           popup.current.setLngLat(e.lngLat).setHTML(html).addTo(map.current);
         }
       });
-      map.current.on('mouseleave', 'assets-line', () => {
+      map.current.on('mouseleave', 'assets-hit-area', () => {
         if (popup.current) popup.current.remove();
       });
 
@@ -657,23 +735,25 @@ export function MapView() {
         moveendTimer.current = window.setTimeout(() => {
           const zoom = map.current?.getZoom() ?? 0;
           setCurrentZoom(zoom);
+
+          // Sync map center and zoom for distance-based sorting and conditional rendering
+          const center = map.current?.getCenter();
+          if (center) {
+            useUIStore.getState().setMapCenter([center.lng, center.lat]);
+          }
+          useUIStore.getState().setMapZoom(zoom);
+
           if (zoom >= 12) {
             const bounds = map.current!.getBounds();
             const bboxString = truncateBbox(bounds);
             setMapBbox(bboxString);
 
-            // Sync to uiStore only when filterByMapView is ON
-            const { filterByMapView } = useUIStore.getState().assetFilters;
-            if (filterByMapView) {
-              useUIStore.getState().setMapBbox(bboxString);
-            }
+            // Sync to uiStore for asset list filtering
+            useUIStore.getState().setMapBbox(bboxString);
           } else {
             setMapBbox(null);
             // Clear uiStore bbox when zoomed out
-            const { filterByMapView } = useUIStore.getState().assetFilters;
-            if (filterByMapView) {
-              useUIStore.getState().setMapBbox(null);
-            }
+            useUIStore.getState().setMapBbox(null);
           }
         }, 250);
       };
@@ -753,6 +833,7 @@ export function MapView() {
     if (!mapBbox || currentZoom < 14 || !showAssets) {
       source.setData({ type: 'FeatureCollection', features: [] });
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
+      map.current.setLayoutProperty('assets-hit-area', 'visibility', 'none');
       map.current.setLayoutProperty('assets-label', 'visibility', 'none');
       return;
     }
@@ -769,6 +850,19 @@ export function MapView() {
         ref: asset.ref,
         localRef: asset.localRef,
         displayName: asset.displayName,
+        labelText: (() => {
+          // Show road name if available
+          if (!isRoadAssetUnnamed(asset)) {
+            return getRoadAssetLabel(asset);
+          }
+          // For unnamed roads, show simplified ID (e.g., "NISH-4032" instead of "RA-NISH-4032")
+          if (asset.id) {
+            const id = String(asset.id);
+            // Remove "RA-" prefix if present
+            return id.startsWith('RA-') ? id.substring(3) : id;
+          }
+          return '';
+        })(),
         roadType: asset.roadType,
         color: ROAD_TYPE_COLORS[asset.roadType] || '#666',
       },
@@ -776,6 +870,7 @@ export function MapView() {
 
     source.setData({ type: 'FeatureCollection', features });
     map.current.setLayoutProperty('assets-line', 'visibility', 'visible');
+    map.current.setLayoutProperty('assets-hit-area', 'visibility', 'visible');
     map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
   }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom]);
 
@@ -841,6 +936,7 @@ export function MapView() {
     source.setData({ type: 'FeatureCollection', features });
     map.current.setLayoutProperty('events-fill', 'visibility', showEvents ? 'visible' : 'none');
     map.current.setLayoutProperty('events-line', 'visibility', showEvents ? 'visible' : 'none');
+    map.current.setLayoutProperty('events-hit-area', 'visibility', showEvents ? 'visible' : 'none');
   }, [eventsData, showEvents, mapLoaded]);
 
   // Update inspections layer
@@ -887,6 +983,8 @@ export function MapView() {
       popup.current.remove();
     }
 
+    let tooltipTimeoutId: number | undefined;
+
     if (selectedEventId && eventsData?.data) {
       const event = eventsData.data.find((e: ConstructionEvent) => e.id === selectedEventId);
       if (event && event.geometry) {
@@ -907,6 +1005,45 @@ export function MapView() {
             [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
             { padding: 100, maxZoom: 16, duration: 1000 }
           );
+
+          // Show tooltip automatically after fly animation completes
+          const mapInstance = map.current;
+          tooltipTimeoutId = window.setTimeout(() => {
+            if (!mapInstance || !mapContainer.current) return;
+
+            // Use bbox to position tooltip at the top of the polygon (not blocking it)
+            // bbox = [minX, minY, maxX, maxY] = [west, south, east, north]
+            const centerX = (bbox[0] + bbox[2]) / 2; // Center longitude
+            const topY = bbox[3]; // North (top) latitude
+
+            // Project geo coordinates to screen coordinates
+            const point = mapInstance.project([centerX, topY]);
+            const containerRect = mapContainer.current.getBoundingClientRect();
+
+            // Position tooltip above the top edge of the polygon
+            // Note: EventMapTooltip adds +12 to both x and y
+            const tooltipX = containerRect.left + point.x;
+            const tooltipY = containerRect.top + point.y - 200; // Above the top edge of polygon
+
+            // Set tooltip data
+            setHoveredEvent({
+              id: event.id,
+              name: event.name,
+              status: event.status,
+              color: STATUS_COLORS[event.status] || '#666',
+              startDate: event.startDate,
+              endDate: event.endDate,
+              department: event.department,
+              restrictionType: event.restrictionType,
+              affectedAssetsCount: event.roadAssets?.length || 0,
+            });
+            setTooltipPosition({ x: tooltipX, y: tooltipY });
+
+            // Lock the tooltip so it doesn't disappear on mouse move
+            isTooltipLockedRef.current = true;
+            lockedEventIdRef.current = event.id;
+            currentHoveredEventIdRef.current = event.id;
+          }, 1050); // Wait for fly animation to complete (1000ms duration + buffer)
         } catch (e) {
           console.warn('Could not calculate bounds for event geometry');
         }
@@ -914,6 +1051,13 @@ export function MapView() {
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
     }
+
+    // Cleanup timeout on unmount or when effect re-runs
+    return () => {
+      if (tooltipTimeoutId !== undefined) {
+        window.clearTimeout(tooltipTimeoutId);
+      }
+    };
   }, [selectedEventId, eventsData, mapLoaded]);
 
   // Highlight and fly to selected asset
@@ -946,11 +1090,34 @@ export function MapView() {
         if (lastFlownAssetIdRef.current !== selectedAssetId && selectedAssetGeometry) {
           lastFlownAssetIdRef.current = selectedAssetId;
           try {
-            const bbox = turf.bbox(geometry);
-            map.current.fitBounds(
-              [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-              { padding: 100, maxZoom: 16, duration: 1000 }
-            );
+            const assetBbox = turf.bbox(geometry);
+            const currentBounds = map.current.getBounds();
+            const currentZoom = map.current.getZoom();
+
+            // Check if asset is already visible in current viewport (only skip when zoomed in enough)
+            const isInView = currentZoom > 17 &&
+              assetBbox[0] >= currentBounds.getWest() &&
+              assetBbox[1] >= currentBounds.getSouth() &&
+              assetBbox[2] <= currentBounds.getEast() &&
+              assetBbox[3] <= currentBounds.getNorth();
+
+            if (!isInView) {
+              // Calculate road length to determine appropriate zoom
+              const feature = turf.feature(geometry);
+              const length = turf.length(feature, { units: 'meters' });
+
+              // Smaller roads need higher zoom (closer view)
+              // length < 50m -> zoom 18, length < 150m -> zoom 17, length < 400m -> zoom 16, else 15
+              let minZoom = 15;
+              if (length < 50) minZoom = 18;
+              else if (length < 150) minZoom = 17;
+              else if (length < 400) minZoom = 16;
+
+              map.current.fitBounds(
+                [[assetBbox[0], assetBbox[1]], [assetBbox[2], assetBbox[3]]],
+                { padding: 100, maxZoom: 18, minZoom, duration: 1000 }
+              );
+            }
           } catch (e) {
             console.warn('Could not calculate bounds for asset geometry');
           }
@@ -1007,14 +1174,10 @@ export function MapView() {
     }
   }, [hoveredAssetId, selectedAssetId, mapLoaded]);
 
-  // Sync bbox to uiStore when filterByMapView toggle changes
+  // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {
-    if (filterByMapView && mapBbox) {
-      setMapBboxStore(mapBbox);
-    } else if (!filterByMapView) {
-      setMapBboxStore(null);
-    }
-  }, [filterByMapView, mapBbox, setMapBboxStore]);
+    setMapBboxStore(mapBbox);
+  }, [mapBbox, setMapBboxStore]);
 
   return (
     <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -1157,12 +1320,9 @@ export function MapView() {
             isTooltipHoveredRef.current = true;
           }}
           onMouseLeave={() => {
+            // Only update hover state, don't unlock
+            // Tooltip stays until event is deselected (click elsewhere) or View Details is clicked
             isTooltipHoveredRef.current = false;
-            isTooltipLockedRef.current = false; // Unlock when leaving tooltip
-            lockedEventIdRef.current = null;
-            currentHoveredEventIdRef.current = null;
-            setHoveredEvent(null);
-            setTooltipPosition(null);
           }}
         />
       )}
