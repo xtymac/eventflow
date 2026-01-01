@@ -90,11 +90,13 @@ export function MapView() {
     showEvents,
     showAssets,
     showInspections,
+    showOsmLabels,
     toggleEvents,
     toggleAssets,
-    toggleInspections
+    toggleInspections,
+    toggleOsmLabels,
   } = useMapStore();
-  const { selectedEventId, selectedAssetId, selectedAssetGeometry, selectEvent, selectAsset, setCurrentView, previewGeometry, isEventFormOpen, openEventDetailModal, hoveredAssetId, assetFilters, setMapBbox: setMapBboxStore } = useUIStore();
+  const { selectedEventId, selectedAssetId, selectedAssetGeometry, selectEvent, selectAsset, setCurrentView, previewGeometry, isEventFormOpen, openEventDetailModal, hoveredAssetId, assetFilters, setAssetFilter, setMapBbox: setMapBboxStore } = useUIStore();
   const { filterByMapView } = assetFilters;
   const popup = useRef<maplibregl.Popup | null>(null);
 
@@ -102,7 +104,12 @@ export function MapView() {
   const [hoveredEvent, setHoveredEvent] = useState<HoveredEventData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const isTooltipHoveredRef = useRef(false);
+
+  // Track which asset we've already flown to (prevent repeated fitBounds on assetsData change)
+  const lastFlownAssetIdRef = useRef<string | null>(null);
   const isTooltipLockedRef = useRef(false); // Locked when user clicks on event
+  const lockedEventIdRef = useRef<string | null>(null); // Store the ID of the locked event
+  const currentHoveredEventIdRef = useRef<string | null>(null); // Track current hovered event (for closure access)
 
   const { data: eventsData } = useEvents();
   // Viewport-based asset loading for interaction (zoom >= 14)
@@ -123,6 +130,8 @@ export function MapView() {
       container: mapContainer.current,
       style: {
         version: 8,
+        // Glyphs URL for text labels (using MapTiler's open fonts)
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
           osm: {
             type: 'raster',
@@ -166,6 +175,35 @@ export function MapView() {
         },
       });
 
+      // Assets label layer (high zoom: 15+, where API data is available)
+      map.current.addLayer({
+        id: 'assets-label',
+        type: 'symbol',
+        source: 'assets',
+        minzoom: 15,
+        layout: {
+          'text-field': [
+            'coalesce',
+            ['get', 'displayName'],
+            ['get', 'name'],
+            ['get', 'nameJa'],
+            ['get', 'ref'],
+            ['get', 'localRef'],
+            '',
+          ],
+          'text-font': ['Open Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 15, 11, 18, 14],
+          'symbol-placement': 'line',
+          'text-max-angle': 30,
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#1a1a1a',
+          'text-halo-color': 'rgba(255,255,255,0.9)',
+          'text-halo-width': 2,
+        },
+      });
+
       // Roads preview source (PMTiles for low-zoom overview)
       map.current.addSource('roads-preview', {
         type: 'vector',
@@ -190,6 +228,30 @@ export function MapView() {
           'line-opacity': 0.6,
         },
       }, 'assets-line'); // Insert below assets-line
+
+      // Roads preview label layer (PMTiles, zoom 14-15, before API data kicks in)
+      map.current.addLayer({
+        id: 'roads-preview-label',
+        type: 'symbol',
+        source: 'roads-preview',
+        'source-layer': 'roads',
+        minzoom: 14,
+        maxzoom: 15,  // Exclusive - shows at zoom 14-14.99, then assets-label takes over
+        layout: {
+          'text-field': ['coalesce', ['get', 'displayName'], ['get', 'name'], ['get', 'ref'], ''],
+          'text-font': ['Open Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11],
+          'text-anchor': 'center',
+          'symbol-placement': 'line',
+          'text-max-angle': 30,
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#333',
+          'text-halo-color': '#fff',
+          'text-halo-width': 1.5,
+        },
+      });
 
       // Events source and layers
       map.current.addSource('events', {
@@ -319,6 +381,35 @@ export function MapView() {
         },
       });
 
+      // OSM Road Labels (CARTO Vector)
+      map.current.addSource('carto-vector', {
+        type: 'vector',
+        url: 'https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json',
+        attribution: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      });
+
+      map.current.addLayer({
+        id: 'osm-road-labels',
+        type: 'symbol',
+        source: 'carto-vector',
+        'source-layer': 'transportation_name',
+        minzoom: 12,
+        maxzoom: 15,  // Handoff to assets-label at zoom 15
+        layout: {
+          'text-field': ['coalesce', ['get', 'name'], ['get', 'name:ja'], ['get', 'ref'], ''],
+          'text-font': ['Noto Sans Regular', 'Open Sans Regular'],  // CJK support
+          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 15, 14],
+          'symbol-placement': 'line',
+          'text-max-angle': 30,
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#2b2b2b',
+          'text-halo-color': 'rgba(255,255,255,0.9)',
+          'text-halo-width': 2,
+        },
+      }, 'assets-line');  // Insert before assets-line
+
       // Create popup
       popup.current = new maplibregl.Popup({
         closeButton: false,
@@ -338,52 +429,120 @@ export function MapView() {
           selectAsset(null);
           // Clear tooltip
           isTooltipLockedRef.current = false;
+          lockedEventIdRef.current = null;
+          currentHoveredEventIdRef.current = null;
           setHoveredEvent(null);
           setTooltipPosition(null);
           // Don't change currentView to keep context
         }
       });
 
+      // Helper to check if road interaction should be enabled
+      const shouldAllowRoadInteraction = () => {
+        const state = useUIStore.getState();
+        // Disable road interaction when event is selected, UNLESS in assets view or road update mode
+        if (state.selectedEventId && state.currentView !== 'assets' && !state.isRoadUpdateModeActive) {
+          return false;
+        }
+        return true;
+      };
+
+      // Helper to show event tooltip at click position
+      const showEventTooltip = (e: maplibregl.MapMouseEvent, props: Record<string, unknown>) => {
+        const containerRect = mapContainer.current?.getBoundingClientRect();
+        const viewportX = (containerRect?.left ?? 0) + e.point.x;
+        const viewportY = (containerRect?.top ?? 0) + e.point.y;
+
+        currentHoveredEventIdRef.current = props?.id as string;
+        setHoveredEvent({
+          id: props?.id as string,
+          name: props?.name as string,
+          status: props?.status as string,
+          color: props?.color as string,
+          startDate: props?.startDate as string | undefined,
+          endDate: props?.endDate as string | undefined,
+          department: props?.department as string | undefined,
+          restrictionType: props?.restrictionType as string | undefined,
+          affectedAssetsCount: props?.affectedAssetsCount as number | undefined,
+        });
+        setTooltipPosition({ x: viewportX, y: viewportY });
+      };
+
       map.current.on('click', 'events-fill', (e) => {
         if (e.features && e.features[0]) {
           // Stop propagation to prevent map click handler from clearing selection
           e.originalEvent.stopPropagation();
+          const eventId = e.features[0].properties?.id;
+          const props = e.features[0].properties;
+
+          // Get latest state to avoid closure issue
+          const state = useUIStore.getState();
+
+          // If clicking the same selected event, reset hover tracking to allow tooltip refresh
+          if (eventId === state.selectedEventId) {
+            currentHoveredEventIdRef.current = null;
+          }
+
           // Select and highlight the event
-          selectEvent(e.features[0].properties?.id);
+          selectEvent(eventId);
           setCurrentView('events');
           // Lock tooltip so it stays visible after click
           isTooltipLockedRef.current = true;
+          lockedEventIdRef.current = eventId;
+
+          // Show tooltip immediately at click position
+          if (props) {
+            showEventTooltip(e, props);
+          }
         }
       });
 
       map.current.on('click', 'events-line', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
+          const eventId = e.features[0].properties?.id;
+          const props = e.features[0].properties;
+
+          // Get latest state to avoid closure issue
+          const state = useUIStore.getState();
+
+          // If clicking the same selected event, reset hover tracking to allow tooltip refresh
+          if (eventId === state.selectedEventId) {
+            currentHoveredEventIdRef.current = null;
+          }
+
           // Select and highlight the event
-          selectEvent(e.features[0].properties?.id);
+          selectEvent(eventId);
           setCurrentView('events');
           // Lock tooltip so it stays visible after click
           isTooltipLockedRef.current = true;
+          lockedEventIdRef.current = eventId;
+
+          // Show tooltip immediately at click position
+          if (props) {
+            showEventTooltip(e, props);
+          }
         }
       });
 
       map.current.on('click', 'assets-line', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
+
+          // Block asset click when event is selected (consistent with hover behavior)
+          if (!shouldAllowRoadInteraction()) {
+            return;
+          }
+
           selectAsset(e.features[0].properties?.id);
           setCurrentView('assets');
+          // Enable "Visible Area Only" filter so the selected road appears in sidebar
+          setAssetFilter('filterByMapView', true);
         }
       });
 
-      // Helper to check if road hover should be enabled
-      const shouldAllowRoadHover = () => {
-        const state = useUIStore.getState();
-        // Disable road hover when event is selected, UNLESS in assets view or road update mode
-        if (state.selectedEventId && state.currentView !== 'assets' && !state.isRoadUpdateModeActive) {
-          return false;
-        }
-        return true;
-      };
+      // Alias for backward compatibility in hover handlers
+      const shouldAllowRoadHover = shouldAllowRoadInteraction;
 
       // Cursor changes
       map.current.on('mouseenter', 'events-fill', () => {
@@ -408,19 +567,20 @@ export function MapView() {
       });
 
       // Hover tooltip for events (using React component)
-      // Track current hovered event ID to avoid re-setting position on same event
-      let currentHoveredEventId: string | null = null;
-
       const handleEventMouseMove = (e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
         if (e.features && e.features[0]) {
           const props = e.features[0].properties;
           const eventId = props?.id;
 
           // Only update position when hovering a NEW event (not on every mouse move)
-          if (eventId !== currentHoveredEventId) {
-            currentHoveredEventId = eventId;
-            // Reset lock when moving to a different event so previous tooltip disappears
-            isTooltipLockedRef.current = false;
+          if (eventId !== currentHoveredEventIdRef.current) {
+            // If tooltip is locked (user clicked), don't update to a different event
+            // This prevents accidental tooltip dismissal when mouse passes over adjacent events
+            if (isTooltipLockedRef.current && lockedEventIdRef.current && eventId !== lockedEventIdRef.current) {
+              return;
+            }
+
+            currentHoveredEventIdRef.current = eventId;
 
             // Get map container's position to calculate viewport coordinates
             const containerRect = mapContainer.current?.getBoundingClientRect();
@@ -445,7 +605,7 @@ export function MapView() {
 
       const handleEventMouseLeave = () => {
         // Reset tracked event ID
-        currentHoveredEventId = null;
+        currentHoveredEventIdRef.current = null;
         // Only hide if tooltip is not being hovered or locked - longer delay for better UX
         setTimeout(() => {
           if (!isTooltipHoveredRef.current && !isTooltipLockedRef.current) {
@@ -593,6 +753,7 @@ export function MapView() {
     if (!mapBbox || currentZoom < 14 || !showAssets) {
       source.setData({ type: 'FeatureCollection', features: [] });
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
+      map.current.setLayoutProperty('assets-label', 'visibility', 'none');
       return;
     }
 
@@ -604,6 +765,10 @@ export function MapView() {
       properties: {
         id: asset.id,
         name: asset.name,
+        nameJa: asset.nameJa,
+        ref: asset.ref,
+        localRef: asset.localRef,
+        displayName: asset.displayName,
         roadType: asset.roadType,
         color: ROAD_TYPE_COLORS[asset.roadType] || '#666',
       },
@@ -611,6 +776,7 @@ export function MapView() {
 
     source.setData({ type: 'FeatureCollection', features });
     map.current.setLayoutProperty('assets-line', 'visibility', 'visible');
+    map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
   }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom]);
 
   // Update roads preview layer visibility and opacity
@@ -624,18 +790,30 @@ export function MapView() {
     const previewOpacity = z >= 14 && showAssets ? 0.5 : 0.6;
 
     try {
-      // Visibility follows showAssets toggle
-      map.current.setLayoutProperty(
-        'roads-preview-line',
-        'visibility',
-        showAssets ? 'visible' : 'none'
-      );
+      // Visibility follows showAssets toggle (sync both line and label layers)
+      const visibility = showAssets ? 'visible' : 'none';
+      map.current.setLayoutProperty('roads-preview-line', 'visibility', visibility);
+      map.current.setLayoutProperty('roads-preview-label', 'visibility', visibility);
       // Apply opacity (no filter - show all road types)
       map.current.setPaintProperty('roads-preview-line', 'line-opacity', previewOpacity);
     } catch {
-      // Layer may not exist if PMTiles file is not available
+      // Layers may not exist if PMTiles file is not available
     }
   }, [currentZoom, showAssets, mapLoaded]);
+
+  // Update OSM road labels visibility
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Guard: check layer exists before setting property
+    if (!map.current.getLayer('osm-road-labels')) return;
+
+    map.current.setLayoutProperty(
+      'osm-road-labels',
+      'visibility',
+      showOsmLabels ? 'visible' : 'none'
+    );
+  }, [showOsmLabels, mapLoaded]);
 
   // Update events layer
   useEffect(() => {
@@ -692,10 +870,14 @@ export function MapView() {
     const source = map.current.getSource('selected-event') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Clear tooltip when selectedEventId changes (e.g., from sidebar click)
-    // This prevents stale tooltips from previous map interactions
+    // Always reset lock state when selectedEventId changes
+    // This ensures hover works correctly after map fly animation completes
+    isTooltipLockedRef.current = false;
+    lockedEventIdRef.current = null;
+    currentHoveredEventIdRef.current = null;
+
+    // Clear tooltip if it's showing a different event (e.g., from sidebar click)
     if (hoveredEvent && hoveredEvent.id !== selectedEventId) {
-      isTooltipLockedRef.current = false;
       setHoveredEvent(null);
       setTooltipPosition(null);
     }
@@ -757,19 +939,26 @@ export function MapView() {
           }],
         });
 
-        // Calculate bounds and fly to feature
-        try {
-          const bbox = turf.bbox(geometry);
-          map.current.fitBounds(
-            [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-            { padding: 100, maxZoom: 16, duration: 1000 }
-          );
-        } catch (e) {
-          console.warn('Could not calculate bounds for asset geometry');
+        // Only fly to feature when:
+        // 1. Selecting a NEW asset (not when assetsData changes)
+        // 2. Selection came from sidebar (selectedAssetGeometry is provided)
+        //    - When clicking on map, the road is already visible, no need to zoom
+        if (lastFlownAssetIdRef.current !== selectedAssetId && selectedAssetGeometry) {
+          lastFlownAssetIdRef.current = selectedAssetId;
+          try {
+            const bbox = turf.bbox(geometry);
+            map.current.fitBounds(
+              [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+              { padding: 100, maxZoom: 16, duration: 1000 }
+            );
+          } catch (e) {
+            console.warn('Could not calculate bounds for asset geometry');
+          }
         }
       }
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
+      lastFlownAssetIdRef.current = null; // Reset when asset is deselected
     }
   }, [selectedAssetId, selectedAssetGeometry, assetsData, mapLoaded]);
 
@@ -885,6 +1074,12 @@ export function MapView() {
             onChange={toggleInspections}
             size="sm"
           />
+          <Switch
+            label="OSM Road Labels"
+            checked={showOsmLabels}
+            onChange={toggleOsmLabels}
+            size="sm"
+          />
         </Stack>
       </Paper>
 
@@ -953,6 +1148,8 @@ export function MapView() {
           onViewDetails={(eventId) => {
             openEventDetailModal(eventId);
             isTooltipLockedRef.current = false;
+            lockedEventIdRef.current = null;
+            currentHoveredEventIdRef.current = null;
             setHoveredEvent(null);
             setTooltipPosition(null);
           }}
@@ -962,6 +1159,8 @@ export function MapView() {
           onMouseLeave={() => {
             isTooltipHoveredRef.current = false;
             isTooltipLockedRef.current = false; // Unlock when leaving tooltip
+            lockedEventIdRef.current = null;
+            currentHoveredEventIdRef.current = null;
             setHoveredEvent(null);
             setTooltipPosition(null);
           }}

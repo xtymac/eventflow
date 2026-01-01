@@ -88,7 +88,7 @@ function App() {
           </Stack>
         </AppShell.Section>
 
-        <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
+        <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars key={currentView}>
           {renderSidebarContent()}
         </AppShell.Section>
       </AppShell.Navbar>

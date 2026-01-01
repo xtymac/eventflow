@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Stack,
   TextInput,
@@ -12,10 +12,12 @@ import {
   Button,
   Collapse,
   UnstyledButton,
+  ActionIcon,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown } from '@tabler/icons-react';
-import { useAssets, useWards } from '../../hooks/useApi';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconX } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { useAssets, useAsset, useWards } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import type { RoadAsset, RoadType, AssetStatus } from '@nagoya/shared';
 
@@ -34,16 +36,17 @@ const ROAD_TYPE_LABELS: Record<RoadType, string> = {
 };
 
 export function AssetList() {
-  // UI-only state (not persisted)
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const wasManuallyClosedRef = useRef(false);
-  const prevFilterCountRef = useRef(0);
+  // Local UI state
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [offset, setOffset] = useState(0);
   const [loadedAssets, setLoadedAssets] = useState<RoadAsset[]>([]);
 
-  // Persisted filter state from store
-  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, setHoveredAsset } = useUIStore();
+  // Inline edit state for manual naming
+  const [editName, setEditName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Persisted filter state from store (including filtersOpen)
+  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, setHoveredAsset, filtersOpen, setFiltersOpen } = useUIStore();
   const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter, filterByMapView } = assetFilters;
   const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
@@ -61,27 +64,15 @@ export function AssetList() {
     includeTotal: true,
   });
 
+  // Always fetch selected asset individually to pin it at top until deselected
+  const { data: selectedAssetData } = useAsset(selectedAssetId);
+
   // Compute active filter count (include unnamed and filterByMapView toggles)
   const activeFilterCount = [roadTypeFilter, statusFilter, wardFilter, unnamedFilter, filterByMapView].filter(Boolean).length;
 
-  // Auto-expand filters when going from 0 → >0 (respect user intent)
-  useEffect(() => {
-    if (prevFilterCountRef.current === 0 && activeFilterCount > 0 && !wasManuallyClosedRef.current) {
-      setFiltersOpen(true);
-    }
-    if (activeFilterCount === 0) {
-      wasManuallyClosedRef.current = false;
-    }
-    prevFilterCountRef.current = activeFilterCount;
-  }, [activeFilterCount]);
-
-  // Toggle handler (sets manual-close flag)
+  // Toggle handler
   const handleToggleFilters = () => {
-    const nextOpen = !filtersOpen;
-    setFiltersOpen(nextOpen);
-    if (!nextOpen) {
-      wasManuallyClosedRef.current = true;
-    }
+    setFiltersOpen(!filtersOpen);
   };
 
   // Reset offset when filters change
@@ -116,15 +107,100 @@ export function AssetList() {
       ? loadedAssets.length < data.meta.total
       : data?.data?.length === LIMIT;
 
-  // Scroll to selected asset when it changes
+  // Compute display list: always pin selected asset at top until deselected
+  const displayList = useMemo(() => {
+    const selectedAsset = selectedAssetData?.data;
+    if (selectedAsset) {
+      // Remove from natural position (if present) and prepend to top
+      const filtered = loadedAssets.filter((a) => a.id !== selectedAsset.id);
+      return [selectedAsset, ...filtered];
+    }
+    return loadedAssets;
+  }, [loadedAssets, selectedAssetData?.data]);
+
+  // Track previous selectedAssetId to detect actual selection changes
+  const prevSelectedAssetIdRef = useRef<string | null>(null);
+
+  // Scroll to selected asset only when selection changes (not on zoom/pan)
   useEffect(() => {
-    if (selectedAssetId) {
+    if (!selectedAssetId) {
+      prevSelectedAssetIdRef.current = null;
+      return;
+    }
+
+    // Only scroll if this is a new selection
+    if (prevSelectedAssetIdRef.current === selectedAssetId) return;
+    prevSelectedAssetIdRef.current = selectedAssetId;
+
+    // Small delay to ensure card is rendered after state update
+    const scrollToCard = () => {
       const card = cardRefs.current.get(selectedAssetId);
       if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }
+    };
+
+    const timer = setTimeout(scrollToCard, 100);
+    return () => clearTimeout(timer);
+  }, [selectedAssetId, selectedAssetData?.data]);
+
+  // Reset edit state when selection changes
+  useEffect(() => {
+    setEditName('');
   }, [selectedAssetId]);
+
+  // Handle manual naming save
+  const handleSaveName = async (assetId: string) => {
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      notifications.show({
+        title: 'Error',
+        message: 'Name cannot be empty',
+        color: 'red',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/assets/${assetId}/name`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: trimmedName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update name');
+      }
+
+      const result = await response.json();
+
+      // Update local state with new name
+      setLoadedAssets((prev) =>
+        prev.map((a) =>
+          a.id === assetId
+            ? { ...a, displayName: result.data.displayName, nameSource: 'manual' }
+            : a
+        )
+      );
+
+      setEditName('');
+      notifications.show({
+        title: 'Success',
+        message: `Road renamed to "${trimmedName}"`,
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to save name',
+        color: 'red',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -277,11 +353,12 @@ export function AssetList() {
       </Collapse>
 
       <Stack gap="xs">
-        {loadedAssets.map((asset: RoadAsset) => {
-          // Compute display values (match backend unnamed logic)
-          const trimmedName = asset.name?.trim() || '';
-          const isUnnamed = trimmedName === '' || trimmedName.toLowerCase() === 'unnamed road';
-          const displayName = isUnnamed ? 'Unnamed Road' : asset.name;
+        {displayList.map((asset: RoadAsset) => {
+          // Use displayName from API (already has fallback chain: name || nameJa || ref || localRef)
+          // 'Unnamed Road' appears ONLY in UI when displayName is also null
+          const displayText = asset.displayName || 'Unnamed Road';
+          // Check if road is truly unnamed (no name, nameJa, ref, or localRef)
+          const isUnnamed = !asset.displayName;
 
           return (
             <Card
@@ -303,7 +380,7 @@ export function AssetList() {
             >
               <Group justify="space-between" mb={4}>
                 <Text fw={500} size="sm" lineClamp={1}>
-                  {displayName}{asset.ward ? ` · ${asset.ward}` : ''}
+                  {displayText}{asset.ward ? ` · ${asset.ward}` : ''}
                 </Text>
                 <Badge color={ROAD_TYPE_COLORS[asset.roadType]} size="sm">
                   {ROAD_TYPE_LABELS[asset.roadType]}
@@ -321,6 +398,15 @@ export function AssetList() {
                 <Badge variant="outline" size="xs" color="gray">
                   {asset.lanes} lanes
                 </Badge>
+                {!isUnnamed && asset.nameSource && (
+                  <Badge
+                    variant="light"
+                    size="xs"
+                    color={asset.nameSource === 'osm' ? 'blue' : 'teal'}
+                  >
+                    {asset.nameSource === 'osm' ? 'OSM' : '手動'}
+                  </Badge>
+                )}
               </Group>
 
               {asset.landmark && (
@@ -337,11 +423,48 @@ export function AssetList() {
               >
                 ID: {asset.id}
               </Text>
+
+              {/* Inline edit for selected unnamed roads */}
+              {selectedAssetId === asset.id && isUnnamed && (
+                <Group mt="xs" gap="xs" onClick={(e) => e.stopPropagation()}>
+                  <TextInput
+                    size="xs"
+                    placeholder="Enter road name..."
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveName(asset.id);
+                      if (e.key === 'Escape') setEditName('');
+                    }}
+                    style={{ flex: 1 }}
+                    disabled={isSaving}
+                  />
+                  <ActionIcon
+                    variant="filled"
+                    color="green"
+                    size="sm"
+                    onClick={() => handleSaveName(asset.id)}
+                    loading={isSaving}
+                    disabled={!editName.trim()}
+                  >
+                    <IconCheck size={14} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    onClick={() => setEditName('')}
+                    disabled={isSaving}
+                  >
+                    <IconX size={14} />
+                  </ActionIcon>
+                </Group>
+              )}
             </Card>
           );
         })}
 
-        {loadedAssets.length === 0 && !isLoading && !isFetching && (!data?.data || data.data.length === 0) && (
+        {displayList.length === 0 && !isLoading && !isFetching && (!data?.data || data.data.length === 0) && (
           <Text c="dimmed" ta="center" py="lg">
             No assets found
           </Text>
