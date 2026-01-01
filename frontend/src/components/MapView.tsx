@@ -97,19 +97,37 @@ export function MapView() {
     toggleInspections,
     toggleOsmLabels,
   } = useMapStore();
-  const { selectedEventId, selectedAssetId, selectedAssetGeometry, selectEvent, selectAsset, setCurrentView, previewGeometry, isEventFormOpen, openEventDetailModal, hoveredAssetId, setMapBbox: setMapBboxStore } = useUIStore();
+  const {
+    selectedEventId,
+    selectedAssetId,
+    selectedAssetGeometry,
+    selectEvent,
+    selectAsset,
+    setCurrentView,
+    previewGeometry,
+    isEventFormOpen,
+    openEventDetailModal,
+    hoveredAssetId,
+    selectedRoadAssetIdsForForm,
+    setMapBbox: setMapBboxStore,
+  } = useUIStore();
   const popup = useRef<maplibregl.Popup | null>(null);
 
-  // Event hover tooltip state
-  const [hoveredEvent, setHoveredEvent] = useState<HoveredEventData | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
-  const isTooltipHoveredRef = useRef(false);
+  // Locked tooltip state (for selected event - stays visible)
+  const [lockedEvent, setLockedEvent] = useState<HoveredEventData | null>(null);
+  const [lockedTooltipPosition, setLockedTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const isLockedTooltipHoveredRef = useRef(false);
+  const lockedEventIdRef = useRef<string | null>(null);
+
+  // Preview tooltip state (for hovering other events - temporary)
+  const [previewEvent, setPreviewEvent] = useState<HoveredEventData | null>(null);
+  const [previewTooltipPosition, setPreviewTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const isPreviewTooltipHoveredRef = useRef(false);
+  const currentHoveredEventIdRef = useRef<string | null>(null);
+  const previewTooltipTimeoutRef = useRef<number | null>(null);
 
   // Track which asset we've already flown to (prevent repeated fitBounds on assetsData change)
   const lastFlownAssetIdRef = useRef<string | null>(null);
-  const isTooltipLockedRef = useRef(false); // Locked when user clicks on event
-  const lockedEventIdRef = useRef<string | null>(null); // Store the ID of the locked event
-  const currentHoveredEventIdRef = useRef<string | null>(null); // Track current hovered event (for closure access)
 
   const { data: eventsData } = useEvents();
   // Viewport-based asset loading for interaction (zoom >= 14)
@@ -172,6 +190,19 @@ export function MapView() {
           'line-color': ['get', 'color'],
           'line-width': 4,
           'line-opacity': 0.8,
+        },
+      });
+
+      // Editing selection highlight (for event editor map picking)
+      map.current.addLayer({
+        id: 'editing-assets-line',
+        type: 'line',
+        source: 'assets',
+        filter: ['in', ['get', 'id'], ['literal', []]], // Initial: match nothing
+        paint: {
+          'line-color': '#2563eb',
+          'line-width': 6,
+          'line-opacity': 0.9,
         },
       });
 
@@ -463,16 +494,18 @@ export function MapView() {
           layers: ['events-fill', 'events-line', 'events-hit-area', 'assets-hit-area', 'inspections-point']
         });
 
-        // If no features were clicked, clear selection and tooltip
+        // If no features were clicked, clear selection and tooltips
         if (!features || features.length === 0) {
+          if (useUIStore.getState().isEventFormOpen) return;
           selectEvent(null);
           selectAsset(null);
-          // Clear tooltip
-          isTooltipLockedRef.current = false;
+          // Clear both tooltips
           lockedEventIdRef.current = null;
+          setLockedEvent(null);
+          setLockedTooltipPosition(null);
+          setPreviewEvent(null);
+          setPreviewTooltipPosition(null);
           currentHoveredEventIdRef.current = null;
-          setHoveredEvent(null);
-          setTooltipPosition(null);
           // Don't change currentView to keep context
         }
       });
@@ -480,6 +513,7 @@ export function MapView() {
       // Helper to check if road interaction should be enabled
       const shouldAllowRoadInteraction = () => {
         const state = useUIStore.getState();
+        if (state.isEventFormOpen) return true;
         // Disable road interaction when event is selected, UNLESS in assets view or road update mode
         if (state.selectedEventId && state.currentView !== 'assets' && !state.isRoadUpdateModeActive) {
           return false;
@@ -487,14 +521,14 @@ export function MapView() {
         return true;
       };
 
-      // Helper to show event tooltip at click position
-      const showEventTooltip = (e: maplibregl.MapMouseEvent, props: Record<string, unknown>) => {
+      // Helper to show locked tooltip at click position
+      const showLockedTooltip = (e: maplibregl.MapMouseEvent, props: Record<string, unknown>) => {
         const containerRect = mapContainer.current?.getBoundingClientRect();
         const viewportX = (containerRect?.left ?? 0) + e.point.x;
         const viewportY = (containerRect?.top ?? 0) + e.point.y;
 
-        currentHoveredEventIdRef.current = props?.id as string;
-        setHoveredEvent({
+        lockedEventIdRef.current = props?.id as string;
+        setLockedEvent({
           id: props?.id as string,
           name: props?.name as string,
           status: props?.status as string,
@@ -505,34 +539,31 @@ export function MapView() {
           restrictionType: props?.restrictionType as string | undefined,
           affectedAssetsCount: props?.affectedAssetsCount as number | undefined,
         });
-        setTooltipPosition({ x: viewportX, y: viewportY });
+        setLockedTooltipPosition({ x: viewportX, y: viewportY });
       };
 
+      // Event click handlers
+      // Only show tooltip immediately if clicking already-selected event (no map fly)
+      // For new selections, just select - user can hover/click again after map settles
       map.current.on('click', 'events-fill', (e) => {
         if (e.features && e.features[0]) {
-          // Stop propagation to prevent map click handler from clearing selection
           e.originalEvent.stopPropagation();
-          const eventId = e.features[0].properties?.id;
           const props = e.features[0].properties;
-
-          // Get latest state to avoid closure issue
+          const eventId = props?.id;
           const state = useUIStore.getState();
+          if (state.isEventFormOpen) return;
 
-          // If clicking the same selected event, reset hover tracking to allow tooltip refresh
+          // Clear preview tooltip
+          setPreviewEvent(null);
+          setPreviewTooltipPosition(null);
+
           if (eventId === state.selectedEventId) {
-            currentHoveredEventIdRef.current = null;
-          }
-
-          // Select and highlight the event
-          selectEvent(eventId);
-          setCurrentView('events');
-          // Lock tooltip so it stays visible after click
-          isTooltipLockedRef.current = true;
-          lockedEventIdRef.current = eventId;
-
-          // Show tooltip immediately at click position
-          if (props) {
-            showEventTooltip(e, props);
+            // Clicking already selected event - show tooltip (no map fly)
+            if (props) showLockedTooltip(e, props);
+          } else {
+            // Clicking different event - select it (map will fly, don't show tooltip)
+            selectEvent(eventId);
+            setCurrentView('events');
           }
         }
       });
@@ -540,56 +571,59 @@ export function MapView() {
       map.current.on('click', 'events-line', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
-          const eventId = e.features[0].properties?.id;
           const props = e.features[0].properties;
-
-          // Get latest state to avoid closure issue
+          const eventId = props?.id;
           const state = useUIStore.getState();
+          if (state.isEventFormOpen) return;
 
-          // If clicking the same selected event, reset hover tracking to allow tooltip refresh
+          setPreviewEvent(null);
+          setPreviewTooltipPosition(null);
+
           if (eventId === state.selectedEventId) {
-            currentHoveredEventIdRef.current = null;
-          }
-
-          // Select and highlight the event
-          selectEvent(eventId);
-          setCurrentView('events');
-          // Lock tooltip so it stays visible after click
-          isTooltipLockedRef.current = true;
-          lockedEventIdRef.current = eventId;
-
-          // Show tooltip immediately at click position
-          if (props) {
-            showEventTooltip(e, props);
+            if (props) showLockedTooltip(e, props);
+          } else {
+            selectEvent(eventId);
+            setCurrentView('events');
           }
         }
       });
 
-      // Events hit area click handler (for easier clicking on thin lines)
       map.current.on('click', 'events-hit-area', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
-          const eventId = e.features[0].properties?.id;
           const props = e.features[0].properties;
-
+          const eventId = props?.id;
           const state = useUIStore.getState();
+          if (state.isEventFormOpen) return;
+
+          setPreviewEvent(null);
+          setPreviewTooltipPosition(null);
+
           if (eventId === state.selectedEventId) {
-            currentHoveredEventIdRef.current = null;
-          }
-
-          selectEvent(eventId);
-          setCurrentView('events');
-          isTooltipLockedRef.current = true;
-          lockedEventIdRef.current = eventId;
-
-          if (props) {
-            showEventTooltip(e, props);
+            if (props) showLockedTooltip(e, props);
+          } else {
+            selectEvent(eventId);
+            setCurrentView('events');
           }
         }
       });
 
       map.current.on('click', 'assets-hit-area', (e) => {
         if (e.features && e.features[0]) {
+          const assetId = e.features[0].properties?.id as string | undefined;
+          if (!assetId) return;
+
+          const state = useUIStore.getState();
+          if (state.isEventFormOpen) {
+            e.originalEvent.stopPropagation();
+            const current = state.selectedRoadAssetIdsForForm || [];
+            const next = current.includes(assetId)
+              ? current.filter((id) => id !== assetId)
+              : [...current, assetId];
+            state.setSelectedRoadAssetsForForm(next);
+            return;
+          }
+
           // Don't allow road selection when event is selected (unless in assets view or road update mode)
           if (!shouldAllowRoadInteraction()) {
             return;
@@ -598,7 +632,7 @@ export function MapView() {
           e.originalEvent.stopPropagation();
 
           // Allow asset selection - this will clear any selected event
-          selectAsset(e.features[0].properties?.id);
+          selectAsset(assetId);
           setCurrentView('assets');
         }
       });
@@ -635,27 +669,35 @@ export function MapView() {
       });
 
       // Hover tooltip for events (using React component)
+      // Shows preview tooltip for non-selected events, locked tooltip stays visible
       const handleEventMouseMove = (e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
         if (e.features && e.features[0]) {
           const props = e.features[0].properties;
           const eventId = props?.id;
 
-          // If tooltip is locked (from click or auto-show), don't update anything
-          // The locked tooltip should stay in place until user interacts with it
-          if (isTooltipLockedRef.current) {
-            return;
-          }
-
-          // Only update position when hovering a NEW event (not on every mouse move)
+          // Only update when hovering a NEW event
           if (eventId !== currentHoveredEventIdRef.current) {
+            // Clear any pending hide timeout since we're on a new event
+            if (previewTooltipTimeoutRef.current !== null) {
+              window.clearTimeout(previewTooltipTimeoutRef.current);
+              previewTooltipTimeoutRef.current = null;
+            }
+
             currentHoveredEventIdRef.current = eventId;
 
-            // Get map container's position to calculate viewport coordinates
+            // If hovering the locked (selected) event, clear preview tooltip
+            if (eventId === lockedEventIdRef.current) {
+              setPreviewEvent(null);
+              setPreviewTooltipPosition(null);
+              return;
+            }
+
+            // Show preview tooltip for other events
             const containerRect = mapContainer.current?.getBoundingClientRect();
             const viewportX = (containerRect?.left ?? 0) + e.point.x;
             const viewportY = (containerRect?.top ?? 0) + e.point.y;
 
-            setHoveredEvent({
+            setPreviewEvent({
               id: props?.id,
               name: props?.name,
               status: props?.status,
@@ -666,24 +708,20 @@ export function MapView() {
               restrictionType: props?.restrictionType,
               affectedAssetsCount: props?.affectedAssetsCount,
             });
-            setTooltipPosition({ x: viewportX, y: viewportY });
+            setPreviewTooltipPosition({ x: viewportX, y: viewportY });
           }
         }
       };
 
       const handleEventMouseLeave = () => {
-        // Don't do anything if tooltip is locked
-        if (isTooltipLockedRef.current) {
-          return;
-        }
-
-        // Reset tracked event ID
         currentHoveredEventIdRef.current = null;
-        // Only hide if tooltip is not being hovered - longer delay for better UX
-        setTimeout(() => {
-          if (!isTooltipHoveredRef.current && !isTooltipLockedRef.current) {
-            setHoveredEvent(null);
-            setTooltipPosition(null);
+
+        // Delay to allow user to move mouse to preview tooltip
+        previewTooltipTimeoutRef.current = window.setTimeout(() => {
+          previewTooltipTimeoutRef.current = null;
+          if (!isPreviewTooltipHoveredRef.current && !currentHoveredEventIdRef.current) {
+            setPreviewEvent(null);
+            setPreviewTooltipPosition(null);
           }
         }, 300);
       };
@@ -700,6 +738,12 @@ export function MapView() {
         // Skip hover when event is selected (unless in assets view or road update mode)
         if (!shouldAllowRoadHover()) {
           if (map.current) map.current.getCanvas().style.cursor = '';
+          if (popup.current) popup.current.remove();
+          return;
+        }
+
+        // Skip hover when mouse is over an event polygon (show event tooltip instead)
+        if (currentHoveredEventIdRef.current || lockedEventIdRef.current) {
           if (popup.current) popup.current.remove();
           return;
         }
@@ -874,6 +918,26 @@ export function MapView() {
     map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
   }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom]);
 
+  // Highlight selected assets while editing an event
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    if (!map.current.getLayer('editing-assets-line')) return;
+
+    if (!showAssets || currentZoom < 14 || !mapBbox) {
+      map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
+      map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', []]]);
+      return;
+    }
+
+    if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
+      map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', selectedRoadAssetIdsForForm]]);
+      map.current.setLayoutProperty('editing-assets-line', 'visibility', 'visible');
+    } else {
+      map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', []]]);
+      map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
+    }
+  }, [selectedRoadAssetIdsForForm, isEventFormOpen, mapLoaded, showAssets, currentZoom, mapBbox]);
+
   // Update roads preview layer visibility and opacity
   // PMTiles shows all road types at all zoom levels; no filter needed
   useEffect(() => {
@@ -966,24 +1030,22 @@ export function MapView() {
     const source = map.current.getSource('selected-event') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Always reset lock state when selectedEventId changes
-    // This ensures hover works correctly after map fly animation completes
-    isTooltipLockedRef.current = false;
-    lockedEventIdRef.current = null;
-    currentHoveredEventIdRef.current = null;
-
-    // Clear tooltip if it's showing a different event (e.g., from sidebar click)
-    if (hoveredEvent && hoveredEvent.id !== selectedEventId) {
-      setHoveredEvent(null);
-      setTooltipPosition(null);
+    // Clear locked tooltip when event is deselected or changed
+    if (!selectedEventId || lockedEventIdRef.current !== selectedEventId) {
+      lockedEventIdRef.current = null;
+      setLockedEvent(null);
+      setLockedTooltipPosition(null);
     }
 
-    // Clear road popup when event is selected (avoid leftover tooltip when mouse doesn't move)
+    // Also clear preview tooltip
+    setPreviewEvent(null);
+    setPreviewTooltipPosition(null);
+    currentHoveredEventIdRef.current = null;
+
+    // Clear road popup when event is selected
     if (selectedEventId && popup.current) {
       popup.current.remove();
     }
-
-    let tooltipTimeoutId: number | undefined;
 
     if (selectedEventId && eventsData?.data) {
       const event = eventsData.data.find((e: ConstructionEvent) => e.id === selectedEventId);
@@ -1005,45 +1067,7 @@ export function MapView() {
             [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
             { padding: 100, maxZoom: 16, duration: 1000 }
           );
-
-          // Show tooltip automatically after fly animation completes
-          const mapInstance = map.current;
-          tooltipTimeoutId = window.setTimeout(() => {
-            if (!mapInstance || !mapContainer.current) return;
-
-            // Use bbox to position tooltip at the top of the polygon (not blocking it)
-            // bbox = [minX, minY, maxX, maxY] = [west, south, east, north]
-            const centerX = (bbox[0] + bbox[2]) / 2; // Center longitude
-            const topY = bbox[3]; // North (top) latitude
-
-            // Project geo coordinates to screen coordinates
-            const point = mapInstance.project([centerX, topY]);
-            const containerRect = mapContainer.current.getBoundingClientRect();
-
-            // Position tooltip above the top edge of the polygon
-            // Note: EventMapTooltip adds +12 to both x and y
-            const tooltipX = containerRect.left + point.x;
-            const tooltipY = containerRect.top + point.y - 200; // Above the top edge of polygon
-
-            // Set tooltip data
-            setHoveredEvent({
-              id: event.id,
-              name: event.name,
-              status: event.status,
-              color: STATUS_COLORS[event.status] || '#666',
-              startDate: event.startDate,
-              endDate: event.endDate,
-              department: event.department,
-              restrictionType: event.restrictionType,
-              affectedAssetsCount: event.roadAssets?.length || 0,
-            });
-            setTooltipPosition({ x: tooltipX, y: tooltipY });
-
-            // Lock the tooltip so it doesn't disappear on mouse move
-            isTooltipLockedRef.current = true;
-            lockedEventIdRef.current = event.id;
-            currentHoveredEventIdRef.current = event.id;
-          }, 1050); // Wait for fly animation to complete (1000ms duration + buffer)
+          // No auto-show tooltip - user will hover/click to see it
         } catch (e) {
           console.warn('Could not calculate bounds for event geometry');
         }
@@ -1051,13 +1075,6 @@ export function MapView() {
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
     }
-
-    // Cleanup timeout on unmount or when effect re-runs
-    return () => {
-      if (tooltipTimeoutId !== undefined) {
-        window.clearTimeout(tooltipTimeoutId);
-      }
-    };
   }, [selectedEventId, eventsData, mapLoaded]);
 
   // Highlight and fly to selected asset
@@ -1303,26 +1320,44 @@ export function MapView() {
         )}
       </Paper>
 
-      {/* Event hover tooltip */}
-      {hoveredEvent && tooltipPosition && (
+      {/* Locked tooltip for selected event - stays visible */}
+      {lockedEvent && lockedTooltipPosition && (
         <EventMapTooltip
-          event={hoveredEvent}
-          position={tooltipPosition}
+          event={lockedEvent}
+          position={lockedTooltipPosition}
           onViewDetails={(eventId) => {
             openEventDetailModal(eventId);
-            isTooltipLockedRef.current = false;
             lockedEventIdRef.current = null;
-            currentHoveredEventIdRef.current = null;
-            setHoveredEvent(null);
-            setTooltipPosition(null);
+            setLockedEvent(null);
+            setLockedTooltipPosition(null);
           }}
           onMouseEnter={() => {
-            isTooltipHoveredRef.current = true;
+            isLockedTooltipHoveredRef.current = true;
           }}
           onMouseLeave={() => {
-            // Only update hover state, don't unlock
-            // Tooltip stays until event is deselected (click elsewhere) or View Details is clicked
-            isTooltipHoveredRef.current = false;
+            isLockedTooltipHoveredRef.current = false;
+          }}
+        />
+      )}
+
+      {/* Preview tooltip for hovering other events */}
+      {previewEvent && previewTooltipPosition && (
+        <EventMapTooltip
+          event={previewEvent}
+          position={previewTooltipPosition}
+          onViewDetails={(eventId) => {
+            openEventDetailModal(eventId);
+            setPreviewEvent(null);
+            setPreviewTooltipPosition(null);
+          }}
+          onMouseEnter={() => {
+            isPreviewTooltipHoveredRef.current = true;
+          }}
+          onMouseLeave={() => {
+            isPreviewTooltipHoveredRef.current = false;
+            // Hide preview tooltip when mouse leaves
+            setPreviewEvent(null);
+            setPreviewTooltipPosition(null);
           }}
         />
       )}
