@@ -131,6 +131,9 @@ export function MapView() {
   // Track which asset we've already flown to (prevent repeated fitBounds on assetsData change)
   const lastFlownAssetIdRef = useRef<string | null>(null);
 
+  // Animation ref for flowing border effect
+  const animationFrameRef = useRef<number | null>(null);
+
   const { data: eventsData } = useEvents();
   // Viewport-based asset loading for interaction (zoom >= 14)
   // PMTiles covers all zoom levels for preview; API enables selection
@@ -195,6 +198,20 @@ export function MapView() {
         },
       });
 
+      // Editing selection glow (outer glow for breathing effect)
+      map.current.addLayer({
+        id: 'editing-assets-glow',
+        type: 'line',
+        source: 'assets',
+        filter: ['in', ['get', 'id'], ['literal', []]], // Initial: match nothing
+        paint: {
+          'line-color': '#2563eb',
+          'line-width': 24, // Wider glow
+          'line-blur': 8,   // More blur
+          'line-opacity': 0.6, // Will be animated
+        },
+      });
+
       // Editing selection highlight (for event editor map picking)
       map.current.addLayer({
         id: 'editing-assets-line',
@@ -204,7 +221,7 @@ export function MapView() {
         paint: {
           'line-color': '#2563eb',
           'line-width': 6,
-          'line-opacity': 0.9,
+          'line-opacity': 1,
         },
       });
 
@@ -313,7 +330,7 @@ export function MapView() {
         filter: ['==', '$type', 'Polygon'],
         paint: {
           'fill-color': ['get', 'color'],
-          'fill-opacity': 0.3,
+          'fill-opacity': 0.15, // Reduced from 0.3 to allow clicking roads underneath
         },
       });
 
@@ -396,19 +413,20 @@ export function MapView() {
         source: 'editing-event',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'fill-color': '#3B82F6', // blue
-          'fill-opacity': 0.08, // Very transparent to see roads underneath
+          'fill-color': '#ffffff', // white panel
+          'fill-opacity': 0.5, // Semi-transparent white
         },
       });
 
+      // Solid line for editing event (color from event status)
       map.current.addLayer({
         id: 'editing-event-line',
         type: 'line',
         source: 'editing-event',
         paint: {
-          'line-color': '#3B82F6', // blue
+          'line-color': ['get', 'color'], // Use event status color
           'line-width': 3,
-          'line-dasharray': [4, 2], // Dashed line to indicate editing mode
+          'line-opacity': 1,
         },
       });
 
@@ -441,16 +459,30 @@ export function MapView() {
         },
       });
 
-      // Hover highlight layer (uses filter on existing assets source)
+      // Hover highlight glow layer (outer glow for visibility)
+      map.current.addLayer({
+        id: 'hovered-asset-glow',
+        type: 'line',
+        source: 'assets',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'line-color': '#f59e0b', // Amber/orange glow
+          'line-width': 16,
+          'line-blur': 6,
+          'line-opacity': 0.7,
+        },
+      }, 'selected-asset-line'); // Insert below selected layer
+
+      // Hover highlight layer (main line)
       map.current.addLayer({
         id: 'hovered-asset-line',
         type: 'line',
         source: 'assets',
         filter: ['==', ['get', 'id'], ''], // Initial: match nothing
         paint: {
-          'line-color': '#3b82f6', // Blue
-          'line-width': 6,
-          'line-opacity': 0.9,
+          'line-color': '#f59e0b', // Amber/orange - more visible
+          'line-width': 8,
+          'line-opacity': 1,
         },
       }, 'selected-asset-line'); // Insert below selected layer
 
@@ -551,30 +583,7 @@ export function MapView() {
         return true;
       };
 
-      // Helper to show locked tooltip at click position
-      const showLockedTooltip = (e: maplibregl.MapMouseEvent, props: Record<string, unknown>) => {
-        const containerRect = mapContainer.current?.getBoundingClientRect();
-        const viewportX = (containerRect?.left ?? 0) + e.point.x;
-        const viewportY = (containerRect?.top ?? 0) + e.point.y;
-
-        lockedEventIdRef.current = props?.id as string;
-        setLockedEvent({
-          id: props?.id as string,
-          name: props?.name as string,
-          status: props?.status as string,
-          color: props?.color as string,
-          startDate: props?.startDate as string | undefined,
-          endDate: props?.endDate as string | undefined,
-          department: props?.department as string | undefined,
-          restrictionType: props?.restrictionType as string | undefined,
-          affectedAssetsCount: props?.affectedAssetsCount as number | undefined,
-        });
-        setLockedTooltipPosition({ x: viewportX, y: viewportY });
-      };
-
       // Event click handlers
-      // Only show tooltip immediately if clicking already-selected event (no map fly)
-      // For new selections, just select - user can hover/click again after map settles
       map.current.on('click', 'events-fill', (e) => {
         if (e.features && e.features[0]) {
           e.originalEvent.stopPropagation();
@@ -587,14 +596,13 @@ export function MapView() {
           setPreviewEvent(null);
           setPreviewTooltipPosition(null);
 
-          if (eventId === state.selectedEventId) {
-            // Clicking already selected event - show tooltip (no map fly)
-            if (props) showLockedTooltip(e, props);
-          } else {
-            // Clicking different event - select it (map will fly, don't show tooltip)
+          // Clear any existing tooltip and open detail panel
+          setLockedTooltipPosition(null);
+          if (eventId !== state.selectedEventId) {
             selectEvent(eventId);
             setCurrentView('events');
           }
+          openEventDetailModal(eventId);
         }
       });
 
@@ -609,12 +617,13 @@ export function MapView() {
           setPreviewEvent(null);
           setPreviewTooltipPosition(null);
 
-          if (eventId === state.selectedEventId) {
-            if (props) showLockedTooltip(e, props);
-          } else {
+          // Clear any existing tooltip and open detail panel
+          setLockedTooltipPosition(null);
+          if (eventId !== state.selectedEventId) {
             selectEvent(eventId);
             setCurrentView('events');
           }
+          openEventDetailModal(eventId);
         }
       });
 
@@ -629,28 +638,55 @@ export function MapView() {
           setPreviewEvent(null);
           setPreviewTooltipPosition(null);
 
-          if (eventId === state.selectedEventId) {
-            if (props) showLockedTooltip(e, props);
-          } else {
+          // Clear any existing tooltip and open detail panel
+          setLockedTooltipPosition(null);
+          if (eventId !== state.selectedEventId) {
             selectEvent(eventId);
             setCurrentView('events');
           }
+          openEventDetailModal(eventId);
         }
       });
 
       map.current.on('click', 'assets-hit-area', (e) => {
         if (e.features && e.features[0]) {
-          const assetId = e.features[0].properties?.id as string | undefined;
+          const props = e.features[0].properties;
+          const assetId = props?.id as string | undefined;
           if (!assetId) return;
 
           const state = useUIStore.getState();
           if (state.isEventFormOpen) {
             e.originalEvent.stopPropagation();
             const current = state.selectedRoadAssetIdsForForm || [];
-            const next = current.includes(assetId)
+            const isRemoving = current.includes(assetId);
+            const next = isRemoving
               ? current.filter((id) => id !== assetId)
               : [...current, assetId];
             state.setSelectedRoadAssetsForForm(next);
+
+            // Cache asset details when adding (not removing)
+            if (!isRemoving && props) {
+              const assetFields: RoadAssetLabelFields = {
+                id: assetId,
+                name: props.name as string | undefined,
+                nameJa: props.nameJa as string | undefined,
+                ref: props.ref as string | undefined,
+                localRef: props.localRef as string | undefined,
+                displayName: props.displayName as string | undefined,
+              };
+              const label = getRoadAssetLabel(assetFields);
+              const wardLabel = (props.ward as string) || 'No ward';
+              const fullLabel = isRoadAssetUnnamed(assetFields)
+                ? `${label} (${wardLabel})`
+                : `${label} (${wardLabel}) - ${assetId}`;
+
+              state.cacheAssetDetails([{
+                id: assetId,
+                label: fullLabel,
+                ward: props.ward as string | undefined,
+                roadType: props.roadType as string | undefined,
+              }]);
+            }
             return;
           }
 
@@ -924,6 +960,7 @@ export function MapView() {
         ref: asset.ref,
         localRef: asset.localRef,
         displayName: asset.displayName,
+        ward: asset.ward,
         labelText: (() => {
           // Show road name if available
           if (!isRoadAssetUnnamed(asset)) {
@@ -956,15 +993,28 @@ export function MapView() {
     if (!showAssets || currentZoom < 14 || !mapBbox) {
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
       map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', []]]);
+      if (map.current.getLayer('editing-assets-glow')) {
+        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
+        map.current.setFilter('editing-assets-glow', ['in', ['get', 'id'], ['literal', []]]);
+      }
       return;
     }
 
     if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
-      map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', selectedRoadAssetIdsForForm]]);
+      const filter: maplibregl.FilterSpecification = ['in', ['get', 'id'], ['literal', selectedRoadAssetIdsForForm]];
+      map.current.setFilter('editing-assets-line', filter);
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'visible');
+      if (map.current.getLayer('editing-assets-glow')) {
+        map.current.setFilter('editing-assets-glow', filter);
+        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'visible');
+      }
     } else {
       map.current.setFilter('editing-assets-line', ['in', ['get', 'id'], ['literal', []]]);
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
+      if (map.current.getLayer('editing-assets-glow')) {
+        map.current.setFilter('editing-assets-glow', ['in', ['get', 'id'], ['literal', []]]);
+        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
+      }
     }
   }, [selectedRoadAssetIdsForForm, isEventFormOpen, mapLoaded, showAssets, currentZoom, mapBbox]);
 
@@ -1011,7 +1061,12 @@ export function MapView() {
     const source = map.current.getSource('events') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    const features = eventsData.data.map((event: ConstructionEvent) => ({
+    // Filter out the event being edited (it's shown in editing-event layer instead)
+    const eventsToShow = isEventFormOpen && editingEventId
+      ? eventsData.data.filter((e: ConstructionEvent) => e.id !== editingEventId)
+      : eventsData.data;
+
+    const features = eventsToShow.map((event: ConstructionEvent) => ({
       type: 'Feature' as const,
       geometry: event.geometry,
       properties: {
@@ -1028,10 +1083,13 @@ export function MapView() {
     }));
 
     source.setData({ type: 'FeatureCollection', features });
-    map.current.setLayoutProperty('events-fill', 'visibility', showEvents ? 'visible' : 'none');
-    map.current.setLayoutProperty('events-line', 'visibility', showEvents ? 'visible' : 'none');
-    map.current.setLayoutProperty('events-hit-area', 'visibility', showEvents ? 'visible' : 'none');
-  }, [eventsData, showEvents, mapLoaded]);
+
+    // Hide all events while editing to allow clicking roads underneath
+    const eventsVisible = showEvents && !isEventFormOpen;
+    map.current.setLayoutProperty('events-fill', 'visibility', eventsVisible ? 'visible' : 'none');
+    map.current.setLayoutProperty('events-line', 'visibility', eventsVisible ? 'visible' : 'none');
+    map.current.setLayoutProperty('events-hit-area', 'visibility', eventsVisible ? 'visible' : 'none');
+  }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId]);
 
   // Update inspections layer
   useEffect(() => {
@@ -1095,7 +1153,7 @@ export function MapView() {
           const bbox = turf.bbox(event.geometry);
           map.current.fitBounds(
             [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-            { padding: 100, maxZoom: 16, duration: 1000 }
+            { padding: 100, maxZoom: 17, duration: 1000 } // Increased from 16 for better road visibility
           );
           // No auto-show tooltip - user will hover/click to see it
         } catch (e) {
@@ -1133,31 +1191,59 @@ export function MapView() {
     if (isEventFormOpen && editingEventId && eventsData?.data) {
       const event = eventsData.data.find((e: ConstructionEvent) => e.id === editingEventId);
       if (event && event.geometry) {
-        // Update editing event source
+        // Update editing event source (keep current zoom level - don't fly to event)
+        const statusColor = STATUS_COLORS[event.status] || '#3B82F6';
         source.setData({
           type: 'FeatureCollection',
           features: [{
             type: 'Feature',
             geometry: event.geometry,
-            properties: { id: event.id },
+            properties: { id: event.id, color: statusColor },
           }],
         });
-
-        // Zoom to event geometry with padding
-        try {
-          const bbox = turf.bbox(event.geometry);
-          map.current.fitBounds(
-            [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-            { padding: 150, maxZoom: 17, duration: 1000 }
-          );
-        } catch (e) {
-          console.warn('Could not calculate bounds for editing event geometry');
-        }
       }
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
     }
   }, [isEventFormOpen, editingEventId, eventsData, mapLoaded]);
+
+  // Animated breathing glow effect for selected road assets during editing
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Start animation when editing and has selected roads
+    if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
+      let time = 0;
+
+      const animate = () => {
+        if (!map.current || !map.current.getLayer('editing-assets-glow')) {
+          return;
+        }
+
+        // Breathing glow effect (opacity 0.3 to 0.9)
+        time += 0.04; // Medium speed
+        const glowOpacity = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(time));
+
+        try {
+          map.current.setPaintProperty('editing-assets-glow', 'line-opacity', glowOpacity);
+        } catch {
+          // Layer might not exist
+        }
+
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+
+    // Cleanup animation when not editing
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [isEventFormOpen, selectedRoadAssetIdsForForm.length, mapLoaded]);
 
   // Highlight and fly to selected asset
   useEffect(() => {
@@ -1266,10 +1352,13 @@ export function MapView() {
     if (!map.current.getLayer('hovered-asset-line')) return;
 
     // Show hover highlight only if not already selected
-    if (hoveredAssetId && hoveredAssetId !== selectedAssetId) {
-      map.current.setFilter('hovered-asset-line', ['==', ['get', 'id'], hoveredAssetId]);
-    } else {
-      map.current.setFilter('hovered-asset-line', ['==', ['get', 'id'], '']); // Match nothing
+    const filter: maplibregl.FilterSpecification = hoveredAssetId && hoveredAssetId !== selectedAssetId
+      ? ['==', ['get', 'id'], hoveredAssetId]
+      : ['==', ['get', 'id'], '']; // Match nothing
+
+    map.current.setFilter('hovered-asset-line', filter);
+    if (map.current.getLayer('hovered-asset-glow')) {
+      map.current.setFilter('hovered-asset-glow', filter);
     }
   }, [hoveredAssetId, selectedAssetId, mapLoaded]);
 
@@ -1395,8 +1484,14 @@ export function MapView() {
             <Stack gap={4}>
               {editingEventId && (
                 <Group gap="xs">
-                  <Box style={{ width: 12, height: 12, backgroundColor: '#3B82F6', opacity: 0.15, borderRadius: 2, border: '2px dashed #3B82F6' }} />
+                  <Box style={{ width: 12, height: 12, backgroundColor: '#ffffff', opacity: 0.7, borderRadius: 2, border: '2px solid #3B82F6' }} />
                   <Text size="xs">Event Area</Text>
+                </Group>
+              )}
+              {selectedRoadAssetIdsForForm.length > 0 && (
+                <Group gap="xs">
+                  <Box style={{ width: 12, height: 3, backgroundColor: '#2563eb', boxShadow: '0 0 4px #2563eb' }} />
+                  <Text size="xs">Selected Roads (pulsing)</Text>
                 </Group>
               )}
               {previewGeometry && (

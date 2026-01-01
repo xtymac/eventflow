@@ -180,7 +180,13 @@ export const useUIStore = create<UIState>((set) => ({
   selectAsset: (id, geometry) => set({ selectedAssetId: id, selectedAssetGeometry: geometry ?? null, selectedEventId: null, selectedInspectionId: null }),
   selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetGeometry: null }),
 
-  openEventForm: (editingId) => set({ isEventFormOpen: true, editingEventId: editingId || null, detailModalEventId: null }),
+  openEventForm: (editingId) => set((state) => ({
+    isEventFormOpen: true,
+    editingEventId: editingId || null,
+    detailModalEventId: null,
+    // Clear selection when editing to hide red highlight layer and prevent fitBounds conflict
+    selectedEventId: editingId ? null : state.selectedEventId,
+  })),
   closeEventForm: () => set({
     isEventFormOpen: false,
     editingEventId: null,

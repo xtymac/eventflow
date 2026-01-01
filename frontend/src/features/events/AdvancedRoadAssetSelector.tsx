@@ -62,6 +62,7 @@ export function AdvancedRoadAssetSelector({
 }: AdvancedRoadAssetSelectorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedExpanded, setSelectedExpanded] = useState(true);
+  const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
 
   // Store state
   const {
@@ -69,11 +70,10 @@ export function AdvancedRoadAssetSelector({
     setAssetSelectorFilter,
     selectedAssetDetailsCache,
     cacheAssetDetails,
-    mapBbox,
     setHoveredAsset,
   } = useUIStore();
 
-  const { ward, roadType, search, filterByMapView } = assetSelectorFilters;
+  const { ward, roadType, search } = assetSelectorFilters;
 
   // Debounced search
   const [debouncedSearch] = useDebouncedValue(search, 300);
@@ -102,7 +102,6 @@ export function AdvancedRoadAssetSelector({
     ward: ward || undefined,
     roadType: roadType || undefined,
     q: debouncedSearch || undefined,
-    bbox: filterByMapView ? mapBbox || undefined : undefined,
   });
 
   // Flatten all loaded assets
@@ -277,7 +276,7 @@ export function AdvancedRoadAssetSelector({
               </Text>
             </Group>
             <Collapse in={selectedExpanded}>
-              <Group gap={4} wrap="wrap" mb="xs">
+              <Group gap={6} wrap="wrap" mb="xs" style={{ padding: '4px', margin: '-4px' }}>
                 {value.map((id) => {
                   const inFilter = isInCurrentFilter(id);
                   return (
@@ -298,7 +297,21 @@ export function AdvancedRoadAssetSelector({
                           <IconX size={12} />
                         </ActionIcon>
                       }
-                      style={{ paddingRight: 4 }}
+                      style={{
+                        paddingRight: 4,
+                        cursor: 'pointer',
+                        transition: 'all 0.1s ease',
+                        transform: hoveredBadgeId === id ? 'scale(1.03)' : 'scale(1)',
+                        boxShadow: hoveredBadgeId === id ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
+                      }}
+                      onMouseEnter={() => {
+                        setHoveredBadgeId(id);
+                        setHoveredAsset(id);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredBadgeId(null);
+                        setHoveredAsset(null);
+                      }}
                     >
                       {getSelectedLabel(id)}
                       {!inFilter && ' (not in filter)'}
@@ -332,14 +345,6 @@ export function AdvancedRoadAssetSelector({
           size="xs"
           leftSection={<Text size="xs" c="dimmed">Type:</Text>}
           leftSectionWidth={40}
-        />
-        <Checkbox
-          label="Map view"
-          size="xs"
-          checked={filterByMapView}
-          onChange={(e) =>
-            setAssetSelectorFilter('filterByMapView', e.currentTarget.checked)
-          }
         />
       </Group>
 
