@@ -13,13 +13,15 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { useForm, Controller } from 'react-hook-form';
-import { RoadAssetSelector } from './RoadAssetSelector';
+import { AdvancedRoadAssetSelector } from './AdvancedRoadAssetSelector';
+import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
 import { useUIStore } from '../../stores/uiStore';
 import {
   useCreateEvent,
   useUpdateEvent,
   useEvent,
   useAssets,
+  useEventIntersectingAssets,
 } from '../../hooks/useApi';
 import { generateCorridorGeometry } from '../../utils/geometryGenerator';
 import type { RestrictionType, SupportedGeometry } from '@nagoya/shared';
@@ -60,10 +62,17 @@ const defaultValues: EventFormData = {
 };
 
 export function EventForm({ eventId, onClose }: EventFormProps) {
-  const { setPreviewGeometry } = useUIStore();
+  const {
+    setPreviewGeometry,
+    selectedRoadAssetIdsForForm,
+    setSelectedRoadAssetsForForm,
+    cacheAssetDetails,
+    resetAssetSelectorFilters,
+  } = useUIStore();
   const [geometry, setGeometry] = useState<SupportedGeometry | null>(null);
 
   const { data: eventData, isLoading: isLoadingEvent } = useEvent(eventId || null);
+  const { data: intersectingAssetsData, isLoading: isLoadingIntersecting } = useEventIntersectingAssets(eventId || null);
   const { data: assetsData } = useAssets({ status: 'active' });
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
@@ -80,9 +89,17 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   const geometryMode = watch('geometryMode');
   const startDate = watch('startDate');
 
+  const areArraysEqual = (left: string[], right: string[]) => {
+    if (left.length !== right.length) return false;
+    return left.every((value, index) => value === right[index]);
+  };
+
+  // Phase 1: Load event data immediately
   useEffect(() => {
     if (eventId && eventData?.data) {
       const event = eventData.data;
+      const linkedRoadIds = event.roadAssets?.map((a) => a.id) || [];
+
       reset({
         name: event.name,
         startDate: new Date(event.startDate),
@@ -90,20 +107,66 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         restrictionType: event.restrictionType,
         department: event.department,
         ward: event.ward || '',
-        selectedRoadAssetIds: event.roadAssets?.map((a) => a.id) || [],
+        selectedRoadAssetIds: linkedRoadIds,
         geometryMode: event.geometrySource === 'auto' ? 'auto' : 'manual',
       });
+      setSelectedRoadAssetsForForm(linkedRoadIds);
       setGeometry(event.geometry);
+
+      // Cache asset details for display in the selector
+      if (event.roadAssets) {
+        cacheAssetDetails(
+          event.roadAssets.map((a) => ({
+            id: a.id,
+            label: getRoadAssetLabel(a),
+            ward: a.ward,
+            roadType: a.roadType,
+          }))
+        );
+      }
     } else if (!eventId) {
       reset(defaultValues);
+      setSelectedRoadAssetsForForm([]);
       setGeometry(null);
+      resetAssetSelectorFilters();
     }
-  }, [eventId, eventData, reset]);
+  }, [eventId, eventData, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters]);
+
+  // Phase 2: Merge intersecting roads when they arrive (background)
+  useEffect(() => {
+    if (eventId && eventData?.data && intersectingAssetsData?.data) {
+      const linkedRoadIds = eventData.data.roadAssets?.map((a) => a.id) || [];
+      const intersectingRoadIds = intersectingAssetsData.data.map((a) => a.id);
+      const mergedRoadIds = [...new Set([...linkedRoadIds, ...intersectingRoadIds])];
+
+      // Cache intersecting asset details for display
+      cacheAssetDetails(
+        intersectingAssetsData.data.map((a) => ({
+          id: a.id,
+          label: getRoadAssetLabel(a),
+          ward: a.ward,
+          roadType: a.roadType,
+        }))
+      );
+
+      // Only update if there are new roads to add
+      if (mergedRoadIds.length > linkedRoadIds.length) {
+        setValue('selectedRoadAssetIds', mergedRoadIds, { shouldValidate: true });
+        setSelectedRoadAssetsForForm(mergedRoadIds);
+      }
+    }
+  }, [eventId, eventData, intersectingAssetsData, setValue, setSelectedRoadAssetsForForm, cacheAssetDetails]);
 
   const selectedAssets = useMemo(() => {
     if (!assetsData?.data || selectedRoadAssetIds.length === 0) return [];
     return assetsData.data.filter((a) => selectedRoadAssetIds.includes(a.id));
   }, [assetsData, selectedRoadAssetIds]);
+
+  useEffect(() => {
+    if (!areArraysEqual(selectedRoadAssetIdsForForm, selectedRoadAssetIds)) {
+      setValue('selectedRoadAssetIds', selectedRoadAssetIdsForForm, { shouldValidate: true });
+    }
+  }, [selectedRoadAssetIdsForForm, selectedRoadAssetIds, setValue]);
 
   useEffect(() => {
     if (geometryMode === 'auto' && selectedAssets.length > 0) {
@@ -191,11 +254,16 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               validate: (value) => value.length > 0 || 'At least one road asset is required',
             }}
             render={({ field, fieldState }) => (
-              <RoadAssetSelector
+              <AdvancedRoadAssetSelector
                 value={field.value}
-                onChange={field.onChange}
+                onChange={(value) => {
+                  field.onChange(value);
+                  setSelectedRoadAssetsForForm(value);
+                }}
                 required
                 error={fieldState.error?.message}
+                initialWard={eventData?.data?.ward || null}
+                isLoadingIntersecting={isEditing && isLoadingIntersecting}
               />
             )}
           />

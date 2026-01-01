@@ -115,6 +115,14 @@ export function useSetPostEndDecision() {
   });
 }
 
+export function useEventIntersectingAssets(eventId: string | null) {
+  return useQuery({
+    queryKey: ['event-intersecting-assets', eventId],
+    queryFn: () => fetchApi<{ data: RoadAsset[] }>(`/events/${eventId}/intersecting-assets`),
+    enabled: !!eventId,
+  });
+}
+
 // Assets hooks
 export function useWards() {
   return useQuery({
@@ -149,7 +157,6 @@ export function useAssets(
       filters?.q,
       filters?.bbox,
       filters?.unnamed,
-      filters?.filterByMapView,  // For cache invalidation when toggle changes
       filters?.limit,
       filters?.offset,
       filters?.includeTotal,

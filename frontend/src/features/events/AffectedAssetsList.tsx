@@ -1,6 +1,7 @@
 import { Stack, Text, Group, UnstyledButton, Badge } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
+import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
 import type { RoadAsset } from '@nagoya/shared';
 
 const ROAD_TYPE_COLORS: Record<string, string> = {
@@ -47,7 +48,7 @@ export function AffectedAssetsList({ assets }: AffectedAssetsListProps) {
           <Group justify="space-between" wrap="nowrap">
             <Group gap="xs" wrap="nowrap" style={{ overflow: 'hidden' }}>
               <Text size="xs" lineClamp={1} style={{ flex: 1 }}>
-                {asset.name}
+                {getRoadAssetLabel(asset)}
               </Text>
               {asset.roadType && (
                 <Badge

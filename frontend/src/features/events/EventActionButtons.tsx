@@ -20,6 +20,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       labels: { confirm: 'Start Event', cancel: 'Cancel' },
       confirmProps: { color: 'green' },
       onConfirm: () => changeStatus.mutate({ id: event.id, status: 'active' }),
+      zIndex: 300,
     });
   };
 
@@ -35,6 +36,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
           { onSuccess: () => openDecisionModal(event.id) }
         );
       },
+      zIndex: 300,
     });
   };
 

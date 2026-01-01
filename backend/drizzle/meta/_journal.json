@@ -36,6 +36,20 @@
       "when": 1766652300000,
       "tag": "0004_geometry_source",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766652400000,
+      "tag": "0005_road_naming",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766652500000,
+      "tag": "0006_name_source",
+      "breakpoints": true
     }
   ]
 }

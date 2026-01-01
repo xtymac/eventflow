@@ -1,4 +1,4 @@
-import type { Feature, Geometry, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection } from 'geojson';
+import type { Feature, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection } from 'geojson';
 
 // Event status lifecycle
 export type EventStatus = 'planned' | 'active' | 'ended';
@@ -23,6 +23,12 @@ export type RelationType = 'affected' | 'updated';
 
 // Geometry source (manual draw vs auto-generated)
 export type GeometrySource = 'manual' | 'auto';
+
+// Name source for traceability
+export type NameSource = 'osm' | 'municipal' | 'manual';
+
+// Name match confidence level
+export type NameConfidence = 'high' | 'medium' | 'low';
 
 // Supported geometry types
 export type SupportedGeometry =
@@ -58,7 +64,13 @@ export interface ConstructionEvent {
 // Road Asset entity
 export interface RoadAsset {
   id: string;
-  name: string;
+  name?: string;          // Raw OSM name (null for unnamed roads, no placeholder)
+  nameJa?: string;        // Japanese name from OSM (name:ja tag)
+  ref?: string;           // Route reference (e.g., 国道23号)
+  localRef?: string;      // Local reference code
+  displayName?: string;   // Computed fallback: name || nameJa || ref || localRef
+  nameSource?: NameSource;      // Source of name: osm, municipal, manual
+  nameConfidence?: NameConfidence; // Match confidence: high, medium, low
   geometry: SupportedGeometry;
   roadType: RoadType;
   lanes: number;
@@ -135,7 +147,10 @@ export interface PostEndDecisionRequest {
 }
 
 export interface CreateAssetRequest {
-  name: string;
+  name?: string;
+  nameJa?: string;
+  ref?: string;
+  localRef?: string;
   geometry: SupportedGeometry;
   roadType: RoadType;
   lanes: number;

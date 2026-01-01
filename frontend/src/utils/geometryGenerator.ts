@@ -1,5 +1,5 @@
 import * as turf from '@turf/turf';
-import type { Feature, Polygon, MultiPolygon, Geometry } from 'geojson';
+import type { Feature, Polygon, MultiPolygon } from 'geojson';
 import type { RoadAsset } from '@nagoya/shared';
 
 const BUFFER_METERS = 15;
@@ -14,28 +14,34 @@ export function generateCorridorGeometry(
   if (roadAssets.length === 0) return null;
 
   // Buffer each road geometry
-  const buffered = roadAssets
-    .map((asset) => {
-      try {
-        return turf.buffer(asset.geometry as Geometry, BUFFER_METERS, {
-          units: 'meters',
-        });
-      } catch {
-        return undefined;
+  const buffered: Feature<Polygon>[] = [];
+  for (const asset of roadAssets) {
+    try {
+      // turf.buffer accepts Feature or Geometry
+      const result = turf.buffer(turf.feature(asset.geometry), BUFFER_METERS, {
+        units: 'meters',
+      });
+      if (result) {
+        buffered.push(result as Feature<Polygon>);
       }
-    })
-    .filter((f): f is Feature<Polygon> => f !== undefined);
+    } catch {
+      // Skip invalid geometries
+    }
+  }
 
   if (buffered.length === 0) return null;
   if (buffered.length === 1) return buffered[0].geometry;
 
   // Union using reduce (turf.union takes exactly 2 Features)
   try {
-    const unified = buffered.reduce((acc, curr) =>
-      turf.union(acc, curr) || acc
-    );
-
-    return unified.geometry as Polygon | MultiPolygon;
+    let unified: Feature<Polygon | MultiPolygon> = buffered[0];
+    for (let i = 1; i < buffered.length; i++) {
+      const result = turf.union(turf.featureCollection([unified, buffered[i]]));
+      if (result) {
+        unified = result as Feature<Polygon | MultiPolygon>;
+      }
+    }
+    return unified.geometry;
   } catch {
     // Fall back to first buffer if union fails
     return buffered[0].geometry;

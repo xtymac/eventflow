@@ -26,7 +26,13 @@ const GeometrySchema = Type.Object({
 
 const AssetSchema = Type.Object({
   id: Type.String(),
-  name: Type.String(),
+  name: Type.Optional(Type.String()),           // Nullable - no placeholder for unnamed
+  nameJa: Type.Optional(Type.String()),         // Japanese name from OSM
+  ref: Type.Optional(Type.String()),            // Route reference
+  localRef: Type.Optional(Type.String()),       // Local reference code
+  displayName: Type.Optional(Type.String()),    // Computed fallback for display
+  nameSource: Type.Optional(Type.String()),     // Source of name: osm, municipal, manual
+  nameConfidence: Type.Optional(Type.String()), // Match confidence: high, medium, low
   geometry: GeometrySchema,
   roadType: Type.String(),
   lanes: Type.Number(),
@@ -42,7 +48,10 @@ const AssetSchema = Type.Object({
 });
 
 const CreateAssetSchema = Type.Object({
-  name: Type.String(),
+  name: Type.Optional(Type.String()),
+  nameJa: Type.Optional(Type.String()),
+  ref: Type.Optional(Type.String()),
+  localRef: Type.Optional(Type.String()),
   geometry: GeometrySchema,
   roadType: Type.String(),
   lanes: Type.Number(),
@@ -204,6 +213,12 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const assetsResult = await db.execute(sql`
       SELECT
         id, name,
+        name_ja as "nameJa",
+        ref,
+        local_ref as "localRef",
+        display_name as "displayName",
+        name_source as "nameSource",
+        name_confidence as "nameConfidence",
         CASE WHEN geometry IS NULL THEN NULL ELSE ST_AsGeoJSON(geometry)::json END as geometry,
         road_type as "roadType", lanes, direction, status,
         valid_from as "validFrom", valid_to as "validTo",
@@ -246,6 +261,12 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const assetSelect = {
       id: roadAssets.id,
       name: roadAssets.name,
+      nameJa: roadAssets.nameJa,
+      ref: roadAssets.ref,
+      localRef: roadAssets.localRef,
+      displayName: roadAssets.displayName,
+      nameSource: roadAssets.nameSource,
+      nameConfidence: roadAssets.nameConfidence,
       geometry: fromGeomSql(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
@@ -464,6 +485,12 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const assetSelect = {
       id: roadAssets.id,
       name: roadAssets.name,
+      nameJa: roadAssets.nameJa,
+      ref: roadAssets.ref,
+      localRef: roadAssets.localRef,
+      displayName: roadAssets.displayName,
+      nameSource: roadAssets.nameSource,
+      nameConfidence: roadAssets.nameConfidence,
       geometry: fromGeomSql(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
@@ -544,6 +571,12 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const assetSelect = {
       id: roadAssets.id,
       name: roadAssets.name,
+      nameJa: roadAssets.nameJa,
+      ref: roadAssets.ref,
+      localRef: roadAssets.localRef,
+      displayName: roadAssets.displayName,
+      nameSource: roadAssets.nameSource,
+      nameConfidence: roadAssets.nameConfidence,
       geometry: fromGeomSql(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
@@ -570,4 +603,87 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       },
     };
   });
+
+  // PATCH /api/assets/:id/name - Manual naming for unnamed roads
+  app.patch<{ Params: { id: string }; Body: { displayName: string } }>(
+    '/:id/name',
+    {
+      schema: {
+        params: Type.Object({ id: Type.String() }),
+        body: Type.Object({ displayName: Type.String({ minLength: 1 }) }),
+        response: {
+          200: Type.Object({
+            data: AssetSchema,
+          }),
+          400: Type.Object({ error: Type.String() }),
+          404: Type.Object({ error: Type.String() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const displayName = request.body.displayName.trim();
+
+      if (!displayName) {
+        return reply.status(400).send({ error: 'displayName cannot be empty' });
+      }
+
+      // Check if asset exists
+      const existing = await db
+        .select({ id: roadAssets.id })
+        .from(roadAssets)
+        .where(eq(roadAssets.id, id))
+        .limit(1);
+
+      if (existing.length === 0) {
+        return reply.status(404).send({ error: 'Asset not found' });
+      }
+
+      // Update with manual source
+      await db
+        .update(roadAssets)
+        .set({
+          displayName,
+          nameSource: 'manual',
+          nameConfidence: 'high',
+        })
+        .where(eq(roadAssets.id, id));
+
+      // Fetch updated asset with geometry conversion
+      const assetSelect = {
+        id: roadAssets.id,
+        name: roadAssets.name,
+        nameJa: roadAssets.nameJa,
+        ref: roadAssets.ref,
+        localRef: roadAssets.localRef,
+        displayName: roadAssets.displayName,
+        nameSource: roadAssets.nameSource,
+        nameConfidence: roadAssets.nameConfidence,
+        geometry: fromGeomSql(roadAssets.geometry),
+        roadType: roadAssets.roadType,
+        lanes: roadAssets.lanes,
+        direction: roadAssets.direction,
+        status: roadAssets.status,
+        validFrom: roadAssets.validFrom,
+        validTo: roadAssets.validTo,
+        replacedBy: roadAssets.replacedBy,
+        ownerDepartment: roadAssets.ownerDepartment,
+        ward: roadAssets.ward,
+        landmark: roadAssets.landmark,
+        updatedAt: roadAssets.updatedAt,
+      };
+
+      const updatedAssets = await db.select(assetSelect).from(roadAssets).where(eq(roadAssets.id, id));
+      const asset = updatedAssets[0];
+
+      return {
+        data: {
+          ...asset,
+          validFrom: asset.validFrom.toISOString(),
+          validTo: asset.validTo?.toISOString(),
+          updatedAt: asset.updatedAt.toISOString(),
+        },
+      };
+    }
+  );
 }

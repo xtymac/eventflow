@@ -21,6 +21,7 @@ export function DecisionModal() {
       onClose={closeDecisionModal}
       title="Set Post-End Decision"
       centered
+      zIndex={300}
     >
       {!decisionEventId ? (
         <Alert icon={<IconAlertCircle size={16} />} color="red">

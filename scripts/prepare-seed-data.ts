@@ -64,11 +64,24 @@ function loadWardSegments(wardConfig: WardConfig): Feature<LineString>[] {
 function normalizeSegment(segment: Feature<LineString>): Feature<LineString> {
   const props = segment.properties || {};
 
+  // Trim and normalize to null if empty (DO NOT write placeholder values!)
+  const name = (props.name || '').trim() || null;
+  const name_ja = (props.name_ja || '').trim() || null;
+  const ref = (props.ref || '').trim() || null;
+  const local_ref = (props.local_ref || '').trim() || null;
+
+  // displayName is for UI display only - computed fallback chain
+  const displayName = name || name_ja || ref || local_ref || null;
+
   return {
     type: 'Feature',
     properties: {
       id: props.id,
-      name: props.name || 'Unnamed Road',
+      name: name,           // Keep NULL - don't write 'Unnamed Road' placeholder!
+      name_ja: name_ja,     // Japanese name from OSM
+      ref: ref,             // Route reference (e.g., 国道23号)
+      local_ref: local_ref, // Local reference code
+      displayName: displayName, // Computed fallback for PMTiles labels (camelCase)
       roadType: props.roadType || 'local',
       lanes: props.lanes || 2,
       direction: props.direction || 'two-way',

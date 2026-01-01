@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { MultiSelect, Select, Text, Stack, Loader, Group, Button } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useAssets, useWards } from '../../hooks/useApi';
+import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
 import type { RoadAsset } from '@nagoya/shared';
 
 const LIMIT = 100;
 
-const formatAssetLabel = (asset: RoadAsset) =>
-  `${asset.name} (${asset.ward || 'No ward'}) - ${asset.id}`;
+const formatAssetLabel = (asset: RoadAsset) => {
+  const label = getRoadAssetLabel(asset);
+  const wardLabel = asset.ward || 'No ward';
+  if (isRoadAssetUnnamed(asset)) {
+    return `${label} (${wardLabel})`;
+  }
+  return `${label} (${wardLabel}) - ${asset.id}`;
+};
 
 interface RoadAssetSelectorProps {
   value: string[];
@@ -15,6 +22,8 @@ interface RoadAssetSelectorProps {
   label?: string;
   required?: boolean;
   error?: string;
+  initialWard?: string | null;
+  isLoadingIntersecting?: boolean;
 }
 
 export function RoadAssetSelector({
@@ -23,8 +32,19 @@ export function RoadAssetSelector({
   label = 'Road Assets',
   required = false,
   error,
+  initialWard = null,
+  isLoadingIntersecting = false,
 }: RoadAssetSelectorProps) {
-  const [wardFilter, setWardFilter] = useState<string | null>(null);
+  const [wardFilter, setWardFilter] = useState<string | null>(initialWard);
+  const [hasSetInitialWard, setHasSetInitialWard] = useState(false);
+
+  // Set initial ward filter when prop changes (only once)
+  useEffect(() => {
+    if (initialWard && !hasSetInitialWard) {
+      setWardFilter(initialWard);
+      setHasSetInitialWard(true);
+    }
+  }, [initialWard, hasSetInitialWard]);
   const [searchValue, setSearchValue] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchValue, 300);
   const [offset, setOffset] = useState(0);
@@ -111,7 +131,17 @@ export function RoadAssetSelector({
         />
       </Group>
       <MultiSelect
-        label={label}
+        label={
+          <Group gap="xs">
+            <span>{label}</span>
+            {isLoadingIntersecting && (
+              <Group gap={4}>
+                <Loader size={12} />
+                <Text size="xs" c="dimmed">Loading intersecting roads...</Text>
+              </Group>
+            )}
+          </Group>
+        }
         placeholder="Search and select road assets..."
         data={loadedOptions}
         value={value}

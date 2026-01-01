@@ -173,11 +173,11 @@ function osmWayToGeoJSON(
   const coordinates: Position[] = element.geometry.map((node: any) => [node.lon, node.lat]);
   const tags = element.tags || {};
 
-  // Extract road name
-  let name = tags.name || tags['name:en'] || tags.ref || 'Unnamed Road';
-  if (tags.ref && tags.name && !tags.name.includes(tags.ref)) {
-    name = `${tags.name} (${tags.ref})`;
-  }
+  // Extract road name fields - keep raw values, don't combine
+  const name = tags.name || tags['name:en'] || null;  // Raw name, no placeholder
+  const name_ja = tags['name:ja'] || null;            // Japanese name
+  const ref = tags.ref || null;                       // Route reference (e.g., 国道23号)
+  const local_ref = tags.local_ref || null;           // Local reference code
 
   // Extract lanes
   let lanes = 2;
@@ -202,6 +202,9 @@ function osmWayToGeoJSON(
     properties: {
       osmId: element.id,
       name,
+      name_ja,      // Japanese name from OSM
+      ref,          // Route reference (e.g., 国道23号)
+      local_ref,    // Local reference code
       roadType,
       lanes,
       direction,

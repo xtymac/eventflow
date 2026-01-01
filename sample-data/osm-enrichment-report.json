@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-12-31T04:07:15.608Z",
+  "totalOsmRoads": 6031,
+  "namedOsmRoads": 6012,
+  "beforeStats": {
+    "total": 128090,
+    "named": 33018,
+    "unnamed": 95072,
+    "coverageRate": 25.8
+  },
+  "afterStats": {
+    "total": 128090,
+    "named": 33764,
+    "unnamed": 94326,
+    "coverageRate": 26.4
+  },
+  "enriched": 746,
+  "reviewCandidates": 14186,
+  "byConfidence": {
+    "high": 0,
+    "medium": 0,
+    "low": 746
+  },
+  "byWard": {
+    "Nakagawa-ku": 141,
+    "Nakamura-ku": 102,
+    "Midori-ku": 65,
+    "Naka-ku": 60,
+    "Minato-ku": 55,
+    "Nishi-ku": 55,
+    "Higashi-ku": 39,
+    "Moriyama-ku": 37,
+    "Kita-ku": 35,
+    "Tempaku-ku": 33,
+    "Meito-ku": 33,
+    "Atsuta-ku": 27,
+    "Chikusa-ku": 22,
+    "Minami-ku": 21,
+    "Mizuho-ku": 14,
+    "Showa-ku": 7
+  }
+}

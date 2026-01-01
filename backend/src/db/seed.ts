@@ -33,13 +33,19 @@ async function seed() {
       const validFrom = new Date(props.validFrom);
       const validTo = props.validTo ? new Date(props.validTo) : null;
 
+      // Set name_source to 'osm' if road has a displayName (from OSM data)
+      const nameSource = props.displayName ? 'osm' : null;
+
       // Use raw SQL for geometry insert
       await db.execute(sql`
         INSERT INTO road_assets (
-          id, name, geometry, road_type, lanes, direction,
+          id, name, name_ja, ref, local_ref, display_name, name_source,
+          geometry, road_type, lanes, direction,
           status, valid_from, valid_to, owner_department, ward, landmark, updated_at
         ) VALUES (
-          ${props.id}, ${props.name}, ${toGeomSql(feature.geometry)}, ${props.roadType},
+          ${props.id}, ${props.name ?? null}, ${props.name_ja ?? null}, ${props.ref ?? null},
+          ${props.local_ref ?? null}, ${props.displayName ?? null}, ${nameSource},
+          ${toGeomSql(feature.geometry)}, ${props.roadType},
           ${props.lanes}, ${props.direction}, ${props.status || 'active'}, ${validFrom},
           ${validTo}, ${props.ownerDepartment ?? null}, ${props.ward ?? null},
           ${props.landmark ?? null}, ${now}

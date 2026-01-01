@@ -9,7 +9,7 @@ import {
   Center,
   Paper,
 } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconMapPin, IconAlertCircle } from '@tabler/icons-react';
 import { useEvent } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import type { EventStatus } from '@nagoya/shared';
@@ -98,14 +98,20 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
 
           {/* Info rows */}
           <Stack gap="sm">
-            <Group gap="xs">
-              <Badge variant="light" color="indigo" size="sm">
-                {event.restrictionType}
-              </Badge>
+            <Group gap="md">
+              <Group gap={4}>
+                <IconAlertCircle size={16} style={{ opacity: 0.5 }} />
+                <Text size="sm" c="dimmed">
+                  {event.restrictionType}
+                </Text>
+              </Group>
               {event.ward && (
-                <Badge variant="light" size="sm" color="gray">
-                  {event.ward}
-                </Badge>
+                <Group gap={4}>
+                  <IconMapPin size={16} style={{ opacity: 0.5 }} />
+                  <Text size="sm" c="dimmed">
+                    {event.ward}
+                  </Text>
+                </Group>
               )}
             </Group>
 
@@ -125,13 +131,13 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
 
             <Stack gap={4}>
               <Text size="sm" c="dimmed">Post-End Decision</Text>
-              <Badge
+              <Text
                 size="sm"
-                variant="light"
-                color={event.postEndDecision === 'permanent-change' ? 'green' : event.postEndDecision === 'no-change' ? 'gray' : 'orange'}
+                c={event.postEndDecision === 'permanent-change' ? 'green' : event.postEndDecision === 'no-change' ? 'dimmed' : 'orange'}
+                fw={500}
               >
                 {DECISION_LABELS[event.postEndDecision || 'pending']}
-              </Badge>
+              </Text>
             </Stack>
 
             {event.createdBy && (

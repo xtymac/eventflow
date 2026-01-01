@@ -1,15 +1,15 @@
-import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Modal } from '@mantine/core';
+import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconMap, IconRefresh } from '@tabler/icons-react';
+import { IconMap, IconRefresh, IconX } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
 import { InspectionList } from './features/inspections/InspectionList';
-import { EventForm } from './features/events/EventForm';
-import { EventDetailModal } from './features/events/EventDetailModal';
+import { EventDetailPanel } from './features/events/EventDetailPanel';
 import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
 import { useUIStore } from './stores/uiStore';
+import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 
 type View = 'events' | 'assets' | 'inspections';
 
@@ -18,6 +18,7 @@ function App() {
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
   const { currentView, setCurrentView, isEventFormOpen, editingEventId, closeEventForm, detailModalEventId, closeEventDetailModal } = useUIStore();
   const queryClient = useQueryClient();
+  const isEditing = isEventFormOpen;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries();
@@ -37,26 +38,31 @@ function App() {
   };
 
   return (
-    <AppShell
-      header={{ height: 60 }}
-      navbar={{
-        width: 400,
-        breakpoint: 'sm',
-        collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
-      }}
-      padding={0}
-    >
+      <AppShell
+        header={{ height: 60 }}
+        navbar={{
+          width: 400,
+          breakpoint: 'sm',
+          collapsed: { mobile: isEditing || !mobileOpened, desktop: isEditing || !desktopOpened },
+        }}
+        aside={{
+          width: 400,
+          breakpoint: 'sm',
+          collapsed: { mobile: !detailModalEventId, desktop: !detailModalEventId },
+        }}
+        padding={0}
+      >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger
-              opened={mobileOpened}
+              opened={!isEditing && mobileOpened}
               onClick={toggleMobile}
               hiddenFrom="sm"
               size="sm"
             />
             <Burger
-              opened={desktopOpened}
+              opened={!isEditing && desktopOpened}
               onClick={toggleDesktop}
               visibleFrom="sm"
               size="sm"
@@ -93,27 +99,33 @@ function App() {
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Main style={{ height: 'calc(100vh - 60px)' }}>
+      <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
         <MapView />
+
+        {isEventFormOpen && (
+          <EventEditorOverlay
+            eventId={editingEventId}
+            onClose={closeEventForm}
+          />
+        )}
       </AppShell.Main>
 
-      {/* Event Form Modal */}
-      <Modal
-        opened={isEventFormOpen}
-        onClose={closeEventForm}
-        title={editingEventId ? 'Edit Event' : 'Create Event'}
-        size="lg"
-      >
-        <EventForm eventId={editingEventId} onClose={closeEventForm} />
-      </Modal>
-
-      {/* Event Detail Modal (from map tooltip) */}
-      {detailModalEventId && (
-        <EventDetailModal
-          eventId={detailModalEventId}
-          onClose={closeEventDetailModal}
-        />
-      )}
+      {/* Event Detail Aside (right sidebar) */}
+      <AppShell.Aside p="md">
+        <AppShell.Section>
+          <Group justify="space-between" mb="md">
+            <Text fw={600}>Event Details</Text>
+            <ActionIcon variant="subtle" color="gray" onClick={closeEventDetailModal}>
+              <IconX size={18} />
+            </ActionIcon>
+          </Group>
+        </AppShell.Section>
+        <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
+          {detailModalEventId && (
+            <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
+          )}
+        </AppShell.Section>
+      </AppShell.Aside>
 
       <DecisionModal />
     </AppShell>

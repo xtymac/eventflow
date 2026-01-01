@@ -39,7 +39,13 @@ export const constructionEvents = pgTable('construction_events', {
 
 export const roadAssets = pgTable('road_assets', {
   id: varchar('id', { length: 50 }).primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }),  // Nullable - no placeholder for unnamed roads
+  nameJa: varchar('name_ja', { length: 255 }),  // Japanese name from OSM
+  ref: varchar('ref', { length: 100 }),  // Route reference (e.g., 国道23号)
+  localRef: varchar('local_ref', { length: 100 }),  // Local reference code
+  displayName: varchar('display_name', { length: 255 }),  // Computed fallback for display
+  nameSource: varchar('name_source', { length: 20 }),  // 'osm' | 'municipal' | 'manual'
+  nameConfidence: varchar('name_confidence', { length: 10 }),  // 'high' | 'medium' | 'low'
   geometry: geometryColumn('geometry').notNull(),
   roadType: varchar('road_type', { length: 50 }).notNull(),
   lanes: integer('lanes').notNull().default(2),

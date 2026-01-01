@@ -75,9 +75,16 @@ export function InspectionList() {
             </Group>
 
             <Group gap="xs" mb={4}>
-              <Badge variant="outline" size="xs" color="gray">
-                {inspection.relatedType}: {inspection.relatedId}
-              </Badge>
+              {inspection.eventId && (
+                <Badge variant="outline" size="xs" color="blue">
+                  Event: {inspection.eventId}
+                </Badge>
+              )}
+              {inspection.roadAssetId && (
+                <Badge variant="outline" size="xs" color="green">
+                  Asset: {inspection.roadAssetId}
+                </Badge>
+              )}
             </Group>
 
             {inspection.notes && (

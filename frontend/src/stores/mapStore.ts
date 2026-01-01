@@ -11,6 +11,7 @@ interface MapState {
   showEvents: boolean;
   showAssets: boolean;
   showInspections: boolean;
+  showOsmLabels: boolean;
   highlightedFeatureId: string | null;
   drawnGeometry: GeoJSON.Geometry | null;
 
@@ -22,6 +23,7 @@ interface MapState {
   toggleEvents: () => void;
   toggleAssets: () => void;
   toggleInspections: () => void;
+  toggleOsmLabels: () => void;
   setHighlightedFeature: (id: string | null) => void;
   setDrawnGeometry: (geometry: GeoJSON.Geometry | null) => void;
 }
@@ -38,6 +40,7 @@ export const useMapStore = create<MapState>((set) => ({
   showEvents: true,
   showAssets: true,
   showInspections: true,
+  showOsmLabels: true,
   highlightedFeatureId: null,
   drawnGeometry: null,
 
@@ -48,6 +51,7 @@ export const useMapStore = create<MapState>((set) => ({
   toggleEvents: () => set((state) => ({ showEvents: !state.showEvents })),
   toggleAssets: () => set((state) => ({ showAssets: !state.showAssets })),
   toggleInspections: () => set((state) => ({ showInspections: !state.showInspections })),
+  toggleOsmLabels: () => set((state) => ({ showOsmLabels: !state.showOsmLabels })),
   setHighlightedFeature: (id) => set({ highlightedFeatureId: id }),
   setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
 }));

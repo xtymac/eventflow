@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Stack,
   TextInput,
@@ -43,11 +42,8 @@ const formatLocalDate = (date: Date | null): string | undefined => {
 };
 
 export function EventList() {
-  // UI-only state (not persisted)
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
-  // Persisted filter state from store
-  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters } = useUIStore();
+  // Persisted filter state from store (including filtersOpen)
+  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters } = useUIStore();
   const { status: statusFilter, search, department, dateRange } = eventFilters;
 
   const { data, isLoading, error } = useEvents({
@@ -58,12 +54,11 @@ export function EventList() {
     startDateTo: formatLocalDate(dateRange.to),
   });
 
-  // Compute active filter count for badge display
+  // Compute active filter count for badge display (search is separate, not counted)
   const activeFilterCount =
     (statusFilter ? 1 : 0) +
     (department ? 1 : 0) +
-    (dateRange.from || dateRange.to ? 1 : 0) +
-    (search ? 1 : 0);
+    (dateRange.from || dateRange.to ? 1 : 0);
 
   const events = data?.data || [];
 
@@ -87,7 +82,7 @@ export function EventList() {
       />
 
       <UnstyledButton
-        onClick={() => setFiltersOpen((prev) => !prev)}
+        onClick={toggleFilters}
         aria-expanded={filtersOpen}
         aria-controls="event-filters"
         style={{ width: '100%', textAlign: 'left' }}

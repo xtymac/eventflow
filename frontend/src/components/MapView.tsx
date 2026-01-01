@@ -106,6 +106,7 @@ export function MapView() {
     setCurrentView,
     previewGeometry,
     isEventFormOpen,
+    editingEventId,
     openEventDetailModal,
     hoveredAssetId,
     selectedRoadAssetIdsForForm,
@@ -118,6 +119,7 @@ export function MapView() {
   const [lockedTooltipPosition, setLockedTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const isLockedTooltipHoveredRef = useRef(false);
   const lockedEventIdRef = useRef<string | null>(null);
+  const editingEventIdRef = useRef<string | null>(null);
 
   // Preview tooltip state (for hovering other events - temporary)
   const [previewEvent, setPreviewEvent] = useState<HoveredEventData | null>(null);
@@ -379,6 +381,34 @@ export function MapView() {
         paint: {
           'line-color': '#EF4444',
           'line-width': 6,
+        },
+      });
+
+      // Editing event source and layers (transparent polygon for editing mode)
+      map.current.addSource('editing-event', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.current.addLayer({
+        id: 'editing-event-fill',
+        type: 'fill',
+        source: 'editing-event',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'fill-color': '#3B82F6', // blue
+          'fill-opacity': 0.08, // Very transparent to see roads underneath
+        },
+      });
+
+      map.current.addLayer({
+        id: 'editing-event-line',
+        type: 'line',
+        source: 'editing-event',
+        paint: {
+          'line-color': '#3B82F6', // blue
+          'line-width': 3,
+          'line-dasharray': [4, 2], // Dashed line to indicate editing mode
         },
       });
 
@@ -685,8 +715,8 @@ export function MapView() {
 
             currentHoveredEventIdRef.current = eventId;
 
-            // If hovering the locked (selected) event, clear preview tooltip
-            if (eventId === lockedEventIdRef.current) {
+            // If hovering the locked (selected) event or editing event, clear preview tooltip
+            if (eventId === lockedEventIdRef.current || eventId === editingEventIdRef.current) {
               setPreviewEvent(null);
               setPreviewTooltipPosition(null);
               return;
@@ -1077,6 +1107,58 @@ export function MapView() {
     }
   }, [selectedEventId, eventsData, mapLoaded]);
 
+  // Show editing event with transparent fill and zoom to it
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('editing-event') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    // Sync editingEventId to ref for use in event handlers
+    editingEventIdRef.current = editingEventId ?? null;
+
+    // Clear tooltips if editing event (sidebar shows details, no need for tooltip)
+    if (editingEventId) {
+      if (lockedEventIdRef.current === editingEventId) {
+        lockedEventIdRef.current = null;
+        setLockedEvent(null);
+        setLockedTooltipPosition(null);
+      }
+      if (previewEvent?.id === editingEventId) {
+        setPreviewEvent(null);
+        setPreviewTooltipPosition(null);
+      }
+    }
+
+    if (isEventFormOpen && editingEventId && eventsData?.data) {
+      const event = eventsData.data.find((e: ConstructionEvent) => e.id === editingEventId);
+      if (event && event.geometry) {
+        // Update editing event source
+        source.setData({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            geometry: event.geometry,
+            properties: { id: event.id },
+          }],
+        });
+
+        // Zoom to event geometry with padding
+        try {
+          const bbox = turf.bbox(event.geometry);
+          map.current.fitBounds(
+            [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+            { padding: 150, maxZoom: 17, duration: 1000 }
+          );
+        } catch (e) {
+          console.warn('Could not calculate bounds for editing event geometry');
+        }
+      }
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }, [isEventFormOpen, editingEventId, eventsData, mapLoaded]);
+
   // Highlight and fly to selected asset
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -1307,14 +1389,22 @@ export function MapView() {
           </Group>
         </Stack>
 
-        {isEventFormOpen && previewGeometry && (
+        {isEventFormOpen && (
           <>
-            <Text size="sm" fw={600} mt="sm" mb="xs">Preview</Text>
+            <Text size="sm" fw={600} mt="sm" mb="xs">Editing</Text>
             <Stack gap={4}>
-              <Group gap="xs">
-                <Box style={{ width: 12, height: 12, backgroundColor: '#06B6D4', opacity: 0.5, borderRadius: 2, border: '1px dashed #06B6D4' }} />
-                <Text size="xs">Corridor (15m buffer)</Text>
-              </Group>
+              {editingEventId && (
+                <Group gap="xs">
+                  <Box style={{ width: 12, height: 12, backgroundColor: '#3B82F6', opacity: 0.15, borderRadius: 2, border: '2px dashed #3B82F6' }} />
+                  <Text size="xs">Event Area</Text>
+                </Group>
+              )}
+              {previewGeometry && (
+                <Group gap="xs">
+                  <Box style={{ width: 12, height: 12, backgroundColor: '#06B6D4', opacity: 0.5, borderRadius: 2, border: '1px dashed #06B6D4' }} />
+                  <Text size="xs">Corridor (15m buffer)</Text>
+                </Group>
+              )}
             </Stack>
           </>
         )}

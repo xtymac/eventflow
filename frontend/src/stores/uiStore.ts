@@ -3,6 +3,14 @@ import type { Geometry } from 'geojson';
 
 type ViewType = 'events' | 'assets' | 'inspections';
 
+// Asset cache entry for selected assets display
+export interface AssetCacheEntry {
+  id: string;
+  label: string;
+  ward?: string;
+  roadType?: string;
+}
+
 interface UIState {
   selectedEventId: string | null;
   selectedAssetId: string | null;
@@ -24,6 +32,15 @@ interface UIState {
   // Event form state
   selectedRoadAssetIdsForForm: string[];
   previewGeometry: Geometry | null;
+
+  // Asset selector state (for AdvancedRoadAssetSelector)
+  assetSelectorFilters: {
+    ward: string | null;
+    roadType: string | null;
+    search: string;
+    filterByMapView: boolean;
+  };
+  selectedAssetDetailsCache: Record<string, AssetCacheEntry>;
 
   // Map state for asset filtering
   mapBbox: string | null;           // Current map viewport bounds
@@ -80,6 +97,13 @@ interface UIState {
   setPreviewGeometry: (geometry: Geometry | null) => void;
   clearFormState: () => void;
 
+  // Asset selector actions
+  setAssetSelectorFilter: <K extends keyof UIState['assetSelectorFilters']>(key: K, value: UIState['assetSelectorFilters'][K]) => void;
+  resetAssetSelectorFilters: () => void;
+  cacheAssetDetails: (assets: AssetCacheEntry[]) => void;
+  removeAssetFromCache: (id: string) => void;
+  clearAssetCache: () => void;
+
   // Filter actions
   setFiltersOpen: (open: boolean) => void;
   toggleFilters: () => void;
@@ -116,6 +140,15 @@ export const useUIStore = create<UIState>((set) => ({
   // Event form state
   selectedRoadAssetIdsForForm: [],
   previewGeometry: null,
+
+  // Asset selector state
+  assetSelectorFilters: {
+    ward: null,
+    roadType: null,
+    search: '',
+    filterByMapView: false,  // Default OFF to avoid user confusion about missing data
+  },
+  selectedAssetDetailsCache: {},
 
   // Map state
   mapBbox: null,
@@ -185,6 +218,32 @@ export const useUIStore = create<UIState>((set) => ({
     previewGeometry: null,
     drawMode: null,
   }),
+
+  // Asset selector actions
+  setAssetSelectorFilter: (key, value) => set((state) => ({
+    assetSelectorFilters: { ...state.assetSelectorFilters, [key]: value },
+  })),
+  resetAssetSelectorFilters: () => set({
+    assetSelectorFilters: {
+      ward: null,
+      roadType: null,
+      search: '',
+      filterByMapView: false,
+    },
+  }),
+  cacheAssetDetails: (assets) => set((state) => {
+    const newCache = { ...state.selectedAssetDetailsCache };
+    for (const asset of assets) {
+      newCache[asset.id] = asset;
+    }
+    return { selectedAssetDetailsCache: newCache };
+  }),
+  removeAssetFromCache: (id) => set((state) => {
+    const newCache = { ...state.selectedAssetDetailsCache };
+    delete newCache[id];
+    return { selectedAssetDetailsCache: newCache };
+  }),
+  clearAssetCache: () => set({ selectedAssetDetailsCache: {} }),
 
   // Filter actions
   setFiltersOpen: (open) => set({ filtersOpen: open }),

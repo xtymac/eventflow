@@ -747,6 +747,76 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     };
   });
 
+  // GET /events/:id/intersecting-assets - Find roads intersecting with event geometry
+  app.get('/:id/intersecting-assets', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Array(RoadAssetSchema),
+        }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    // Get event geometry
+    const eventSelect = {
+      id: constructionEvents.id,
+      geometry: fromGeomSql(constructionEvents.geometry),
+    };
+
+    const events = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+
+    if (events.length === 0) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const event = events[0];
+
+    // Find road assets that intersect with the event geometry
+    const assetSelect = {
+      id: roadAssets.id,
+      name: roadAssets.name,
+      geometry: fromGeomSql(roadAssets.geometry),
+      roadType: roadAssets.roadType,
+      lanes: roadAssets.lanes,
+      direction: roadAssets.direction,
+      status: roadAssets.status,
+      validFrom: roadAssets.validFrom,
+      validTo: roadAssets.validTo,
+      replacedBy: roadAssets.replacedBy,
+      ownerDepartment: roadAssets.ownerDepartment,
+      ward: roadAssets.ward,
+      landmark: roadAssets.landmark,
+      updatedAt: roadAssets.updatedAt,
+    };
+
+    // Use ST_Intersects to find roads that intersect with event geometry
+    const intersectingAssets = await db.select(assetSelect)
+      .from(roadAssets)
+      .where(
+        and(
+          eq(roadAssets.status, 'active'),
+          isNotNull(roadAssets.geometry),
+          sql`ST_Intersects(${roadAssets.geometry}, ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(event.geometry)}), 4326))`
+        )
+      )
+      .limit(500);
+
+    return {
+      data: intersectingAssets.map(a => ({
+        ...a,
+        validFrom: a.validFrom.toISOString(),
+        validTo: a.validTo?.toISOString() ?? null,
+        updatedAt: a.updatedAt.toISOString(),
+      })),
+    };
+  });
+
   // PATCH /events/:id/decision - Set post-end decision
   app.patch('/:id/decision', {
     schema: {
