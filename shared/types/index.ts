@@ -25,7 +25,7 @@ export type RelationType = 'affected' | 'updated';
 export type GeometrySource = 'manual' | 'auto';
 
 // Name source for traceability
-export type NameSource = 'osm' | 'municipal' | 'manual';
+export type NameSource = 'osm' | 'municipal' | 'manual' | 'google';
 
 // Name match confidence level
 export type NameConfidence = 'high' | 'medium' | 'low';

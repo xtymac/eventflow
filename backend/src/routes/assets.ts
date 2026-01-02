@@ -6,6 +6,7 @@ import { roadAssets, roadAssetChanges, constructionEvents, eventRoadAssets } fro
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { toGeomSql, toGeomSqlNullable, fromGeomSql } from '../db/geometry.js';
+import { getRoadNameForLineString, isGoogleMapsConfigured } from '../services/google-maps.js';
 
 // BBOX validation helper
 function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
@@ -684,6 +685,173 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           updatedAt: asset.updatedAt.toISOString(),
         },
       };
+    }
+  );
+
+  // POST /api/assets/:id/lookup-google-name - Lookup road name from Google Maps
+  app.post<{ Params: { id: string } }>(
+    '/:id/lookup-google-name',
+    {
+      schema: {
+        params: Type.Object({ id: Type.String() }),
+        response: {
+          200: Type.Object({
+            data: Type.Object({
+              roadName: Type.Union([Type.String(), Type.Null()]),
+              formattedAddress: Type.Union([Type.String(), Type.Null()]),
+              placeId: Type.Union([Type.String(), Type.Null()]),
+            }),
+          }),
+          400: Type.Object({ error: Type.String() }),
+          404: Type.Object({ error: Type.String() }),
+          503: Type.Object({ error: Type.String() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      // Check if Google Maps is configured
+      if (!isGoogleMapsConfigured()) {
+        return reply.status(503).send({
+          error: 'Google Maps API is not configured. Set GOOGLE_MAPS_API_KEY environment variable.',
+        });
+      }
+
+      const { id } = request.params;
+
+      // Get asset with geometry
+      const assetResult = await db.execute(sql`
+        SELECT id, ST_AsGeoJSON(geometry)::json as geometry
+        FROM road_assets
+        WHERE id = ${id}
+      `);
+
+      if (assetResult.rows.length === 0) {
+        return reply.status(404).send({ error: 'Asset not found' });
+      }
+
+      const asset = assetResult.rows[0] as { id: string; geometry: { type: string; coordinates: unknown } };
+
+      if (!asset.geometry || asset.geometry.type !== 'LineString') {
+        return reply.status(400).send({ error: 'Asset geometry must be a LineString' });
+      }
+
+      try {
+        const result = await getRoadNameForLineString(
+          asset.geometry.coordinates as [number, number][]
+        );
+
+        return {
+          data: result,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return reply.status(400).send({ error: `Google Maps lookup failed: ${message}` });
+      }
+    }
+  );
+
+  // POST /api/assets/:id/apply-google-name - Lookup and apply road name from Google Maps
+  app.post<{ Params: { id: string } }>(
+    '/:id/apply-google-name',
+    {
+      schema: {
+        params: Type.Object({ id: Type.String() }),
+        response: {
+          200: Type.Object({
+            data: AssetSchema,
+          }),
+          400: Type.Object({ error: Type.String() }),
+          404: Type.Object({ error: Type.String() }),
+          503: Type.Object({ error: Type.String() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      // Check if Google Maps is configured
+      if (!isGoogleMapsConfigured()) {
+        return reply.status(503).send({
+          error: 'Google Maps API is not configured. Set GOOGLE_MAPS_API_KEY environment variable.',
+        });
+      }
+
+      const { id } = request.params;
+
+      // Get asset with geometry
+      const assetResult = await db.execute(sql`
+        SELECT id, ST_AsGeoJSON(geometry)::json as geometry
+        FROM road_assets
+        WHERE id = ${id}
+      `);
+
+      if (assetResult.rows.length === 0) {
+        return reply.status(404).send({ error: 'Asset not found' });
+      }
+
+      const asset = assetResult.rows[0] as { id: string; geometry: { type: string; coordinates: unknown } };
+
+      if (!asset.geometry || asset.geometry.type !== 'LineString') {
+        return reply.status(400).send({ error: 'Asset geometry must be a LineString' });
+      }
+
+      try {
+        const result = await getRoadNameForLineString(
+          asset.geometry.coordinates as [number, number][]
+        );
+
+        if (!result.roadName) {
+          return reply.status(400).send({ error: 'No road name found from Google Maps' });
+        }
+
+        // Update the asset with Google Maps name
+        await db
+          .update(roadAssets)
+          .set({
+            displayName: result.roadName,
+            nameSource: 'google',
+            nameConfidence: 'medium',
+            updatedAt: new Date(),
+          })
+          .where(eq(roadAssets.id, id));
+
+        // Fetch updated asset
+        const assetSelect = {
+          id: roadAssets.id,
+          name: roadAssets.name,
+          nameJa: roadAssets.nameJa,
+          ref: roadAssets.ref,
+          localRef: roadAssets.localRef,
+          displayName: roadAssets.displayName,
+          nameSource: roadAssets.nameSource,
+          nameConfidence: roadAssets.nameConfidence,
+          geometry: fromGeomSql(roadAssets.geometry),
+          roadType: roadAssets.roadType,
+          lanes: roadAssets.lanes,
+          direction: roadAssets.direction,
+          status: roadAssets.status,
+          validFrom: roadAssets.validFrom,
+          validTo: roadAssets.validTo,
+          replacedBy: roadAssets.replacedBy,
+          ownerDepartment: roadAssets.ownerDepartment,
+          ward: roadAssets.ward,
+          landmark: roadAssets.landmark,
+          updatedAt: roadAssets.updatedAt,
+        };
+
+        const updatedAssets = await db.select(assetSelect).from(roadAssets).where(eq(roadAssets.id, id));
+        const updatedAsset = updatedAssets[0];
+
+        return {
+          data: {
+            ...updatedAsset,
+            validFrom: updatedAsset.validFrom.toISOString(),
+            validTo: updatedAsset.validTo?.toISOString(),
+            updatedAt: updatedAsset.updatedAt.toISOString(),
+          },
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return reply.status(400).send({ error: `Google Maps lookup failed: ${message}` });
+      }
     }
   );
 }

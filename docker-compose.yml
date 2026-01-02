@@ -71,6 +71,7 @@ services:
       ORION_LD_URL: http://orion-ld:1026
       PORT: 3000
       TZ: Asia/Tokyo
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
     volumes:
       - ./backend/src:/app/src:ro
     healthcheck:
@@ -91,7 +92,9 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://localhost:3000
+      # API_PROXY_TARGET is for Vite server proxy (Docker internal)
+      # VITE_API_URL defaults to /api which uses the proxy
+      API_PROXY_TARGET: http://api:3000
     volumes:
       - ./frontend/src:/app/src:ro
 

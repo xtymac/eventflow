@@ -15,7 +15,7 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconX } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconX, IconMapPin } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useAssets, useAsset, useWards } from '../../hooks/useApi';
@@ -46,6 +46,7 @@ export function AssetList() {
   // Inline edit state for manual naming
   const [editName, setEditName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Persisted filter state from store (including filtersOpen)
   const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, mapCenter, setHoveredAsset, setSidebarAssets, filtersOpen, setFiltersOpen } = useUIStore();
@@ -228,6 +229,46 @@ export function AssetList() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Handle Google Maps name lookup
+  const handleGoogleLookup = async (assetId: string) => {
+    setIsLookingUp(true);
+    try {
+      const response = await fetch(`/api/assets/${assetId}/lookup-google-name`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to lookup name');
+      }
+
+      const result = await response.json();
+
+      if (result.data.roadName) {
+        setEditName(result.data.roadName);
+        notifications.show({
+          title: 'Google Maps',
+          message: `Found: ${result.data.roadName}`,
+          color: 'blue',
+        });
+      } else {
+        notifications.show({
+          title: 'Google Maps',
+          message: 'No road name found at this location',
+          color: 'yellow',
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to lookup name',
+        color: 'red',
+      });
+    } finally {
+      setIsLookingUp(false);
     }
   };
 
@@ -420,9 +461,9 @@ export function AssetList() {
                       <Badge
                         variant="light"
                         size="xs"
-                        color={asset.nameSource === 'osm' ? 'blue' : 'teal'}
+                        color={asset.nameSource === 'osm' ? 'blue' : asset.nameSource === 'google' ? 'red' : 'teal'}
                       >
-                        {asset.nameSource === 'osm' ? 'OSM' : '手動'}
+                        {asset.nameSource === 'osm' ? 'OSM' : asset.nameSource === 'google' ? 'Google' : '手動'}
                       </Badge>
                     )}
                   </Group>
@@ -456,15 +497,26 @@ export function AssetList() {
                           if (e.key === 'Escape') setEditName('');
                         }}
                         style={{ flex: 1 }}
-                        disabled={isSaving}
+                        disabled={isSaving || isLookingUp}
                       />
+                      <ActionIcon
+                        variant="light"
+                        color="blue"
+                        size="sm"
+                        onClick={() => handleGoogleLookup(asset.id)}
+                        loading={isLookingUp}
+                        disabled={isSaving}
+                        title="Lookup from Google Maps"
+                      >
+                        <IconMapPin size={14} />
+                      </ActionIcon>
                       <ActionIcon
                         variant="filled"
                         color="green"
                         size="sm"
                         onClick={() => handleSaveName(asset.id)}
                         loading={isSaving}
-                        disabled={!editName.trim()}
+                        disabled={!editName.trim() || isLookingUp}
                       >
                         <IconCheck size={14} />
                       </ActionIcon>
@@ -473,7 +525,7 @@ export function AssetList() {
                         color="gray"
                         size="sm"
                         onClick={() => setEditName('')}
-                        disabled={isSaving}
+                        disabled={isSaving || isLookingUp}
                       >
                         <IconX size={14} />
                       </ActionIcon>
