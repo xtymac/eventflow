@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group } from '@mantine/core';
+import { Box, Paper, Stack, Switch, Text, Group, Button, Badge } from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
 import { useEvents, useAssets, useInspections } from '../hooks/useApi';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
+import { useMapDraw } from '../hooks/useMapDraw';
 import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
 import type { ConstructionEvent, RoadAsset, InspectionRecord } from '@nagoya/shared';
 import { EventMapTooltip } from './EventMapTooltip';
@@ -114,6 +116,12 @@ export function MapView() {
     setMapBbox: setMapBboxStore,
     flyToGeometry,
     setFlyToGeometry,
+    // Drawing state
+    drawMode,
+    geometryModeForForm,
+    drawnGeometry,
+    setDrawnGeometry,
+    setDrawMode,
   } = useUIStore();
   const popup = useRef<maplibregl.Popup | null>(null);
 
@@ -145,6 +153,32 @@ export function MapView() {
     { enabled: !!mapBbox && currentZoom >= 14 && showAssets }
   );
   const { data: inspectionsData } = useInspections();
+
+  // Drawing mode: enable when event form is open AND manual geometry mode is selected
+  const isDrawingEnabled = isEventFormOpen && geometryModeForForm === 'manual';
+
+  // Get initial geometry for editing (only used when editing an existing event with manual geometry)
+  const editingEventData = eventsData?.data?.find((e: ConstructionEvent) => e.id === editingEventId);
+  const initialDrawGeometry = editingEventData?.geometrySource === 'manual' ? editingEventData.geometry : null;
+
+  // Initialize map drawing
+  const { setMode: setDrawingMode, deleteAll: deleteDrawing } = useMapDraw(
+    map.current,
+    isDrawingEnabled,
+    mapLoaded,
+    {
+      onGeometryChange: setDrawnGeometry,
+      initialGeometry: initialDrawGeometry,
+      geometrySource: editingEventData?.geometrySource,
+    }
+  );
+
+  // Sync drawMode from store to draw instance
+  useEffect(() => {
+    if (isDrawingEnabled && drawMode) {
+      setDrawingMode(drawMode === 'polygon' ? 'polygon' : drawMode === 'line' ? 'line' : 'select');
+    }
+  }, [isDrawingEnabled, drawMode, setDrawingMode]);
 
   // Initialize map
   useEffect(() => {

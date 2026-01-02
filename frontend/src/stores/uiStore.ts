@@ -33,6 +33,8 @@ interface UIState {
   // Event form state
   selectedRoadAssetIdsForForm: string[];
   previewGeometry: Geometry | null;
+  drawnGeometry: Geometry | null;         // Geometry drawn via maplibre-gl-draw
+  geometryModeForForm: 'auto' | 'manual'; // Current geometry mode in EventForm
 
   // Asset selector state (for AdvancedRoadAssetSelector)
   assetSelectorFilters: {
@@ -97,6 +99,9 @@ interface UIState {
   // Event form actions
   setSelectedRoadAssetsForForm: (ids: string[]) => void;
   setPreviewGeometry: (geometry: Geometry | null) => void;
+  setDrawnGeometry: (geometry: Geometry | null) => void;
+  setGeometryModeForForm: (mode: 'auto' | 'manual') => void;
+  clearDrawing: () => void;  // Clears drawnGeometry and drawMode
   clearFormState: () => void;
 
   // Asset selector actions
@@ -143,6 +148,8 @@ export const useUIStore = create<UIState>((set) => ({
   // Event form state
   selectedRoadAssetIdsForForm: [],
   previewGeometry: null,
+  drawnGeometry: null,
+  geometryModeForForm: 'auto',
 
   // Asset selector state
   assetSelectorFilters: {
@@ -197,6 +204,8 @@ export const useUIStore = create<UIState>((set) => ({
     drawMode: null,
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
+    drawnGeometry: null,
+    geometryModeForForm: 'auto',
   }),
 
   openAssetForm: () => set({ isAssetFormOpen: true }),
@@ -223,9 +232,14 @@ export const useUIStore = create<UIState>((set) => ({
   // Event form actions
   setSelectedRoadAssetsForForm: (ids) => set({ selectedRoadAssetIdsForForm: ids }),
   setPreviewGeometry: (geometry) => set({ previewGeometry: geometry }),
+  setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
+  setGeometryModeForForm: (mode) => set({ geometryModeForForm: mode }),
+  clearDrawing: () => set({ drawnGeometry: null, drawMode: null }),
   clearFormState: () => set({
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
+    drawnGeometry: null,
+    geometryModeForForm: 'auto',
     drawMode: null,
   }),
 
