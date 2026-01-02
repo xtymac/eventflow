@@ -15,9 +15,10 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconX, IconMapPin } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAssets, useAsset, useWards } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
@@ -53,6 +54,7 @@ export function AssetList() {
   const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter } = assetFilters;
   const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
+  const queryClient = useQueryClient();
   const { data: wardsData } = useWards();
   const { data, isLoading, error, isFetching } = useAssets({
     roadType: roadTypeFilter as RoadType | undefined,
@@ -174,10 +176,16 @@ export function AssetList() {
     return () => clearTimeout(timer);
   }, [selectedAssetId, selectedAssetData?.data]);
 
-  // Reset edit state when selection changes
+  // Pre-populate edit state with current name when selection changes
   useEffect(() => {
-    setEditName('');
-  }, [selectedAssetId]);
+    const asset = selectedAssetData?.data;
+    if (asset) {
+      // Pre-fill with current display name if exists
+      setEditName(asset.displayName || asset.name || '');
+    } else {
+      setEditName('');
+    }
+  }, [selectedAssetId, selectedAssetData?.data]);
 
   // Handle manual naming save
   const handleSaveName = async (assetId: string) => {
@@ -204,16 +212,11 @@ export function AssetList() {
         throw new Error(errorData.error || 'Failed to update name');
       }
 
-      const result = await response.json();
+      await response.json();
 
-      // Update local state with new name
-      setLoadedAssets((prev) =>
-        prev.map((a) =>
-          a.id === assetId
-            ? { ...a, displayName: result.data.displayName, nameSource: 'manual' }
-            : a
-        )
-      );
+      // Invalidate queries to refresh list and map
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['asset', assetId] });
 
       setEditName('');
       notifications.show({
@@ -484,17 +487,16 @@ export function AssetList() {
                     ID: {asset.id}
                   </Text>
 
-                  {/* Inline edit for selected unnamed roads */}
-                  {selectedAssetId === asset.id && isUnnamed && (
+                  {/* Inline edit for selected roads */}
+                  {selectedAssetId === asset.id && (
                     <Group mt="xs" gap="xs" onClick={(e) => e.stopPropagation()}>
                       <TextInput
                         size="xs"
-                        placeholder="Enter road name..."
+                        placeholder="Road name..."
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveName(asset.id);
-                          if (e.key === 'Escape') setEditName('');
                         }}
                         style={{ flex: 1 }}
                         disabled={isSaving || isLookingUp}
@@ -519,15 +521,6 @@ export function AssetList() {
                         disabled={!editName.trim() || isLookingUp}
                       >
                         <IconCheck size={14} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="sm"
-                        onClick={() => setEditName('')}
-                        disabled={isSaving || isLookingUp}
-                      >
-                        <IconX size={14} />
                       </ActionIcon>
                     </Group>
                   )}

@@ -9,6 +9,7 @@ export interface AssetCacheEntry {
   label: string;
   ward?: string;
   roadType?: string;
+  geometry?: Geometry; // For fly-to when clicking badge
 }
 
 interface UIState {
@@ -48,6 +49,7 @@ interface UIState {
   mapZoom: number;                  // Current map zoom level
   hoveredAssetId: string | null;    // Asset being hovered in list (for map highlight)
   sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
+  flyToGeometry: Geometry | null;   // Geometry to fly to (set to trigger flyTo, auto-clears after animation)
 
   // Filter panel state (persisted across tab switches)
   filtersOpen: boolean;
@@ -117,6 +119,7 @@ interface UIState {
   setMapZoom: (zoom: number) => void;
   setHoveredAsset: (id: string | null) => void;
   setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
+  setFlyToGeometry: (geometry: Geometry | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -156,6 +159,7 @@ export const useUIStore = create<UIState>((set) => ({
   mapZoom: 0,
   hoveredAssetId: null,
   sidebarAssets: [],
+  flyToGeometry: null,
 
   // Filter panel state
   filtersOpen: false,
@@ -275,4 +279,5 @@ export const useUIStore = create<UIState>((set) => ({
   setMapZoom: (zoom) => set({ mapZoom: zoom }),
   setHoveredAsset: (id) => set({ hoveredAssetId: id }),
   setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
+  setFlyToGeometry: (geometry) => set({ flyToGeometry: geometry }),
 }));

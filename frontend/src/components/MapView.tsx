@@ -108,9 +108,12 @@ export function MapView() {
     isEventFormOpen,
     editingEventId,
     openEventDetailModal,
+    closeEventDetailModal,
     hoveredAssetId,
     selectedRoadAssetIdsForForm,
     setMapBbox: setMapBboxStore,
+    flyToGeometry,
+    setFlyToGeometry,
   } = useUIStore();
   const popup = useRef<maplibregl.Popup | null>(null);
 
@@ -1361,6 +1364,38 @@ export function MapView() {
       map.current.setFilter('hovered-asset-glow', filter);
     }
   }, [hoveredAssetId, selectedAssetId, mapLoaded]);
+
+  // Fly to geometry when triggered (e.g., clicking road badge in selector)
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !flyToGeometry) return;
+
+    try {
+      const bbox = turf.bbox(flyToGeometry);
+
+      // Calculate feature length to determine appropriate zoom
+      const feature = turf.feature(flyToGeometry);
+      const length = turf.length(feature, { units: 'meters' });
+
+      // Smaller features need higher zoom (closer view)
+      let minZoom = 15;
+      if (length < 50) minZoom = 18;
+      else if (length < 150) minZoom = 17;
+      else if (length < 400) minZoom = 16;
+
+      map.current.fitBounds(
+        [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+        { padding: 100, maxZoom: 18, minZoom, duration: 1000 }
+      );
+
+      // Clear the flyToGeometry after animation starts
+      setTimeout(() => {
+        setFlyToGeometry(null);
+      }, 100);
+    } catch (e) {
+      console.warn('Could not calculate bounds for flyTo geometry');
+      setFlyToGeometry(null);
+    }
+  }, [flyToGeometry, mapLoaded, setFlyToGeometry]);
 
   // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {

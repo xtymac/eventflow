@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconMap, IconRefresh, IconX } from '@tabler/icons-react';
@@ -14,11 +15,21 @@ import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 type View = 'events' | 'assets' | 'inspections';
 
 function App() {
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
-  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+  const [mobileOpened, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
+  const [desktopOpened, { toggle: toggleDesktop, open: openDesktop }] = useDisclosure(true);
   const { currentView, setCurrentView, isEventFormOpen, editingEventId, closeEventForm, detailModalEventId, closeEventDetailModal } = useUIStore();
   const queryClient = useQueryClient();
   const isEditing = isEventFormOpen;
+  const prevDetailModalEventId = useRef(detailModalEventId);
+
+  // When right sidebar closes, reopen left sidebar
+  useEffect(() => {
+    if (prevDetailModalEventId.current && !detailModalEventId) {
+      openDesktop();
+      openMobile();
+    }
+    prevDetailModalEventId.current = detailModalEventId;
+  }, [detailModalEventId, openDesktop, openMobile]);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries();

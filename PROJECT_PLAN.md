@@ -337,12 +337,12 @@ Tasks:
 
 ### 3.3 Event Management
 Tasks:
-- [ ] Event list with status filter, date range, name search, department filter (status + name search done; date range + department pending)
+- [x] Event list with status filter, date range, name search, department filter
 - [x] Event detail view with all fields (modal via EventDetailPanel)
-- [ ] Create event form (React Hook Form + Mantine inputs) (form exists but uses local state)
+- [x] Create event form (React Hook Form + Mantine inputs)
 - [x] Edit event form
 - [x] Status chips (planned=blue, active=yellow, ended=gray)
-- [ ] Start/End buttons with confirmation dialog (buttons exist; confirm dialog pending)
+- [x] Start/End buttons with confirmation dialog
 
 ### 3.4 Map Drawing
 Tasks:
