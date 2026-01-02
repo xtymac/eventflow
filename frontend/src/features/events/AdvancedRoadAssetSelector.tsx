@@ -71,6 +71,7 @@ export function AdvancedRoadAssetSelector({
     selectedAssetDetailsCache,
     cacheAssetDetails,
     setHoveredAsset,
+    setFlyToGeometry,
   } = useUIStore();
 
   const { ward, roadType, search } = assetSelectorFilters;
@@ -115,9 +116,6 @@ export function AdvancedRoadAssetSelector({
   // Selected assets set for quick lookup
   const selectedSet = useMemo(() => new Set(value), [value]);
 
-  // Get loaded asset IDs for checking if asset is in current filter results
-  const loadedAssetIds = useMemo(() => new Set(allAssets.map((a) => a.id)), [allAssets]);
-
   // Virtual list setup
   const virtualizer = useVirtualizer({
     count: hasNextPage ? allAssets.length + 1 : allAssets.length,
@@ -141,7 +139,7 @@ export function AdvancedRoadAssetSelector({
     }
   }, [virtualizer.getVirtualItems(), hasNextPage, isFetchingNextPage, allAssets.length, fetchNextPage]);
 
-  // Cache asset details when selecting
+  // Cache asset details when selecting and fly to on map
   const handleToggleAsset = useCallback(
     (asset: RoadAsset) => {
       const isSelected = selectedSet.has(asset.id);
@@ -151,20 +149,26 @@ export function AdvancedRoadAssetSelector({
         newValue = value.filter((id) => id !== asset.id);
       } else {
         newValue = [...value, asset.id];
-        // Cache the asset details
+        // Cache the asset details including geometry for flyTo
         cacheAssetDetails([
           {
             id: asset.id,
             label: formatAssetLabel(asset),
             ward: asset.ward,
             roadType: asset.roadType,
+            geometry: asset.geometry,
           },
         ]);
       }
 
+      // Always fly to asset on click (both selecting and deselecting)
+      if (asset.geometry) {
+        setFlyToGeometry(asset.geometry);
+      }
+
       onChange(newValue);
     },
-    [selectedSet, value, onChange, cacheAssetDetails]
+    [selectedSet, value, onChange, cacheAssetDetails, setFlyToGeometry]
   );
 
   // Remove from selection
@@ -180,6 +184,25 @@ export function AdvancedRoadAssetSelector({
     onChange([]);
   }, [onChange]);
 
+  // Fly to asset on map
+  const handleFlyToAsset = useCallback(
+    (id: string) => {
+      // Try to get geometry from cache first
+      const cached = selectedAssetDetailsCache[id];
+      if (cached?.geometry) {
+        setFlyToGeometry(cached.geometry);
+        return;
+      }
+
+      // Fallback to loaded assets
+      const loaded = allAssets.find((a) => a.id === id);
+      if (loaded?.geometry) {
+        setFlyToGeometry(loaded.geometry);
+      }
+    },
+    [selectedAssetDetailsCache, allAssets, setFlyToGeometry]
+  );
+
   // Get display label for selected asset
   const getSelectedLabel = (id: string): string => {
     // First check cache
@@ -192,11 +215,6 @@ export function AdvancedRoadAssetSelector({
 
     // Fallback to ID
     return id;
-  };
-
-  // Check if selected asset is in current filter results
-  const isInCurrentFilter = (id: string): boolean => {
-    return loadedAssetIds.has(id);
   };
 
   const wardOptions = useMemo(
@@ -277,47 +295,44 @@ export function AdvancedRoadAssetSelector({
             </Group>
             <Collapse in={selectedExpanded}>
               <Group gap={6} wrap="wrap" mb="xs" style={{ padding: '4px', margin: '-4px' }}>
-                {value.map((id) => {
-                  const inFilter = isInCurrentFilter(id);
-                  return (
-                    <Badge
-                      key={id}
-                      variant="light"
-                      color={inFilter ? 'blue' : 'gray'}
-                      size="sm"
-                      rightSection={
-                        <ActionIcon
-                          size="xs"
-                          variant="transparent"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveSelected(id);
-                          }}
-                        >
-                          <IconX size={12} />
-                        </ActionIcon>
-                      }
-                      style={{
-                        paddingRight: 4,
-                        cursor: 'pointer',
-                        transition: 'all 0.1s ease',
-                        transform: hoveredBadgeId === id ? 'scale(1.03)' : 'scale(1)',
-                        boxShadow: hoveredBadgeId === id ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
-                      }}
-                      onMouseEnter={() => {
-                        setHoveredBadgeId(id);
-                        setHoveredAsset(id);
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredBadgeId(null);
-                        setHoveredAsset(null);
-                      }}
-                    >
-                      {getSelectedLabel(id)}
-                      {!inFilter && ' (not in filter)'}
-                    </Badge>
-                  );
-                })}
+                {value.map((id) => (
+                  <Badge
+                    key={id}
+                    variant="light"
+                    color="blue"
+                    size="sm"
+                    rightSection={
+                      <ActionIcon
+                        size="xs"
+                        variant="transparent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveSelected(id);
+                        }}
+                      >
+                        <IconX size={12} />
+                      </ActionIcon>
+                    }
+                    style={{
+                      paddingRight: 4,
+                      cursor: 'pointer',
+                      transition: 'all 0.1s ease',
+                      transform: hoveredBadgeId === id ? 'scale(1.03)' : 'scale(1)',
+                      boxShadow: hoveredBadgeId === id ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
+                    }}
+                    onClick={() => handleFlyToAsset(id)}
+                    onMouseEnter={() => {
+                      setHoveredBadgeId(id);
+                      setHoveredAsset(id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredBadgeId(null);
+                      setHoveredAsset(null);
+                    }}
+                  >
+                    {getSelectedLabel(id)}
+                  </Badge>
+                ))}
               </Group>
             </Collapse>
           </>
@@ -480,11 +495,6 @@ export function AdvancedRoadAssetSelector({
           <Loader size="xs" />
         </Group>
       )}
-
-      {/* Tip */}
-      <Text size="xs" c="dimmed">
-        Tip: click road lines on the map to add or remove assets.
-      </Text>
     </Stack>
   );
 }
