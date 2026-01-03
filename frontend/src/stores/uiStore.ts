@@ -35,6 +35,7 @@ interface UIState {
   detailModalEventId: string | null;
   isRoadUpdateModeActive: boolean;
   editingEventId: string | null;
+  duplicateEventId: string | null;  // ID of event being duplicated (for prefill)
   drawMode: 'polygon' | 'line' | 'point' | null;
   currentView: ViewType;
 
@@ -91,6 +92,7 @@ interface UIState {
       from: Date | null;
       to: Date | null;
     };
+    showArchivedSection: boolean;  // Toggle for archived events section visibility
   };
 
   // Actions
@@ -99,6 +101,8 @@ interface UIState {
   selectInspection: (id: string | null) => void;
   openEventForm: (editingId?: string) => void;
   closeEventForm: () => void;
+  openDuplicateEventForm: (id: string) => void;
+  clearDuplicateEvent: () => void;
   openAssetForm: () => void;
   closeAssetForm: () => void;
   openInspectionForm: () => void;
@@ -173,6 +177,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   detailModalEventId: null,
   isRoadUpdateModeActive: false,
   editingEventId: null,
+  duplicateEventId: null,
   drawMode: null,
   currentView: 'events',
 
@@ -226,6 +231,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     search: '',
     department: null,
     dateRange: { from: null, to: null },
+    showArchivedSection: false,
   },
 
   selectEvent: (id) => set({
@@ -238,16 +244,14 @@ export const useUIStore = create<UIState>((set, get) => ({
   selectAsset: (id, geometry) => set({ selectedAssetId: id, selectedAssetGeometry: geometry ?? null, selectedEventId: null, selectedInspectionId: null }),
   selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetGeometry: null }),
 
-  openEventForm: (editingId) => set((state) => ({
+  openEventForm: (editingId) => set({
     isEventFormOpen: true,
     editingEventId: editingId || null,
+    duplicateEventId: null,  // Clear duplicate state
     detailModalEventId: null,
-    // Clear selection when editing to hide red highlight layer and prevent fitBounds conflict
-    selectedEventId: editingId ? null : state.selectedEventId,
-  })),
-  closeEventForm: () => set({
-    isEventFormOpen: false,
-    editingEventId: null,
+    // Always clear selection when opening form to hide red highlight layer
+    selectedEventId: null,
+    // Clear drawing state when opening form (will be restored from event data if editing)
     drawMode: null,
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
@@ -258,6 +262,40 @@ export const useUIStore = create<UIState>((set, get) => ({
     editRedoStack: [],
     _lastSnapshotTime: 0,
   }),
+  closeEventForm: () => set({
+    isEventFormOpen: false,
+    editingEventId: null,
+    duplicateEventId: null,
+    drawMode: null,
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+
+  openDuplicateEventForm: (id) => set({
+    isEventFormOpen: true,
+    editingEventId: null,      // CRITICAL: null = create mode
+    duplicateEventId: id,
+    detailModalEventId: null,
+    selectedEventId: null,
+    // Clear drawing state (will be restored from duplicate event data)
+    drawMode: null,
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+
+  clearDuplicateEvent: () => set({ duplicateEventId: null }),
 
   openAssetForm: () => set({ isAssetFormOpen: true }),
   closeAssetForm: () => set({ isAssetFormOpen: false, drawMode: null }),
@@ -457,6 +495,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       search: '',
       department: null,
       dateRange: { from: null, to: null },
+      showArchivedSection: false,
     },
   }),
   setEventFilter: (key, value) => set((state) => ({

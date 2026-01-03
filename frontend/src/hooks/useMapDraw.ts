@@ -119,16 +119,24 @@ export function useMapDraw(
   }, []);
 
   const handleDrawUpdate = useCallback(() => {
-    console.log('[useMapDraw] draw.update event');
+    console.log('[useMapDraw] draw.update event, previousFeaturesRef:', previousFeaturesRef.current ? 'set' : 'null');
 
-    // Only save history if we have a cached previous state (from modechange)
+    // Only save history if we have a cached previous state (from modechange or restore)
     if (previousFeaturesRef.current) {
       // Use unified saveEditSnapshot which captures both drawing AND asset selection state
       useUIStore.getState().saveEditSnapshot();
-      previousFeaturesRef.current = null;  // Clear cache
+      console.log('[useMapDraw] Saved edit snapshot');
     }
 
+    // Always update previousFeaturesRef with current state for next update
+    // This ensures consecutive modifications are tracked
     const allFeatures = getAllFeatures();
+    if (allFeatures && allFeatures.length > 0) {
+      previousFeaturesRef.current = JSON.parse(JSON.stringify(allFeatures));
+    } else {
+      previousFeaturesRef.current = null;
+    }
+
     onFeaturesChangeRef.current?.(allFeatures);
   }, [getAllFeatures]);
 
@@ -528,17 +536,39 @@ export function useMapDraw(
 
       // Re-add features from store
       if (features && features.length > 0) {
+        let lastAddedId: string | undefined;
+
         for (const feature of features) {
-          drawRef.current.add(feature);
+          // add() returns an array of assigned IDs
+          const addedIds = drawRef.current.add(feature);
+          if (addedIds && addedIds.length > 0) {
+            lastAddedId = addedIds[0];
+          }
         }
-        // Select the last feature for editing
-        const lastId = features[features.length - 1].id;
-        if (lastId) {
-          drawRef.current.changeMode('direct_select', { featureId: lastId as string });
+
+        // Select the last added feature for editing (use the ID from add(), not original feature)
+        if (lastAddedId) {
+          try {
+            drawRef.current.changeMode('direct_select', { featureId: lastAddedId });
+          } catch (modeError) {
+            console.warn('[useMapDraw] Failed to enter direct_select, using simple_select:', modeError);
+            drawRef.current.changeMode('simple_select');
+          }
+        } else {
+          drawRef.current.changeMode('simple_select');
         }
+
+        // Cache the current state for undo tracking (DEEP COPY as Feature[])
+        // This ensures handleDrawUpdate has a previous state to compare
+        // NOTE: Programmatic changeMode doesn't trigger draw.modechange event,
+        // so we must manually set previousFeaturesRef here
+        const currentFeatures = drawRef.current.getAll().features as Feature[];
+        previousFeaturesRef.current = JSON.parse(JSON.stringify(currentFeatures));
+        console.log('[useMapDraw] restoreFeatures: set previousFeaturesRef with', currentFeatures.length, 'features');
       } else {
         // No features - go to simple_select
         drawRef.current.changeMode('simple_select');
+        previousFeaturesRef.current = null;
       }
     } catch (e) {
       console.warn('Failed to restore features:', e);

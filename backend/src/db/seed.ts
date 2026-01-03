@@ -118,10 +118,12 @@ async function seed() {
       restrictionType: constructionEvents.restrictionType,
       geometry: fromGeomSql(constructionEvents.geometry),
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
       updatedAt: constructionEvents.updatedAt,
+      geometrySource: constructionEvents.geometrySource,
     };
     const allEvents = await db.select(eventSelect).from(constructionEvents);
     for (const event of allEvents) {

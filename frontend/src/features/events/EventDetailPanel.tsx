@@ -91,9 +91,16 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
             <Text fw={600} size="lg" lineClamp={2} style={{ flex: 1, lineHeight: 1.2 }}>
               {event.name}
             </Text>
-            <Badge color={STATUS_COLORS[event.status]} size="md" variant="light">
-              {STATUS_LABELS[event.status]}
-            </Badge>
+            <Group gap={4}>
+              {event.archivedAt && (
+                <Badge color="gray" size="md" variant="light">
+                  Archived
+                </Badge>
+              )}
+              <Badge color={STATUS_COLORS[event.status]} size="md" variant="light">
+                {STATUS_LABELS[event.status]}
+              </Badge>
+            </Group>
           </Group>
 
           <Divider />

@@ -54,6 +54,7 @@ export interface ConstructionEvent {
   geometry: SupportedGeometry;
   geometrySource?: GeometrySource; // 'manual' | 'auto'
   postEndDecision: PostEndDecision;
+  archivedAt?: string | null; // ISO 8601 timestamp, null = not archived
   roadAssets?: RoadAsset[]; // Populated from JOIN query, replaces affectedRoadAssetIds
   department: string;
   ward?: string;
@@ -189,6 +190,7 @@ export interface EventFilters {
   endDateTo?: string;
   name?: string;
   ward?: string;
+  includeArchived?: boolean; // false = hide archived, true = include archived
 }
 
 export interface AssetFilters {

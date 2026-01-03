@@ -109,10 +109,12 @@ export function MapView() {
     selectedAssetGeometry,
     selectEvent,
     selectAsset,
+    currentView,
     setCurrentView,
     previewGeometry,
     isEventFormOpen,
     editingEventId,
+    duplicateEventId,
     openEventDetailModal,
     closeEventDetailModal,
     hoveredAssetId,
@@ -160,8 +162,25 @@ export function MapView() {
   // Animation ref for flowing border effect
   const animationFrameRef = useRef<number | null>(null);
 
+  // Track last restored features to prevent duplicate restores
+  const lastRestoredFeaturesRef = useRef<string | null>(null);
+
+  // Delayed zoom after page refresh: wait 2s before zooming to selected event
+  const initialZoomPendingRef = useRef<string | null>(null);
+  const initialZoomTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userInteractedRef = useRef(false);
+
   // Debounced asset search (consistent with AssetList behavior)
   const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
+
+  // Check if any asset filters are active
+  const hasActiveAssetFilters = !!(
+    assetFilters.roadType ||
+    assetFilters.status ||
+    assetFilters.ward ||
+    assetFilters.unnamed ||
+    debouncedAssetSearch
+  );
 
   const { data: eventsData } = useEvents({
     name: eventFilters.search || undefined,
@@ -172,8 +191,14 @@ export function MapView() {
   });
   // Fetch editing event separately to avoid losing it when filtered out
   const { data: editingEventResponse } = useEvent(editingEventId);
-  // Viewport-based asset loading for interaction (zoom >= 14)
-  // PMTiles covers all zoom levels for preview; API enables selection
+  // Fetch duplicate event for displaying source geometry in duplicate mode
+  const { data: duplicateEventResponse } = useEvent(duplicateEventId);
+  // Viewport-based asset loading for interaction
+  // - zoom >= 14: load assets in viewport (for selection)
+  // - filters active at low zoom: load ALL filtered assets (no bbox, show globally)
+  // - filters active at high zoom: load filtered assets in viewport (bbox for performance)
+  // PMTiles covers all zoom levels for preview; API enables selection and filtering
+  const useGlobalFilter = hasActiveAssetFilters && currentZoom < 14;
   const { data: assetsData } = useAssets(
     {
       roadType: assetFilters.roadType as RoadType | undefined,
@@ -181,11 +206,14 @@ export function MapView() {
       ward: assetFilters.ward || undefined,
       q: debouncedAssetSearch || undefined,
       unnamed: assetFilters.unnamed || undefined,
-      bbox: mapBbox ?? undefined,
+      // At low zoom with filters: skip bbox to show all filtered assets globally
+      // At high zoom or no filters: use bbox for viewport-based loading
+      bbox: useGlobalFilter ? undefined : (mapBbox ?? undefined),
       limit: 1000,
       includeTotal: false,
     },
-    { enabled: !!mapBbox && currentZoom >= 14 && showAssets }
+    // Enable when: showAssets AND (mapBbox exists for viewport mode OR global filter mode)
+    { enabled: showAssets && (!!mapBbox || useGlobalFilter) && (currentZoom >= 14 || hasActiveAssetFilters) }
   );
   const { data: inspectionsData } = useInspections();
 
@@ -235,8 +263,7 @@ export function MapView() {
     console.log('[MapView] Drawing complete, switching to select mode');
     setDrawMode(null); // null represents 'select' mode
     setIsDrawingActive(false);
-    // Trigger zoom to the drawn geometry
-    setShouldZoomToDrawing(true);
+    // Note: No auto-zoom after drawing - user can use manual zoom button in EventForm
   };
 
   // Initialize map drawing - pass currentMode so hook handles mode changes internally
@@ -249,6 +276,7 @@ export function MapView() {
     startAddAnother: _startAddAnother,
     isDrawing: _isDrawing, // Used by EventForm via store actions
     restoreFeatures,
+    isReady: isDrawReady,
   } = useMapDraw(
     map.current,
     isDrawingEnabled,
@@ -263,6 +291,13 @@ export function MapView() {
     }
   );
 
+  // Clear restore tracking when form closes
+  useEffect(() => {
+    if (!isEventFormOpen) {
+      lastRestoredFeaturesRef.current = null;
+    }
+  }, [isEventFormOpen]);
+
   // Handle draw actions from store (for touch-friendly buttons in EventForm)
   useEffect(() => {
     if (!drawAction) return;
@@ -270,19 +305,69 @@ export function MapView() {
     switch (drawAction) {
       case 'finish':
         finishDrawing();
+        clearDrawAction();
         break;
       case 'cancel':
         cancelDrawing();
+        // Clear the restore ref when canceling
+        lastRestoredFeaturesRef.current = null;
+        clearDrawAction();
         break;
       case 'restore':
-        // Restore features from store (for undo/redo)
+        // Restore features from store (for undo/redo and duplicate load)
+        // Guard: wait for draw control to be ready - don't clear action, let effect re-run
+        if (!isDrawReady) {
+          console.log('[MapView] Draw control not ready, waiting...');
+          return; // Effect will re-run when isDrawReady changes
+        }
+
+        // Guard: prevent duplicate restores for the same features
+        const featuresHash = drawnFeatures ? JSON.stringify(drawnFeatures) : null;
+        if (featuresHash === lastRestoredFeaturesRef.current) {
+          console.log('[MapView] Skipping duplicate restore');
+          clearDrawAction();
+          return;
+        }
+
+        console.log('[MapView] Restoring features:', drawnFeatures?.length ?? 0);
         restoreFeatures(drawnFeatures);
+        lastRestoredFeaturesRef.current = featuresHash;
+
+        // Fly to restored geometry after features are on map
+        // Must handle BOTH Polygon and LineString types
+        if (drawnFeatures && drawnFeatures.length > 0) {
+          let combinedGeometry: Geometry;
+          const firstType = drawnFeatures[0].geometry?.type;
+
+          console.log('[MapView] Restore: flying to geometry, firstType:', firstType, 'count:', drawnFeatures.length);
+
+          if (drawnFeatures.length === 1) {
+            combinedGeometry = drawnFeatures[0].geometry as Geometry;
+          } else if (firstType === 'Polygon') {
+            combinedGeometry = {
+              type: 'MultiPolygon',
+              coordinates: drawnFeatures.map(f => (f.geometry as GeoJSON.Polygon).coordinates),
+            };
+          } else if (firstType === 'LineString') {
+            combinedGeometry = {
+              type: 'MultiLineString',
+              coordinates: drawnFeatures.map(f => (f.geometry as GeoJSON.LineString).coordinates),
+            };
+          } else {
+            // Fallback: use bbox for other types
+            const fc = turf.featureCollection(drawnFeatures);
+            const bbox = turf.bbox(fc);
+            combinedGeometry = turf.bboxPolygon(bbox).geometry;
+          }
+
+          console.log('[MapView] Restore: calling setFlyToGeometry with', combinedGeometry.type);
+          setFlyToGeometry(combinedGeometry, true);
+        }
+
+        clearDrawAction();
         break;
     }
-
-    // Clear the action after handling
-    clearDrawAction();
-  }, [drawAction, finishDrawing, cancelDrawing, restoreFeatures, drawnFeatures, clearDrawAction]);
+  }, [drawAction, finishDrawing, cancelDrawing, restoreFeatures, drawnFeatures, clearDrawAction, isDrawReady, setFlyToGeometry]);
 
   // Initialize map
   useEffect(() => {
@@ -463,37 +548,103 @@ export function MapView() {
       });
 
       // Events source and layers
+      // Status-based layers: ended (bottom) → planned (middle) → active (top)
+      // This ensures active events are always clickable on top
       map.current.addSource('events', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
 
+      // ENDED events (bottom layer - gray, less prominent)
+      // Note: Using legacy filter syntax - property names as strings, not ['get', 'prop']
+      // $type only supports Point, LineString, Polygon (MultiPolygon treated as Polygon)
       map.current.addLayer({
-        id: 'events-fill',
+        id: 'events-ended-fill',
         type: 'fill',
         source: 'events',
-        filter: ['==', '$type', 'Polygon'],
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'ended']],
         paint: {
-          'fill-color': ['get', 'color'],
-          'fill-opacity': 0.15, // Reduced from 0.3 to allow clicking roads underneath
+          'fill-color': STATUS_COLORS.ended,
+          'fill-opacity': 0.1,
         },
       });
 
       map.current.addLayer({
-        id: 'events-line',
+        id: 'events-ended-line',
         type: 'line',
         source: 'events',
+        filter: ['==', 'status', 'ended'],
         paint: {
-          'line-color': ['get', 'color'],
+          'line-color': STATUS_COLORS.ended,
+          'line-width': 2,
+        },
+      });
+
+      // PLANNED events (middle layer - blue)
+      map.current.addLayer({
+        id: 'events-planned-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'planned']],
+        paint: {
+          'fill-color': STATUS_COLORS.planned,
+          'fill-opacity': 0.15,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'events-planned-line',
+        type: 'line',
+        source: 'events',
+        filter: ['==', 'status', 'planned'],
+        paint: {
+          'line-color': STATUS_COLORS.planned,
           'line-width': 3,
         },
       });
 
-      // Invisible hit area layer for events (wider clickable area for lines)
+      // ACTIVE events (top layer - amber, most prominent)
       map.current.addLayer({
-        id: 'events-hit-area',
+        id: 'events-active-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'active']],
+        paint: {
+          'fill-color': STATUS_COLORS.active,
+          'fill-opacity': 0.2,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'events-active-line',
         type: 'line',
         source: 'events',
+        filter: ['==', 'status', 'active'],
+        paint: {
+          'line-color': STATUS_COLORS.active,
+          'line-width': 4,
+        },
+      });
+
+      // Hit areas for easier clicking - MUST have BOTH fill and line types
+      // Fill hit area (for Polygon events - MapLibre treats MultiPolygon as Polygon for $type)
+      map.current.addLayer({
+        id: 'events-hit-area-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'fill-color': '#000000',
+          'fill-opacity': 0.001,
+        },
+      });
+
+      // Line hit area (for LineString events - MapLibre treats MultiLineString as LineString for $type)
+      map.current.addLayer({
+        id: 'events-hit-area-line',
+        type: 'line',
+        source: 'events',
+        filter: ['==', '$type', 'LineString'],
         paint: {
           'line-color': '#000000',
           'line-width': 20,
@@ -703,7 +854,13 @@ export function MapView() {
 
         // Check if we clicked on any features
         const features = map.current?.queryRenderedFeatures(e.point, {
-          layers: ['events-fill', 'events-line', 'events-hit-area', 'assets-hit-area', 'inspections-point']
+          layers: [
+            'events-ended-fill', 'events-ended-line',
+            'events-planned-fill', 'events-planned-line',
+            'events-active-fill', 'events-active-line',
+            'events-hit-area-fill', 'events-hit-area-line',
+            'assets-hit-area', 'inspections-point'
+          ]
         });
 
         // If no features were clicked, clear selection and tooltips
@@ -760,13 +917,27 @@ export function MapView() {
               setCurrentView('events');
             }
             openEventDetailModal(eventId);
+            // Zoom in to the event geometry
+            const geometry = e.features![0].geometry as Geometry;
+            if (geometry) {
+              setFlyToGeometry(geometry, false);
+            }
           }
         }
       };
 
-      map.current.on('click', 'events-fill', handleEventClick);
-      map.current.on('click', 'events-line', handleEventClick);
-      map.current.on('click', 'events-hit-area', handleEventClick);
+      // Add click handlers for all status-specific event layers
+      // Include selected-event layers so clicking a selected event still works
+      const eventLayerIds = [
+        'events-ended-fill', 'events-ended-line',
+        'events-planned-fill', 'events-planned-line',
+        'events-active-fill', 'events-active-line',
+        'events-hit-area-fill', 'events-hit-area-line',
+        'selected-event-fill', 'selected-event-line'
+      ];
+      for (const layerId of eventLayerIds) {
+        map.current.on('click', layerId, handleEventClick);
+      }
 
       map.current.on('click', 'assets-hit-area', (e) => {
         if (e.features && e.features[0]) {
@@ -866,25 +1037,22 @@ export function MapView() {
       // Alias for backward compatibility in hover handlers
       const shouldAllowRoadHover = shouldAllowRoadInteraction;
 
-      // Cursor changes
-      map.current.on('mouseenter', 'events-fill', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-      });
-      map.current.on('mouseleave', 'events-fill', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
-      });
-      map.current.on('mouseenter', 'events-line', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-      });
-      map.current.on('mouseleave', 'events-line', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
-      });
-      map.current.on('mouseenter', 'events-hit-area', () => {
-        if (map.current) map.current.getCanvas().style.cursor = 'pointer';
-      });
-      map.current.on('mouseleave', 'events-hit-area', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
-      });
+      // Cursor changes for event layers
+      const eventCursorLayerIds = [
+        'events-ended-fill', 'events-ended-line',
+        'events-planned-fill', 'events-planned-line',
+        'events-active-fill', 'events-active-line',
+        'events-hit-area-fill', 'events-hit-area-line',
+        'selected-event-fill', 'selected-event-line'
+      ];
+      for (const layerId of eventCursorLayerIds) {
+        map.current.on('mouseenter', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+        });
+        map.current.on('mouseleave', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = '';
+        });
+      }
       map.current.on('mouseenter', 'assets-hit-area', () => {
         if (map.current && shouldAllowRoadHover()) {
           map.current.getCanvas().style.cursor = 'pointer';
@@ -956,12 +1124,18 @@ export function MapView() {
         }, 300);
       };
 
-      map.current.on('mousemove', 'events-fill', handleEventMouseMove);
-      map.current.on('mouseleave', 'events-fill', handleEventMouseLeave);
-      map.current.on('mousemove', 'events-line', handleEventMouseMove);
-      map.current.on('mouseleave', 'events-line', handleEventMouseLeave);
-      map.current.on('mousemove', 'events-hit-area', handleEventMouseMove);
-      map.current.on('mouseleave', 'events-hit-area', handleEventMouseLeave);
+      // Add hover handlers for all status-specific event layers
+      const eventHoverLayerIds = [
+        'events-ended-fill', 'events-ended-line',
+        'events-planned-fill', 'events-planned-line',
+        'events-active-fill', 'events-active-line',
+        'events-hit-area-fill', 'events-hit-area-line',
+        'selected-event-fill', 'selected-event-line'
+      ];
+      for (const layerId of eventHoverLayerIds) {
+        map.current.on('mousemove', layerId, handleEventMouseMove);
+        map.current.on('mouseleave', layerId, handleEventMouseLeave);
+      }
 
       // Hover popup for assets
       map.current.on('mousemove', 'assets-hit-area', (e) => {
@@ -1042,12 +1216,24 @@ export function MapView() {
       handleMoveendRef.current = handleMoveend;
       map.current.on('moveend', handleMoveend);
 
+      // Cancel delayed initial zoom when user interacts with the map
+      const cancelInitialZoom = () => {
+        userInteractedRef.current = true;
+        if (initialZoomTimerRef.current) {
+          clearTimeout(initialZoomTimerRef.current);
+          initialZoomTimerRef.current = null;
+        }
+      };
+      map.current.on('dragstart', cancelInitialZoom);
+      map.current.on('zoomstart', cancelInitialZoom);
+
       // Call once after load to fetch initial data without user interaction
       handleMoveend();
     });
 
     return () => {
       if (moveendTimer.current) window.clearTimeout(moveendTimer.current);
+      if (initialZoomTimerRef.current) clearTimeout(initialZoomTimerRef.current);
       if (handleMoveendRef.current && map.current) {
         map.current.off('moveend', handleMoveendRef.current);
       }
@@ -1103,15 +1289,20 @@ export function MapView() {
     }
   }, [mapTheme, mapLoaded]);
 
-  // Update assets layer (API data for zoom >= 14)
+  // Update assets layer (API data for zoom >= 14, or any zoom when filters active)
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     const source = map.current.getSource('assets') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Clear assets when zoomed out below interaction threshold OR layer is hidden
-    if (!mapBbox || currentZoom < 14 || !showAssets) {
+    // Clear assets when:
+    // - showAssets is off, OR
+    // - No mapBbox AND not in global filter mode, OR
+    // - zoom < 14 AND no filters active (rely on PMTiles preview instead)
+    const shouldClearAssets = !showAssets || (!mapBbox && !hasActiveAssetFilters) || (currentZoom < 14 && !hasActiveAssetFilters);
+
+    if (shouldClearAssets) {
       source.setData({ type: 'FeatureCollection', features: [] });
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
       map.current.setLayoutProperty('assets-hit-area', 'visibility', 'none');
@@ -1155,7 +1346,7 @@ export function MapView() {
     map.current.setLayoutProperty('assets-line', 'visibility', 'visible');
     map.current.setLayoutProperty('assets-hit-area', 'visibility', 'visible');
     map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
-  }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom]);
+  }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom, hasActiveAssetFilters]);
 
   // Highlight selected assets while editing an event
   // Uses separate source so it shows at all zoom levels
@@ -1212,19 +1403,10 @@ export function MapView() {
 
     const z = Math.floor(currentZoom);
 
-    // Check if any asset filters are active (excluding search which has its own debounce)
-    const hasActiveAssetFilters = !!(
-      assetFilters.roadType ||
-      assetFilters.status ||
-      assetFilters.ward ||
-      assetFilters.unnamed ||
-      debouncedAssetSearch
-    );
-
     // Hide PMTiles preview when:
     // 1. showAssets is off, OR
-    // 2. Any filters are active AND we're zoomed in enough for API data (zoom >= 14)
-    const shouldHidePreview = !showAssets || (hasActiveAssetFilters && z >= 14);
+    // 2. Any filters are active (PMTiles cannot be filtered, so hide it entirely)
+    const shouldHidePreview = !showAssets || hasActiveAssetFilters;
 
     // Opacity: reduce when API data is visible (zoom >= 14) to avoid visual clutter
     const previewOpacity = z >= 14 && showAssets ? 0.5 : 0.6;
@@ -1238,7 +1420,7 @@ export function MapView() {
     } catch {
       // Layers may not exist if PMTiles file is not available
     }
-  }, [currentZoom, showAssets, mapLoaded, assetFilters, debouncedAssetSearch]);
+  }, [currentZoom, showAssets, mapLoaded, hasActiveAssetFilters]);
 
   // Update OSM road labels visibility
   useEffect(() => {
@@ -1264,11 +1446,14 @@ export function MapView() {
     // Filter out:
     // 1. The event being edited (it's shown in editing-event layer instead)
     // 2. Cancelled events by default (unless explicitly filtered to show cancelled)
+    // 3. Archived events (always hidden on map, even when archived section is expanded in list)
     const eventsToShow = eventsData.data.filter((e: ConstructionEvent) => {
       // Exclude event being edited
       if (isEventFormOpen && editingEventId && e.id === editingEventId) return false;
       // Hide cancelled events unless explicitly filtering for them
       if (e.status === 'cancelled' && eventFilters.status !== 'cancelled') return false;
+      // Always hide archived events on the map
+      if (e.archivedAt) return false;
       return true;
     });
 
@@ -1292,9 +1477,18 @@ export function MapView() {
 
     // Hide all events while editing to allow clicking roads underneath
     const eventsVisible = showEvents && !isEventFormOpen;
-    map.current.setLayoutProperty('events-fill', 'visibility', eventsVisible ? 'visible' : 'none');
-    map.current.setLayoutProperty('events-line', 'visibility', eventsVisible ? 'visible' : 'none');
-    map.current.setLayoutProperty('events-hit-area', 'visibility', eventsVisible ? 'visible' : 'none');
+    const statusLayers = [
+      'events-ended-fill', 'events-ended-line',
+      'events-planned-fill', 'events-planned-line',
+      'events-active-fill', 'events-active-line',
+      'events-hit-area-fill', 'events-hit-area-line'
+    ];
+    for (const layerId of statusLayers) {
+      // Guard: check layer exists before setting property (layer might not be created yet on first render)
+      if (map.current.getLayer(layerId)) {
+        map.current.setLayoutProperty(layerId, 'visibility', eventsVisible ? 'visible' : 'none');
+      }
+    }
   }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status]);
 
   // Update inspections layer
@@ -1353,13 +1547,38 @@ export function MapView() {
             properties: { id: event.id },
           }],
         });
+
+        // Delayed zoom after page refresh: wait 1s before zooming to selected event
+        // Only triggers once per selectedEventId (on initial page load from URL)
+        if (initialZoomPendingRef.current !== selectedEventId) {
+          initialZoomPendingRef.current = selectedEventId;
+          userInteractedRef.current = false;
+
+          // Clear any existing timer
+          if (initialZoomTimerRef.current) {
+            clearTimeout(initialZoomTimerRef.current);
+          }
+
+          // Zoom in after 0.5 second if user hasn't interacted
+          initialZoomTimerRef.current = setTimeout(() => {
+            if (!userInteractedRef.current && event.geometry) {
+              setFlyToGeometry(event.geometry, false);
+            }
+            initialZoomTimerRef.current = null;
+          }, 500);
+        }
       }
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
+      // Clear delayed zoom when event is deselected
+      if (initialZoomTimerRef.current) {
+        clearTimeout(initialZoomTimerRef.current);
+        initialZoomTimerRef.current = null;
+      }
     }
-  }, [selectedEventId, eventsData, mapLoaded]);
+  }, [selectedEventId, eventsData, mapLoaded, setFlyToGeometry]);
 
-  // Show editing event with transparent fill and zoom to it
+  // Show editing/duplicate event with transparent fill and fly to it
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
@@ -1369,37 +1588,56 @@ export function MapView() {
     // Sync editingEventId to ref for use in event handlers
     editingEventIdRef.current = editingEventId ?? null;
 
-    // Clear tooltips if editing event (sidebar shows details, no need for tooltip)
-    if (editingEventId) {
-      if (lockedEventIdRef.current === editingEventId) {
+    // Determine source event data: editing takes priority, then duplicate
+    const sourceEventData = editingEventId
+      ? (editingEventResponse?.data ?? eventsData?.data?.find((e: ConstructionEvent) => e.id === editingEventId))
+      : (duplicateEventId ? duplicateEventResponse?.data : null);
+
+    console.log('[MapView] editing-event effect:', {
+      editingEventId,
+      duplicateEventId,
+      hasSourceEventData: !!sourceEventData,
+      geometrySource: sourceEventData?.geometrySource,
+      isEventFormOpen,
+    });
+
+    // Clear tooltips if editing/duplicating event (sidebar shows details, no need for tooltip)
+    const activeEventId = editingEventId || duplicateEventId;
+    if (activeEventId) {
+      if (lockedEventIdRef.current === activeEventId) {
         lockedEventIdRef.current = null;
         setLockedEvent(null);
         setLockedTooltipPosition(null);
       }
-      if (previewEvent?.id === editingEventId) {
+      if (previewEvent?.id === activeEventId) {
         setPreviewEvent(null);
         setPreviewTooltipPosition(null);
       }
     }
 
-    if (isEventFormOpen && editingEventId && eventsData?.data) {
-      const event = eventsData.data.find((e: ConstructionEvent) => e.id === editingEventId);
-      if (event && event.geometry) {
-        // Update editing event source (keep current zoom level - don't fly to event)
-        const statusColor = STATUS_COLORS[event.status] || '#3B82F6';
+    if (isEventFormOpen && sourceEventData?.geometry) {
+      // For edit mode: always show the original event boundary
+      // For duplicate mode: only show if manual geometry (for auto, road preview is sufficient)
+      const shouldShowOverlay = editingEventId || sourceEventData.geometrySource === 'manual';
+
+      if (shouldShowOverlay) {
+        const statusColor = STATUS_COLORS[sourceEventData.status] || '#3B82F6';
         source.setData({
           type: 'FeatureCollection',
           features: [{
             type: 'Feature',
-            geometry: event.geometry,
-            properties: { id: event.id, color: statusColor },
+            geometry: sourceEventData.geometry,
+            properties: { id: sourceEventData.id, color: statusColor },
           }],
         });
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
       }
+      // Note: FlyTo is handled in the restore action handler for better timing
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [isEventFormOpen, editingEventId, eventsData, mapLoaded]);
+  }, [isEventFormOpen, editingEventId, duplicateEventId, editingEventResponse, duplicateEventResponse, eventsData, mapLoaded, previewEvent?.id]);
 
   // Animated breathing glow effect for selected road assets during editing
   useEffect(() => {
@@ -1578,32 +1816,59 @@ export function MapView() {
 
   // Fly to geometry when triggered (e.g., clicking road badge in selector or event in list)
   useEffect(() => {
+    console.log('[MapView] flyTo effect: mapLoaded=', mapLoaded, 'flyToGeometry=', flyToGeometry?.type || 'null');
     if (!map.current || !mapLoaded || !flyToGeometry) return;
+
+    console.log('[MapView] Flying to geometry:', flyToGeometry.type, 'closeUp:', flyToCloseUp);
 
     try {
       const bbox = turf.bbox(flyToGeometry);
 
+      // Account for right panel (420px + 16px padding) when event form is open
+      const rightPadding = isEventFormOpen ? 450 : 100;
+
       // Use different zoom levels based on closeUp flag
-      // Overview: wider view (maxZoom 15), CloseUp: closer view (maxZoom 16-17)
+      // Overview: wider view (maxZoom 15), CloseUp: closer view (zoom 16-17)
       if (flyToCloseUp) {
-        // Close-up view: zoom closer based on feature size
+        // Close-up view: use flyTo with center and fixed zoom instead of fitBounds
+        // This prevents zooming out too far for large geometries
+        const center = turf.center(flyToGeometry);
         const feature = turf.feature(flyToGeometry);
         const length = turf.length(feature, { units: 'meters' });
 
-        let minZoom = 16;
-        if (length < 50) minZoom = 17;
-        else if (length < 150) minZoom = 17;
-        else if (length < 400) minZoom = 16;
+        // Calculate zoom based on feature size
+        let zoom = 16;
+        if (length < 50) zoom = 17;
+        else if (length < 150) zoom = 17;
+        else if (length < 500) zoom = 16;
+        else if (length < 1000) zoom = 15.5;
+        else zoom = 15;
 
-        map.current.fitBounds(
-          [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-          { padding: 100, maxZoom: 17, minZoom, duration: 1000 }
-        );
+        // Offset center to account for LEFT panel (EventEditorOverlay is on left side)
+        // Visible area center is ~225px RIGHT of viewport center
+        // To place geometry at visible center, we shift map center WEST (subtract from longitude)
+        const centerCoords = center.geometry.coordinates as [number, number];
+        let lngOffset = 0;
+        if (isEventFormOpen) {
+          const panelWidth = 450; // Left panel width in pixels
+          // Convert pixels to degrees at target zoom level
+          // In web mercator: 360° longitude = 256 * 2^zoom pixels (same at all latitudes)
+          const pixelsAtZoom = 256 * Math.pow(2, zoom);
+          const degreesPerPixel = 360 / pixelsAtZoom;
+          // NEGATIVE offset: shift map center WEST so geometry appears in visible area (right of left panel)
+          lngOffset = -(panelWidth / 2) * degreesPerPixel;
+        }
+
+        map.current.flyTo({
+          center: [centerCoords[0] + lngOffset, centerCoords[1]],
+          zoom,
+          duration: 1000,
+        });
       } else {
         // Overview: wider view with lower zoom
         map.current.fitBounds(
           [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-          { padding: 150, maxZoom: 15, duration: 1000 }
+          { padding: { top: 150, bottom: 150, left: 150, right: rightPadding }, maxZoom: 15, duration: 1000 }
         );
       }
 
@@ -1615,7 +1880,7 @@ export function MapView() {
       console.warn('Could not calculate bounds for flyTo geometry');
       setFlyToGeometry(null);
     }
-  }, [flyToGeometry, flyToCloseUp, mapLoaded, setFlyToGeometry]);
+  }, [flyToGeometry, flyToCloseUp, mapLoaded, setFlyToGeometry, isEventFormOpen]);
 
   // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {
@@ -1626,8 +1891,8 @@ export function MapView() {
     <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
-      {/* Road assets zoom/type indicator */}
-      {showAssets && mapLoaded && (
+      {/* Road assets zoom/type indicator (hidden on Events tab) */}
+      {showAssets && mapLoaded && currentView !== 'events' && (
         <Paper
           shadow="sm"
           p="xs"
@@ -1812,12 +2077,6 @@ export function MapView() {
         <EventMapTooltip
           event={lockedEvent}
           position={lockedTooltipPosition}
-          onViewDetails={(eventId) => {
-            openEventDetailModal(eventId);
-            lockedEventIdRef.current = null;
-            setLockedEvent(null);
-            setLockedTooltipPosition(null);
-          }}
           onMouseEnter={() => {
             isLockedTooltipHoveredRef.current = true;
           }}
@@ -1832,11 +2091,6 @@ export function MapView() {
         <EventMapTooltip
           event={previewEvent}
           position={previewTooltipPosition}
-          onViewDetails={(eventId) => {
-            openEventDetailModal(eventId);
-            setPreviewEvent(null);
-            setPreviewTooltipPosition(null);
-          }}
           onMouseEnter={() => {
             isPreviewTooltipHoveredRef.current = true;
           }}

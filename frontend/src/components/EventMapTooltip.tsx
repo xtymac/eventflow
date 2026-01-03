@@ -1,4 +1,4 @@
-import { Paper, Text, Button, Stack, Group, Box } from '@mantine/core';
+import { Paper, Text, Stack, Group, Box } from '@mantine/core';
 import dayjs from 'dayjs';
 
 interface HoveredEventData {
@@ -16,7 +16,6 @@ interface HoveredEventData {
 interface EventMapTooltipProps {
   event: HoveredEventData;
   position: { x: number; y: number };
-  onViewDetails: (eventId: string) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
@@ -29,7 +28,6 @@ const formatDate = (dateStr: string | undefined): string => {
 export function EventMapTooltip({
   event,
   position,
-  onViewDetails,
   onMouseEnter,
   onMouseLeave,
 }: EventMapTooltipProps) {
@@ -83,15 +81,6 @@ export function EventMapTooltip({
             <strong>Affected Assets:</strong> {event.affectedAssetsCount || 0}
           </Text>
         </Stack>
-
-        <Button
-          size="xs"
-          variant="light"
-          fullWidth
-          onClick={() => onViewDetails(event.id)}
-        >
-          View Details
-        </Button>
       </Stack>
     </Paper>
   );

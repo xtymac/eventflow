@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Stack,
   TextInput,
@@ -16,7 +16,7 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconSearch, IconPlus, IconFilter, IconChevronDown, IconX } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconFilter, IconChevronDown, IconChevronRight, IconX, IconArchive } from '@tabler/icons-react';
 import { useEvents } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import type { ConstructionEvent, EventStatus } from '@nagoya/shared';
@@ -40,11 +40,25 @@ const STATUS_LABELS: Record<EventStatus, string> = {
 export function EventList() {
   // Persisted filter state from store (including filtersOpen)
   const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry } = useUIStore();
-  const { status: statusFilter, search, department, dateRange } = eventFilters;
+  const { status: statusFilter, search, department, dateRange, showArchivedSection } = eventFilters;
 
   // Track close-up state for toggling zoom levels
   const [isCloseUp, setIsCloseUp] = useState(false);
 
+  // Refs for scrolling to selected event
+  const eventCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Scroll to selected event when it changes (e.g., from map click)
+  useEffect(() => {
+    if (selectedEventId) {
+      const cardElement = eventCardRefs.current.get(selectedEventId);
+      if (cardElement) {
+        cardElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedEventId]);
+
+  // Main events query (excludes archived)
   const { data, isLoading, error } = useEvents({
     name: search || undefined,
     status: statusFilter as EventStatus | undefined,
@@ -53,6 +67,19 @@ export function EventList() {
     startDateTo: formatLocalDate(dateRange.to),
   });
 
+  // Archived events query (only when section is expanded)
+  const { data: archivedData, isLoading: archivedLoading } = useEvents(
+    {
+      name: search || undefined,
+      status: statusFilter as EventStatus | undefined,
+      department: department || undefined,
+      startDateFrom: formatLocalDate(dateRange.from),
+      startDateTo: formatLocalDate(dateRange.to),
+      includeArchived: true,
+    },
+    { enabled: showArchivedSection }
+  );
+
   // Compute active filter count for badge display (search is separate, not counted)
   const activeFilterCount =
     (statusFilter ? 1 : 0) +
@@ -60,9 +87,16 @@ export function EventList() {
     (dateRange.from || dateRange.to ? 1 : 0);
 
   const allEvents = data?.data || [];
-  // Hide cancelled events by default unless explicitly filtered
+  const archivedCount = data?.meta?.archivedCount ?? 0;
+
+  // Hide cancelled and archived events from main list
   const events = allEvents.filter(e =>
-    statusFilter === 'cancelled' || e.status !== 'cancelled'
+    (statusFilter === 'cancelled' || e.status !== 'cancelled') && !e.archivedAt
+  );
+
+  // Filter archived events from the includeArchived query
+  const archivedEvents = (archivedData?.data || []).filter(e =>
+    e.archivedAt && (statusFilter === 'cancelled' || e.status !== 'cancelled')
   );
 
   return (
@@ -194,6 +228,9 @@ export function EventList() {
           events.map((event: ConstructionEvent) => (
             <Card
               key={event.id}
+              ref={(el) => {
+                if (el) eventCardRefs.current.set(event.id, el);
+              }}
               padding="sm"
               radius="sm"
               withBorder
@@ -253,6 +290,121 @@ export function EventList() {
           ))
         )}
       </Stack>
+
+      {/* Archived Events Section */}
+      {archivedCount > 0 && (
+        <Stack gap="xs" mt="md">
+          <UnstyledButton
+            onClick={() => setEventFilter('showArchivedSection', !showArchivedSection)}
+            aria-expanded={showArchivedSection}
+            aria-controls="archived-events"
+            style={{ width: '100%', textAlign: 'left' }}
+          >
+            <Group
+              justify="space-between"
+              p="xs"
+              style={{
+                backgroundColor: 'var(--mantine-color-gray-1)',
+                borderRadius: 'var(--mantine-radius-sm)',
+              }}
+            >
+              <Group gap="xs">
+                <IconArchive size={14} color="var(--mantine-color-gray-6)" />
+                <Text size="sm" fw={500} c="dimmed">
+                  Archived Events ({archivedCount})
+                </Text>
+              </Group>
+              {showArchivedSection ? (
+                <IconChevronDown size={14} color="var(--mantine-color-gray-6)" />
+              ) : (
+                <IconChevronRight size={14} color="var(--mantine-color-gray-6)" />
+              )}
+            </Group>
+          </UnstyledButton>
+
+          <Collapse in={showArchivedSection} id="archived-events">
+            <Stack gap="xs">
+              {archivedLoading ? (
+                <Center py="md">
+                  <Loader size="sm" />
+                </Center>
+              ) : archivedEvents.length === 0 ? (
+                <Text c="dimmed" ta="center" py="sm" size="sm">
+                  No archived events
+                </Text>
+              ) : (
+                archivedEvents.map((event: ConstructionEvent) => (
+                  <Card
+                    key={event.id}
+                    ref={(el) => {
+                      if (el) eventCardRefs.current.set(event.id, el);
+                    }}
+                    padding="sm"
+                    radius="sm"
+                    withBorder
+                    style={{
+                      cursor: 'pointer',
+                      borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
+                      backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-gray-0)',
+                      opacity: 0.85,
+                    }}
+                    onClick={() => {
+                      if (selectedEventId === event.id) {
+                        if (event.geometry) {
+                          const newCloseUp = !isCloseUp;
+                          setIsCloseUp(newCloseUp);
+                          setFlyToGeometry(event.geometry, newCloseUp);
+                        }
+                      } else {
+                        selectEvent(event.id);
+                        setIsCloseUp(false);
+                        if (event.geometry) {
+                          setFlyToGeometry(event.geometry, false);
+                        }
+                      }
+                    }}
+                  >
+                    <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
+                      <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }} c="dimmed">
+                        {event.name}
+                      </Text>
+                      <Group gap={4}>
+                        <Badge color="gray" size="xs" variant="light">
+                          Archived
+                        </Badge>
+                        <Badge color={STATUS_COLORS[event.status]} size="sm" style={{ flexShrink: 0 }}>
+                          {STATUS_LABELS[event.status]}
+                        </Badge>
+                      </Group>
+                    </Group>
+
+                    {event.department && (
+                      <Text size="xs" c="gray.5" fw={500} mb={6}>
+                        {event.department}
+                      </Text>
+                    )}
+
+                    <Group gap="xs" mb={6}>
+                      <Badge variant="outline" size="xs" color="gray">
+                        {event.restrictionType}
+                      </Badge>
+                      {event.ward && (
+                        <Badge variant="outline" size="xs" color="gray">
+                          {event.ward}
+                        </Badge>
+                      )}
+                    </Group>
+
+                    <Text size="xs" c="gray.5">
+                      {dayjs(event.startDate).format('YYYY/MM/DD')} - {dayjs(event.endDate).format('YYYY/MM/DD')}
+                    </Text>
+                  </Card>
+                ))
+              )}
+            </Stack>
+          </Collapse>
+        </Stack>
+      )}
     </Stack>
   );
 }

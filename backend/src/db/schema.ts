@@ -25,6 +25,7 @@ export const constructionEvents = pgTable('construction_events', {
   geometry: geometryColumn('geometry').notNull(),
   geometrySource: varchar('geometry_source', { length: 20 }).default('manual'), // 'manual' | 'auto'
   postEndDecision: varchar('post_end_decision', { length: 50 }).default('pending'),
+  archivedAt: timestamp('archived_at', { withTimezone: true }), // null = not archived
   // Note: affectedRoadAssetIds moved to event_road_assets join table
   department: varchar('department', { length: 100 }).notNull(),
   ward: varchar('ward', { length: 100 }),

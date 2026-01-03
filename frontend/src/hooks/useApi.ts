@@ -29,18 +29,22 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 }
 
 // Events hooks
-export function useEvents(filters?: EventFilters) {
+export function useEvents(filters?: EventFilters, options?: { enabled?: boolean }) {
   const params = new URLSearchParams();
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
+      if (value !== undefined && value !== null && value !== '') {
+        // Convert boolean to string for URL params
+        params.append(key, typeof value === 'boolean' ? String(value) : value);
+      }
     });
   }
   const queryString = params.toString() ? `?${params.toString()}` : '';
 
   return useQuery({
     queryKey: ['events', filters],
-    queryFn: () => fetchApi<{ data: ConstructionEvent[]; meta: { total: number } }>(`/events${queryString}`),
+    queryFn: () => fetchApi<{ data: ConstructionEvent[]; meta: { total: number; archivedCount: number } }>(`/events${queryString}`),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -122,6 +126,36 @@ export function useCancelEvent() {
     mutationFn: (id: string) =>
       fetchApi<{ data: ConstructionEvent }>(`/events/${id}`, {
         method: 'DELETE',
+      }),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+    },
+  });
+}
+
+export function useArchiveEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchApi<{ data: ConstructionEvent }>(`/events/${id}/archive`, {
+        method: 'PATCH',
+      }),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+    },
+  });
+}
+
+export function useUnarchiveEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchApi<{ data: ConstructionEvent }>(`/events/${id}/unarchive`, {
+        method: 'PATCH',
       }),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });

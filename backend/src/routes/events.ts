@@ -3,10 +3,12 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { constructionEvents, eventRoadAssets, roadAssets } from '../db/schema.js';
-import { eq, and, gte, lte, like, ilike, inArray, sql, isNotNull, asc, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
+import { enrichRoadNamesForEvent, enrichAllEventRoadNames, countAllEventUnnamedRoads } from '../services/road-name-enrichment.js';
+import { isGoogleMapsConfigured } from '../services/google-maps.js';
 
 // TypeBox schemas
 const GeometrySchema = Type.Object({
@@ -41,6 +43,7 @@ const EventSchema = Type.Object({
   geometry: GeometrySchema,
   geometrySource: Type.Optional(Type.Union([Type.Literal('manual'), Type.Literal('auto')])),
   postEndDecision: Type.Union([Type.Literal('pending'), Type.Literal('no-change'), Type.Literal('permanent-change')]),
+  archivedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
   roadAssets: Type.Optional(Type.Array(RoadAssetSchema)),
   department: Type.String(),
   ward: Type.Optional(Type.Union([Type.String(), Type.Null()])),
@@ -94,18 +97,20 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         endDateTo: Type.Optional(Type.String()),
         name: Type.Optional(Type.String()),
         ward: Type.Optional(Type.String()),
+        includeArchived: Type.Optional(Type.String()), // 'true' to include archived events
       }),
       response: {
         200: Type.Object({
           data: Type.Array(EventSchema),
           meta: Type.Object({
             total: Type.Number(),
+            archivedCount: Type.Number(),
           }),
         }),
       },
     },
   }, async (request) => {
-    const { status, department, startDateFrom, startDateTo, endDateFrom, endDateTo, name, ward } = request.query;
+    const { status, department, startDateFrom, startDateTo, endDateFrom, endDateTo, name, ward, includeArchived } = request.query;
 
     const conditions = [];
 
@@ -134,6 +139,12 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       conditions.push(lte(constructionEvents.endDate, new Date(endDateTo)));
     }
 
+    // Filter out archived events unless explicitly requested
+    const shouldIncludeArchived = includeArchived === 'true';
+    if (!shouldIncludeArchived) {
+      conditions.push(isNull(constructionEvents.archivedAt));
+    }
+
     // Select events with explicit geometry conversion
     const eventSelect = {
       id: constructionEvents.id,
@@ -145,6 +156,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -199,6 +211,12 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     const assetMap = new Map(allAssets.map(a => [a.id, a]));
 
+    // Get archived count for meta (always count total archived regardless of filter)
+    const archivedCountResult = await db.select({
+      count: sql<number>`count(*)`.as('count'),
+    }).from(constructionEvents).where(isNotNull(constructionEvents.archivedAt));
+    const archivedCount = Number(archivedCountResult[0]?.count ?? 0);
+
     return {
       data: events.map(e => {
         const eventRelations = allRelations.filter(r => r.eventId === e.id);
@@ -216,11 +234,12 @@ export async function eventsRoutes(fastify: FastifyInstance) {
           ...e,
           startDate: e.startDate.toISOString(),
           endDate: e.endDate.toISOString(),
+          archivedAt: e.archivedAt?.toISOString() ?? null,
           updatedAt: e.updatedAt.toISOString(),
           roadAssets: eventAssets,
         };
       }),
-      meta: { total: events.length },
+      meta: { total: events.length, archivedCount },
     };
   });
 
@@ -248,6 +267,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -299,6 +319,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -443,11 +464,24 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     // Sync to Orion-LD
     await syncEventToOrion(newEvent);
 
+    // Async: Enrich unnamed road names from Google Maps
+    if (isGoogleMapsConfigured()) {
+      enrichRoadNamesForEvent(id).then(result => {
+        console.log(`[RoadNameEnrich] Event ${id}: ${result.enriched}/${result.processed} roads enriched`);
+        if (result.errors.length > 0) {
+          console.warn(`[RoadNameEnrich] Event ${id} errors:`, result.errors);
+        }
+      }).catch(err => {
+        console.error(`[RoadNameEnrich] Event ${id} failed:`, err);
+      });
+    }
+
     return reply.status(201).send({
       data: {
         ...newEvent,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
+        archivedAt: null,
         updatedAt: now.toISOString(),
         roadAssets: eventAssets,
       },
@@ -595,6 +629,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -639,11 +674,24 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     // Sync to Orion-LD
     await syncEventToOrion(event);
 
+    // Async: Enrich unnamed road names from Google Maps (only if roadAssetIds changed)
+    if (body.roadAssetIds !== undefined && isGoogleMapsConfigured()) {
+      enrichRoadNamesForEvent(id).then(result => {
+        console.log(`[RoadNameEnrich] Event ${id}: ${result.enriched}/${result.processed} roads enriched`);
+        if (result.errors.length > 0) {
+          console.warn(`[RoadNameEnrich] Event ${id} errors:`, result.errors);
+        }
+      }).catch(err => {
+        console.error(`[RoadNameEnrich] Event ${id} failed:`, err);
+      });
+    }
+
     return {
       data: {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -704,6 +752,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -753,6 +802,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -883,6 +933,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -932,6 +983,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -1001,6 +1053,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(constructionEvents.geometry),
       geometrySource: constructionEvents.geometrySource,
       postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
@@ -1050,9 +1103,277 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         ...event,
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
+    };
+  });
+
+  // PATCH /events/:id/archive - Archive an ended event
+  app.patch('/:id/archive', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      response: {
+        200: Type.Object({ data: EventSchema }),
+        400: Type.Object({ error: Type.String() }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    // Check current status and archive state
+    const existingEvents = await db.select({
+      id: constructionEvents.id,
+      status: constructionEvents.status,
+      archivedAt: constructionEvents.archivedAt,
+    }).from(constructionEvents).where(eq(constructionEvents.id, id));
+
+    if (existingEvents.length === 0) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const currentEvent = existingEvents[0];
+
+    // Only ended events can be archived
+    if (currentEvent.status !== 'ended') {
+      return reply.status(400).send({ error: 'Only ended events can be archived' });
+    }
+
+    // Check if already archived
+    if (currentEvent.archivedAt !== null) {
+      return reply.status(400).send({ error: 'Event is already archived' });
+    }
+
+    const now = new Date();
+    await db.update(constructionEvents).set({
+      archivedAt: now,
+      updatedAt: now,
+    }).where(eq(constructionEvents.id, id));
+
+    // Fetch updated event with geometry conversion
+    const eventSelect = {
+      id: constructionEvents.id,
+      name: constructionEvents.name,
+      status: constructionEvents.status,
+      startDate: constructionEvents.startDate,
+      endDate: constructionEvents.endDate,
+      restrictionType: constructionEvents.restrictionType,
+      geometry: fromGeomSql(constructionEvents.geometry),
+      geometrySource: constructionEvents.geometrySource,
+      postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
+      department: constructionEvents.department,
+      ward: constructionEvents.ward,
+      createdBy: constructionEvents.createdBy,
+      updatedAt: constructionEvents.updatedAt,
+    };
+
+    const updatedEvents = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+    const event = updatedEvents[0];
+
+    // Fetch related road assets
+    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, id));
+    const assetIds = relations.map(r => r.roadAssetId);
+
+    const assetSelect = {
+      id: roadAssets.id,
+      name: roadAssets.name,
+      geometry: fromGeomSql(roadAssets.geometry),
+      roadType: roadAssets.roadType,
+      lanes: roadAssets.lanes,
+      direction: roadAssets.direction,
+      status: roadAssets.status,
+      validFrom: roadAssets.validFrom,
+      validTo: roadAssets.validTo,
+      replacedBy: roadAssets.replacedBy,
+      ownerDepartment: roadAssets.ownerDepartment,
+      ward: roadAssets.ward,
+      landmark: roadAssets.landmark,
+      updatedAt: roadAssets.updatedAt,
+    };
+
+    const assets = assetIds.length > 0
+      ? await db.select(assetSelect).from(roadAssets).where(inArray(roadAssets.id, assetIds))
+      : [];
+
+    const eventAssets = assets.map(a => ({
+      ...a,
+      validFrom: a.validFrom.toISOString(),
+      validTo: a.validTo?.toISOString() ?? null,
+      updatedAt: a.updatedAt.toISOString(),
+    }));
+
+    return {
+      data: {
+        ...event,
+        startDate: event.startDate.toISOString(),
+        endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
+        updatedAt: event.updatedAt.toISOString(),
+        roadAssets: eventAssets,
+      },
+    };
+  });
+
+  // PATCH /events/:id/unarchive - Unarchive an archived event
+  app.patch('/:id/unarchive', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      response: {
+        200: Type.Object({ data: EventSchema }),
+        400: Type.Object({ error: Type.String() }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    // Check current archive state
+    const existingEvents = await db.select({
+      id: constructionEvents.id,
+      archivedAt: constructionEvents.archivedAt,
+    }).from(constructionEvents).where(eq(constructionEvents.id, id));
+
+    if (existingEvents.length === 0) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const currentEvent = existingEvents[0];
+
+    // Check if event is archived
+    if (currentEvent.archivedAt === null) {
+      return reply.status(400).send({ error: 'Event is not archived' });
+    }
+
+    const now = new Date();
+    await db.update(constructionEvents).set({
+      archivedAt: null,
+      updatedAt: now,
+    }).where(eq(constructionEvents.id, id));
+
+    // Fetch updated event with geometry conversion
+    const eventSelect = {
+      id: constructionEvents.id,
+      name: constructionEvents.name,
+      status: constructionEvents.status,
+      startDate: constructionEvents.startDate,
+      endDate: constructionEvents.endDate,
+      restrictionType: constructionEvents.restrictionType,
+      geometry: fromGeomSql(constructionEvents.geometry),
+      geometrySource: constructionEvents.geometrySource,
+      postEndDecision: constructionEvents.postEndDecision,
+      archivedAt: constructionEvents.archivedAt,
+      department: constructionEvents.department,
+      ward: constructionEvents.ward,
+      createdBy: constructionEvents.createdBy,
+      updatedAt: constructionEvents.updatedAt,
+    };
+
+    const updatedEvents = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+    const event = updatedEvents[0];
+
+    // Fetch related road assets
+    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, id));
+    const assetIds = relations.map(r => r.roadAssetId);
+
+    const assetSelect = {
+      id: roadAssets.id,
+      name: roadAssets.name,
+      geometry: fromGeomSql(roadAssets.geometry),
+      roadType: roadAssets.roadType,
+      lanes: roadAssets.lanes,
+      direction: roadAssets.direction,
+      status: roadAssets.status,
+      validFrom: roadAssets.validFrom,
+      validTo: roadAssets.validTo,
+      replacedBy: roadAssets.replacedBy,
+      ownerDepartment: roadAssets.ownerDepartment,
+      ward: roadAssets.ward,
+      landmark: roadAssets.landmark,
+      updatedAt: roadAssets.updatedAt,
+    };
+
+    const assets = assetIds.length > 0
+      ? await db.select(assetSelect).from(roadAssets).where(inArray(roadAssets.id, assetIds))
+      : [];
+
+    const eventAssets = assets.map(a => ({
+      ...a,
+      validFrom: a.validFrom.toISOString(),
+      validTo: a.validTo?.toISOString() ?? null,
+      updatedAt: a.updatedAt.toISOString(),
+    }));
+
+    return {
+      data: {
+        ...event,
+        startDate: event.startDate.toISOString(),
+        endDate: event.endDate.toISOString(),
+        archivedAt: event.archivedAt?.toISOString() ?? null,
+        updatedAt: event.updatedAt.toISOString(),
+        roadAssets: eventAssets,
+      },
+    };
+  });
+
+  // GET /events/enrich-road-names/status - Check status of unnamed event-covered roads
+  app.get('/enrich-road-names/status', {
+    schema: {
+      response: {
+        200: Type.Object({
+          data: Type.Object({
+            unnamedCount: Type.Number(),
+            googleMapsConfigured: Type.Boolean(),
+          }),
+        }),
+      },
+    },
+  }, async () => {
+    const unnamedCount = await countAllEventUnnamedRoads();
+    return {
+      data: {
+        unnamedCount,
+        googleMapsConfigured: isGoogleMapsConfigured(),
+      },
+    };
+  });
+
+  // POST /events/enrich-road-names - Batch enrich road names for all event-covered roads
+  app.post('/enrich-road-names', {
+    schema: {
+      querystring: Type.Object({
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Object({
+            processed: Type.Number(),
+            enriched: Type.Number(),
+            skipped: Type.Number(),
+            errors: Type.Array(Type.String()),
+          }),
+        }),
+        503: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    if (!isGoogleMapsConfigured()) {
+      return reply.status(503).send({
+        error: 'Google Maps API is not configured. Set GOOGLE_MAPS_API_KEY environment variable.',
+      });
+    }
+
+    const limit = request.query.limit ?? 50;
+    const result = await enrichAllEventRoadNames(limit);
+
+    return {
+      data: result,
     };
   });
 }

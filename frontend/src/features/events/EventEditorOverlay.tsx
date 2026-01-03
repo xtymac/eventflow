@@ -4,10 +4,12 @@ import { EventForm } from './EventForm';
 
 interface EventEditorOverlayProps {
   eventId?: string | null;
+  duplicateEventId?: string | null;
   onClose: () => void;
 }
 
-export function EventEditorOverlay({ eventId, onClose }: EventEditorOverlayProps) {
+export function EventEditorOverlay({ eventId, duplicateEventId, onClose }: EventEditorOverlayProps) {
+  const title = eventId ? 'Edit Event' : duplicateEventId ? 'Duplicate Event' : 'Create Event';
   return (
     <Box
       style={{
@@ -35,7 +37,7 @@ export function EventEditorOverlay({ eventId, onClose }: EventEditorOverlayProps
         <Group justify="space-between" mb="xs">
           <div>
             <Text fw={600} size="lg">
-              {eventId ? 'Edit Event' : 'Create Event'}
+              {title}
             </Text>
             <Text size="xs" c="dimmed">
               Click road lines on the map to add or remove assets.

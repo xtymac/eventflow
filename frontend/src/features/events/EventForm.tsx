@@ -11,13 +11,14 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser } from '@tabler/icons-react';
+import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser, IconFocus2 } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useForm, Controller } from 'react-hook-form';
 import * as turf from '@turf/turf';
 import { AdvancedRoadAssetSelector } from './AdvancedRoadAssetSelector';
 import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
 import { generateCorridorGeometry } from '../../utils/geometryGenerator';
+import { geometryToFeatures, getDrawTypeFromGeometry } from '../../utils/geometryToFeatures';
 import { useUIStore } from '../../stores/uiStore';
 import {
   useCreateEvent,
@@ -76,6 +77,10 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     clearDrawing,
     triggerDrawAction,
     isDrawingActive,
+    setDrawnFeatures,
+    setCurrentDrawType,
+    // Duplicate state
+    duplicateEventId,
     // Unified editing history (for both drawing AND asset selection)
     editHistory,
     editRedoStack,
@@ -84,6 +89,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     saveEditSnapshot,
     clearEditHistory,
     isUndoRedoInProgress,
+    // Map navigation
+    setFlyToGeometry,
   } = useUIStore();
 
   // Computed history state
@@ -92,6 +99,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   const [geometry, setGeometry] = useState<SupportedGeometry | null>(null);
 
   const { data: eventData, isLoading: isLoadingEvent } = useEvent(eventId || null);
+  const { data: duplicateEventData } = useEvent(duplicateEventId || null);
   const { data: intersectingAssetsData, isLoading: isLoadingIntersecting } = useEventIntersectingAssets(eventId || null);
 
   // Helper to combine multiple features into final geometry for submission
@@ -231,13 +239,100 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
           }))
         );
       }
+
+      // Fly to event geometry to center the map (closeUp: true for better zoom)
+      if (event.geometry) {
+        setFlyToGeometry(event.geometry, true);
+      }
     } else if (!eventId) {
       reset(defaultValues);
       setSelectedRoadAssetsForForm([]);
       setGeometry(null);
       resetAssetSelectorFilters();
     }
-  }, [eventId, eventData, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters]);
+  }, [eventId, eventData, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters, setFlyToGeometry]);
+
+  // Phase 1b: Load duplicate event data (only when NOT editing)
+  useEffect(() => {
+    // CRITICAL: Skip if we're editing an existing event
+    if (eventId) return;
+
+    // Skip if no duplicate ID or data not loaded yet
+    if (!duplicateEventId || !duplicateEventData?.data) return;
+
+    // Guard: prevent re-triggering if we've already processed this duplicate
+    if (processedDuplicateIdRef.current === duplicateEventId) {
+      return;
+    }
+    processedDuplicateIdRef.current = duplicateEventId;
+
+    const event = duplicateEventData.data;
+    const linkedRoadIds = event.roadAssets?.map((a) => a.id) || [];
+
+    // Step 1: Clear any existing drawing state FIRST
+    clearDrawing();
+
+    // Step 2: Reset form with copied values
+    reset({
+      name: `${event.name} (Copy)`,
+      startDate: null,
+      endDate: null,
+      restrictionType: event.restrictionType,
+      department: event.department,
+      ward: event.ward || '',
+      selectedRoadAssetIds: linkedRoadIds,
+    });
+    setSelectedRoadAssetsForForm(linkedRoadIds);
+
+    // Step 3: Cache asset details for badges
+    if (event.roadAssets) {
+      cacheAssetDetails(
+        event.roadAssets.map((a) => ({
+          id: a.id,
+          label: getRoadAssetLabel(a),
+          ward: a.ward,
+          roadType: a.roadType,
+          geometry: a.geometry,
+        }))
+      );
+    }
+
+    // Step 4: Handle geometry based on source
+    if (event.geometrySource === 'manual' && event.geometry) {
+      const features = geometryToFeatures(event.geometry);
+      const drawType = getDrawTypeFromGeometry(event.geometry);
+
+      console.log('[EventForm] Duplicate: restoring manual geometry', {
+        featureCount: features.length,
+        drawType,
+      });
+
+      // Set features and type in store
+      setDrawnFeatures(features);
+      setCurrentDrawType(drawType);
+
+      // Trigger restore action - MapView will wait for draw control to be ready
+      triggerDrawAction('restore');
+    }
+    // For 'auto' source: road selection triggers preview automatically
+    // Note: FlyTo is handled in MapView's restore action handler for better timing
+
+    // Note: We no longer call clearDuplicateEvent() here since:
+    // 1. processedDuplicateIdRef prevents re-triggering
+    // 2. Keeping duplicateEventId allows MapView to show the source event overlay
+    // 3. It gets cleared automatically when form closes
+  }, [
+    duplicateEventId,
+    duplicateEventData,
+    eventId,
+    reset,
+    clearDrawing,
+    setSelectedRoadAssetsForForm,
+    cacheAssetDetails,
+    setDrawnFeatures,
+    setCurrentDrawType,
+    triggerDrawAction,
+  ]);
 
   // Phase 2: Merge intersecting roads when they arrive (background)
   useEffect(() => {
@@ -270,15 +365,19 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     }
   }, [selectedRoadAssetIdsForForm, selectedRoadAssetIds, setValue]);
 
-  // Auto-select polygon mode when form opens and no mode selected
+  // Auto-select polygon mode when form opens in CREATE mode (no existing features)
+  // Skip for Edit/Duplicate modes where we have existing features to select
   useEffect(() => {
-    if (!drawMode) {
+    if (!drawMode && !drawnFeatures?.length && !eventId && !duplicateEventId) {
       setDrawMode('polygon');
     }
-  }, [drawMode, setDrawMode]);
+  }, [drawMode, drawnFeatures, eventId, duplicateEventId, setDrawMode]);
 
   // Track if we've already processed intersecting roads for this geometry
   const processedGeometryRef = useRef<string | null>(null);
+
+  // Track if we've already processed a duplicate event (prevent re-triggering)
+  const processedDuplicateIdRef = useRef<string | null>(null);
 
   // Sync drawnFeatures from MapView to form state
   // Also auto-select intersecting road assets
@@ -402,6 +501,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     return () => {
       setPreviewGeometry(null);
       clearDrawing();
+      // Reset the processed duplicate ref
+      processedDuplicateIdRef.current = null;
     };
   }, [setPreviewGeometry, clearDrawing]);
 
@@ -504,6 +605,24 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               >
                 Line
               </Button>
+
+              {/* Zoom to geometry button */}
+              <ActionIcon
+                variant="light"
+                size="sm"
+                disabled={!drawnFeatures?.length}
+                onClick={() => {
+                  if (drawnFeatures && drawnFeatures.length > 0) {
+                    const combinedGeometry = combineFeatures(drawnFeatures);
+                    if (combinedGeometry) {
+                      setFlyToGeometry(combinedGeometry, true);
+                    }
+                  }
+                }}
+                title="定位到绘制区域"
+              >
+                <IconFocus2 size={14} />
+              </ActionIcon>
 
               {/* Clear All button - clears geometry AND road assets */}
               <Button

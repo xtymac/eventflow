@@ -62,7 +62,8 @@ export function AssetList() {
     ward: wardFilter || undefined,
     q: debouncedSearch || undefined,
     unnamed: unnamedFilter || undefined,
-    bbox: mapBbox ?? undefined,  // Always filter by visible area
+    // Always use bbox - filters narrow down results within current viewport
+    bbox: mapBbox ?? undefined,
     limit: LIMIT,
     offset: offset,
     includeTotal: true,

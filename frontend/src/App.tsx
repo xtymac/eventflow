@@ -11,13 +11,17 @@ import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
 import { useUIStore } from './stores/uiStore';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
+import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
 
 function App() {
+  // Sync UI state with URL parameters (filters, tabs, selections)
+  useUrlState();
+
   const [mobileOpened, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop, open: openDesktop }] = useDisclosure(true);
-  const { currentView, setCurrentView, isEventFormOpen, editingEventId, closeEventForm, detailModalEventId, closeEventDetailModal } = useUIStore();
+  const { currentView, setCurrentView, isEventFormOpen, editingEventId, duplicateEventId, closeEventForm, detailModalEventId, closeEventDetailModal } = useUIStore();
   const queryClient = useQueryClient();
   const isEditing = isEventFormOpen;
   const prevDetailModalEventId = useRef(detailModalEventId);
@@ -116,6 +120,7 @@ function App() {
         {isEventFormOpen && (
           <EventEditorOverlay
             eventId={editingEventId}
+            duplicateEventId={duplicateEventId}
             onClose={closeEventForm}
           />
         )}

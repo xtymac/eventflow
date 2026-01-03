@@ -1,8 +1,8 @@
 import { Group, Button, Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
-import { useChangeEventStatus, useCancelEvent } from '../../hooks/useApi';
+import { useChangeEventStatus, useCancelEvent, useArchiveEvent, useUnarchiveEvent } from '../../hooks/useApi';
 import type { ConstructionEvent } from '@nagoya/shared';
 
 interface EventActionButtonsProps {
@@ -10,9 +10,11 @@ interface EventActionButtonsProps {
 }
 
 export function EventActionButtons({ event }: EventActionButtonsProps) {
-  const { openEventForm, openDecisionModal } = useUIStore();
+  const { openEventForm, openDecisionModal, openDuplicateEventForm, selectEvent, closeEventDetailModal, selectedEventId, detailModalEventId } = useUIStore();
   const changeStatus = useChangeEventStatus();
   const cancelEvent = useCancelEvent();
+  const archiveEvent = useArchiveEvent();
+  const unarchiveEvent = useUnarchiveEvent();
 
   const handleCancelEvent = () => {
     modals.openConfirmModal({
@@ -54,7 +56,43 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
     });
   };
 
-  const isLoading = changeStatus.isPending || cancelEvent.isPending;
+  const handleArchiveEvent = () => {
+    modals.openConfirmModal({
+      title: 'Archive Event',
+      children: <Text size="sm">Are you sure you want to archive this event? It will be hidden from the default list and map.</Text>,
+      labels: { confirm: 'Archive', cancel: 'Cancel' },
+      confirmProps: { color: 'gray' },
+      onConfirm: () => {
+        archiveEvent.mutate(event.id, {
+          onSuccess: () => {
+            // Clear selection if this event was selected
+            if (selectedEventId === event.id) {
+              selectEvent(null);
+            }
+            if (detailModalEventId === event.id) {
+              closeEventDetailModal();
+            }
+          },
+        });
+      },
+      zIndex: 1100,
+    });
+  };
+
+  const handleUnarchiveEvent = () => {
+    modals.openConfirmModal({
+      title: 'Unarchive Event',
+      children: <Text size="sm">Are you sure you want to unarchive this event? It will be visible in the default list again.</Text>,
+      labels: { confirm: 'Unarchive', cancel: 'Cancel' },
+      confirmProps: { color: 'blue' },
+      onConfirm: () => {
+        unarchiveEvent.mutate(event.id);
+      },
+      zIndex: 1100,
+    });
+  };
+
+  const isLoading = changeStatus.isPending || cancelEvent.isPending || archiveEvent.isPending || unarchiveEvent.isPending;
   // Only planned and active events can be edited (ended/cancelled are read-only for audit)
   const canEdit = event.status === 'planned' || event.status === 'active';
 
@@ -112,7 +150,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
         </Button>
       )}
 
-      {event.status === 'ended' && event.postEndDecision === 'pending' && (
+      {event.status === 'ended' && event.postEndDecision === 'pending' && !event.archivedAt && (
         <Button
           size="xs"
           variant="filled"
@@ -122,6 +160,56 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
         >
           Set Decision
         </Button>
+      )}
+
+      {event.status === 'ended' && !event.archivedAt && (
+        <>
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconCopy size={14} />}
+            onClick={() => openDuplicateEventForm(event.id)}
+            disabled={isLoading}
+          >
+            Duplicate
+          </Button>
+          <Button
+            size="xs"
+            variant="light"
+            color="gray"
+            leftSection={<IconArchive size={14} />}
+            onClick={handleArchiveEvent}
+            loading={archiveEvent.isPending}
+            disabled={isLoading}
+          >
+            Archive
+          </Button>
+        </>
+      )}
+
+      {event.archivedAt && (
+        <>
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconCopy size={14} />}
+            onClick={() => openDuplicateEventForm(event.id)}
+            disabled={isLoading}
+          >
+            Duplicate
+          </Button>
+          <Button
+            size="xs"
+            variant="light"
+            color="blue"
+            leftSection={<IconArchiveOff size={14} />}
+            onClick={handleUnarchiveEvent}
+            loading={unarchiveEvent.isPending}
+            disabled={isLoading}
+          >
+            Unarchive
+          </Button>
+        </>
       )}
     </Group>
   );
