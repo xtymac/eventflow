@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { constructionEvents, eventRoadAssets, roadAssets } from '../db/schema.js';
-import { eq, and, gte, lte, like, inArray, sql, isNotNull, asc, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, like, ilike, inArray, sql, isNotNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
@@ -34,7 +34,7 @@ const RoadAssetSchema = Type.Object({
 const EventSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
-  status: Type.Union([Type.Literal('planned'), Type.Literal('active'), Type.Literal('ended')]),
+  status: Type.Union([Type.Literal('planned'), Type.Literal('active'), Type.Literal('ended'), Type.Literal('cancelled')]),
   startDate: Type.String({ format: 'date-time' }),
   endDate: Type.String({ format: 'date-time' }),
   restrictionType: Type.String(),
@@ -113,13 +113,13 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       conditions.push(eq(constructionEvents.status, status));
     }
     if (department) {
-      conditions.push(like(constructionEvents.department, `%${department}%`));
+      conditions.push(ilike(constructionEvents.department, `%${department}%`));
     }
     if (ward) {
-      conditions.push(eq(constructionEvents.ward, ward));
+      conditions.push(ilike(constructionEvents.ward, `%${ward}%`));
     }
     if (name) {
-      conditions.push(like(constructionEvents.name, `%${name}%`));
+      conditions.push(ilike(constructionEvents.name, `%${name}%`));
     }
     if (startDateFrom) {
       conditions.push(gte(constructionEvents.startDate, new Date(startDateFrom)));
@@ -471,11 +471,23 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     const { id } = request.params;
     const body = request.body;
 
-    // Check if event exists (no geometry needed for existence check)
-    const existingEvents = await db.select({ id: constructionEvents.id }).from(constructionEvents).where(eq(constructionEvents.id, id));
+    // Check if event exists and get its status
+    const existingEvents = await db.select({
+      id: constructionEvents.id,
+      status: constructionEvents.status,
+    }).from(constructionEvents).where(eq(constructionEvents.id, id));
 
     if (existingEvents.length === 0) {
       return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const { status } = existingEvents[0];
+
+    // Only planned and active events can be edited (ended/cancelled are read-only for audit)
+    if (status === 'ended' || status === 'cancelled') {
+      return reply.status(400).send({
+        error: `Cannot edit ${status} events. Historical records must be preserved for audit.`,
+      });
     }
 
     const now = new Date();
@@ -913,6 +925,124 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     }));
 
     // Sync to Orion-LD
+    await syncEventToOrion(event);
+
+    return {
+      data: {
+        ...event,
+        startDate: event.startDate.toISOString(),
+        endDate: event.endDate.toISOString(),
+        updatedAt: event.updatedAt.toISOString(),
+        roadAssets: eventAssets,
+      },
+    };
+  });
+
+  // DELETE /events/:id - Cancel event (soft delete)
+  app.delete('/:id', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      response: {
+        200: Type.Object({
+          data: EventSchema,
+        }),
+        400: Type.Object({ error: Type.String() }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    // Check current status
+    const existingEvents = await db.select({
+      id: constructionEvents.id,
+      status: constructionEvents.status,
+    }).from(constructionEvents).where(eq(constructionEvents.id, id));
+
+    if (existingEvents.length === 0) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    const { status } = existingEvents[0];
+
+    // Validate status - only planned events can be cancelled
+    if (status === 'active') {
+      return reply.status(400).send({
+        error: 'Active events cannot be deleted. End the event first.',
+      });
+    }
+
+    if (status === 'ended') {
+      return reply.status(400).send({
+        error: 'Ended events cannot be deleted. Historical records must be preserved for traceability.',
+      });
+    }
+
+    if (status === 'cancelled') {
+      return reply.status(400).send({ error: 'Event is already cancelled.' });
+    }
+
+    // Soft delete: change status to 'cancelled'
+    await db.update(constructionEvents).set({
+      status: 'cancelled',
+      updatedAt: new Date(),
+    }).where(eq(constructionEvents.id, id));
+
+    // Fetch updated event with geometry conversion
+    const eventSelect = {
+      id: constructionEvents.id,
+      name: constructionEvents.name,
+      status: constructionEvents.status,
+      startDate: constructionEvents.startDate,
+      endDate: constructionEvents.endDate,
+      restrictionType: constructionEvents.restrictionType,
+      geometry: fromGeomSql(constructionEvents.geometry),
+      geometrySource: constructionEvents.geometrySource,
+      postEndDecision: constructionEvents.postEndDecision,
+      department: constructionEvents.department,
+      ward: constructionEvents.ward,
+      createdBy: constructionEvents.createdBy,
+      updatedAt: constructionEvents.updatedAt,
+    };
+
+    const updatedEvents = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+    const event = updatedEvents[0];
+
+    // Fetch related road assets
+    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, id));
+    const assetIds = relations.map(r => r.roadAssetId);
+
+    const assetSelect = {
+      id: roadAssets.id,
+      name: roadAssets.name,
+      geometry: fromGeomSql(roadAssets.geometry),
+      roadType: roadAssets.roadType,
+      lanes: roadAssets.lanes,
+      direction: roadAssets.direction,
+      status: roadAssets.status,
+      validFrom: roadAssets.validFrom,
+      validTo: roadAssets.validTo,
+      replacedBy: roadAssets.replacedBy,
+      ownerDepartment: roadAssets.ownerDepartment,
+      ward: roadAssets.ward,
+      landmark: roadAssets.landmark,
+      updatedAt: roadAssets.updatedAt,
+    };
+
+    const assets = assetIds.length > 0
+      ? await db.select(assetSelect).from(roadAssets).where(inArray(roadAssets.id, assetIds))
+      : [];
+
+    const eventAssets = assets.map(a => ({
+      ...a,
+      validFrom: a.validFrom.toISOString(),
+      validTo: a.validTo?.toISOString() ?? null,
+      updatedAt: a.updatedAt.toISOString(),
+    }));
+
+    // Sync to Orion-LD (updates status to 'cancelled')
     await syncEventToOrion(event);
 
     return {

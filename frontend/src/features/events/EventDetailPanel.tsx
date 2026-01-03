@@ -21,12 +21,14 @@ const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
   ended: 'gray',
+  cancelled: 'red',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
   ended: 'Ended',
+  cancelled: 'Cancelled',
 };
 
 const DECISION_LABELS: Record<string, string> = {

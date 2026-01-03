@@ -78,7 +78,7 @@ function App() {
               visibleFrom="sm"
               size="sm"
             />
-            <img src="/favicon.svg" alt="EventFlow" width={36} height={36} style={{ marginLeft: 8 }} />
+            <img src="/favicon.svg" alt="EventFlow" width={44} height={44} style={{ marginLeft: 8 }} />
             <Title order={3}>EventFlow</Title>
           </Group>
           <Tooltip label="Refresh data">

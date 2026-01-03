@@ -3,13 +3,15 @@ import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
 import { Box, Paper, Stack, Switch, Text, Group, Button, Badge } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections } from '../hooks/useApi';
+import { useEvents, useAssets, useInspections, useEvent } from '../hooks/useApi';
+import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
 import { useMapDraw } from '../hooks/useMapDraw';
 import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
-import type { ConstructionEvent, RoadAsset, InspectionRecord } from '@nagoya/shared';
+import type { ConstructionEvent, RoadAsset, InspectionRecord, EventStatus, RoadType, AssetStatus } from '@nagoya/shared';
 import type { Geometry } from 'geojson';
 import { EventMapTooltip } from './EventMapTooltip';
 
@@ -62,6 +64,7 @@ const STATUS_COLORS: Record<string, string> = {
   planned: '#3B82F6', // blue
   active: '#F59E0B', // amber
   ended: '#6B7280', // gray
+  cancelled: '#EF4444', // red
 };
 
 const ROAD_TYPE_COLORS: Record<string, string> = {
@@ -131,6 +134,9 @@ export function MapView() {
     clearDrawAction,
     shouldZoomToDrawing,
     setShouldZoomToDrawing,
+    // Filter state
+    eventFilters,
+    assetFilters,
   } = useUIStore();
   const popup = useRef<maplibregl.Popup | null>(null);
 
@@ -154,11 +160,31 @@ export function MapView() {
   // Animation ref for flowing border effect
   const animationFrameRef = useRef<number | null>(null);
 
-  const { data: eventsData } = useEvents();
+  // Debounced asset search (consistent with AssetList behavior)
+  const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
+
+  const { data: eventsData } = useEvents({
+    name: eventFilters.search || undefined,
+    status: eventFilters.status as EventStatus | undefined,
+    department: eventFilters.department || undefined,
+    startDateFrom: formatLocalDate(eventFilters.dateRange.from),
+    startDateTo: formatLocalDate(eventFilters.dateRange.to),
+  });
+  // Fetch editing event separately to avoid losing it when filtered out
+  const { data: editingEventResponse } = useEvent(editingEventId);
   // Viewport-based asset loading for interaction (zoom >= 14)
   // PMTiles covers all zoom levels for preview; API enables selection
   const { data: assetsData } = useAssets(
-    { bbox: mapBbox ?? undefined, limit: 1000, includeTotal: false },
+    {
+      roadType: assetFilters.roadType as RoadType | undefined,
+      status: assetFilters.status as AssetStatus | undefined,
+      ward: assetFilters.ward || undefined,
+      q: debouncedAssetSearch || undefined,
+      unnamed: assetFilters.unnamed || undefined,
+      bbox: mapBbox ?? undefined,
+      limit: 1000,
+      includeTotal: false,
+    },
     { enabled: !!mapBbox && currentZoom >= 14 && showAssets }
   );
   const { data: inspectionsData } = useInspections();
@@ -167,7 +193,8 @@ export function MapView() {
   const isDrawingEnabled = isEventFormOpen;
 
   // Get initial geometry for editing (only used when editing an existing event with manual geometry)
-  const editingEventData = eventsData?.data?.find((e: ConstructionEvent) => e.id === editingEventId);
+  // Use separately fetched data first (in case event is filtered out), then fall back to list data
+  const editingEventData = editingEventResponse?.data ?? eventsData?.data?.find((e: ConstructionEvent) => e.id === editingEventId);
   const initialDrawGeometry = editingEventData?.geometrySource === 'manual' ? editingEventData.geometry : null;
 
   // Handle new feature created - add to store and lock type
@@ -625,10 +652,12 @@ export function MapView() {
         id: 'preview-geometry-line',
         type: 'line',
         source: 'preview-geometry',
+        layout: {
+          'visibility': 'none', // Hidden - corridor preview not needed
+        },
         paint: {
           'line-color': '#06B6D4', // cyan
           'line-width': 3,
-          'line-dasharray': [4, 4], // dashed line to indicate preview
         },
       });
 
@@ -751,6 +780,38 @@ export function MapView() {
           // Don't handle road clicks while actively drawing - let the draw library handle them
           if (state.isDrawingActive) {
             return;
+          }
+
+          // Check if click is on a drawn feature - if so, let the draw library handle it
+          // This allows clicking on polygons/lines to select them for editing
+          if (state.isEventFormOpen && state.drawnFeatures && state.drawnFeatures.length > 0) {
+            const clickPoint = turf.point([e.lngLat.lng, e.lngLat.lat]);
+
+            for (const feature of state.drawnFeatures) {
+              if (!feature.geometry) continue;
+
+              try {
+                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+                  // Check if click is inside polygon
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  if (turf.booleanPointInPolygon(clickPoint, feature as any)) {
+                    console.log('[MapView] Click inside drawn polygon, letting draw library handle');
+                    return;
+                  }
+                } else if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
+                  // Check if click is near line (within ~20 pixels at current zoom)
+                  const tolerance = 0.0001 * Math.pow(2, 18 - (map.current?.getZoom() || 14));
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const buffered = turf.buffer(feature as any, tolerance, { units: 'degrees' });
+                  if (buffered && turf.booleanPointInPolygon(clickPoint, buffered)) {
+                    console.log('[MapView] Click near drawn line, letting draw library handle');
+                    return;
+                  }
+                }
+              } catch (err) {
+                console.warn('[MapView] Error checking click against drawn feature:', err);
+              }
+            }
           }
 
           if (state.isEventFormOpen) {
@@ -1058,9 +1119,10 @@ export function MapView() {
       return;
     }
 
-    if (!assetsData?.data) return;
+    // Get assets data (empty array if no data or loading)
+    const assets = assetsData?.data ?? [];
 
-    const features = assetsData.data.map((asset: RoadAsset) => ({
+    const features = assets.map((asset: RoadAsset) => ({
       type: 'Feature' as const,
       geometry: asset.geometry,
       properties: {
@@ -1144,18 +1206,31 @@ export function MapView() {
   }, [selectedRoadAssetIdsForForm, isEventFormOpen, mapLoaded, selectedAssetDetailsCache, assetsData]);
 
   // Update roads preview layer visibility and opacity
-  // PMTiles shows all road types at all zoom levels; no filter needed
+  // PMTiles shows all road types at all zoom levels; hidden when filters are active
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     const z = Math.floor(currentZoom);
 
+    // Check if any asset filters are active (excluding search which has its own debounce)
+    const hasActiveAssetFilters = !!(
+      assetFilters.roadType ||
+      assetFilters.status ||
+      assetFilters.ward ||
+      assetFilters.unnamed ||
+      debouncedAssetSearch
+    );
+
+    // Hide PMTiles preview when:
+    // 1. showAssets is off, OR
+    // 2. Any filters are active AND we're zoomed in enough for API data (zoom >= 14)
+    const shouldHidePreview = !showAssets || (hasActiveAssetFilters && z >= 14);
+
     // Opacity: reduce when API data is visible (zoom >= 14) to avoid visual clutter
     const previewOpacity = z >= 14 && showAssets ? 0.5 : 0.6;
 
     try {
-      // Visibility follows showAssets toggle (sync both line and label layers)
-      const visibility = showAssets ? 'visible' : 'none';
+      const visibility = shouldHidePreview ? 'none' : 'visible';
       map.current.setLayoutProperty('roads-preview-line', 'visibility', visibility);
       map.current.setLayoutProperty('roads-preview-label', 'visibility', visibility);
       // Apply opacity (no filter - show all road types)
@@ -1163,7 +1238,7 @@ export function MapView() {
     } catch {
       // Layers may not exist if PMTiles file is not available
     }
-  }, [currentZoom, showAssets, mapLoaded]);
+  }, [currentZoom, showAssets, mapLoaded, assetFilters, debouncedAssetSearch]);
 
   // Update OSM road labels visibility
   useEffect(() => {
@@ -1186,10 +1261,16 @@ export function MapView() {
     const source = map.current.getSource('events') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Filter out the event being edited (it's shown in editing-event layer instead)
-    const eventsToShow = isEventFormOpen && editingEventId
-      ? eventsData.data.filter((e: ConstructionEvent) => e.id !== editingEventId)
-      : eventsData.data;
+    // Filter out:
+    // 1. The event being edited (it's shown in editing-event layer instead)
+    // 2. Cancelled events by default (unless explicitly filtered to show cancelled)
+    const eventsToShow = eventsData.data.filter((e: ConstructionEvent) => {
+      // Exclude event being edited
+      if (isEventFormOpen && editingEventId && e.id === editingEventId) return false;
+      // Hide cancelled events unless explicitly filtering for them
+      if (e.status === 'cancelled' && eventFilters.status !== 'cancelled') return false;
+      return true;
+    });
 
     const features = eventsToShow.map((event: ConstructionEvent) => ({
       type: 'Feature' as const,
@@ -1214,7 +1295,7 @@ export function MapView() {
     map.current.setLayoutProperty('events-fill', 'visibility', eventsVisible ? 'visible' : 'none');
     map.current.setLayoutProperty('events-line', 'visibility', eventsVisible ? 'visible' : 'none');
     map.current.setLayoutProperty('events-hit-area', 'visibility', eventsVisible ? 'visible' : 'none');
-  }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId]);
+  }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status]);
 
   // Update inspections layer
   useEffect(() => {
@@ -1474,7 +1555,7 @@ export function MapView() {
     }
 
     if (combinedGeometry) {
-      setFlyToGeometry(combinedGeometry);
+      setFlyToGeometry(combinedGeometry, true); // closeUp: true to zoom in on the drawn feature
     }
     setShouldZoomToDrawing(false);
   }, [shouldZoomToDrawing, drawnFeatures, setFlyToGeometry, setShouldZoomToDrawing]);

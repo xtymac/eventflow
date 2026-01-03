@@ -115,6 +115,21 @@ export function useSetPostEndDecision() {
   });
 }
 
+export function useCancelEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchApi<{ data: ConstructionEvent }>(`/events/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+    },
+  });
+}
+
 export function useEventIntersectingAssets(eventId: string | null) {
   return useQuery({
     queryKey: ['event-intersecting-assets', eventId],

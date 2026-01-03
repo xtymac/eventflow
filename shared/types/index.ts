@@ -1,7 +1,7 @@
 import type { Feature, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection } from 'geojson';
 
 // Event status lifecycle
-export type EventStatus = 'planned' | 'active' | 'ended';
+export type EventStatus = 'planned' | 'active' | 'ended' | 'cancelled';
 
 // Restriction types for construction events
 export type RestrictionType = 'full' | 'partial' | 'workzone';

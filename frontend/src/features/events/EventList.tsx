@@ -21,25 +21,20 @@ import { useEvents } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import type { ConstructionEvent, EventStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
+import { formatLocalDate } from '../../utils/dateFormat';
 
 const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
   ended: 'gray',
+  cancelled: 'red',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
   ended: 'Ended',
-};
-
-const formatLocalDate = (date: Date | null): string | undefined => {
-  if (!date) return undefined;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  cancelled: 'Cancelled',
 };
 
 export function EventList() {
@@ -64,7 +59,11 @@ export function EventList() {
     (department ? 1 : 0) +
     (dateRange.from || dateRange.to ? 1 : 0);
 
-  const events = data?.data || [];
+  const allEvents = data?.data || [];
+  // Hide cancelled events by default unless explicitly filtered
+  const events = allEvents.filter(e =>
+    statusFilter === 'cancelled' || e.status !== 'cancelled'
+  );
 
   return (
     <Stack gap="sm">
@@ -129,6 +128,7 @@ export function EventList() {
                 <Chip value="planned">Planned</Chip>
                 <Chip value="active">Active</Chip>
                 <Chip value="ended">Ended</Chip>
+                <Chip value="cancelled" color="red">Cancelled</Chip>
               </Group>
             </Chip.Group>
           </div>

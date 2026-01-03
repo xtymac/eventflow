@@ -158,7 +158,7 @@ interface UIState {
   setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>((set, get) => ({
   selectedEventId: null,
   selectedAssetId: null,
   selectedAssetGeometry: null,
@@ -228,7 +228,13 @@ export const useUIStore = create<UIState>((set) => ({
     dateRange: { from: null, to: null },
   },
 
-  selectEvent: (id) => set({ selectedEventId: id, selectedAssetId: null, selectedAssetGeometry: null, selectedInspectionId: null }),
+  selectEvent: (id) => set({
+    selectedEventId: id,
+    selectedAssetId: null,
+    selectedAssetGeometry: null,
+    selectedInspectionId: null,
+    detailModalEventId: id,  // Sync sidebar with selection
+  }),
   selectAsset: (id, geometry) => set({ selectedAssetId: id, selectedAssetGeometry: geometry ?? null, selectedEventId: null, selectedInspectionId: null }),
   selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetGeometry: null }),
 
@@ -411,7 +417,7 @@ export const useUIStore = create<UIState>((set) => ({
     _isUndoRedoInProgress: false,
   }),
 
-  isUndoRedoInProgress: () => useUIStore.getState()._isUndoRedoInProgress,
+  isUndoRedoInProgress: (): boolean => get()._isUndoRedoInProgress,
 
   // Asset selector actions
   setAssetSelectorFilter: (key, value) => set((state) => ({

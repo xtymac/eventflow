@@ -83,6 +83,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     redoEdit,
     saveEditSnapshot,
     clearEditHistory,
+    isUndoRedoInProgress,
   } = useUIStore();
 
   // Computed history state
@@ -291,6 +292,12 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         // The preview layer only shows road buffer preview (dashed cyan)
       }
 
+      // Skip auto-intersection during undo/redo - the assets are already restored from snapshot
+      if (isUndoRedoInProgress()) {
+        console.log('[EventForm] Skipping intersection check during undo/redo');
+        return;
+      }
+
       // Generate a simple hash to detect if geometry changed
       const geomHash = JSON.stringify(drawnFeatures);
 
@@ -343,7 +350,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         }
       }
     }
-  }, [drawnFeatures, assetsData, setPreviewGeometry, setSelectedRoadAssetsForForm, setValue, cacheAssetDetails, combineFeatures]);
+  }, [drawnFeatures, assetsData, setPreviewGeometry, setSelectedRoadAssetsForForm, setValue, cacheAssetDetails, combineFeatures, isUndoRedoInProgress]);
 
   // Generate PREVIEW geometry from selected roads
   // This now shows BOTH drawn shapes (via maplibre-gl-draw) AND road buffer preview (via preview-geometry layer)
@@ -358,20 +365,37 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   }, [selectedAssetsWithGeometry, setPreviewGeometry]);
 
   // Track asset selection changes for unified undo/redo
+  // Use a delay to skip initial data loading before starting to track changes
   const prevAssetsRef = useRef<string[]>([]);
+  const isReadyToTrackRef = useRef(false);
+
+  // Start tracking after a short delay to skip initial data load
   useEffect(() => {
+    const timer = setTimeout(() => {
+      isReadyToTrackRef.current = true;
+      // Initialize prevAssetsRef with current state when ready
+      prevAssetsRef.current = [...selectedRoadAssetIdsForForm];
+    }, 500); // Wait for initial data loading to complete
+
+    return () => clearTimeout(timer);
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    // Skip if not ready to track (still in initial loading phase)
+    if (!isReadyToTrackRef.current) return;
+
     const prevAssets = prevAssetsRef.current;
     const currentAssets = selectedRoadAssetIdsForForm;
 
-    // Only save snapshot if meaningful change (not initial render)
-    // Skip if this is the first render or if arrays are identical
-    if (prevAssets.length > 0 || currentAssets.length > 0) {
-      if (JSON.stringify(prevAssets) !== JSON.stringify(currentAssets)) {
+    // Only save snapshot if there's a meaningful change
+    if (JSON.stringify(prevAssets) !== JSON.stringify(currentAssets)) {
+      // Skip if undo/redo is in progress
+      if (!isUndoRedoInProgress()) {
         saveEditSnapshot();
       }
     }
     prevAssetsRef.current = [...currentAssets];
-  }, [selectedRoadAssetIdsForForm, saveEditSnapshot]);
+  }, [selectedRoadAssetIdsForForm, saveEditSnapshot, isUndoRedoInProgress]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -461,30 +485,22 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
               {/* Drawing tool buttons */}
               <Button
-                variant={
-                  (drawMode === 'polygon' || currentDrawType === 'polygon')
-                    ? 'filled'
-                    : 'light'
-                }
+                variant={drawMode === 'polygon' ? 'filled' : 'light'}
                 color="cyan"
                 size="xs"
                 leftSection={<IconPolygon size={14} />}
                 onClick={() => setDrawMode('polygon')}
-                disabled={isDrawingActive}
+                disabled={isDrawingActive || currentDrawType === 'line'}
               >
                 Polygon
               </Button>
               <Button
-                variant={
-                  (drawMode === 'line' || currentDrawType === 'line')
-                    ? 'filled'
-                    : 'light'
-                }
+                variant={drawMode === 'line' ? 'filled' : 'light'}
                 color="cyan"
                 size="xs"
                 leftSection={<IconLine size={14} />}
                 onClick={() => setDrawMode('line')}
-                disabled={isDrawingActive}
+                disabled={isDrawingActive || currentDrawType === 'polygon'}
               >
                 Line
               </Button>
