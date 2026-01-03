@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Stack,
   TextInput,
@@ -43,8 +44,11 @@ const formatLocalDate = (date: Date | null): string | undefined => {
 
 export function EventList() {
   // Persisted filter state from store (including filtersOpen)
-  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters } = useUIStore();
+  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry } = useUIStore();
   const { status: statusFilter, search, department, dateRange } = eventFilters;
+
+  // Track close-up state for toggling zoom levels
+  const [isCloseUp, setIsCloseUp] = useState(false);
 
   const { data, isLoading, error } = useEvents({
     name: search || undefined,
@@ -198,7 +202,23 @@ export function EventList() {
                 borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : undefined,
                 backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : undefined,
               }}
-              onClick={() => selectEvent(event.id)}
+              onClick={() => {
+                if (selectedEventId === event.id) {
+                  // Already selected: toggle between overview and close-up
+                  if (event.geometry) {
+                    const newCloseUp = !isCloseUp;
+                    setIsCloseUp(newCloseUp);
+                    setFlyToGeometry(event.geometry, newCloseUp);
+                  }
+                } else {
+                  // First click: select, reset to overview, and fly to event
+                  selectEvent(event.id);
+                  setIsCloseUp(false);
+                  if (event.geometry) {
+                    setFlyToGeometry(event.geometry, false);
+                  }
+                }
+              }}
             >
               <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
                 <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }}>

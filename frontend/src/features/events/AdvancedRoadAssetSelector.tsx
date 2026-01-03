@@ -40,6 +40,7 @@ interface AdvancedRoadAssetSelectorProps {
   error?: string;
   initialWard?: string | null;
   isLoadingIntersecting?: boolean;
+  onClearAll?: () => void; // Optional: comprehensive clear that clears geometry/preview/cache too
 }
 
 const formatAssetLabel = (asset: RoadAsset): string => {
@@ -59,6 +60,7 @@ export function AdvancedRoadAssetSelector({
   error,
   initialWard = null,
   isLoadingIntersecting = false,
+  onClearAll,
 }: AdvancedRoadAssetSelectorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedExpanded, setSelectedExpanded] = useState(true);
@@ -109,9 +111,6 @@ export function AdvancedRoadAssetSelector({
   const allAssets = useMemo(() => {
     return data?.pages.flatMap((p) => p.data) ?? [];
   }, [data]);
-
-  // Total count
-  const total = data?.pages[0]?.meta.total ?? 0;
 
   // Selected assets set for quick lookup
   const selectedSet = useMemo(() => new Set(value), [value]);
@@ -179,10 +178,14 @@ export function AdvancedRoadAssetSelector({
     [value, onChange]
   );
 
-  // Clear all selected
+  // Clear all selected - uses comprehensive clear if provided, otherwise just clears selection
   const handleClearAll = useCallback(() => {
-    onChange([]);
-  }, [onChange]);
+    if (onClearAll) {
+      onClearAll(); // Use parent's comprehensive clear (geometry + roads + preview + cache)
+    } else {
+      onChange([]); // Fallback: just clear selection
+    }
+  }, [onChange, onClearAll]);
 
   // Fly to asset on map
   const handleFlyToAsset = useCallback(
@@ -259,21 +262,16 @@ export function AdvancedRoadAssetSelector({
               </Group>
             )}
           </Group>
-          <Group gap="xs">
-            <Text size="xs" c="dimmed">
-              Selected {value.length} / {total} results
-            </Text>
-            {value.length > 0 && (
-              <Button
-                variant="subtle"
-                size="compact-xs"
-                c="red"
-                onClick={handleClearAll}
-              >
-                Clear all
-              </Button>
-            )}
-          </Group>
+          {value.length > 0 && (
+            <Button
+              variant="subtle"
+              size="compact-xs"
+              c="red"
+              onClick={handleClearAll}
+            >
+              Clear all
+            </Button>
+          )}
         </Group>
 
         {value.length > 0 && (

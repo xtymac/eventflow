@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconMap, IconRefresh, IconX } from '@tabler/icons-react';
+import { IconRefresh, IconX } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
@@ -78,8 +78,8 @@ function App() {
               visibleFrom="sm"
               size="sm"
             />
-            <IconMap size={28} stroke={1.5} />
-            <Title order={3}>Nagoya Construction Lifecycle</Title>
+            <img src="/favicon.svg" alt="EventFlow" width={36} height={36} style={{ marginLeft: 8 }} />
+            <Title order={3}>EventFlow</Title>
           </Group>
           <Tooltip label="Refresh data">
             <ActionIcon variant="subtle" onClick={handleRefresh}>

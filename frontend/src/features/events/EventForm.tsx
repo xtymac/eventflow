@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Stack,
   TextInput,
@@ -6,15 +6,18 @@ import {
   Button,
   Group,
   Text,
-  Radio,
   Divider,
   Alert,
+  ActionIcon,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
+import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
 import { useForm, Controller } from 'react-hook-form';
+import * as turf from '@turf/turf';
 import { AdvancedRoadAssetSelector } from './AdvancedRoadAssetSelector';
 import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
+import { generateCorridorGeometry } from '../../utils/geometryGenerator';
 import { useUIStore } from '../../stores/uiStore';
 import {
   useCreateEvent,
@@ -23,15 +26,12 @@ import {
   useAssets,
   useEventIntersectingAssets,
 } from '../../hooks/useApi';
-import { generateCorridorGeometry } from '../../utils/geometryGenerator';
 import type { RestrictionType, SupportedGeometry } from '@nagoya/shared';
 
 interface EventFormProps {
   eventId?: string | null;
   onClose: () => void;
 }
-
-type GeometryMode = 'auto' | 'manual';
 
 const RESTRICTION_TYPES: { value: RestrictionType; label: string }[] = [
   { value: 'full', label: 'Full Closure' },
@@ -47,7 +47,6 @@ interface EventFormData {
   department: string;
   ward: string;
   selectedRoadAssetIds: string[];
-  geometryMode: GeometryMode;
 }
 
 const defaultValues: EventFormData = {
@@ -58,7 +57,6 @@ const defaultValues: EventFormData = {
   department: '',
   ward: '',
   selectedRoadAssetIds: [],
-  geometryMode: 'auto',
 };
 
 export function EventForm({ eventId, onClose }: EventFormProps) {
@@ -68,12 +66,106 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     setSelectedRoadAssetsForForm,
     cacheAssetDetails,
     resetAssetSelectorFilters,
+    clearAssetCache,
+    selectedAssetDetailsCache, // For getting geometry from map clicks
+    // Drawing state
+    drawnFeatures,
+    currentDrawType,
+    drawMode,
+    setDrawMode,
+    clearDrawing,
+    triggerDrawAction,
+    isDrawingActive,
+    // Unified editing history (for both drawing AND asset selection)
+    editHistory,
+    editRedoStack,
+    undoEdit,
+    redoEdit,
+    saveEditSnapshot,
+    clearEditHistory,
   } = useUIStore();
+
+  // Computed history state
+  const canUndo = editHistory.length > 0;
+  const canRedo = editRedoStack.length > 0;
   const [geometry, setGeometry] = useState<SupportedGeometry | null>(null);
 
   const { data: eventData, isLoading: isLoadingEvent } = useEvent(eventId || null);
   const { data: intersectingAssetsData, isLoading: isLoadingIntersecting } = useEventIntersectingAssets(eventId || null);
-  const { data: assetsData } = useAssets({ status: 'active' });
+
+  // Helper to combine multiple features into final geometry for submission
+  const combineFeatures = useCallback((features: import('geojson').Feature[]): SupportedGeometry | null => {
+    if (!features || features.length === 0) return null;
+
+    if (features.length === 1) {
+      return features[0].geometry as SupportedGeometry;
+    }
+
+    // Multiple features - create Multi* geometry
+    const firstType = features[0].geometry?.type;
+    if (firstType === 'Polygon') {
+      return {
+        type: 'MultiPolygon',
+        coordinates: features.map(f => (f.geometry as import('geojson').Polygon).coordinates),
+      } as SupportedGeometry;
+    } else if (firstType === 'LineString') {
+      return {
+        type: 'MultiLineString',
+        coordinates: features.map(f => (f.geometry as import('geojson').LineString).coordinates),
+      } as SupportedGeometry;
+    }
+
+    return features[0].geometry as SupportedGeometry;
+  }, []);
+
+  // Compute bbox from all drawn features for efficient asset filtering
+  const drawnBbox = useMemo(() => {
+    if (!drawnFeatures || drawnFeatures.length === 0) return undefined;
+    try {
+      // Create a feature collection from all features and compute combined bbox
+      const fc = turf.featureCollection(drawnFeatures as import('geojson').Feature[]);
+      const bbox = turf.bbox(fc);
+      // Expand bbox by ~50m (~0.0005 degrees) to catch nearby roads
+      const buffer = 0.0005;
+      return `${bbox[0] - buffer},${bbox[1] - buffer},${bbox[2] + buffer},${bbox[3] + buffer}`;
+    } catch {
+      return undefined;
+    }
+  }, [drawnFeatures]);
+
+  // Fetch assets with bbox filter when drawing, or all active assets otherwise
+  const { data: assetsData } = useAssets(
+    drawnBbox
+      ? { status: 'active', bbox: drawnBbox, limit: 500 }
+      : { status: 'active' }
+  );
+
+  // Memoize selected assets with geometry for preview generation
+  // Combines data from API (assetsData) AND cache (selectedAssetDetailsCache from map clicks)
+  const selectedAssetsWithGeometry = useMemo(() => {
+    if (selectedRoadAssetIdsForForm.length === 0) return [];
+
+    const result: Array<{ id: string; geometry: import('geojson').Geometry }> = [];
+
+    for (const id of selectedRoadAssetIdsForForm) {
+      // Priority 1: Get from assetsData (full RoadAsset info from API)
+      const fromApi = assetsData?.data?.find((a) => a.id === id);
+      if (fromApi?.geometry) {
+        result.push({ id: fromApi.id, geometry: fromApi.geometry });
+        continue;
+      }
+
+      // Priority 2: Get from cache (geometry from map clicks, works even if outside bbox)
+      const cached = selectedAssetDetailsCache[id];
+      if (cached?.geometry) {
+        result.push({ id: cached.id, geometry: cached.geometry });
+      }
+      // If neither has geometry, skip (can't generate preview)
+    }
+
+    return result;
+  }, [assetsData, selectedRoadAssetIdsForForm, selectedAssetDetailsCache]);
+
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
 
@@ -86,13 +178,28 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   });
 
   const selectedRoadAssetIds = watch('selectedRoadAssetIds');
-  const geometryMode = watch('geometryMode');
   const startDate = watch('startDate');
 
   const areArraysEqual = (left: string[], right: string[]) => {
     if (left.length !== right.length) return false;
     return left.every((value, index) => value === right[index]);
   };
+
+  // Shared clear all handler - clears geometry, roads, preview, cache, and history
+  const handleClearAll = useCallback(() => {
+    // Clear map canvas
+    triggerDrawAction('cancel');
+    clearDrawing();
+    setGeometry(null);
+    // Clear road assets
+    setValue('selectedRoadAssetIds', [], { shouldValidate: true });
+    setSelectedRoadAssetsForForm([]);
+    // Clear preview and cache
+    setPreviewGeometry(null);
+    clearAssetCache();
+    // Clear undo/redo history
+    clearEditHistory();
+  }, [triggerDrawAction, clearDrawing, setValue, setSelectedRoadAssetsForForm, setPreviewGeometry, clearAssetCache, clearEditHistory]);
 
   // Phase 1: Load event data immediately
   useEffect(() => {
@@ -108,7 +215,6 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         department: event.department,
         ward: event.ward || '',
         selectedRoadAssetIds: linkedRoadIds,
-        geometryMode: event.geometrySource === 'auto' ? 'auto' : 'manual',
       });
       setSelectedRoadAssetsForForm(linkedRoadIds);
       setGeometry(event.geometry);
@@ -157,78 +263,150 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     }
   }, [eventId, eventData, intersectingAssetsData, setValue, setSelectedRoadAssetsForForm, cacheAssetDetails]);
 
-  const selectedAssets = useMemo(() => {
-    if (!assetsData?.data || selectedRoadAssetIds.length === 0) return [];
-    return assetsData.data.filter((a) => selectedRoadAssetIds.includes(a.id));
-  }, [assetsData, selectedRoadAssetIds]);
-
   useEffect(() => {
     if (!areArraysEqual(selectedRoadAssetIdsForForm, selectedRoadAssetIds)) {
       setValue('selectedRoadAssetIds', selectedRoadAssetIdsForForm, { shouldValidate: true });
     }
   }, [selectedRoadAssetIdsForForm, selectedRoadAssetIds, setValue]);
 
+  // Auto-select polygon mode when form opens and no mode selected
   useEffect(() => {
-    if (geometryMode === 'auto' && selectedAssets.length > 0) {
-      const corridorGeometry = generateCorridorGeometry(selectedAssets);
-      if (corridorGeometry) {
-        setGeometry(corridorGeometry);
-        setPreviewGeometry(corridorGeometry);
+    if (!drawMode) {
+      setDrawMode('polygon');
+    }
+  }, [drawMode, setDrawMode]);
+
+  // Track if we've already processed intersecting roads for this geometry
+  const processedGeometryRef = useRef<string | null>(null);
+
+  // Sync drawnFeatures from MapView to form state
+  // Also auto-select intersecting road assets
+  useEffect(() => {
+    if (drawnFeatures && drawnFeatures.length > 0) {
+      // Combine features into single geometry for form state
+      const combinedGeometry = combineFeatures(drawnFeatures);
+      if (combinedGeometry) {
+        setGeometry(combinedGeometry);
+        // Note: Don't set preview geometry here - drawn features are rendered by maplibre-gl-draw
+        // The preview layer only shows road buffer preview (dashed cyan)
+      }
+
+      // Generate a simple hash to detect if geometry changed
+      const geomHash = JSON.stringify(drawnFeatures);
+
+      // Find intersecting road assets (only if geometry changed)
+      if (assetsData?.data && geomHash !== processedGeometryRef.current) {
+        processedGeometryRef.current = geomHash;
+
+        console.log('[EventForm] Checking intersection with', assetsData.data.length, 'assets');
+
+        try {
+          const intersectingIds: string[] = [];
+
+          // Check each drawn feature against each asset
+          for (const drawnFeature of drawnFeatures) {
+            for (const asset of assetsData.data) {
+              if (asset.geometry) {
+                try {
+                  const assetFeature = turf.feature(asset.geometry);
+                  // Check if geometries intersect
+                  if (turf.booleanIntersects(drawnFeature, assetFeature)) {
+                    if (!intersectingIds.includes(asset.id)) {
+                      console.log('[EventForm] Found intersecting asset:', asset.id, asset.name);
+                      intersectingIds.push(asset.id);
+                      // Cache asset details for display
+                      cacheAssetDetails([{
+                        id: asset.id,
+                        label: getRoadAssetLabel(asset),
+                        ward: asset.ward,
+                        roadType: asset.roadType,
+                      }]);
+                    }
+                  }
+                } catch (geomError) {
+                  // Skip assets with invalid geometry
+                  console.warn('[EventForm] Invalid asset geometry:', asset.id, geomError);
+                }
+              }
+            }
+          }
+
+          console.log('[EventForm] Total intersecting assets:', intersectingIds.length);
+
+          // Replace selection with only currently intersecting assets
+          // (Don't accumulate - only keep assets that intersect with final position)
+          console.log('[EventForm] Replacing selected roads with:', intersectingIds);
+          setSelectedRoadAssetsForForm(intersectingIds);
+          setValue('selectedRoadAssetIds', intersectingIds, { shouldValidate: true });
+        } catch (e) {
+          console.warn('Failed to find intersecting assets:', e);
+        }
       }
     }
-  }, [selectedAssets, geometryMode, setPreviewGeometry]);
+  }, [drawnFeatures, assetsData, setPreviewGeometry, setSelectedRoadAssetsForForm, setValue, cacheAssetDetails, combineFeatures]);
 
+  // Generate PREVIEW geometry from selected roads
+  // This now shows BOTH drawn shapes (via maplibre-gl-draw) AND road buffer preview (via preview-geometry layer)
+  useEffect(() => {
+    // Always generate road corridor preview, regardless of drawn features
+    if (selectedAssetsWithGeometry.length > 0) {
+      const corridorGeometry = generateCorridorGeometry(selectedAssetsWithGeometry);
+      setPreviewGeometry(corridorGeometry);
+    } else {
+      setPreviewGeometry(null);
+    }
+  }, [selectedAssetsWithGeometry, setPreviewGeometry]);
+
+  // Track asset selection changes for unified undo/redo
+  const prevAssetsRef = useRef<string[]>([]);
+  useEffect(() => {
+    const prevAssets = prevAssetsRef.current;
+    const currentAssets = selectedRoadAssetIdsForForm;
+
+    // Only save snapshot if meaningful change (not initial render)
+    // Skip if this is the first render or if arrays are identical
+    if (prevAssets.length > 0 || currentAssets.length > 0) {
+      if (JSON.stringify(prevAssets) !== JSON.stringify(currentAssets)) {
+        saveEditSnapshot();
+      }
+    }
+    prevAssetsRef.current = [...currentAssets];
+  }, [selectedRoadAssetIdsForForm, saveEditSnapshot]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       setPreviewGeometry(null);
+      clearDrawing();
     };
-  }, [setPreviewGeometry]);
-
-  const handleRegenerateGeometry = () => {
-    if (selectedAssets.length > 0) {
-      const corridorGeometry = generateCorridorGeometry(selectedAssets);
-      if (corridorGeometry) {
-        setGeometry(corridorGeometry);
-        setPreviewGeometry(corridorGeometry);
-        setValue('geometryMode', 'auto');
-      }
-    }
-  };
-
-  const handlePreview = () => {
-    if (geometry) {
-      setPreviewGeometry(geometry);
-    }
-  };
+  }, [setPreviewGeometry, clearDrawing]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
+      // Determine if we have manually drawn geometry
+      const hasDrawnGeometry = drawnFeatures && drawnFeatures.length > 0;
+
+      const submitData = {
+        name: data.name,
+        startDate: data.startDate!.toISOString(),
+        endDate: data.endDate!.toISOString(),
+        restrictionType: data.restrictionType,
+        department: data.department,
+        ward: data.ward || undefined,
+        roadAssetIds: data.selectedRoadAssetIds,
+        // Only submit geometry if manually drawn
+        geometry: hasDrawnGeometry && geometry ? geometry : undefined,
+        // Signal backend to auto-generate if no manual geometry
+        regenerateGeometry: !hasDrawnGeometry,
+      };
+
       if (isEditing && eventId) {
         await updateEvent.mutateAsync({
           id: eventId,
-          data: {
-            name: data.name,
-            startDate: data.startDate!.toISOString(),
-            endDate: data.endDate!.toISOString(),
-            restrictionType: data.restrictionType,
-            department: data.department,
-            ward: data.ward || undefined,
-            roadAssetIds: data.selectedRoadAssetIds,
-            geometry: data.geometryMode === 'manual' ? geometry || undefined : undefined,
-            regenerateGeometry: data.geometryMode === 'auto' && eventData?.data.geometrySource !== 'auto',
-          },
+          data: submitData,
         });
       } else {
-        await createEvent.mutateAsync({
-          name: data.name,
-          startDate: data.startDate!.toISOString(),
-          endDate: data.endDate!.toISOString(),
-          restrictionType: data.restrictionType,
-          department: data.department,
-          ward: data.ward || undefined,
-          roadAssetIds: data.selectedRoadAssetIds,
-          geometry: data.geometryMode === 'manual' ? geometry || undefined : undefined,
-        });
+        await createEvent.mutateAsync(submitData);
       }
       onClose();
     } catch (error) {
@@ -243,34 +421,130 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Stack gap="md">
+        {/* Step 1: Define Area (Geometry + Road Selection) */}
         <div>
           <Text size="sm" fw={600} mb="xs">
-            Step 1: Select Road Assets
+            Step 1: Define Area
           </Text>
-          <Controller
-            name="selectedRoadAssetIds"
-            control={control}
-            rules={{
-              validate: (value) => value.length > 0 || 'At least one road asset is required',
-            }}
-            render={({ field, fieldState }) => (
-              <AdvancedRoadAssetSelector
-                value={field.value}
-                onChange={(value) => {
-                  field.onChange(value);
-                  setSelectedRoadAssetsForForm(value);
+          <Stack gap="sm">
+            <Text size="sm" c="dimmed">
+              Draw on the map or select roads below. Double-click to finish drawing.
+            </Text>
+
+            {/* Drawing controls row: Undo/Redo | Drawing tools | Clear All */}
+            <Group gap="xs" wrap="wrap" align="center">
+              {/* Undo/Redo buttons - now unified for both drawing AND asset selection */}
+              <ActionIcon
+                variant="light"
+                size="sm"
+                disabled={!canUndo}
+                onClick={() => {
+                  undoEdit();
+                  triggerDrawAction('restore');
                 }}
-                required
-                error={fieldState.error?.message}
-                initialWard={eventData?.data?.ward || null}
-                isLoadingIntersecting={isEditing && isLoadingIntersecting}
-              />
-            )}
-          />
+                title="Undo"
+              >
+                <IconArrowBack size={14} />
+              </ActionIcon>
+              <ActionIcon
+                variant="light"
+                size="sm"
+                disabled={!canRedo}
+                onClick={() => {
+                  redoEdit();
+                  triggerDrawAction('restore');
+                }}
+                title="Redo"
+              >
+                <IconArrowForward size={14} />
+              </ActionIcon>
+
+              {/* Drawing tool buttons */}
+              <Button
+                variant={
+                  (drawMode === 'polygon' || currentDrawType === 'polygon')
+                    ? 'filled'
+                    : 'light'
+                }
+                color="cyan"
+                size="xs"
+                leftSection={<IconPolygon size={14} />}
+                onClick={() => setDrawMode('polygon')}
+                disabled={isDrawingActive}
+              >
+                Polygon
+              </Button>
+              <Button
+                variant={
+                  (drawMode === 'line' || currentDrawType === 'line')
+                    ? 'filled'
+                    : 'light'
+                }
+                color="cyan"
+                size="xs"
+                leftSection={<IconLine size={14} />}
+                onClick={() => setDrawMode('line')}
+                disabled={isDrawingActive}
+              >
+                Line
+              </Button>
+
+              {/* Clear All button - clears geometry AND road assets */}
+              <Button
+                variant="subtle"
+                color="red"
+                size="xs"
+                onClick={() => {
+                  modals.openConfirmModal({
+                    title: 'Confirm Clear All',
+                    children: (
+                      <Text size="sm">
+                        This will clear all drawn shapes and selected roads. Continue?
+                      </Text>
+                    ),
+                    labels: { confirm: 'Clear All', cancel: 'Cancel' },
+                    confirmProps: { color: 'red' },
+                    onConfirm: handleClearAll,
+                  });
+                }}
+                disabled={!drawnFeatures?.length && selectedRoadAssetIds.length === 0}
+                title="Clear All"
+                px={8}
+              >
+                <IconEraser size={14} />
+              </Button>
+            </Group>
+
+            <Divider label="Or select roads from the list" labelPosition="center" />
+
+            {/* Road Asset Selector */}
+            <Controller
+              name="selectedRoadAssetIds"
+              control={control}
+              rules={{
+                validate: (value) => value.length > 0 || 'At least one road asset is required',
+              }}
+              render={({ field, fieldState }) => (
+                <AdvancedRoadAssetSelector
+                  value={field.value}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    setSelectedRoadAssetsForForm(value);
+                  }}
+                  required
+                  error={fieldState.error?.message}
+                  initialWard={eventData?.data?.ward || null}
+                  isLoadingIntersecting={isEditing && isLoadingIntersecting}
+                  onClearAll={handleClearAll}
+                />
+              )}
+            />
+          </Stack>
         </div>
 
         <Divider />
 
+        {/* Step 2: Event Details */}
         <div>
           <Text size="sm" fw={600} mb="xs">
             Step 2: Event Details
@@ -373,59 +647,6 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                 />
               )}
             />
-          </Stack>
-        </div>
-
-        <Divider />
-
-        <div>
-          <Text size="sm" fw={600} mb="xs">
-            Step 3: Geometry
-          </Text>
-          <Stack gap="sm">
-            <Controller
-              name="geometryMode"
-              control={control}
-              render={({ field }) => (
-                <Radio.Group value={field.value} onChange={field.onChange}>
-                  <Stack gap="xs">
-                    <Radio value="auto" label="Auto-generate from road assets (15m buffer)" />
-                    <Radio value="manual" label="Draw manually on map" />
-                  </Stack>
-                </Radio.Group>
-              )}
-            />
-
-            {geometryMode === 'manual' && (
-              <Alert icon={<IconAlertCircle size={16} />} color="blue">
-                Drawing on map is not yet implemented. Using auto-generated geometry.
-              </Alert>
-            )}
-
-            <Group>
-              <Button
-                variant="light"
-                size="xs"
-                onClick={handlePreview}
-                disabled={!geometry}
-                type="button"
-              >
-                Preview on Map
-              </Button>
-
-              {isEditing && (
-                <Button
-                  variant="light"
-                  size="xs"
-                  leftSection={<IconRefresh size={14} />}
-                  onClick={handleRegenerateGeometry}
-                  disabled={selectedRoadAssetIds.length === 0}
-                  type="button"
-                >
-                  Regenerate from Roads
-                </Button>
-              )}
-            </Group>
           </Stack>
         </div>
 

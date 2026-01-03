@@ -1,21 +1,26 @@
 import * as turf from '@turf/turf';
-import type { Feature, Polygon, MultiPolygon } from 'geojson';
-import type { RoadAsset } from '@nagoya/shared';
+import type { Feature, Polygon, MultiPolygon, Geometry } from 'geojson';
 
 const BUFFER_METERS = 15;
+
+// Simple interface for assets with geometry - works with both full RoadAsset and cache entries
+interface AssetWithGeometry {
+  id: string;
+  geometry: Geometry;
+}
 
 /**
  * Generate corridor geometry from road assets by buffering and unioning.
  * This is for frontend preview only - backend PostGIS result is authoritative.
  */
 export function generateCorridorGeometry(
-  roadAssets: RoadAsset[]
+  assets: AssetWithGeometry[]
 ): Polygon | MultiPolygon | null {
-  if (roadAssets.length === 0) return null;
+  if (assets.length === 0) return null;
 
   // Buffer each road geometry
   const buffered: Feature<Polygon>[] = [];
-  for (const asset of roadAssets) {
+  for (const asset of assets) {
     try {
       // turf.buffer accepts Feature or Geometry
       const result = turf.buffer(turf.feature(asset.geometry), BUFFER_METERS, {

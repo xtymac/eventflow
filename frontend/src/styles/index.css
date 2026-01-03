@@ -47,3 +47,19 @@ body {
   background-color: var(--mantine-color-gray-0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+
+/* MapLibre GL Draw - Cursor styles */
+.maplibregl-map.mouse-pointer .maplibregl-canvas-container,
+.mapboxgl-map.mouse-pointer .mapboxgl-canvas-container {
+  cursor: pointer;
+}
+
+.maplibregl-map.mouse-move .maplibregl-canvas-container,
+.mapboxgl-map.mouse-move .mapboxgl-canvas-container {
+  cursor: move;
+}
+
+.maplibregl-map.mouse-add .maplibregl-canvas-container,
+.mapboxgl-map.mouse-add .mapboxgl-canvas-container {
+  cursor: crosshair;
+}

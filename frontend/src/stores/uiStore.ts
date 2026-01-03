@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Geometry } from 'geojson';
+import type { Geometry, Feature } from 'geojson';
 
 type ViewType = 'events' | 'assets' | 'inspections';
 
@@ -10,6 +10,14 @@ export interface AssetCacheEntry {
   ward?: string;
   roadType?: string;
   geometry?: Geometry; // For fly-to when clicking badge
+}
+
+// Unified snapshot for undo/redo - captures both drawing AND asset selection state
+export interface EditingStateSnapshot {
+  drawnFeatures: Feature[] | null;
+  currentDrawType: 'polygon' | 'line' | null;
+  selectedRoadAssetIds: string[];
+  assetDetailsCache: Record<string, AssetCacheEntry>;
 }
 
 interface UIState {
@@ -33,8 +41,17 @@ interface UIState {
   // Event form state
   selectedRoadAssetIdsForForm: string[];
   previewGeometry: Geometry | null;
-  drawnGeometry: Geometry | null;         // Geometry drawn via maplibre-gl-draw
-  geometryModeForForm: 'auto' | 'manual'; // Current geometry mode in EventForm
+  drawnFeatures: Feature[] | null;        // Features drawn via maplibre-gl-draw (multi-draw support)
+  currentDrawType: 'polygon' | 'line' | null;  // Locked after first shape drawn
+  drawAction: 'finish' | 'undo' | 'cancel' | 'restore' | null; // Touch-friendly draw actions
+  isDrawingActive: boolean;               // True when actively drawing a shape (not in select mode)
+  shouldZoomToDrawing: boolean;           // Flag to trigger zoom after draw completes (one-time)
+
+  // Unified history for undo/redo (captures both drawing AND asset selection)
+  editHistory: EditingStateSnapshot[];    // Stack of previous states (deep copied)
+  editRedoStack: EditingStateSnapshot[];  // Stack for redo
+  _lastSnapshotTime: number;              // For throttling snapshots during drag
+  _isUndoRedoInProgress: boolean;         // Flag to prevent saveEditSnapshot during undo/redo
 
   // Asset selector state (for AdvancedRoadAssetSelector)
   assetSelectorFilters: {
@@ -52,6 +69,7 @@ interface UIState {
   hoveredAssetId: string | null;    // Asset being hovered in list (for map highlight)
   sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
   flyToGeometry: Geometry | null;   // Geometry to fly to (set to trigger flyTo, auto-clears after animation)
+  flyToCloseUp: boolean;            // If true, zoom closer when flying to geometry
 
   // Filter panel state (persisted across tab switches)
   filtersOpen: boolean;
@@ -99,10 +117,23 @@ interface UIState {
   // Event form actions
   setSelectedRoadAssetsForForm: (ids: string[]) => void;
   setPreviewGeometry: (geometry: Geometry | null) => void;
-  setDrawnGeometry: (geometry: Geometry | null) => void;
-  setGeometryModeForForm: (mode: 'auto' | 'manual') => void;
-  clearDrawing: () => void;  // Clears drawnGeometry and drawMode
+  setDrawnFeatures: (features: Feature[] | null) => void;
+  addDrawnFeature: (feature: Feature) => void;
+  removeLastFeature: () => void;
+  setCurrentDrawType: (type: 'polygon' | 'line' | null) => void;
+  setIsDrawingActive: (active: boolean) => void;
+  clearDrawing: () => void;  // Clears drawnFeatures, currentDrawType, drawMode, and history
   clearFormState: () => void;
+  triggerDrawAction: (action: 'finish' | 'undo' | 'cancel' | 'restore') => void;
+  clearDrawAction: () => void;
+  setShouldZoomToDrawing: (should: boolean) => void;
+
+  // Unified editing history actions (for both drawing AND asset selection)
+  saveEditSnapshot: () => void;           // Save current state with throttle
+  undoEdit: () => void;                   // Undo - restores previous state (drawing + assets)
+  redoEdit: () => void;                   // Redo - restores next state (drawing + assets)
+  clearEditHistory: () => void;
+  isUndoRedoInProgress: () => boolean;    // Check if undo/redo is in progress (to skip auto-save)
 
   // Asset selector actions
   setAssetSelectorFilter: <K extends keyof UIState['assetSelectorFilters']>(key: K, value: UIState['assetSelectorFilters'][K]) => void;
@@ -124,7 +155,7 @@ interface UIState {
   setMapZoom: (zoom: number) => void;
   setHoveredAsset: (id: string | null) => void;
   setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
-  setFlyToGeometry: (geometry: Geometry | null) => void;
+  setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -148,8 +179,17 @@ export const useUIStore = create<UIState>((set) => ({
   // Event form state
   selectedRoadAssetIdsForForm: [],
   previewGeometry: null,
-  drawnGeometry: null,
-  geometryModeForForm: 'auto',
+  drawnFeatures: null,
+  currentDrawType: null,
+  drawAction: null,
+  isDrawingActive: false,
+  shouldZoomToDrawing: false,
+
+  // Unified editing history
+  editHistory: [],
+  editRedoStack: [],
+  _lastSnapshotTime: 0,
+  _isUndoRedoInProgress: false,
 
   // Asset selector state
   assetSelectorFilters: {
@@ -167,6 +207,7 @@ export const useUIStore = create<UIState>((set) => ({
   hoveredAssetId: null,
   sidebarAssets: [],
   flyToGeometry: null,
+  flyToCloseUp: false,
 
   // Filter panel state
   filtersOpen: false,
@@ -204,8 +245,12 @@ export const useUIStore = create<UIState>((set) => ({
     drawMode: null,
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
-    drawnGeometry: null,
-    geometryModeForForm: 'auto',
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
   }),
 
   openAssetForm: () => set({ isAssetFormOpen: true }),
@@ -232,16 +277,141 @@ export const useUIStore = create<UIState>((set) => ({
   // Event form actions
   setSelectedRoadAssetsForForm: (ids) => set({ selectedRoadAssetIdsForForm: ids }),
   setPreviewGeometry: (geometry) => set({ previewGeometry: geometry }),
-  setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
-  setGeometryModeForForm: (mode) => set({ geometryModeForForm: mode }),
-  clearDrawing: () => set({ drawnGeometry: null, drawMode: null }),
+  setDrawnFeatures: (features) => set({ drawnFeatures: features }),
+  addDrawnFeature: (feature) => set((state) => ({
+    drawnFeatures: state.drawnFeatures ? [...state.drawnFeatures, feature] : [feature],
+  })),
+  removeLastFeature: () => set((state) => {
+    if (!state.drawnFeatures || state.drawnFeatures.length === 0) return state;
+    const newFeatures = state.drawnFeatures.slice(0, -1);
+    return {
+      drawnFeatures: newFeatures.length > 0 ? newFeatures : null,
+      // Unlock type if no features left
+      currentDrawType: newFeatures.length > 0 ? state.currentDrawType : null,
+    };
+  }),
+  setCurrentDrawType: (type) => set({ currentDrawType: type }),
+  setIsDrawingActive: (active) => set({ isDrawingActive: active }),
+  clearDrawing: () => set({
+    drawnFeatures: null,
+    currentDrawType: null,
+    drawMode: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
   clearFormState: () => set({
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
-    drawnGeometry: null,
-    geometryModeForForm: 'auto',
+    drawnFeatures: null,
+    currentDrawType: null,
     drawMode: null,
+    drawAction: null,
+    isDrawingActive: false,
+    shouldZoomToDrawing: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
   }),
+  triggerDrawAction: (action) => set({ drawAction: action }),
+  clearDrawAction: () => set({ drawAction: null }),
+  setShouldZoomToDrawing: (should) => set({ shouldZoomToDrawing: should }),
+
+  // Unified editing history actions (for both drawing AND asset selection)
+  saveEditSnapshot: () => set((state) => {
+    // Skip if undo/redo just happened (to preserve redo stack)
+    if (state._isUndoRedoInProgress) {
+      return { _isUndoRedoInProgress: false }; // Reset flag but don't save
+    }
+
+    const now = Date.now();
+    const THROTTLE_MS = 300;
+    // Throttle to prevent too many snapshots during drag
+    if (now - state._lastSnapshotTime < THROTTLE_MS) return state;
+
+    // Create snapshot of both drawing AND asset selection state
+    const snapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editHistory: [...state.editHistory, snapshot],
+      editRedoStack: [],  // Clear redo on new action
+      _lastSnapshotTime: now,
+    };
+  }),
+
+  undoEdit: () => set((state) => {
+    if (state.editHistory.length === 0) return state;
+
+    const newHistory = [...state.editHistory];
+    const previousState = newHistory.pop()!;
+
+    // Create snapshot of current state for redo stack
+    const currentSnapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editHistory: newHistory,
+      editRedoStack: [currentSnapshot, ...state.editRedoStack],
+      drawnFeatures: previousState.drawnFeatures,
+      currentDrawType: previousState.currentDrawType,
+      selectedRoadAssetIdsForForm: previousState.selectedRoadAssetIds,
+      selectedAssetDetailsCache: previousState.assetDetailsCache,
+      // Clear drawMode if no shapes left
+      drawMode: previousState.drawnFeatures?.length ? state.drawMode : null,
+      // Set flag to prevent saveEditSnapshot from clearing redo stack
+      _isUndoRedoInProgress: true,
+    };
+  }),
+
+  redoEdit: () => set((state) => {
+    if (state.editRedoStack.length === 0) return state;
+
+    const [nextState, ...remaining] = state.editRedoStack;
+
+    // Create snapshot of current state for history
+    const currentSnapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editRedoStack: remaining,
+      editHistory: [...state.editHistory, currentSnapshot],
+      drawnFeatures: nextState.drawnFeatures,
+      currentDrawType: nextState.currentDrawType,
+      selectedRoadAssetIdsForForm: nextState.selectedRoadAssetIds,
+      selectedAssetDetailsCache: nextState.assetDetailsCache,
+      // Set flag to prevent saveEditSnapshot from clearing redo stack
+      _isUndoRedoInProgress: true,
+    };
+  }),
+
+  clearEditHistory: () => set({
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+    _isUndoRedoInProgress: false,
+  }),
+
+  isUndoRedoInProgress: () => useUIStore.getState()._isUndoRedoInProgress,
 
   // Asset selector actions
   setAssetSelectorFilter: (key, value) => set((state) => ({
@@ -293,5 +463,5 @@ export const useUIStore = create<UIState>((set) => ({
   setMapZoom: (zoom) => set({ mapZoom: zoom }),
   setHoveredAsset: (id) => set({ hoveredAssetId: id }),
   setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
-  setFlyToGeometry: (geometry) => set({ flyToGeometry: geometry }),
+  setFlyToGeometry: (geometry, closeUp = false) => set({ flyToGeometry: geometry, flyToCloseUp: closeUp }),
 }));
