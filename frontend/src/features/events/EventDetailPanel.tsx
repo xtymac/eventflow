@@ -88,9 +88,14 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
       <Paper p="sm" withBorder radius="sm">
         <Stack gap="xs">
           <Group justify="space-between" align="flex-start">
-            <Text fw={600} size="lg" lineClamp={2} style={{ flex: 1, lineHeight: 1.2 }}>
-              {event.name}
-            </Text>
+            <Stack gap="xs" style={{ flex: 1 }}>
+              <Text fw={600} size="lg" lineClamp={2} style={{ lineHeight: 1.2 }}>
+                {event.name}
+              </Text>
+              <Text size="xs" c="dimmed" ff="monospace">
+                {event.id}
+              </Text>
+            </Stack>
             <Group gap={4}>
               {event.archivedAt && (
                 <Badge color="gray" size="md" variant="light">

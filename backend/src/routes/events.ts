@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { constructionEvents, eventRoadAssets, roadAssets } from '../db/schema.js';
-import { eq, and, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, asc, desc } from 'drizzle-orm';
+import { eq, and, or, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
@@ -124,7 +124,11 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       conditions.push(ilike(constructionEvents.ward, `%${ward}%`));
     }
     if (name) {
-      conditions.push(ilike(constructionEvents.name, `%${name}%`));
+      // Search across both name and department fields
+      conditions.push(or(
+        ilike(constructionEvents.name, `%${name}%`),
+        ilike(constructionEvents.department, `%${name}%`)
+      ));
     }
     if (startDateFrom) {
       conditions.push(gte(constructionEvents.startDate, new Date(startDateFrom)));

@@ -21,8 +21,9 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+    const errorBody = await response.json().catch(() => ({ message: 'Unknown error' }));
+    // Backend returns { error: '...' }, fallback to message or HTTP status
+    throw new Error(errorBody.error || errorBody.message || `HTTP ${response.status}`);
   }
 
   return response.json();
@@ -141,6 +142,7 @@ export function useArchiveEvent() {
     mutationFn: (id: string) =>
       fetchApi<{ data: ConstructionEvent }>(`/events/${id}/archive`, {
         method: 'PATCH',
+        body: JSON.stringify({}), // Empty body required for Content-Type: application/json
       }),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
@@ -156,6 +158,7 @@ export function useUnarchiveEvent() {
     mutationFn: (id: string) =>
       fetchApi<{ data: ConstructionEvent }>(`/events/${id}/unarchive`, {
         method: 'PATCH',
+        body: JSON.stringify({}), // Empty body required for Content-Type: application/json
       }),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
