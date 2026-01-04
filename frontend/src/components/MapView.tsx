@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group, Button, Badge } from '@mantine/core';
+import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
 import { useEvents, useAssets, useInspections, useEvent } from '../hooks/useApi';
@@ -118,6 +118,7 @@ export function MapView() {
     openEventDetailModal,
     closeEventDetailModal,
     hoveredAssetId,
+    hoveredEventId,
     selectedRoadAssetIdsForForm,
     selectedAssetDetailsCache,
     setMapBbox: setMapBboxStore,
@@ -193,6 +194,8 @@ export function MapView() {
   const { data: editingEventResponse } = useEvent(editingEventId);
   // Fetch duplicate event for displaying source geometry in duplicate mode
   const { data: duplicateEventResponse } = useEvent(duplicateEventId);
+  // Fetch selected event separately (for archived event preview on map)
+  const { data: selectedEventResponse } = useEvent(selectedEventId);
   // Viewport-based asset loading for interaction
   // - zoom >= 14: load assets in viewport (for selection)
   // - filters active at low zoom: load ALL filtered assets (no bbox, show globally)
@@ -649,6 +652,32 @@ export function MapView() {
           'line-color': '#000000',
           'line-width': 20,
           'line-opacity': 0.001,
+        },
+      });
+
+      // Hover highlight layers for events (shown when hovering event card in list)
+      // Fill layer for Polygon/MultiPolygon events
+      map.current.addLayer({
+        id: 'hovered-event-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'fill-color': '#f59e0b', // Amber/orange
+          'fill-opacity': 0.35,
+        },
+      });
+
+      // Line layer for all event geometry types
+      map.current.addLayer({
+        id: 'hovered-event-line',
+        type: 'line',
+        source: 'events',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'line-color': '#f59e0b', // Amber/orange
+          'line-width': 6,
+          'line-opacity': 1,
         },
       });
 
@@ -1443,17 +1472,24 @@ export function MapView() {
     const source = map.current.getSource('events') as maplibregl.GeoJSONSource;
     if (!source) return;
 
+    // Merge selected event (from separate query) if not in main data (e.g., archived events)
+    const selectedEvent = selectedEventResponse?.data;
+    const allEvents = [...eventsData.data];
+    if (selectedEvent && !allEvents.some(e => e.id === selectedEvent.id)) {
+      allEvents.push(selectedEvent);
+    }
+
     // Filter out:
     // 1. The event being edited (it's shown in editing-event layer instead)
     // 2. Cancelled events by default (unless explicitly filtered to show cancelled)
-    // 3. Archived events (always hidden on map, even when archived section is expanded in list)
-    const eventsToShow = eventsData.data.filter((e: ConstructionEvent) => {
+    // 3. Archived events (hidden on map, except when selected for preview)
+    const eventsToShow = allEvents.filter((e: ConstructionEvent) => {
       // Exclude event being edited
       if (isEventFormOpen && editingEventId && e.id === editingEventId) return false;
       // Hide cancelled events unless explicitly filtering for them
       if (e.status === 'cancelled' && eventFilters.status !== 'cancelled') return false;
-      // Always hide archived events on the map
-      if (e.archivedAt) return false;
+      // Hide archived events on the map, but show if currently selected or hovered (for preview)
+      if (e.archivedAt && e.id !== selectedEventId && e.id !== hoveredEventId) return false;
       return true;
     });
 
@@ -1481,7 +1517,8 @@ export function MapView() {
       'events-ended-fill', 'events-ended-line',
       'events-planned-fill', 'events-planned-line',
       'events-active-fill', 'events-active-line',
-      'events-hit-area-fill', 'events-hit-area-line'
+      'events-hit-area-fill', 'events-hit-area-line',
+      'hovered-event-fill', 'hovered-event-line',
     ];
     for (const layerId of statusLayers) {
       // Guard: check layer exists before setting property (layer might not be created yet on first render)
@@ -1489,7 +1526,7 @@ export function MapView() {
         map.current.setLayoutProperty(layerId, 'visibility', eventsVisible ? 'visible' : 'none');
       }
     }
-  }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status]);
+  }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status, selectedEventId, selectedEventResponse, hoveredEventId]);
 
   // Update inspections layer
   useEffect(() => {
@@ -1535,8 +1572,10 @@ export function MapView() {
       popup.current.remove();
     }
 
-    if (selectedEventId && eventsData?.data) {
-      const event = eventsData.data.find((e: ConstructionEvent) => e.id === selectedEventId);
+    if (selectedEventId) {
+      // Look for event in main data or selected event response (for archived events)
+      const event = eventsData?.data?.find((e: ConstructionEvent) => e.id === selectedEventId)
+        || (selectedEventResponse?.data?.id === selectedEventId ? selectedEventResponse.data : null);
       if (event && event.geometry) {
         // Update highlight source (no auto-zoom - user clicks again to zoom)
         source.setData({
@@ -1576,7 +1615,7 @@ export function MapView() {
         initialZoomTimerRef.current = null;
       }
     }
-  }, [selectedEventId, eventsData, mapLoaded, setFlyToGeometry]);
+  }, [selectedEventId, eventsData, selectedEventResponse, mapLoaded, setFlyToGeometry]);
 
   // Show editing/duplicate event with transparent fill and fly to it
   useEffect(() => {
@@ -1814,6 +1853,29 @@ export function MapView() {
     }
   }, [hoveredAssetId, selectedAssetId, mapLoaded]);
 
+  // Update hover highlight layer filter when hoveredEventId changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    if (!map.current.getLayer('hovered-event-line')) return;
+
+    // Show hover highlight only if:
+    // - hoveredEventId is set
+    // - Not already selected (avoid duplicate highlight)
+    // - Event form is closed (events layer is visible)
+    const shouldHighlight = hoveredEventId &&
+      hoveredEventId !== selectedEventId &&
+      !isEventFormOpen;
+
+    const filter: maplibregl.FilterSpecification = shouldHighlight
+      ? ['==', ['get', 'id'], hoveredEventId]
+      : ['==', ['get', 'id'], '']; // Match nothing
+
+    map.current.setFilter('hovered-event-line', filter);
+    if (map.current.getLayer('hovered-event-fill')) {
+      map.current.setFilter('hovered-event-fill', filter);
+    }
+  }, [hoveredEventId, selectedEventId, isEventFormOpen, mapLoaded]);
+
   // Fly to geometry when triggered (e.g., clicking road badge in selector or event in list)
   useEffect(() => {
     console.log('[MapView] flyTo effect: mapLoaded=', mapLoaded, 'flyToGeometry=', flyToGeometry?.type || 'null');
@@ -1836,13 +1898,14 @@ export function MapView() {
         const feature = turf.feature(flyToGeometry);
         const length = turf.length(feature, { units: 'meters' });
 
-        // Calculate zoom based on feature size
-        let zoom = 16;
-        if (length < 50) zoom = 17;
-        else if (length < 150) zoom = 17;
-        else if (length < 500) zoom = 16;
-        else if (length < 1000) zoom = 15.5;
-        else zoom = 15;
+        // Calculate zoom based on feature size (higher values for more noticeable closeUp)
+        let zoom = 17;
+        if (length < 50) zoom = 18.5;
+        else if (length < 150) zoom = 18;
+        else if (length < 500) zoom = 17.5;
+        else if (length < 1000) zoom = 17;
+        else if (length < 2000) zoom = 16.5;
+        else zoom = 16;
 
         // Offset center to account for LEFT panel (EventEditorOverlay is on left side)
         // Visible area center is ~225px RIGHT of viewport center
@@ -1865,10 +1928,10 @@ export function MapView() {
           duration: 1000,
         });
       } else {
-        // Overview: wider view with lower zoom
+        // Overview: wider view (maxZoom 15.5 for good initial view, closeUp is 16-18.5)
         map.current.fitBounds(
           [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-          { padding: { top: 150, bottom: 150, left: 150, right: rightPadding }, maxZoom: 15, duration: 1000 }
+          { padding: { top: 150, bottom: 150, left: 150, right: rightPadding }, maxZoom: 15.5, duration: 1000 }
         );
       }
 
@@ -1890,6 +1953,29 @@ export function MapView() {
   return (
     <Box style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+
+      {/* Loading overlay */}
+      {!mapLoaded && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'var(--mantine-color-gray-1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}
+        >
+          <Stack align="center" gap="sm">
+            <Loader size="lg" />
+            <Text size="sm" c="dimmed">Loading map...</Text>
+          </Stack>
+        </Box>
+      )}
 
       {/* Road assets zoom/type indicator (hidden on Events tab) */}
       {showAssets && mapLoaded && currentView !== 'events' && (

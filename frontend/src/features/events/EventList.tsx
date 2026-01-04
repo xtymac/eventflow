@@ -39,7 +39,14 @@ const STATUS_LABELS: Record<EventStatus, string> = {
 
 export function EventList() {
   // Persisted filter state from store (including filtersOpen)
-  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry } = useUIStore();
+  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry, setHoveredEvent, isEventFormOpen } = useUIStore();
+
+  // Cleanup hover state on unmount to prevent stale hover
+  useEffect(() => {
+    return () => {
+      setHoveredEvent(null);
+    };
+  }, [setHoveredEvent]);
   const { status: statusFilter, search, department, dateRange, showArchivedSection } = eventFilters;
 
   // Track close-up state for toggling zoom levels
@@ -238,7 +245,9 @@ export function EventList() {
                 cursor: 'pointer',
                 borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : undefined,
                 backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : undefined,
+                transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
               }}
+              className="event-card-hover"
               onClick={() => {
                 if (selectedEventId === event.id) {
                   // Already selected: toggle between overview and close-up
@@ -256,6 +265,8 @@ export function EventList() {
                   }
                 }
               }}
+              onMouseEnter={() => !isEventFormOpen && setHoveredEvent(event.id)}
+              onMouseLeave={() => setHoveredEvent(null)}
             >
               <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
                 <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }}>
@@ -347,7 +358,9 @@ export function EventList() {
                       borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
                       backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-gray-0)',
                       opacity: 0.85,
+                      transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
                     }}
+                    className="event-card-hover"
                     onClick={() => {
                       if (selectedEventId === event.id) {
                         if (event.geometry) {
@@ -363,6 +376,8 @@ export function EventList() {
                         }
                       }
                     }}
+                    onMouseEnter={() => !isEventFormOpen && setHoveredEvent(event.id)}
+                    onMouseLeave={() => setHoveredEvent(null)}
                   >
                     <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
                       <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }} c="dimmed">

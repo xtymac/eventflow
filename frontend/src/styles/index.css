@@ -48,6 +48,12 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Event card hover effect */
+.event-card-hover:hover {
+  background-color: var(--mantine-color-gray-0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 /* MapLibre GL Draw - Cursor styles */
 .maplibregl-map.mouse-pointer .maplibregl-canvas-container,
 .mapboxgl-map.mouse-pointer .mapboxgl-canvas-container {

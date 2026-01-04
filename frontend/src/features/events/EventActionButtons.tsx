@@ -1,5 +1,6 @@
 import { Group, Button, Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useChangeEventStatus, useCancelEvent, useArchiveEvent, useUnarchiveEvent } from '../../hooks/useApi';
@@ -72,6 +73,18 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
             if (detailModalEventId === event.id) {
               closeEventDetailModal();
             }
+            notifications.show({
+              title: 'Event Archived',
+              message: 'The event has been archived successfully.',
+              color: 'green',
+            });
+          },
+          onError: (error) => {
+            notifications.show({
+              title: 'Archive Failed',
+              message: error instanceof Error ? error.message : 'Failed to archive event',
+              color: 'red',
+            });
           },
         });
       },
@@ -86,7 +99,22 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       labels: { confirm: 'Unarchive', cancel: 'Cancel' },
       confirmProps: { color: 'blue' },
       onConfirm: () => {
-        unarchiveEvent.mutate(event.id);
+        unarchiveEvent.mutate(event.id, {
+          onSuccess: () => {
+            notifications.show({
+              title: 'Event Unarchived',
+              message: 'The event is now visible in the default list.',
+              color: 'green',
+            });
+          },
+          onError: (error) => {
+            notifications.show({
+              title: 'Unarchive Failed',
+              message: error instanceof Error ? error.message : 'Failed to unarchive event',
+              color: 'red',
+            });
+          },
+        });
       },
       zIndex: 1100,
     });

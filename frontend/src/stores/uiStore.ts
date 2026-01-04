@@ -68,6 +68,7 @@ interface UIState {
   mapCenter: [number, number] | null;  // Current map center [lng, lat] for distance sorting
   mapZoom: number;                  // Current map zoom level
   hoveredAssetId: string | null;    // Asset being hovered in list (for map highlight)
+  hoveredEventId: string | null;    // Event being hovered in list (for map highlight)
   sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
   flyToGeometry: Geometry | null;   // Geometry to fly to (set to trigger flyTo, auto-clears after animation)
   flyToCloseUp: boolean;            // If true, zoom closer when flying to geometry
@@ -158,6 +159,7 @@ interface UIState {
   setMapCenter: (center: [number, number] | null) => void;
   setMapZoom: (zoom: number) => void;
   setHoveredAsset: (id: string | null) => void;
+  setHoveredEvent: (id: string | null) => void;
   setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
   setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
 }
@@ -210,6 +212,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   mapCenter: null,
   mapZoom: 0,
   hoveredAssetId: null,
+  hoveredEventId: null,
   sidebarAssets: [],
   flyToGeometry: null,
   flyToCloseUp: false,
@@ -507,6 +510,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setMapCenter: (center) => set({ mapCenter: center }),
   setMapZoom: (zoom) => set({ mapZoom: zoom }),
   setHoveredAsset: (id) => set({ hoveredAssetId: id }),
+  setHoveredEvent: (id) => set({ hoveredEventId: id }),
   setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
   setFlyToGeometry: (geometry, closeUp = false) => set({ flyToGeometry: geometry, flyToCloseUp: closeUp }),
 }));
