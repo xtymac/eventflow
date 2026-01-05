@@ -175,7 +175,7 @@ export function AssetList() {
 
     const timer = setTimeout(scrollToCard, 150);
     return () => clearTimeout(timer);
-  }, [selectedAssetId, selectedAssetData?.data]);
+  }, [selectedAssetId]);
 
   // Pre-populate edit state with current name when selection changes
   useEffect(() => {
