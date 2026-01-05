@@ -19,3 +19,13 @@ export function toGeomSqlNullable(geojson: Geometry | Point | null | undefined) 
 export function fromGeomSql(column: unknown) {
   return sql<Geometry | null>`CASE WHEN ${column} IS NULL THEN NULL ELSE ST_AsGeoJSON(${column})::json END`.as('geometry');
 }
+
+/** Convert non-null PostGIS geometry to GeoJSON for SELECT */
+export function fromGeomSqlRequired(column: unknown) {
+  return sql<Geometry>`ST_AsGeoJSON(${column})::json`.as('geometry');
+}
+
+/** Convert non-null PostGIS point geometry to GeoJSON for SELECT */
+export function fromPointSqlRequired(column: unknown) {
+  return sql<Point>`ST_AsGeoJSON(${column})::json`.as('geometry');
+}

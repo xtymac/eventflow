@@ -50,6 +50,13 @@
       "when": 1766652500000,
       "tag": "0006_name_source",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766652600000,
+      "tag": "0007_archive",
+      "breakpoints": true
     }
   ]
 }

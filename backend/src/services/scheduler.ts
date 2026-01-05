@@ -6,7 +6,7 @@ import { db } from '../db/index.js';
 import { constructionEvents } from '../db/schema.js';
 import { eq, lte, and } from 'drizzle-orm';
 import { syncEventToOrion } from './ngsi-sync.js';
-import { fromGeomSql } from '../db/geometry.js';
+import { fromGeomSqlRequired } from '../db/geometry.js';
 
 // Configure dayjs for Asia/Tokyo timezone
 dayjs.extend(utc);
@@ -22,8 +22,10 @@ const eventSelect = {
   startDate: constructionEvents.startDate,
   endDate: constructionEvents.endDate,
   restrictionType: constructionEvents.restrictionType,
-  geometry: fromGeomSql(constructionEvents.geometry),
+  geometry: fromGeomSqlRequired(constructionEvents.geometry),
   postEndDecision: constructionEvents.postEndDecision,
+  geometrySource: constructionEvents.geometrySource,
+  archivedAt: constructionEvents.archivedAt,
   department: constructionEvents.department,
   ward: constructionEvents.ward,
   createdBy: constructionEvents.createdBy,

@@ -1,0 +1,21 @@
+{$DOMAIN} {
+  encode zstd gzip
+
+  handle_path /api/* {
+    reverse_proxy api:3000
+  }
+
+  handle {
+    reverse_proxy web:80
+  }
+
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+  }
+
+  log {
+    output file /data/access.log
+  }
+}

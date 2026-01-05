@@ -1,12 +1,13 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import { Type, Static } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { roadAssets, roadAssetChanges, constructionEvents, eventRoadAssets } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { toGeomSql, toGeomSqlNullable, fromGeomSql } from '../db/geometry.js';
+import { toGeomSql, fromGeomSqlRequired } from '../db/geometry.js';
 import { getRoadNameForLineString, isGoogleMapsConfigured } from '../services/google-maps.js';
+import type { Geometry } from 'geojson';
 
 // BBOX validation helper
 function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
@@ -70,6 +71,8 @@ const RetireAssetSchema = Type.Object({
   replacedBy: Type.Optional(Type.String()),
 });
 
+type AssetResponse = Static<typeof AssetSchema>;
+
 export async function assetsRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
@@ -111,7 +114,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         bbox: Type.Optional(Type.String()),  // "minLng,minLat,maxLng,maxLat"
         limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),
         offset: Type.Optional(Type.Integer({ minimum: 0 })),
-        includeTotal: Type.Optional(Type.Boolean()),
+        includeTotal: Type.Optional(Type.Union([Type.Boolean(), Type.Literal('true'), Type.Literal('false')])),
       }),
       response: {
         200: Type.Object({
@@ -130,7 +133,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     // Backwards compat: support both q and searchName, prefer q
     const searchQuery = q ?? searchName;
     // Parse unnamed boolean (handles string 'true' from querystring if coerceTypes is off)
-    const unnamed = unnamedParam === true || (unnamedParam as unknown) === 'true';
+    const unnamed = unnamedParam === true || unnamedParam === 'true';
     // Pagination with server-side hard limit enforcement
     const MAX_LIMIT = 1000;
     const limit = Math.min(request.query.limit ?? 200, MAX_LIMIT);
@@ -220,7 +223,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         display_name as "displayName",
         name_source as "nameSource",
         name_confidence as "nameConfidence",
-        CASE WHEN geometry IS NULL THEN NULL ELSE ST_AsGeoJSON(geometry)::json END as geometry,
+        ST_AsGeoJSON(geometry)::json as geometry,
         road_type as "roadType", lanes, direction, status,
         valid_from as "validFrom", valid_to as "validTo",
         replaced_by as "replacedBy", owner_department as "ownerDepartment",
@@ -237,7 +240,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       validFrom: a.validFrom instanceof Date ? a.validFrom.toISOString() : a.validFrom,
       validTo: a.validTo instanceof Date ? a.validTo.toISOString() : a.validTo,
       updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : a.updatedAt,
-    }));
+    })) as AssetResponse[];
 
     return {
       data: assets,
@@ -268,7 +271,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSqlRequired(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -368,7 +371,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         id, name, geometry, road_type, lanes, direction,
         status, valid_from, owner_department, ward, landmark, updated_at
       ) VALUES (
-        ${id}, ${body.name}, ${toGeomSql(body.geometry)}, ${body.roadType},
+        ${id}, ${body.name}, ${toGeomSql(body.geometry as Geometry)}, ${body.roadType},
         ${body.lanes}, ${body.direction}, 'active', ${now},
         ${body.ownerDepartment ?? null}, ${body.ward ?? null},
         ${body.landmark ?? null}, ${now}
@@ -382,7 +385,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           id, event_id, change_type, new_road_asset_id, geometry, created_at
         ) VALUES (
           ${`RAC-${nanoid(8)}`}, ${body.eventId}, 'create', ${id},
-          ${toGeomSql(body.geometry)}, ${now}
+          ${toGeomSql(body.geometry as Geometry)}, ${now}
         )
       `);
     }
@@ -391,7 +394,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       data: {
         id,
         name: body.name,
-        geometry: body.geometry,
+        geometry: body.geometry as AssetResponse['geometry'],
         roadType: body.roadType,
         lanes: body.lanes,
         direction: body.direction,
@@ -436,7 +439,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     if (body.geometry) {
       await db.execute(sql`
         UPDATE road_assets
-        SET geometry = ${toGeomSql(body.geometry)}, updated_at = ${now}
+        SET geometry = ${toGeomSql(body.geometry as Geometry)}, updated_at = ${now}
         WHERE id = ${id}
       `);
     }
@@ -467,7 +470,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
             id, event_id, change_type, old_road_asset_id, new_road_asset_id, geometry, created_at
           ) VALUES (
             ${`RAC-${nanoid(8)}`}, ${body.eventId}, 'update', ${id}, ${id},
-            ${toGeomSql(changeGeom)}, ${now}
+            ${toGeomSql(changeGeom as Geometry)}, ${now}
           )
         `);
       } else {
@@ -492,7 +495,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSqlRequired(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -578,7 +581,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSqlRequired(roadAssets.geometry),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -660,7 +663,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         displayName: roadAssets.displayName,
         nameSource: roadAssets.nameSource,
         nameConfidence: roadAssets.nameConfidence,
-        geometry: fromGeomSql(roadAssets.geometry),
+        geometry: fromGeomSqlRequired(roadAssets.geometry),
         roadType: roadAssets.roadType,
         lanes: roadAssets.lanes,
         direction: roadAssets.direction,
@@ -823,7 +826,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           displayName: roadAssets.displayName,
           nameSource: roadAssets.nameSource,
           nameConfidence: roadAssets.nameConfidence,
-          geometry: fromGeomSql(roadAssets.geometry),
+          geometry: fromGeomSqlRequired(roadAssets.geometry),
           roadType: roadAssets.roadType,
           lanes: roadAssets.lanes,
           direction: roadAssets.direction,

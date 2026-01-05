@@ -1,11 +1,12 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import { Type, Static } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { inspectionRecords } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { toGeomSql, fromGeomSql } from '../db/geometry.js';
+import { toGeomSql, fromPointSqlRequired } from '../db/geometry.js';
+import type { Point } from 'geojson';
 
 // TypeBox schemas
 const PointGeometrySchema = Type.Object({
@@ -43,6 +44,8 @@ const UpdateInspectionSchema = Type.Object({
   notes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   geometry: Type.Optional(PointGeometrySchema),
 });
+
+type InspectionResponse = Static<typeof InspectionSchema>;
 
 export async function inspectionsRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -83,7 +86,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       inspectionDate: inspectionRecords.inspectionDate,
       result: inspectionRecords.result,
       notes: inspectionRecords.notes,
-      geometry: fromGeomSql(inspectionRecords.geometry),
+      geometry: fromPointSqlRequired(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };
 
@@ -93,12 +96,14 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
 
     const inspections = await query;
 
+    const data = inspections.map(i => ({
+      ...i,
+      inspectionDate: i.inspectionDate.toISOString().split('T')[0],
+      createdAt: i.createdAt.toISOString(),
+    })) as InspectionResponse[];
+
     return {
-      data: inspections.map(i => ({
-        ...i,
-        inspectionDate: i.inspectionDate.toISOString().split('T')[0],
-        createdAt: i.createdAt.toISOString(),
-      })),
+      data,
       meta: { total: inspections.length },
     };
   });
@@ -124,7 +129,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       inspectionDate: inspectionRecords.inspectionDate,
       result: inspectionRecords.result,
       notes: inspectionRecords.notes,
-      geometry: fromGeomSql(inspectionRecords.geometry),
+      geometry: fromPointSqlRequired(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };
 
@@ -140,7 +145,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
         ...inspection,
         inspectionDate: inspection.inspectionDate.toISOString().split('T')[0],
         createdAt: inspection.createdAt.toISOString(),
-      },
+      } as InspectionResponse,
     };
   });
 
@@ -174,7 +179,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       ) VALUES (
         ${id}, ${body.eventId ?? null}, ${body.roadAssetId ?? null},
         ${inspectionDate}, ${body.result}, ${body.notes ?? null},
-        ${toGeomSql(body.geometry)}, ${now}
+        ${toGeomSql(body.geometry as Point)}, ${now}
       )
     `);
 
@@ -238,7 +243,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
     if (body.geometry) {
       await db.execute(sql`
         UPDATE inspection_records
-        SET geometry = ${toGeomSql(body.geometry)}
+        SET geometry = ${toGeomSql(body.geometry as Point)}
         WHERE id = ${id}
       `);
     }
@@ -263,7 +268,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       inspectionDate: inspectionRecords.inspectionDate,
       result: inspectionRecords.result,
       notes: inspectionRecords.notes,
-      geometry: fromGeomSql(inspectionRecords.geometry),
+      geometry: fromPointSqlRequired(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };
 
@@ -276,7 +281,7 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
         ...inspection,
         inspectionDate: inspection.inspectionDate.toISOString().split('T')[0],
         createdAt: inspection.createdAt.toISOString(),
-      },
+      } as InspectionResponse,
     };
   });
 

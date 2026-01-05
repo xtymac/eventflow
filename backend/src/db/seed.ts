@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import type { FeatureCollection } from 'geojson';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { sql } from 'drizzle-orm';
-import { toGeomSql, fromGeomSql } from './geometry.js';
+import { toGeomSql, fromGeomSqlRequired } from './geometry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -116,7 +116,7 @@ async function seed() {
       startDate: constructionEvents.startDate,
       endDate: constructionEvents.endDate,
       restrictionType: constructionEvents.restrictionType,
-      geometry: fromGeomSql(constructionEvents.geometry),
+      geometry: fromGeomSqlRequired(constructionEvents.geometry),
       postEndDecision: constructionEvents.postEndDecision,
       archivedAt: constructionEvents.archivedAt,
       department: constructionEvents.department,

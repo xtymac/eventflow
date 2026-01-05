@@ -1,0 +1,16 @@
+FROM node:20-alpine AS builder
+WORKDIR /app/frontend
+COPY frontend/package.json ./
+RUN npm install --include=dev
+COPY frontend ./
+COPY shared /app/shared
+# Workaround: Link node_modules so shared/types can resolve @types/geojson
+RUN ln -s /app/frontend/node_modules /app/shared/node_modules
+RUN npm run build
+
+FROM nginx:1.27-alpine
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:80/ > /dev/null || exit 1
