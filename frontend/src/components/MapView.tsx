@@ -171,6 +171,14 @@ export function MapView() {
   const initialZoomTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userInteractedRef = useRef(false);
 
+  // Track if current zoom is close-up for toggle behavior on double-click
+  const isMapCloseUpRef = useRef(false);
+
+  // For manual double-click detection on map events
+  const lastClickTimeRef = useRef<number>(0);
+  const lastClickEventIdRef = useRef<string | null>(null);
+  const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
+
   // Debounced asset search (consistent with AssetList behavior)
   const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
 
@@ -919,7 +927,7 @@ export function MapView() {
         return true;
       };
 
-      // Event click handlers - toggle right sidebar (detail panel)
+      // Event click handler with manual double-click detection
       const handleEventClick = (e: maplibregl.MapLayerMouseEvent) => {
         // Don't handle event clicks while actively drawing
         if (useUIStore.getState().isDrawingActive) return;
@@ -928,32 +936,78 @@ export function MapView() {
           e.originalEvent.stopPropagation();
           const props = e.features[0].properties;
           const eventId = props?.id;
+          const geometry = e.features[0].geometry as Geometry;
           const state = useUIStore.getState();
           if (state.isEventFormOpen) return;
 
-          // Clear tooltips
-          setPreviewEvent(null);
-          setPreviewTooltipPosition(null);
-          setLockedTooltipPosition(null);
+          const now = Date.now();
 
-          // Toggle right sidebar: if same event is already showing, close it
-          if (state.detailModalEventId === eventId) {
-            closeEventDetailModal();
+          // Ignore clicks during cooldown period (after double-click)
+          if (now < doubleClickCooldownRef.current) {
+            console.log('[MapView] Ignoring click during cooldown');
+            return;
+          }
+
+          const timeSinceLastClick = now - lastClickTimeRef.current;
+          const isSameEvent = lastClickEventIdRef.current === eventId;
+
+          // Check if this is a double-click (same event within 400ms)
+          if (isSameEvent && timeSinceLastClick < 400) {
+            console.log('[MapView] Double-click detected on event:', eventId);
+            // Double-click: toggle zoom
+            const newCloseUp = !isMapCloseUpRef.current;
+            console.log('[MapView] Toggling zoom, newCloseUp:', newCloseUp);
+            setFlyToGeometry(geometry, newCloseUp);
+            // Reset click tracking and set cooldown to ignore subsequent clicks
+            lastClickTimeRef.current = 0;
+            lastClickEventIdRef.current = null;
+            doubleClickCooldownRef.current = now + 500; // Ignore clicks for 500ms after double-click
           } else {
-            // Select event and open detail panel
-            if (eventId !== state.selectedEventId) {
-              selectEvent(eventId);
-              setCurrentView('events');
-            }
-            openEventDetailModal(eventId);
-            // Zoom in to the event geometry
-            const geometry = e.features![0].geometry as Geometry;
-            if (geometry) {
+            console.log('[MapView] Single click on event:', eventId);
+            // Single click: normal behavior
+            // Update click tracking for potential double-click
+            lastClickTimeRef.current = now;
+            lastClickEventIdRef.current = eventId;
+
+            // Clear tooltips
+            setPreviewEvent(null);
+            setPreviewTooltipPosition(null);
+            setLockedTooltipPosition(null);
+
+            // Toggle right sidebar: if same event is already showing, close it
+            if (state.detailModalEventId === eventId) {
+              closeEventDetailModal();
+            } else {
+              // Select event and open detail panel
+              if (eventId !== state.selectedEventId) {
+                selectEvent(eventId);
+                setCurrentView('events');
+              }
+              openEventDetailModal(eventId);
+              // Zoom in to the event geometry (overview)
               setFlyToGeometry(geometry, false);
+              isMapCloseUpRef.current = false; // Reset zoom state for new event
             }
           }
         }
       };
+
+      // Disable default map double-click zoom on event features
+      map.current.on('dblclick', (e) => {
+        const features = map.current?.queryRenderedFeatures(e.point, {
+          layers: [
+            'events-ended-fill', 'events-ended-line',
+            'events-planned-fill', 'events-planned-line',
+            'events-active-fill', 'events-active-line',
+            'events-hit-area-fill', 'events-hit-area-line',
+            'selected-event-fill', 'selected-event-line'
+          ]
+        });
+        if (features && features.length > 0) {
+          // Prevent default map zoom on double-click when over event features
+          e.preventDefault();
+        }
+      });
 
       // Add click handlers for all status-specific event layers
       // Include selected-event layers so clicking a selected event still works
@@ -1655,9 +1709,15 @@ export function MapView() {
     }
 
     if (isEventFormOpen && sourceEventData?.geometry) {
-      // For edit mode: always show the original event boundary
-      // For duplicate mode: only show if manual geometry (for auto, road preview is sufficient)
-      const shouldShowOverlay = editingEventId || sourceEventData.geometrySource === 'manual';
+      // Determine if the draw control is handling this geometry
+      // If editing a manual geometry event, the draw control renders the editable polygon
+      // We should NOT show the overlay in this case (it would block vertex clicks!)
+      const isDrawControlHandlingGeometry = editingEventId && sourceEventData.geometrySource === 'manual';
+
+      // For edit mode with AUTO geometry: show overlay (draw control doesn't have it)
+      // For duplicate mode with MANUAL geometry: show overlay (draw control handles separately)
+      // For edit mode with MANUAL geometry: DON'T show overlay (draw control renders it)
+      const shouldShowOverlay = !isDrawControlHandlingGeometry && (editingEventId || sourceEventData.geometrySource === 'manual');
 
       if (shouldShowOverlay) {
         const statusColor = STATUS_COLORS[sourceEventData.status] || '#3B82F6';
@@ -1887,53 +1947,41 @@ export function MapView() {
       const bbox = turf.bbox(flyToGeometry);
 
       // Account for right panel (420px + 16px padding) when event form is open
-      const rightPadding = isEventFormOpen ? 450 : 100;
+      // Reduced from 450 to 250 for better centering
+      const rightPadding = isEventFormOpen ? 250 : 100;
 
-      // Use different zoom levels based on closeUp flag
-      // Overview: wider view (maxZoom 15), CloseUp: closer view (zoom 16-17)
+      // Use fitBounds with padding for both cases - this properly accounts for the right panel
+      // The right padding shifts the visible center to the left, placing geometry in the visible area
+      const padding = { top: 100, bottom: 100, left: 100, right: rightPadding };
+
       if (flyToCloseUp) {
-        // Close-up view: use flyTo with center and fixed zoom instead of fitBounds
-        // This prevents zooming out too far for large geometries
-        const center = turf.center(flyToGeometry);
+        // Close-up view: use higher minZoom for closer view
+        // Calculate zoom based on feature size
         const feature = turf.feature(flyToGeometry);
         const length = turf.length(feature, { units: 'meters' });
 
-        // Calculate zoom based on feature size (higher values for more noticeable closeUp)
-        let zoom = 17;
-        if (length < 50) zoom = 18.5;
-        else if (length < 150) zoom = 18;
-        else if (length < 500) zoom = 17.5;
-        else if (length < 1000) zoom = 17;
-        else if (length < 2000) zoom = 16.5;
-        else zoom = 16;
+        let minZoom = 17;
+        if (length < 50) minZoom = 18.5;
+        else if (length < 150) minZoom = 18;
+        else if (length < 500) minZoom = 17.5;
+        else if (length < 1000) minZoom = 17;
+        else if (length < 2000) minZoom = 16.5;
+        else minZoom = 16;
 
-        // Offset center to account for LEFT panel (EventEditorOverlay is on left side)
-        // Visible area center is ~225px RIGHT of viewport center
-        // To place geometry at visible center, we shift map center WEST (subtract from longitude)
-        const centerCoords = center.geometry.coordinates as [number, number];
-        let lngOffset = 0;
-        if (isEventFormOpen) {
-          const panelWidth = 450; // Left panel width in pixels
-          // Convert pixels to degrees at target zoom level
-          // In web mercator: 360° longitude = 256 * 2^zoom pixels (same at all latitudes)
-          const pixelsAtZoom = 256 * Math.pow(2, zoom);
-          const degreesPerPixel = 360 / pixelsAtZoom;
-          // NEGATIVE offset: shift map center WEST so geometry appears in visible area (right of left panel)
-          lngOffset = -(panelWidth / 2) * degreesPerPixel;
-        }
-
-        map.current.flyTo({
-          center: [centerCoords[0] + lngOffset, centerCoords[1]],
-          zoom,
-          duration: 1000,
-        });
-      } else {
-        // Overview: wider view (maxZoom 15.5 for good initial view, closeUp is 16-18.5)
         map.current.fitBounds(
           [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
-          { padding: { top: 150, bottom: 150, left: 150, right: rightPadding }, maxZoom: 15.5, duration: 1000 }
+          { padding, minZoom, maxZoom: 18.5, duration: 1000 }
+        );
+      } else {
+        // Overview: wider view (maxZoom 15.5 for good initial view)
+        map.current.fitBounds(
+          [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+          { padding, maxZoom: 15.5, duration: 1000 }
         );
       }
+
+      // Track current zoom state for toggle behavior
+      isMapCloseUpRef.current = flyToCloseUp;
 
       // Clear the flyToGeometry after animation starts
       setTimeout(() => {

@@ -46,6 +46,8 @@ export function useMapDraw(
   const [isDrawing, setIsDrawing] = useState(false);
   // Flag to skip mode effect after draw.create (we handle mode change manually)
   const skipNextModeEffectRef = useRef(false);
+  // Flag to indicate geometry is being loaded - prevents mode effect interference
+  const isLoadingGeometryRef = useRef(false);
   // Track the last draw mode to re-enter when adding another shape
   const lastDrawModeRef = useRef<'polygon' | 'line' | null>(null);
   // Track previous features for undo (cached before update)
@@ -202,6 +204,7 @@ export function useMapDraw(
       }
       drawRef.current = null;
       initialGeometryLoadedRef.current = false;
+      isLoadingGeometryRef.current = false;
       setIsReady(false);
     }
 
@@ -221,6 +224,7 @@ export function useMapDraw(
           // Control might already be removed
         }
         drawRef.current = null;
+        isLoadingGeometryRef.current = false;
         setIsReady(false);
       }
     };
@@ -239,8 +243,15 @@ export function useMapDraw(
       return;
     }
 
+    // Skip if geometry is currently being loaded (prevents race conditions)
+    if (isLoadingGeometryRef.current) {
+      console.log('[useMapDraw] Skipping mode effect (geometry is loading)');
+      return;
+    }
+
     const mode = options?.currentMode;
-    console.log('[useMapDraw] Applying mode:', mode);
+    const existingFeatures = drawRef.current.getAll();
+    console.log('[useMapDraw] Applying mode:', mode, 'existing features:', existingFeatures.features.length);
 
     try {
       switch (mode) {
@@ -261,18 +272,31 @@ export function useMapDraw(
           // When switching to select mode with existing features, enter direct_select
           // to allow immediate vertex editing on the last feature
           const data = drawRef.current.getAll();
+          const currentMode = drawRef.current.getMode();
+
+          // Don't change mode if already in direct_select with features (prevents React StrictMode double-run issues)
+          if (currentMode === 'direct_select' && data.features.length > 0) {
+            console.log('[useMapDraw] Mode effect: already in direct_select with features, skipping');
+            break;
+          }
+
           if (data.features.length > 0) {
             const lastFeature = data.features[data.features.length - 1];
             if (lastFeature.id) {
               drawRef.current.changeMode('direct_select', { featureId: lastFeature.id as string });
+              console.log('[useMapDraw] Mode effect: entered direct_select for feature:', lastFeature.id);
             } else {
               drawRef.current.changeMode('simple_select');
+              console.log('[useMapDraw] Mode effect: entered simple_select (no feature id)');
             }
           } else {
             drawRef.current.changeMode('simple_select');
+            console.log('[useMapDraw] Mode effect: entered simple_select (no features)');
           }
           break;
       }
+      // Log final mode
+      console.log('[useMapDraw] Mode effect: final mode is', drawRef.current.getMode());
     } catch (e) {
       console.warn('Failed to change draw mode:', e);
     }
@@ -337,6 +361,9 @@ export function useMapDraw(
       }
 
       try {
+        // Set loading flag to prevent mode effect interference
+        isLoadingGeometryRef.current = true;
+
         let lastFeatureId: string | undefined;
         for (const feature of featuresToAdd) {
           const ids = drawRef.current.add(feature);
@@ -345,19 +372,36 @@ export function useMapDraw(
           }
         }
 
-        // Use direct_select for immediate vertex editing on the last feature
-        if (lastFeatureId) {
-          drawRef.current.changeMode('direct_select', { featureId: lastFeatureId });
-        } else {
-          drawRef.current.changeMode('simple_select');
-        }
+        // Skip the next mode effect since we're manually setting the mode
+        // This prevents the mode effect from interfering with the loaded features
+        skipNextModeEffectRef.current = true;
+
         initialGeometryLoadedRef.current = true;
         console.log('[useMapDraw] Loaded', featuresToAdd.length, 'features for editing');
 
+        // Enter direct_select IMMEDIATELY so the polygon is visible right away
+        // (active polygon has higher fill opacity than inactive)
+        if (lastFeatureId) {
+          try {
+            drawRef.current.changeMode('direct_select', { featureId: lastFeatureId });
+            console.log('[useMapDraw] Loaded features: entered direct_select for feature:', lastFeatureId);
+          } catch (e) {
+            console.warn('[useMapDraw] Failed to enter direct_select after load:', e);
+            drawRef.current.changeMode('simple_select');
+          }
+        } else {
+          drawRef.current.changeMode('simple_select');
+        }
+
+        // Clear loading flag after mode is set
+        isLoadingGeometryRef.current = false;
+
         // Notify about loaded features so MapView can update store (including currentDrawType)
+        // Do this AFTER entering direct_select so the polygon is already visible
         onFeaturesChangeRef.current?.(featuresToAdd);
       } catch (e) {
         console.warn('Failed to load initial geometry into draw:', e);
+        isLoadingGeometryRef.current = false;
       }
     }
   }, [isEnabled, isReady, options?.initialGeometry, options?.geometrySource]);
@@ -530,6 +574,9 @@ export function useMapDraw(
 
     console.log('[useMapDraw] restoreFeatures called with', features?.length ?? 0, 'features');
 
+    // Set loading flag to prevent mode effect interference
+    isLoadingGeometryRef.current = true;
+
     try {
       // Clear draw canvas
       drawRef.current.deleteAll();
@@ -546,10 +593,15 @@ export function useMapDraw(
           }
         }
 
-        // Select the last added feature for editing (use the ID from add(), not original feature)
+        // Skip the next mode effect since we're manually setting the mode
+        // This prevents the mode effect from interfering with the restored features
+        skipNextModeEffectRef.current = true;
+
+        // Enter direct_select IMMEDIATELY so the polygon is visible right away
         if (lastAddedId) {
           try {
             drawRef.current.changeMode('direct_select', { featureId: lastAddedId });
+            console.log('[useMapDraw] restoreFeatures: entered direct_select for feature:', lastAddedId);
           } catch (modeError) {
             console.warn('[useMapDraw] Failed to enter direct_select, using simple_select:', modeError);
             drawRef.current.changeMode('simple_select');
@@ -565,13 +617,18 @@ export function useMapDraw(
         const currentFeatures = drawRef.current.getAll().features as Feature[];
         previousFeaturesRef.current = JSON.parse(JSON.stringify(currentFeatures));
         console.log('[useMapDraw] restoreFeatures: set previousFeaturesRef with', currentFeatures.length, 'features');
+
+        // Clear loading flag after mode is set
+        isLoadingGeometryRef.current = false;
       } else {
         // No features - go to simple_select
         drawRef.current.changeMode('simple_select');
         previousFeaturesRef.current = null;
+        isLoadingGeometryRef.current = false;
       }
     } catch (e) {
       console.warn('Failed to restore features:', e);
+      isLoadingGeometryRef.current = false;
     }
   }, []);
 

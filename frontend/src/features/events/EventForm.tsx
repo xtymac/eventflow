@@ -501,7 +501,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     return () => {
       setPreviewGeometry(null);
       clearDrawing();
-      // Reset the processed duplicate ref
+      // Reset the processed duplicate ref so the effect can run again if form reopens
       processedDuplicateIdRef.current = null;
     };
   }, [setPreviewGeometry, clearDrawing]);

@@ -13,14 +13,14 @@ export const drawStyles = [
       'fill-opacity': 0.2,
     },
   },
-  // Polygon fill - inactive (completed) - lower opacity to distinguish from active
+  // Polygon fill - inactive (completed) - visible but lower opacity than active
   {
     id: 'gl-draw-polygon-fill-inactive',
     type: 'fill',
     filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
     paint: {
       'fill-color': '#06B6D4', // cyan
-      'fill-opacity': 0.1,  // Was 0.3, lowered to make inactive less prominent
+      'fill-opacity': 0.15,  // Visible but lower than active (0.2)
     },
   },
   // Polygon stroke - active

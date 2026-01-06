@@ -24,7 +24,29 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       labels: { confirm: 'Cancel Event', cancel: 'Keep Event' },
       confirmProps: { color: 'red' },
       onConfirm: () => {
-        cancelEvent.mutate(event.id);
+        cancelEvent.mutate(event.id, {
+          onSuccess: () => {
+            // Clear selection if this event was selected
+            if (selectedEventId === event.id) {
+              selectEvent(null);
+            }
+            if (detailModalEventId === event.id) {
+              closeEventDetailModal();
+            }
+            notifications.show({
+              title: 'Event Cancelled',
+              message: 'The event has been cancelled successfully.',
+              color: 'green',
+            });
+          },
+          onError: (error) => {
+            notifications.show({
+              title: 'Cancel Failed',
+              message: error instanceof Error ? error.message : 'Failed to cancel event',
+              color: 'red',
+            });
+          },
+        });
       },
       zIndex: 1100,
     });

@@ -96,15 +96,11 @@ export function EventList() {
   const allEvents = data?.data || [];
   const archivedCount = data?.meta?.archivedCount ?? 0;
 
-  // Hide cancelled and archived events from main list
-  const events = allEvents.filter(e =>
-    (statusFilter === 'cancelled' || e.status !== 'cancelled') && !e.archivedAt
-  );
+  // Hide archived events from main list (cancelled events are shown)
+  const events = allEvents.filter(e => !e.archivedAt);
 
   // Filter archived events from the includeArchived query
-  const archivedEvents = (archivedData?.data || []).filter(e =>
-    e.archivedAt && (statusFilter === 'cancelled' || e.status !== 'cancelled')
-  );
+  const archivedEvents = (archivedData?.data || []).filter(e => e.archivedAt);
 
   return (
     <Stack gap="sm">

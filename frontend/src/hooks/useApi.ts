@@ -127,6 +127,7 @@ export function useCancelEvent() {
     mutationFn: (id: string) =>
       fetchApi<{ data: ConstructionEvent }>(`/events/${id}`, {
         method: 'DELETE',
+        body: JSON.stringify({}), // Empty body required for Content-Type: application/json
       }),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
