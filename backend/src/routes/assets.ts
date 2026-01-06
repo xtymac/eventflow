@@ -224,7 +224,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         road_type as "roadType", lanes, direction, status,
         valid_from as "validFrom", valid_to as "validTo",
         replaced_by as "replacedBy", owner_department as "ownerDepartment",
-        ward, landmark, updated_at as "updatedAt"
+        ward, landmark, sublocality, updated_at as "updatedAt"
       FROM road_assets
       ${whereClause}
       ORDER BY id
@@ -279,6 +279,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ownerDepartment: roadAssets.ownerDepartment,
       ward: roadAssets.ward,
       landmark: roadAssets.landmark,
+      sublocality: roadAssets.sublocality,
       updatedAt: roadAssets.updatedAt,
     };
 

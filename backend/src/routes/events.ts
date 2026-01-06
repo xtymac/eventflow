@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
 import { enrichRoadNamesForEvent, enrichAllEventRoadNames, countAllEventUnnamedRoads, countNearbyUnnamedRoads, enrichNearbyRoadNames } from '../services/road-name-enrichment.js';
-import { isGoogleMapsConfigured } from '../services/google-maps.js';
+import { isGoogleMapsConfigured, getRoadNameForLineString } from '../services/google-maps.js';
 
 // TypeBox schemas
 const GeometrySchema = Type.Object({
@@ -1446,5 +1446,101 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         distanceMeters: distance,
       },
     };
+  });
+
+  // POST /events/update-sublocality - Update sublocality for roads with generic names like "道路"
+  app.post('/update-sublocality', {
+    schema: {
+      querystring: Type.Object({
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 50 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Object({
+            processed: Type.Number(),
+            enriched: Type.Number(),
+            skipped: Type.Number(),
+            errors: Type.Array(Type.String()),
+          }),
+        }),
+        503: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    if (!isGoogleMapsConfigured()) {
+      return reply.status(503).send({
+        error: 'Google Maps API is not configured. Set GOOGLE_MAPS_API_KEY environment variable.',
+      });
+    }
+
+    const limit = request.query.limit ?? 50;
+    const result = {
+      processed: 0,
+      enriched: 0,
+      skipped: 0,
+      errors: [] as string[],
+    };
+
+    try {
+      // Find roads with generic names that don't have sublocality yet
+      const genericRoads = await db.execute(sql`
+        SELECT
+          id,
+          ST_AsGeoJSON(geometry)::json as geometry
+        FROM road_assets
+        WHERE display_name = '道路'
+          AND (sublocality IS NULL OR sublocality = '')
+          AND geometry IS NOT NULL
+        LIMIT ${limit}
+      `);
+
+      const roads = genericRoads.rows as Array<{
+        id: string;
+        geometry: { type: string; coordinates: [number, number][] };
+      }>;
+
+      console.log(`[UpdateSublocality] Found ${roads.length} roads needing sublocality`);
+
+      for (const road of roads) {
+        result.processed++;
+
+        if (!road.geometry || road.geometry.type !== 'LineString') {
+          result.skipped++;
+          continue;
+        }
+
+        try {
+          const lookupResult = await getRoadNameForLineString(road.geometry.coordinates);
+
+          if (lookupResult.sublocality) {
+            await db
+              .update(roadAssets)
+              .set({
+                sublocality: lookupResult.sublocality,
+                updatedAt: new Date(),
+              })
+              .where(eq(roadAssets.id, road.id));
+
+            result.enriched++;
+            console.log(`[UpdateSublocality] Road ${road.id}: sublocality = "${lookupResult.sublocality}"`);
+          } else {
+            result.skipped++;
+          }
+
+          // Rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          result.errors.push(`Road ${road.id}: ${message}`);
+        }
+      }
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      result.errors.push(`Query failed: ${message}`);
+    }
+
+    return { data: result };
   });
 }

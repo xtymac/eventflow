@@ -58,6 +58,7 @@ export const roadAssets = pgTable('road_assets', {
   ownerDepartment: varchar('owner_department', { length: 100 }),
   ward: varchar('ward', { length: 100 }),
   landmark: varchar('landmark', { length: 255 }),
+  sublocality: varchar('sublocality', { length: 255 }),  // 町名/丁目 from Google Maps
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   statusIdx: index('idx_assets_status').on(table.status),

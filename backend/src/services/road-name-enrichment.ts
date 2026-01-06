@@ -75,11 +75,12 @@ export async function enrichRoadNamesForEvent(eventId: string): Promise<Enrichme
         const lookupResult = await getRoadNameForLineString(road.geometry.coordinates);
 
         if (lookupResult.roadName) {
-          // Update the road asset with the fetched name
+          // Update the road asset with the fetched name and sublocality
           await db
             .update(roadAssets)
             .set({
               displayName: lookupResult.roadName,
+              sublocality: lookupResult.sublocality,
               nameSource: 'google',
               nameConfidence: 'medium',
               updatedAt: new Date(),
@@ -87,7 +88,7 @@ export async function enrichRoadNamesForEvent(eventId: string): Promise<Enrichme
             .where(eq(roadAssets.id, road.id));
 
           result.enriched++;
-          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}"`);
+          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}" (${lookupResult.sublocality || 'no sublocality'})`);
         } else {
           result.skipped++;
         }
@@ -257,6 +258,7 @@ export async function enrichNearbyRoadNames(
             .update(roadAssets)
             .set({
               displayName: lookupResult.roadName,
+              sublocality: lookupResult.sublocality,
               nameSource: 'google',
               nameConfidence: 'medium',
               updatedAt: new Date(),
@@ -264,7 +266,7 @@ export async function enrichNearbyRoadNames(
             .where(eq(roadAssets.id, road.id));
 
           result.enriched++;
-          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}"`);
+          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}" (${lookupResult.sublocality || 'no sublocality'})`);
         } else {
           // Mark as attempted so we don't retry
           await db
@@ -350,11 +352,12 @@ export async function enrichAllEventRoadNames(limit: number = 100): Promise<Enri
         const lookupResult = await getRoadNameForLineString(road.geometry.coordinates);
 
         if (lookupResult.roadName) {
-          // Update the road asset with the fetched name
+          // Update the road asset with the fetched name and sublocality
           await db
             .update(roadAssets)
             .set({
               displayName: lookupResult.roadName,
+              sublocality: lookupResult.sublocality,
               nameSource: 'google',
               nameConfidence: 'medium',
               updatedAt: new Date(),
@@ -362,7 +365,7 @@ export async function enrichAllEventRoadNames(limit: number = 100): Promise<Enri
             .where(eq(roadAssets.id, road.id));
 
           result.enriched++;
-          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}"`);
+          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}" (${lookupResult.sublocality || 'no sublocality'})`);
         } else {
           result.skipped++;
         }

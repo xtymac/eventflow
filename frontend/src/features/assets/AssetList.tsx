@@ -418,6 +418,10 @@ export function AssetList() {
         {displayList.map((asset: RoadAsset) => {
           const displayText = getRoadAssetLabel(asset);
           const isUnnamed = isRoadAssetUnnamed(asset);
+          // For generic names like "道路", add more disambiguation
+          const isGenericName = displayText === '道路' || displayText === 'Unnamed Road';
+          const locationLabel = asset.sublocality || asset.ward;
+          const shortId = asset.id.replace(/^RA-/, '').replace(/^[A-Z]+-/, '');  // e.g. "RA-ATSU-1890" -> "1890"
 
           return (
             <Card
@@ -443,7 +447,10 @@ export function AssetList() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Group justify="space-between" wrap="nowrap" gap="xs">
                     <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
-                      {displayText}{asset.ward ? ` · ${asset.ward}` : ''}
+                      {isGenericName
+                        ? `${displayText}${locationLabel ? ` · ${locationLabel}` : ''}${shortId ? ` · #${shortId}` : ''}`
+                        : `${displayText}${asset.ward ? ` · ${asset.ward}` : ''}`
+                      }
                     </Text>
                     <Badge color={ROAD_TYPE_COLORS[asset.roadType]} size="sm" style={{ flexShrink: 0 }}>
                       {ROAD_TYPE_LABELS[asset.roadType]}

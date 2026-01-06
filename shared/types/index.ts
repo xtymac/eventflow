@@ -83,6 +83,7 @@ export interface RoadAsset {
   ownerDepartment?: string;
   ward?: string;
   landmark?: string;
+  sublocality?: string;  // 町名/丁目 from Google Maps
   updatedAt: string; // ISO 8601 timestamp
 }
 

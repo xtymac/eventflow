@@ -5,6 +5,7 @@
 
 interface ReverseGeocodeResult {
   roadName: string | null;
+  sublocality: string | null;  // 町名/丁目 (sublocality_level_1, neighborhood)
   formattedAddress: string | null;
   placeId: string | null;
 }
@@ -55,7 +56,7 @@ export async function getRoadNameFromCoordinates(
   const data: GeocodeResponse = await response.json();
 
   if (data.status === 'ZERO_RESULTS') {
-    return { roadName: null, formattedAddress: null, placeId: null };
+    return { roadName: null, sublocality: null, formattedAddress: null, placeId: null };
   }
 
   if (data.status !== 'OK') {
@@ -65,11 +66,26 @@ export async function getRoadNameFromCoordinates(
   // Find the route result
   const routeResult = data.results.find(r => r.types.includes('route'));
 
+  // Helper to extract sublocality from address components
+  const extractSublocality = (components: GeocodeResponse['results'][0]['address_components']): string | null => {
+    // Priority: sublocality_level_1 > neighborhood > sublocality
+    const sublocalityLevel1 = components.find(c => c.types.includes('sublocality_level_1'));
+    if (sublocalityLevel1) return sublocalityLevel1.long_name;
+
+    const neighborhood = components.find(c => c.types.includes('neighborhood'));
+    if (neighborhood) return neighborhood.long_name;
+
+    const sublocality = components.find(c => c.types.includes('sublocality'));
+    if (sublocality) return sublocality.long_name;
+
+    return null;
+  };
+
   if (!routeResult) {
     // Fallback to first result
     const firstResult = data.results[0];
     if (!firstResult) {
-      return { roadName: null, formattedAddress: null, placeId: null };
+      return { roadName: null, sublocality: null, formattedAddress: null, placeId: null };
     }
 
     // Try to extract route from address components
@@ -79,6 +95,7 @@ export async function getRoadNameFromCoordinates(
 
     return {
       roadName: routeComponent?.long_name || null,
+      sublocality: extractSublocality(firstResult.address_components),
       formattedAddress: firstResult.formatted_address,
       placeId: firstResult.place_id,
     };
@@ -91,6 +108,7 @@ export async function getRoadNameFromCoordinates(
 
   return {
     roadName: routeComponent?.long_name || null,
+    sublocality: extractSublocality(routeResult.address_components),
     formattedAddress: routeResult.formatted_address,
     placeId: routeResult.place_id,
   };
@@ -105,7 +123,7 @@ export async function getRoadNameForLineString(
   coordinates: [number, number][]
 ): Promise<ReverseGeocodeResult> {
   if (!coordinates || coordinates.length === 0) {
-    return { roadName: null, formattedAddress: null, placeId: null };
+    return { roadName: null, sublocality: null, formattedAddress: null, placeId: null };
   }
 
   // Sample up to 3 points: start, middle, end
@@ -132,7 +150,7 @@ export async function getRoadNameForLineString(
   }
 
   if (results.length === 0) {
-    return { roadName: null, formattedAddress: null, placeId: null };
+    return { roadName: null, sublocality: null, formattedAddress: null, placeId: null };
   }
 
   // Return the most common road name, or first if all different
