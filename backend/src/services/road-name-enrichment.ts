@@ -153,31 +153,30 @@ export async function countAllEventUnnamedRoads(): Promise<number> {
  * @returns Number of nearby unnamed roads
  */
 export async function countNearbyUnnamedRoads(distanceMeters: number = 100): Promise<number> {
+  // Use ST_Buffer to create a single buffered area around all event roads
+  // Then use ST_Intersects which can leverage the spatial index efficiently
+  // Note: ST_Union works on geometry, then we cast to geography for ST_Buffer (meters)
   const result = await db.execute(sql`
-    WITH event_roads AS (
-      SELECT DISTINCT ra.geometry
+    WITH event_buffer AS (
+      SELECT ST_Buffer(
+        ST_Union(ra.geometry)::geography,
+        ${distanceMeters}
+      )::geometry as buffer
       FROM road_assets ra
       INNER JOIN event_road_assets era ON ra.id = era.road_asset_id
       WHERE ra.geometry IS NOT NULL
     )
-    SELECT COUNT(DISTINCT ra.id)::int as count
-    FROM road_assets ra
+    SELECT COUNT(*)::int as count
+    FROM road_assets ra, event_buffer eb
     WHERE (
       COALESCE(TRIM(ra.display_name), '') = ''
       AND COALESCE(TRIM(ra.name), '') = ''
     )
     AND ra.geometry IS NOT NULL
     AND ra.id NOT IN (
-      SELECT DISTINCT era.road_asset_id FROM event_road_assets era
+      SELECT era.road_asset_id FROM event_road_assets era
     )
-    AND EXISTS (
-      SELECT 1 FROM event_roads er
-      WHERE ST_DWithin(
-        ra.geometry::geography,
-        er.geometry::geography,
-        ${distanceMeters}
-      )
-    )
+    AND ST_Intersects(ra.geometry, eb.buffer)
   `);
 
   return (result.rows[0] as { count: number })?.count ?? 0;
@@ -207,9 +206,14 @@ export async function enrichNearbyRoadNames(
 
   try {
     // Find unnamed roads within distanceMeters of any event-covered road
+    // Use ST_Buffer + ST_Intersects for better performance with spatial index
+    // Note: ST_Union works on geometry, then we cast to geography for ST_Buffer (meters)
     const nearbyRoads = await db.execute(sql`
-      WITH event_roads AS (
-        SELECT DISTINCT ra.geometry
+      WITH event_buffer AS (
+        SELECT ST_Buffer(
+          ST_Union(ra.geometry)::geography,
+          ${distanceMeters}
+        )::geometry as buffer
         FROM road_assets ra
         INNER JOIN event_road_assets era ON ra.id = era.road_asset_id
         WHERE ra.geometry IS NOT NULL
@@ -217,23 +221,16 @@ export async function enrichNearbyRoadNames(
       SELECT
         ra.id,
         ST_AsGeoJSON(ra.geometry)::json as geometry
-      FROM road_assets ra
+      FROM road_assets ra, event_buffer eb
       WHERE (
         COALESCE(TRIM(ra.display_name), '') = ''
         AND COALESCE(TRIM(ra.name), '') = ''
       )
       AND ra.geometry IS NOT NULL
       AND ra.id NOT IN (
-        SELECT DISTINCT era.road_asset_id FROM event_road_assets era
+        SELECT era.road_asset_id FROM event_road_assets era
       )
-      AND EXISTS (
-        SELECT 1 FROM event_roads er
-        WHERE ST_DWithin(
-          ra.geometry::geography,
-          er.geometry::geography,
-          ${distanceMeters}
-        )
-      )
+      AND ST_Intersects(ra.geometry, eb.buffer)
       LIMIT ${limit}
     `);
 
