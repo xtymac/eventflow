@@ -7,7 +7,7 @@ import { eq, and, or, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, as
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
-import { enrichRoadNamesForEvent, enrichAllEventRoadNames, countAllEventUnnamedRoads } from '../services/road-name-enrichment.js';
+import { enrichRoadNamesForEvent, enrichAllEventRoadNames, countAllEventUnnamedRoads, countNearbyUnnamedRoads, enrichNearbyRoadNames } from '../services/road-name-enrichment.js';
 import { isGoogleMapsConfigured } from '../services/google-maps.js';
 
 // TypeBox schemas
@@ -1378,6 +1378,73 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     return {
       data: result,
+    };
+  });
+
+  // GET /events/enrich-nearby-roads/status - Check status of unnamed roads near events
+  app.get('/enrich-nearby-roads/status', {
+    schema: {
+      querystring: Type.Object({
+        distance: Type.Optional(Type.Integer({ minimum: 10, maximum: 500, default: 100 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Object({
+            unnamedCount: Type.Number(),
+            distanceMeters: Type.Number(),
+            googleMapsConfigured: Type.Boolean(),
+          }),
+        }),
+      },
+    },
+  }, async (request) => {
+    const distance = request.query.distance ?? 100;
+    const unnamedCount = await countNearbyUnnamedRoads(distance);
+    return {
+      data: {
+        unnamedCount,
+        distanceMeters: distance,
+        googleMapsConfigured: isGoogleMapsConfigured(),
+      },
+    };
+  });
+
+  // POST /events/enrich-nearby-roads - Enrich road names for roads near event-covered roads
+  app.post('/enrich-nearby-roads', {
+    schema: {
+      querystring: Type.Object({
+        distance: Type.Optional(Type.Integer({ minimum: 10, maximum: 500, default: 100 })),
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500, default: 100 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Object({
+            processed: Type.Number(),
+            enriched: Type.Number(),
+            skipped: Type.Number(),
+            errors: Type.Array(Type.String()),
+            distanceMeters: Type.Number(),
+          }),
+        }),
+        503: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    if (!isGoogleMapsConfigured()) {
+      return reply.status(503).send({
+        error: 'Google Maps API is not configured. Set GOOGLE_MAPS_API_KEY environment variable.',
+      });
+    }
+
+    const distance = request.query.distance ?? 100;
+    const limit = request.query.limit ?? 100;
+    const result = await enrichNearbyRoadNames(distance, limit);
+
+    return {
+      data: {
+        ...result,
+        distanceMeters: distance,
+      },
     };
   });
 }

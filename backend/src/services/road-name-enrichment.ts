@@ -148,10 +148,156 @@ export async function countAllEventUnnamedRoads(): Promise<number> {
 }
 
 /**
- * Enrich road names for ALL unnamed roads that are covered by any event
+ * Count unnamed roads within a distance of event-covered roads
+ * @param distanceMeters Distance in meters from event-covered roads
+ * @returns Number of nearby unnamed roads
+ */
+export async function countNearbyUnnamedRoads(distanceMeters: number = 100): Promise<number> {
+  const result = await db.execute(sql`
+    WITH event_roads AS (
+      SELECT DISTINCT ra.geometry
+      FROM road_assets ra
+      INNER JOIN event_road_assets era ON ra.id = era.road_asset_id
+      WHERE ra.geometry IS NOT NULL
+    )
+    SELECT COUNT(DISTINCT ra.id)::int as count
+    FROM road_assets ra
+    WHERE (
+      COALESCE(TRIM(ra.display_name), '') = ''
+      AND COALESCE(TRIM(ra.name), '') = ''
+    )
+    AND ra.geometry IS NOT NULL
+    AND ra.id NOT IN (
+      SELECT DISTINCT era.road_asset_id FROM event_road_assets era
+    )
+    AND EXISTS (
+      SELECT 1 FROM event_roads er
+      WHERE ST_DWithin(
+        ra.geometry::geography,
+        er.geometry::geography,
+        ${distanceMeters}
+      )
+    )
+  `);
+
+  return (result.rows[0] as { count: number })?.count ?? 0;
+}
+
+/**
+ * Enrich road names for unnamed roads within a distance of event-covered roads
+ * @param distanceMeters Distance in meters from event-covered roads
  * @param limit Maximum number of roads to process (for cost control)
  * @returns Statistics about the enrichment process
  */
+export async function enrichNearbyRoadNames(
+  distanceMeters: number = 100,
+  limit: number = 100
+): Promise<EnrichmentResult> {
+  const result: EnrichmentResult = {
+    processed: 0,
+    enriched: 0,
+    skipped: 0,
+    errors: [],
+  };
+
+  if (!isGoogleMapsConfigured()) {
+    result.errors.push('Google Maps API is not configured');
+    return result;
+  }
+
+  try {
+    // Find unnamed roads within distanceMeters of any event-covered road
+    const nearbyRoads = await db.execute(sql`
+      WITH event_roads AS (
+        SELECT DISTINCT ra.geometry
+        FROM road_assets ra
+        INNER JOIN event_road_assets era ON ra.id = era.road_asset_id
+        WHERE ra.geometry IS NOT NULL
+      )
+      SELECT
+        ra.id,
+        ST_AsGeoJSON(ra.geometry)::json as geometry
+      FROM road_assets ra
+      WHERE (
+        COALESCE(TRIM(ra.display_name), '') = ''
+        AND COALESCE(TRIM(ra.name), '') = ''
+      )
+      AND ra.geometry IS NOT NULL
+      AND ra.id NOT IN (
+        SELECT DISTINCT era.road_asset_id FROM event_road_assets era
+      )
+      AND EXISTS (
+        SELECT 1 FROM event_roads er
+        WHERE ST_DWithin(
+          ra.geometry::geography,
+          er.geometry::geography,
+          ${distanceMeters}
+        )
+      )
+      LIMIT ${limit}
+    `);
+
+    const roads = nearbyRoads.rows as Array<{
+      id: string;
+      geometry: { type: string; coordinates: [number, number][] };
+    }>;
+
+    console.log(`[RoadNameEnrich] Nearby: Found ${roads.length} unnamed roads within ${distanceMeters}m of events`);
+
+    for (const road of roads) {
+      result.processed++;
+
+      if (!road.geometry || road.geometry.type !== 'LineString') {
+        result.skipped++;
+        continue;
+      }
+
+      try {
+        const lookupResult = await getRoadNameForLineString(road.geometry.coordinates);
+
+        if (lookupResult.roadName) {
+          await db
+            .update(roadAssets)
+            .set({
+              displayName: lookupResult.roadName,
+              nameSource: 'google',
+              nameConfidence: 'medium',
+              updatedAt: new Date(),
+            })
+            .where(eq(roadAssets.id, road.id));
+
+          result.enriched++;
+          console.log(`[RoadNameEnrich] Road ${road.id}: "${lookupResult.roadName}"`);
+        } else {
+          // Mark as attempted so we don't retry
+          await db
+            .update(roadAssets)
+            .set({
+              nameSource: 'google',
+              nameConfidence: 'low',
+              updatedAt: new Date(),
+            })
+            .where(eq(roadAssets.id, road.id));
+          result.skipped++;
+        }
+
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        result.errors.push(`Road ${road.id}: ${message}`);
+      }
+    }
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    result.errors.push(`Query failed: ${message}`);
+  }
+
+  return result;
+}
+
 export async function enrichAllEventRoadNames(limit: number = 100): Promise<EnrichmentResult> {
   const result: EnrichmentResult = {
     processed: 0,
