@@ -137,6 +137,14 @@ export function MapView() {
     clearDrawAction,
     shouldZoomToDrawing,
     setShouldZoomToDrawing,
+    // Drawing context (shared between event form, road update, inspection form)
+    drawingContext,
+    setInspectionDrawnPoint,
+    setRoadUpdateDrawnFeatures,
+    selectInspection,
+    // Road update mode
+    isRoadUpdateModeActive,
+    roadUpdateSelectedAssetIds,
     // Filter state
     eventFilters,
     assetFilters,
@@ -232,8 +240,8 @@ export function MapView() {
   );
   const { data: inspectionsData } = useInspections();
 
-  // Drawing mode: enable when event form is open (drawing tools always available)
-  const isDrawingEnabled = isEventFormOpen;
+  // Drawing mode: enable when any editor has active drawing context
+  const isDrawingEnabled = !!drawingContext;
 
   // Get initial geometry for editing (only used when editing an existing event with manual geometry)
   // Use separately fetched data first (in case event is filtered out), then fall back to list data
@@ -242,11 +250,26 @@ export function MapView() {
 
   // Handle new feature created - add to store and lock type
   const handleFeatureCreated = (feature: import('geojson').Feature) => {
-    console.log('[MapView] Feature created:', feature.geometry?.type);
+    console.log('[MapView] Feature created:', feature.geometry?.type, 'context:', drawingContext);
+    const geomType = feature.geometry?.type;
+
+    // Route based on drawing context
+    if (drawingContext === 'inspection-form' && geomType === 'Point') {
+      // For inspection forms, set the point directly
+      setInspectionDrawnPoint(feature.geometry as import('geojson').Point);
+      return;
+    }
+
+    if (drawingContext === 'road-update' && (geomType === 'LineString' || geomType === 'MultiLineString')) {
+      // For road update mode, store in road update features
+      setRoadUpdateDrawnFeatures([feature]);
+      return;
+    }
+
+    // Default: event form drawing
     addDrawnFeature(feature);
 
     // Lock to this geometry type after first shape
-    const geomType = feature.geometry?.type;
     if (geomType === 'Polygon') {
       setCurrentDrawType('polygon');
     } else if (geomType === 'LineString') {
@@ -907,7 +930,9 @@ export function MapView() {
 
         // If no features were clicked, clear selection and tooltips
         if (!features || features.length === 0) {
-          if (useUIStore.getState().isEventFormOpen) return;
+          const state = useUIStore.getState();
+          // Don't clear selection during any editor mode
+          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
           selectEvent(null);
           selectAsset(null);
           // Clear both tooltips
@@ -924,9 +949,12 @@ export function MapView() {
       // Helper to check if road interaction should be enabled
       const shouldAllowRoadInteraction = () => {
         const state = useUIStore.getState();
+        // Allow road interaction in event form (for asset selection)
         if (state.isEventFormOpen) return true;
-        // Disable road interaction when event is selected, UNLESS in assets view or road update mode
-        if (state.selectedEventId && state.currentView !== 'assets' && !state.isRoadUpdateModeActive) {
+        // Allow road interaction in road update mode (for asset selection)
+        if (state.isRoadUpdateModeActive) return true;
+        // Disable road interaction when event is selected, UNLESS in assets view
+        if (state.selectedEventId && state.currentView !== 'assets') {
           return false;
         }
         return true;
@@ -943,7 +971,8 @@ export function MapView() {
           const eventId = props?.id;
           const geometry = e.features[0].geometry as Geometry;
           const state = useUIStore.getState();
-          if (state.isEventFormOpen) return;
+          // Don't handle event clicks during any editor mode
+          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
 
           const now = Date.now();
 
@@ -1109,6 +1138,34 @@ export function MapView() {
             return;
           }
 
+          // Road Update Mode: toggle asset selection
+          if (state.isRoadUpdateModeActive) {
+            e.originalEvent.stopPropagation();
+            state.toggleRoadUpdateAsset(assetId);
+
+            // Cache asset details for display
+            if (props) {
+              const assetFields: RoadAssetLabelFields = {
+                id: assetId,
+                name: props.name as string | undefined,
+                nameJa: props.nameJa as string | undefined,
+                ref: props.ref as string | undefined,
+                localRef: props.localRef as string | undefined,
+                displayName: props.displayName as string | undefined,
+              };
+              const label = getRoadAssetLabel(assetFields);
+
+              state.cacheAssetDetails([{
+                id: assetId,
+                label,
+                ward: props.ward as string | undefined,
+                roadType: props.roadType as string | undefined,
+                geometry: feature.geometry as Geometry,
+              }]);
+            }
+            return;
+          }
+
           // Don't allow road selection when event is selected (unless in assets view or road update mode)
           if (!shouldAllowRoadInteraction()) {
             return;
@@ -1119,6 +1176,22 @@ export function MapView() {
           // Allow asset selection - this will clear any selected event
           selectAsset(assetId);
           setCurrentView('assets');
+        }
+      });
+
+      // Inspection point click handler
+      map.current.on('click', 'inspections-point', (e) => {
+        if (e.features && e.features[0]) {
+          const feature = e.features[0];
+          const inspectionId = feature.properties?.id as string | undefined;
+          if (!inspectionId) return;
+
+          const state = useUIStore.getState();
+          // Don't handle inspection clicks during any editor mode
+          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+
+          e.originalEvent.stopPropagation();
+          selectInspection(inspectionId);
         }
       });
 
@@ -1412,12 +1485,21 @@ export function MapView() {
         localRef: asset.localRef,
         displayName: asset.displayName,
         ward: asset.ward,
+        sublocality: asset.sublocality,
         labelText: (() => {
           // Show road name if available
           if (!isRoadAssetUnnamed(asset)) {
             return getRoadAssetLabel(asset);
           }
-          // For unnamed roads, show simplified ID (e.g., "NISH-4032" instead of "RA-NISH-4032")
+          // For unnamed roads with sublocality, show enhanced format: "道路 · {sublocality} · #{shortId}"
+          const displayText = getRoadAssetLabel(asset);
+          const isGenericName = displayText === '道路' || displayText === 'Unnamed Road';
+          if (isGenericName && (asset.sublocality || asset.ward)) {
+            const locationLabel = asset.sublocality || asset.ward;
+            const shortId = asset.id.replace(/^RA-/, '').replace(/^[A-Z]+-/, '');
+            return `${displayText} · ${locationLabel} · #${shortId}`;
+          }
+          // Fallback: show simplified ID (e.g., "NISH-4032" instead of "RA-NISH-4032")
           if (asset.id) {
             const id = String(asset.id);
             // Remove "RA-" prefix if present
@@ -1444,11 +1526,21 @@ export function MapView() {
     const source = map.current.getSource('editing-assets') as maplibregl.GeoJSONSource;
     if (!source) return;
 
+    // Determine which asset IDs to highlight
+    // Event form mode: use selectedRoadAssetIdsForForm
+    // Road update mode: use roadUpdateSelectedAssetIds
+    let assetIds: string[] = [];
     if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
+      assetIds = selectedRoadAssetIdsForForm;
+    } else if (isRoadUpdateModeActive && roadUpdateSelectedAssetIds.length > 0) {
+      assetIds = roadUpdateSelectedAssetIds;
+    }
+
+    if (assetIds.length > 0) {
       // Build features from cache (includes geometry) and fallback to assetsData
       const features: GeoJSON.Feature[] = [];
 
-      for (const assetId of selectedRoadAssetIdsForForm) {
+      for (const assetId of assetIds) {
         // First check cache (which stores geometry when assets are selected)
         const cached = selectedAssetDetailsCache[assetId];
         if (cached?.geometry) {
@@ -1482,7 +1574,7 @@ export function MapView() {
         map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
       }
     }
-  }, [selectedRoadAssetIdsForForm, isEventFormOpen, mapLoaded, selectedAssetDetailsCache, assetsData]);
+  }, [selectedRoadAssetIdsForForm, isEventFormOpen, isRoadUpdateModeActive, roadUpdateSelectedAssetIds, mapLoaded, selectedAssetDetailsCache, assetsData]);
 
   // Update roads preview layer visibility and opacity
   // PMTiles shows all road types at all zoom levels; hidden when filters are active

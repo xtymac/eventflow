@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Geometry, Feature } from 'geojson';
+import type { Geometry, Feature, Point } from 'geojson';
 
 type ViewType = 'events' | 'assets' | 'inspections';
 
@@ -54,6 +54,20 @@ interface UIState {
   _lastSnapshotTime: number;              // For throttling snapshots during drag
   _isUndoRedoInProgress: boolean;         // Flag to prevent saveEditSnapshot during undo/redo
 
+  // Drawing context - tracks which component owns current drawing session
+  drawingContext: 'event-form' | 'road-update' | 'inspection-form' | null;
+
+  // Road update mode state
+  roadUpdateEventId: string | null;
+  roadUpdateSelectedAssetIds: string[];
+  roadUpdateDrawnFeatures: Feature[] | null;  // Separate state for road update drawing
+
+  // Inspection form state
+  selectedInspectionForEdit: string | null;
+  inspectionFormEventId: string | null;
+  inspectionFormAssetId: string | null;
+  inspectionDrawnPoint: Point | null;         // Separate state for inspection point
+
   // Asset selector state (for AdvancedRoadAssetSelector)
   assetSelectorFilters: {
     ward: string | null;
@@ -106,7 +120,7 @@ interface UIState {
   clearDuplicateEvent: () => void;
   openAssetForm: () => void;
   closeAssetForm: () => void;
-  openInspectionForm: () => void;
+  openInspectionForm: (editingId?: string | null, eventId?: string | null, assetId?: string | null) => void;
   closeInspectionForm: () => void;
   openDecisionModal: (eventId: string) => void;
   closeDecisionModal: () => void;
@@ -114,8 +128,17 @@ interface UIState {
   closeStatusChangeModal: () => void;
   openEventDetailModal: (eventId: string) => void;
   closeEventDetailModal: () => void;
-  enterRoadUpdateMode: () => void;
+  enterRoadUpdateMode: (eventId: string) => void;
   exitRoadUpdateMode: () => void;
+  toggleRoadUpdateAsset: (assetId: string) => void;
+  setRoadUpdateDrawnFeatures: (features: Feature[] | null) => void;
+
+  // Drawing context actions
+  startDrawing: (context: 'event-form' | 'road-update' | 'inspection-form') => void;
+  stopDrawing: () => void;
+
+  // Inspection drawing action
+  setInspectionDrawnPoint: (point: Point | null) => void;
   setDrawMode: (mode: 'polygon' | 'line' | 'point' | null) => void;
   setCurrentView: (view: ViewType) => void;
 
@@ -197,6 +220,20 @@ export const useUIStore = create<UIState>((set, get) => ({
   editRedoStack: [],
   _lastSnapshotTime: 0,
   _isUndoRedoInProgress: false,
+
+  // Drawing context
+  drawingContext: null,
+
+  // Road update mode state
+  roadUpdateEventId: null,
+  roadUpdateSelectedAssetIds: [],
+  roadUpdateDrawnFeatures: null,
+
+  // Inspection form state
+  selectedInspectionForEdit: null,
+  inspectionFormEventId: null,
+  inspectionFormAssetId: null,
+  inspectionDrawnPoint: null,
 
   // Asset selector state
   assetSelectorFilters: {
@@ -303,8 +340,23 @@ export const useUIStore = create<UIState>((set, get) => ({
   openAssetForm: () => set({ isAssetFormOpen: true }),
   closeAssetForm: () => set({ isAssetFormOpen: false, drawMode: null }),
 
-  openInspectionForm: () => set({ isInspectionFormOpen: true }),
-  closeInspectionForm: () => set({ isInspectionFormOpen: false, drawMode: null }),
+  openInspectionForm: (editingId, eventId, assetId) => set({
+    isInspectionFormOpen: true,
+    selectedInspectionForEdit: editingId || null,
+    inspectionFormEventId: eventId || null,
+    inspectionFormAssetId: assetId || null,
+    inspectionDrawnPoint: null,
+    drawMode: null,
+  }),
+  closeInspectionForm: () => set({
+    isInspectionFormOpen: false,
+    selectedInspectionForEdit: null,
+    inspectionFormEventId: null,
+    inspectionFormAssetId: null,
+    inspectionDrawnPoint: null,
+    drawingContext: null,
+    drawMode: null,
+  }),
 
   openDecisionModal: (eventId) => set({ isDecisionModalOpen: true, decisionEventId: eventId }),
   closeDecisionModal: () => set({ isDecisionModalOpen: false, decisionEventId: null }),
@@ -315,8 +367,41 @@ export const useUIStore = create<UIState>((set, get) => ({
   openEventDetailModal: (eventId) => set({ detailModalEventId: eventId }),
   closeEventDetailModal: () => set({ detailModalEventId: null }),
 
-  enterRoadUpdateMode: () => set({ isRoadUpdateModeActive: true }),
-  exitRoadUpdateMode: () => set({ isRoadUpdateModeActive: false }),
+  enterRoadUpdateMode: (eventId) => set({
+    isRoadUpdateModeActive: true,
+    roadUpdateEventId: eventId,
+    roadUpdateSelectedAssetIds: [],
+    roadUpdateDrawnFeatures: null,
+  }),
+  exitRoadUpdateMode: () => set({
+    isRoadUpdateModeActive: false,
+    roadUpdateEventId: null,
+    roadUpdateSelectedAssetIds: [],
+    roadUpdateDrawnFeatures: null,
+    drawingContext: null,
+    drawMode: null,
+  }),
+  toggleRoadUpdateAsset: (assetId) => set((state) => {
+    const ids = state.roadUpdateSelectedAssetIds;
+    if (ids.includes(assetId)) {
+      return { roadUpdateSelectedAssetIds: ids.filter((id) => id !== assetId) };
+    } else {
+      return { roadUpdateSelectedAssetIds: [...ids, assetId] };
+    }
+  }),
+  setRoadUpdateDrawnFeatures: (features) => set({ roadUpdateDrawnFeatures: features }),
+
+  // Drawing context actions
+  startDrawing: (context) => set({ drawingContext: context }),
+  stopDrawing: () => set({
+    drawingContext: null,
+    drawMode: null,
+    roadUpdateDrawnFeatures: null,
+    inspectionDrawnPoint: null,
+  }),
+
+  // Inspection drawing action
+  setInspectionDrawnPoint: (point) => set({ inspectionDrawnPoint: point }),
 
   setDrawMode: (mode) => set({ drawMode: mode }),
   setCurrentView: (view) => set({ currentView: view }),

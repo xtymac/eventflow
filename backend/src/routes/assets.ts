@@ -45,6 +45,7 @@ const AssetSchema = Type.Object({
   ownerDepartment: Type.Optional(Type.String()),
   ward: Type.Optional(Type.String()),
   landmark: Type.Optional(Type.String()),
+  sublocality: Type.Optional(Type.String()),    // 町名/丁目 from Google Maps
   updatedAt: Type.String({ format: 'date-time' }),
 });
 
@@ -386,6 +387,13 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           ${toGeomSql(body.geometry)}, ${now}
         )
       `);
+
+      // Add event-asset relation for Road Update Mode tracking
+      await db.execute(sql`
+        INSERT INTO event_road_assets (event_id, road_asset_id, relation_type, created_at)
+        VALUES (${body.eventId}, ${id}, 'updated', ${now})
+        ON CONFLICT (event_id, road_asset_id) DO UPDATE SET relation_type = 'updated'
+      `);
     }
 
     return reply.status(201).send({
@@ -481,6 +489,13 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           FROM road_assets WHERE id = ${id}
         `);
       }
+
+      // Add event-asset relation for Road Update Mode tracking
+      await db.execute(sql`
+        INSERT INTO event_road_assets (event_id, road_asset_id, relation_type, created_at)
+        VALUES (${body.eventId}, ${id}, 'updated', ${now})
+        ON CONFLICT (event_id, road_asset_id) DO UPDATE SET relation_type = 'updated'
+      `);
     }
 
     // Fetch updated asset with geometry conversion
@@ -567,6 +582,13 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       )
       SELECT ${`RAC-${nanoid(8)}`}, ${eventId}, 'retire', ${id}, ${replacedBy ?? null}, geometry, ${now}
       FROM road_assets WHERE id = ${id}
+    `);
+
+    // Add event-asset relation for Road Update Mode tracking
+    await db.execute(sql`
+      INSERT INTO event_road_assets (event_id, road_asset_id, relation_type, created_at)
+      VALUES (${eventId}, ${id}, 'updated', ${now})
+      ON CONFLICT (event_id, road_asset_id) DO UPDATE SET relation_type = 'updated'
     `);
 
     // Fetch updated asset with geometry conversion

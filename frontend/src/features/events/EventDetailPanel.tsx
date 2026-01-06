@@ -16,6 +16,7 @@ import type { EventStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
 import { EventActionButtons } from './EventActionButtons';
 import { AffectedAssetsList } from './AffectedAssetsList';
+import { InspectionsListSection } from '../inspections/InspectionsListSection';
 
 const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
@@ -175,6 +176,11 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
           <AffectedAssetsList assets={affectedAssets} />
         </Paper>
       )}
+
+      {/* Inspections */}
+      <Paper p="sm" withBorder radius="sm">
+        <InspectionsListSection eventId={eventId} />
+      </Paper>
     </Stack>
   );
 }

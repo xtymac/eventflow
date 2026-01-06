@@ -11,6 +11,9 @@ import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
 import { useUIStore } from './stores/uiStore';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
+import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
+import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
+import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
 import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
@@ -21,9 +24,16 @@ function App() {
 
   const [mobileOpened, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop, open: openDesktop }] = useDisclosure(true);
-  const { currentView, setCurrentView, isEventFormOpen, editingEventId, duplicateEventId, closeEventForm, detailModalEventId, closeEventDetailModal } = useUIStore();
+  const {
+    currentView, setCurrentView,
+    isEventFormOpen, editingEventId, duplicateEventId, closeEventForm,
+    detailModalEventId, closeEventDetailModal,
+    isRoadUpdateModeActive, roadUpdateEventId, exitRoadUpdateMode,
+    isInspectionFormOpen, selectedInspectionForEdit, inspectionFormEventId, inspectionFormAssetId, closeInspectionForm,
+    selectedInspectionId, selectInspection,
+  } = useUIStore();
   const queryClient = useQueryClient();
-  const isEditing = isEventFormOpen;
+  const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const prevDetailModalEventId = useRef(detailModalEventId);
 
   // When right sidebar closes, reopen left sidebar
@@ -124,6 +134,22 @@ function App() {
             onClose={closeEventForm}
           />
         )}
+
+        {isRoadUpdateModeActive && roadUpdateEventId && (
+          <RoadUpdateModeOverlay
+            eventId={roadUpdateEventId}
+            onClose={exitRoadUpdateMode}
+          />
+        )}
+
+        {isInspectionFormOpen && (
+          <InspectionEditorOverlay
+            inspectionId={selectedInspectionForEdit}
+            prefillEventId={inspectionFormEventId}
+            prefillAssetId={inspectionFormAssetId}
+            onClose={closeInspectionForm}
+          />
+        )}
       </AppShell.Main>
 
       {/* Event Detail Aside (right sidebar) */}
@@ -144,6 +170,13 @@ function App() {
       </AppShell.Aside>
 
       <DecisionModal />
+
+      {selectedInspectionId && (
+        <InspectionDetailModal
+          inspectionId={selectedInspectionId}
+          onClose={() => selectInspection(null)}
+        />
+      )}
     </AppShell>
   );
 }

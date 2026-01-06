@@ -318,7 +318,7 @@ Tasks:
 - Use Asia/Tokyo timezone
 
 ## Phase 3: Frontend Core Features
-Status: IN PROGRESS.
+Status: COMPLETE.
 
 ### 3.1 Layout and Navigation
 Tasks:
@@ -346,33 +346,33 @@ Tasks:
 
 ### 3.4 Map Drawing
 Tasks:
-- [ ] Integrate maplibre-gl-draw
-- [ ] Draw polygon mode for event geometry
-- [ ] Draw line mode for linear events
-- [ ] Edit vertices functionality
-- [ ] Delete geometry button
-- [ ] Preview geometry during create/edit
+- [x] Integrate maplibre-gl-draw
+- [x] Draw polygon mode for event geometry
+- [x] Draw line mode for linear events
+- [x] Edit vertices functionality
+- [x] Delete geometry button
+- [x] Preview geometry during create/edit
 
 ### 3.5 Post-End Decision Flow
 Tasks:
-- [ ] Decision modal after ending event (Permanent Change: Yes/No) (decision menu exists; modal pending)
-- [ ] If No: archive event, disable editing
-- [ ] If Yes: enter road update mode
+- [x] Decision modal after ending event (Permanent Change: Yes/No)
+- [x] If No: archive event, disable editing
+- [x] If Yes: enter road update mode
 
 ### 3.6 Road Update Mode
 Tasks:
-- [ ] Create new road asset form
-- [ ] Modify existing road asset
-- [ ] Retire road asset (set inactive, validTo)
-- [ ] Before/after preview on map
-- [ ] Link changes to source event (eventId)
+- [x] Create new road asset form
+- [x] Modify existing road asset
+- [x] Retire road asset (set inactive, validTo)
+- [x] Before/after preview on map (assets highlighted during selection)
+- [x] Link changes to source event (eventId)
 
 ### 3.7 Inspection Records
 Tasks:
-- [ ] Inspection list in event detail (global list exists; event detail pending)
-- [ ] Create inspection form (point geometry, date, result, notes)
+- [x] Inspection list in event detail
+- [x] Create inspection form (point geometry, date, result, notes)
 - [x] Display inspection points on map
-- [ ] Click to view inspection detail
+- [x] Click to view inspection detail
 
 ## Phase 4: State Management and Data Flow
 

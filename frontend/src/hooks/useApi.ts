@@ -305,3 +305,41 @@ export function useCreateInspection() {
     },
   });
 }
+
+export function useInspection(id: string | null) {
+  return useQuery({
+    queryKey: ['inspection', id],
+    queryFn: () => fetchApi<{ data: InspectionRecord }>(`/inspections/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useUpdateInspection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<InspectionRecord> }) =>
+      fetchApi<{ data: InspectionRecord }>(`/inspections/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['inspection', variables.id] });
+    },
+  });
+}
+
+export function useDeleteInspection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchApi<void>(`/inspections/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+    },
+  });
+}

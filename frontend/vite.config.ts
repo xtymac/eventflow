@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['eventflow.uixai.org', 'localhost'],
     proxy: {
       '/api': {
         // Use API_PROXY_TARGET for server-side proxy (Docker: http://api:3000)

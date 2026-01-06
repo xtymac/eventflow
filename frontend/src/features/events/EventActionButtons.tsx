@@ -1,7 +1,7 @@
 import { Group, Button, Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff } from '@tabler/icons-react';
+import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff, IconRoad } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useChangeEventStatus, useCancelEvent, useArchiveEvent, useUnarchiveEvent } from '../../hooks/useApi';
 import type { ConstructionEvent } from '@nagoya/shared';
@@ -11,7 +11,7 @@ interface EventActionButtonsProps {
 }
 
 export function EventActionButtons({ event }: EventActionButtonsProps) {
-  const { openEventForm, openDecisionModal, openDuplicateEventForm, selectEvent, closeEventDetailModal, selectedEventId, detailModalEventId } = useUIStore();
+  const { openEventForm, openDecisionModal, openDuplicateEventForm, selectEvent, closeEventDetailModal, selectedEventId, detailModalEventId, enterRoadUpdateMode } = useUIStore();
   const changeStatus = useChangeEventStatus();
   const cancelEvent = useCancelEvent();
   const archiveEvent = useArchiveEvent();
@@ -209,6 +209,20 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
           disabled={isLoading}
         >
           Set Decision
+        </Button>
+      )}
+
+      {/* Re-entry to Road Update Mode for permanent-change events that aren't archived */}
+      {event.status === 'ended' && event.postEndDecision === 'permanent-change' && !event.archivedAt && (
+        <Button
+          size="xs"
+          variant="filled"
+          color="teal"
+          leftSection={<IconRoad size={14} />}
+          onClick={() => enterRoadUpdateMode(event.id)}
+          disabled={isLoading}
+        >
+          Road Update
         </Button>
       )}
 
