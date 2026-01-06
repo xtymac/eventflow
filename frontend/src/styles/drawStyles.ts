@@ -3,14 +3,14 @@
  * Uses cyan theme to match the existing preview-geometry layer.
  */
 export const drawStyles = [
-  // Polygon fill - active (being drawn)
+  // Polygon fill - active (being drawn/edited)
   {
     id: 'gl-draw-polygon-fill-active',
     type: 'fill',
     filter: ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
     paint: {
       'fill-color': '#06B6D4', // cyan
-      'fill-opacity': 0.2,
+      'fill-opacity': 0.3,  // Increased for better visibility
     },
   },
   // Polygon fill - inactive (completed) - visible but lower opacity than active
@@ -20,7 +20,7 @@ export const drawStyles = [
     filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
     paint: {
       'fill-color': '#06B6D4', // cyan
-      'fill-opacity': 0.15,  // Visible but lower than active (0.2)
+      'fill-opacity': 0.25,  // Increased for better visibility
     },
   },
   // Polygon stroke - active

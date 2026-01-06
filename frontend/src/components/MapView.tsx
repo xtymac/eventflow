@@ -12,7 +12,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useMapDraw } from '../hooks/useMapDraw';
 import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
 import type { ConstructionEvent, RoadAsset, InspectionRecord, EventStatus, RoadType, AssetStatus } from '@nagoya/shared';
-import type { Geometry } from 'geojson';
+import type { Geometry, Feature } from 'geojson';
 import { EventMapTooltip } from './EventMapTooltip';
 
 // Register PMTiles protocol once (avoid duplicate registration on hot reload)
@@ -177,6 +177,10 @@ export function MapView() {
   // For manual double-click detection on map events
   const lastClickTimeRef = useRef<number>(0);
   const lastClickEventIdRef = useRef<string | null>(null);
+
+  // Delayed geometry loading state - adds a small delay after draw loads to ensure rendering
+  const [isGeometryLoadingDelayed, setIsGeometryLoadingDelayed] = useState(false);
+  const geometryLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
 
   // Debounced asset search (consistent with AssetList behavior)
@@ -288,6 +292,7 @@ export function MapView() {
     isDrawing: _isDrawing, // Used by EventForm via store actions
     restoreFeatures,
     isReady: isDrawReady,
+    getAllFeatures,
   } = useMapDraw(
     map.current,
     isDrawingEnabled,
@@ -1686,12 +1691,18 @@ export function MapView() {
       ? (editingEventResponse?.data ?? eventsData?.data?.find((e: ConstructionEvent) => e.id === editingEventId))
       : (duplicateEventId ? duplicateEventResponse?.data : null);
 
+    // Check if we're still waiting for the detail response
+    const isWaitingForEditingResponse = editingEventId && !editingEventResponse?.data;
+    const isWaitingForDuplicateResponse = duplicateEventId && !duplicateEventResponse?.data;
+
     console.log('[MapView] editing-event effect:', {
       editingEventId,
       duplicateEventId,
       hasSourceEventData: !!sourceEventData,
       geometrySource: sourceEventData?.geometrySource,
       isEventFormOpen,
+      isWaitingForEditingResponse,
+      drawnFeaturesLength: drawnFeatures?.length ?? 0,
     });
 
     // Clear tooltips if editing/duplicating event (sidebar shows details, no need for tooltip)
@@ -1708,18 +1719,29 @@ export function MapView() {
       }
     }
 
+    // IMPORTANT: When editing, wait for editingEventResponse to load before making decisions
+    // The list data (eventsData) may not include full geometry, so we need the detail response
+    // to know if it's a manual geometry event that draw control should handle
+    if (isEventFormOpen && (isWaitingForEditingResponse || isWaitingForDuplicateResponse)) {
+      // Still waiting for detail response - don't clear anything, keep previous state
+      console.log('[MapView] editing-event effect: waiting for response, keeping current overlay');
+      return;
+    }
+
     if (isEventFormOpen && sourceEventData?.geometry) {
-      // Determine if the draw control is handling this geometry
-      // If editing a manual geometry event, the draw control renders the editable polygon
-      // We should NOT show the overlay in this case (it would block vertex clicks!)
-      const isDrawControlHandlingGeometry = editingEventId && sourceEventData.geometrySource === 'manual';
+      const isManualGeometry = sourceEventData.geometrySource === 'manual';
+      const hasDrawnFeatures = drawnFeatures && drawnFeatures.length > 0;
 
-      // For edit mode with AUTO geometry: show overlay (draw control doesn't have it)
-      // For duplicate mode with MANUAL geometry: show overlay (draw control handles separately)
-      // For edit mode with MANUAL geometry: DON'T show overlay (draw control renders it)
-      const shouldShowOverlay = !isDrawControlHandlingGeometry && (editingEventId || sourceEventData.geometrySource === 'manual');
+      // For manual geometry events: hide overlay ONLY after loading delay has passed
+      // This ensures draw control has time to fully render before we remove the overlay
+      const shouldHideOverlay = isManualGeometry && hasDrawnFeatures && !isGeometryLoadingDelayed;
 
-      if (shouldShowOverlay) {
+      if (shouldHideOverlay) {
+        // Draw control is ready and has rendered - hide overlay to allow vertex editing
+        source.setData({ type: 'FeatureCollection', features: [] });
+        console.log('[MapView] editing-event effect: hiding overlay (draw ready)');
+      } else {
+        // Show overlay as visual feedback
         const statusColor = STATUS_COLORS[sourceEventData.status] || '#3B82F6';
         source.setData({
           type: 'FeatureCollection',
@@ -1729,14 +1751,143 @@ export function MapView() {
             properties: { id: sourceEventData.id, color: statusColor },
           }],
         });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
+        console.log('[MapView] editing-event effect: showing overlay for', sourceEventData.id, 'isManualGeometry=', isManualGeometry, 'hasDrawnFeatures=', hasDrawnFeatures, 'isGeometryLoadingDelayed=', isGeometryLoadingDelayed);
       }
       // Note: FlyTo is handled in the restore action handler for better timing
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [isEventFormOpen, editingEventId, duplicateEventId, editingEventResponse, duplicateEventResponse, eventsData, mapLoaded, previewEvent?.id]);
+  }, [isEventFormOpen, editingEventId, duplicateEventId, editingEventResponse, duplicateEventResponse, eventsData, mapLoaded, previewEvent?.id, drawnFeatures, isGeometryLoadingDelayed]);
+
+  // Manage delayed geometry loading state for smooth overlay transitions
+  // Also includes retry logic if draw control fails to load features
+  useEffect(() => {
+    // Clear any pending timer when dependencies change
+    if (geometryLoadingTimerRef.current) {
+      clearTimeout(geometryLoadingTimerRef.current);
+      geometryLoadingTimerRef.current = null;
+    }
+
+    const sourceEvent = editingEventResponse?.data;
+    const isWaitingForResponse = editingEventId && !sourceEvent;
+    const isManualGeometry = sourceEvent?.geometrySource === 'manual';
+    const hasDrawnFeatures = drawnFeatures && drawnFeatures.length > 0;
+
+    if (isEventFormOpen && editingEventId) {
+      if (isWaitingForResponse) {
+        // Still waiting for API response - show loading
+        setIsGeometryLoadingDelayed(true);
+      } else if (isManualGeometry) {
+        if (hasDrawnFeatures) {
+          // Features are loaded - wait a bit before hiding the loading overlay
+          // This ensures the draw control has time to fully render
+          geometryLoadingTimerRef.current = setTimeout(() => {
+            // Force a map repaint to ensure draw control is rendered
+            if (map.current) {
+              map.current.triggerRepaint();
+            }
+            setIsGeometryLoadingDelayed(false);
+          }, 500); // 500ms delay for smooth transition
+        } else {
+          // Still waiting for draw control to load features - show loading
+          setIsGeometryLoadingDelayed(true);
+
+          // Polling retry logic: check every 300ms up to 5 times for features
+          let retryCount = 0;
+          const maxRetries = 5;
+
+          const pollForFeatures = () => {
+            retryCount++;
+            // Check CURRENT features from draw control (not stale closure value)
+            const currentFeatures = getAllFeatures();
+
+            if (currentFeatures && currentFeatures.length > 0) {
+              // Draw control has features - sync to store if needed and finish loading
+              console.log('[MapView] Poll: found', currentFeatures.length, 'features in draw control, syncing store');
+              setDrawnFeatures(currentFeatures);
+              // Trigger repaint to ensure visibility
+              if (map.current) {
+                map.current.triggerRepaint();
+              }
+              // Don't set another timer - the effect will re-run when drawnFeatures updates
+              return;
+            }
+
+            if (retryCount >= maxRetries) {
+              // Max retries reached, force restore
+              console.log('[MapView] Poll: max retries reached, forcing restore');
+              if (sourceEvent?.geometry && isDrawReady) {
+                const geometry = sourceEvent.geometry;
+                const featuresToRestore: Feature[] = [];
+
+                // Handle both single geometry and multi-geometry (GeometryCollection, MultiPolygon, etc.)
+                if (geometry.type === 'GeometryCollection') {
+                  for (const geom of (geometry as GeoJSON.GeometryCollection).geometries) {
+                    featuresToRestore.push({
+                      type: 'Feature',
+                      geometry: geom,
+                      properties: {},
+                    } as Feature);
+                  }
+                } else if (geometry.type === 'MultiPolygon') {
+                  for (const coords of (geometry as GeoJSON.MultiPolygon).coordinates) {
+                    featuresToRestore.push({
+                      type: 'Feature',
+                      geometry: { type: 'Polygon', coordinates: coords },
+                      properties: {},
+                    } as Feature);
+                  }
+                } else if (geometry.type === 'MultiLineString') {
+                  for (const coords of (geometry as GeoJSON.MultiLineString).coordinates) {
+                    featuresToRestore.push({
+                      type: 'Feature',
+                      geometry: { type: 'LineString', coordinates: coords },
+                      properties: {},
+                    } as Feature);
+                  }
+                } else {
+                  featuresToRestore.push({
+                    type: 'Feature',
+                    geometry: geometry,
+                    properties: {},
+                  } as Feature);
+                }
+
+                // Call restoreFeatures to reload the geometry into draw control
+                restoreFeatures(featuresToRestore);
+
+                // Also trigger a repaint
+                if (map.current) {
+                  map.current.triggerRepaint();
+                }
+              }
+              return;
+            }
+
+            // Schedule next poll
+            console.log('[MapView] Poll: retry', retryCount, '/', maxRetries, 'features not found yet');
+            geometryLoadingTimerRef.current = setTimeout(pollForFeatures, 300);
+          };
+
+          // Start polling after a short delay
+          geometryLoadingTimerRef.current = setTimeout(pollForFeatures, 300);
+        }
+      } else {
+        // Not a manual geometry event (auto geometry) - no loading needed
+        setIsGeometryLoadingDelayed(false);
+      }
+    } else {
+      // Not editing - no loading needed
+      setIsGeometryLoadingDelayed(false);
+    }
+
+    return () => {
+      if (geometryLoadingTimerRef.current) {
+        clearTimeout(geometryLoadingTimerRef.current);
+        geometryLoadingTimerRef.current = null;
+      }
+    };
+  }, [isEventFormOpen, editingEventId, editingEventResponse, drawnFeatures, isDrawReady, restoreFeatures, getAllFeatures, setDrawnFeatures]);
 
   // Animated breathing glow effect for selected road assets during editing
   useEffect(() => {
@@ -2024,6 +2175,44 @@ export function MapView() {
           </Stack>
         </Box>
       )}
+
+      {/* Geometry loading overlay - shown when editing manual geometry event and draw control hasn't loaded yet */}
+      {(() => {
+        // Check if we're editing and waiting for data or draw control to load
+        const isWaitingForResponse = editingEventId && !editingEventResponse?.data;
+
+        // Show loading when:
+        // 1. We're editing and waiting for response (don't know geometry type yet)
+        // 2. We're editing a manual geometry event and draw control hasn't fully rendered yet (with delay)
+        const isLoadingGeometry = isEventFormOpen && editingEventId && (
+          isWaitingForResponse || isGeometryLoadingDelayed
+        );
+
+        return isLoadingGeometry ? (
+          <Box
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: isEventFormOpen ? 450 : 0, // Account for right sidebar
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 15,
+              pointerEvents: 'none',
+            }}
+          >
+            <Paper shadow="sm" p="md" radius="md">
+              <Stack align="center" gap="xs">
+                <Loader size="sm" color="cyan" />
+                <Text size="sm" c="dimmed">Loading geometry...</Text>
+              </Stack>
+            </Paper>
+          </Box>
+        ) : null;
+      })()}
 
       {/* Road assets zoom/type indicator (hidden on Events tab) */}
       {showAssets && mapLoaded && currentView !== 'events' && (

@@ -393,6 +393,11 @@ export function useMapDraw(
           drawRef.current.changeMode('simple_select');
         }
 
+        // Force map to repaint to ensure the polygon is rendered
+        if (map) {
+          map.triggerRepaint();
+        }
+
         // Clear loading flag after mode is set
         isLoadingGeometryRef.current = false;
 
@@ -610,6 +615,11 @@ export function useMapDraw(
           drawRef.current.changeMode('simple_select');
         }
 
+        // Force map to repaint to ensure the polygon is rendered
+        if (map) {
+          map.triggerRepaint();
+        }
+
         // Cache the current state for undo tracking (DEEP COPY as Feature[])
         // This ensures handleDrawUpdate has a previous state to compare
         // NOTE: Programmatic changeMode doesn't trigger draw.modechange event,
@@ -630,7 +640,7 @@ export function useMapDraw(
       console.warn('Failed to restore features:', e);
       isLoadingGeometryRef.current = false;
     }
-  }, []);
+  }, [map]);
 
   return {
     setMode,
