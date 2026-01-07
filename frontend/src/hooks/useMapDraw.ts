@@ -42,6 +42,8 @@ export function useMapDraw(
 ): UseMapDrawReturn {
   const drawRef = useRef<MapboxDraw | null>(null);
   const initialGeometryLoadedRef = useRef(false);
+  // Track which geometry was loaded to allow reloading when geometry changes
+  const loadedGeometryHashRef = useRef<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   // Flag to skip mode effect after draw.create (we handle mode change manually)
@@ -304,17 +306,37 @@ export function useMapDraw(
 
   // Load initial geometry for editing (supports Multi* by splitting into individual features)
   useEffect(() => {
+    // Compute hash of current geometry to detect changes
+    const currentGeometryHash = options?.initialGeometry ? JSON.stringify(options.initialGeometry) : null;
+
+    // Check if we need to load: either never loaded, or geometry changed
+    const needsLoad = !initialGeometryLoadedRef.current ||
+      (currentGeometryHash !== null && currentGeometryHash !== loadedGeometryHashRef.current);
+
+    console.log('[useMapDraw] initialGeometry effect:', {
+      hasDrawRef: !!drawRef.current,
+      isEnabled,
+      isReady,
+      hasInitialGeometry: !!options?.initialGeometry,
+      geometrySource: options?.geometrySource,
+      needsLoad,
+      initialGeometryLoaded: initialGeometryLoadedRef.current,
+      geometryHashChanged: currentGeometryHash !== loadedGeometryHashRef.current,
+    });
+
     if (
       drawRef.current &&
       isEnabled &&
       isReady &&
       options?.initialGeometry &&
       options?.geometrySource === 'manual' &&
-      !initialGeometryLoadedRef.current
+      needsLoad
     ) {
       drawRef.current.deleteAll();
 
       const geometry = options.initialGeometry;
+      if (!geometry) return;
+
       const featuresToAdd: Feature[] = [];
 
       // Split Multi* geometries into individual features
@@ -366,7 +388,7 @@ export function useMapDraw(
 
         let lastFeatureId: string | undefined;
         for (const feature of featuresToAdd) {
-          const ids = drawRef.current.add(feature);
+          const ids = drawRef.current!.add(feature);
           if (ids && ids.length > 0) {
             lastFeatureId = ids[0];
           }
@@ -377,20 +399,21 @@ export function useMapDraw(
         skipNextModeEffectRef.current = true;
 
         initialGeometryLoadedRef.current = true;
+        loadedGeometryHashRef.current = currentGeometryHash;
         console.log('[useMapDraw] Loaded', featuresToAdd.length, 'features for editing');
 
         // Enter direct_select IMMEDIATELY so the polygon is visible right away
         // (active polygon has higher fill opacity than inactive)
         if (lastFeatureId) {
           try {
-            drawRef.current.changeMode('direct_select', { featureId: lastFeatureId });
+            drawRef.current!.changeMode('direct_select', { featureId: lastFeatureId });
             console.log('[useMapDraw] Loaded features: entered direct_select for feature:', lastFeatureId);
           } catch (e) {
             console.warn('[useMapDraw] Failed to enter direct_select after load:', e);
-            drawRef.current.changeMode('simple_select');
+            drawRef.current!.changeMode('simple_select');
           }
         } else {
-          drawRef.current.changeMode('simple_select');
+          drawRef.current!.changeMode('simple_select');
         }
 
         // Force map to repaint to ensure the polygon is rendered
@@ -409,7 +432,7 @@ export function useMapDraw(
         isLoadingGeometryRef.current = false;
       }
     }
-  }, [isEnabled, isReady, options?.initialGeometry, options?.geometrySource]);
+  }, [map, isEnabled, isReady, options?.initialGeometry, options?.geometrySource]);
 
   const setMode = useCallback((mode: DrawModeType) => {
     if (!drawRef.current) return;

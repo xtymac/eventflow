@@ -25,12 +25,22 @@ import type { RoadAsset, RoadType, SupportedGeometry } from '@nagoya/shared';
 
 type ChangeAction = 'create' | 'modify' | 'retire';
 
+// Pending change for batch submission
+export interface PendingChange {
+  action: ChangeAction;
+  assetId?: string;
+  assetLabel?: string;
+  data?: Partial<RoadAsset>;
+  replacedBy?: string;
+}
+
 interface RoadChangeFormModalProps {
   opened: boolean;
   onClose: () => void;
   action: ChangeAction;
   assetId?: string | null;
   eventId: string;
+  onSavePending?: (change: PendingChange) => void; // Batch mode callback
 }
 
 interface AssetFormData {
@@ -63,6 +73,7 @@ export function RoadChangeFormModal({
   action,
   assetId,
   eventId,
+  onSavePending,
 }: RoadChangeFormModalProps) {
   const {
     roadUpdateDrawnFeatures,
@@ -171,6 +182,84 @@ export function RoadChangeFormModal({
   };
 
   const onSubmit = (data: AssetFormData) => {
+    // Batch mode: add to pending changes instead of calling API
+    if (onSavePending) {
+      if (action === 'create') {
+        if (!geometry) {
+          notifications.show({
+            title: 'Geometry Required',
+            message: 'Please draw the road geometry on the map.',
+            color: 'red',
+          });
+          return;
+        }
+
+        onSavePending({
+          action: 'create',
+          data: {
+            name: data.name || undefined,
+            nameJa: data.nameJa || undefined,
+            ref: data.ref || undefined,
+            localRef: data.localRef || undefined,
+            geometry,
+            roadType: data.roadType,
+            lanes: data.lanes,
+            direction: data.direction,
+            ward: data.ward || undefined,
+            ownerDepartment: data.ownerDepartment || undefined,
+          },
+        });
+
+        notifications.show({
+          title: 'Change Queued',
+          message: 'New road asset will be created when you finalize.',
+          color: 'blue',
+        });
+        handleClose();
+      } else if (action === 'modify' && assetId) {
+        onSavePending({
+          action: 'modify',
+          assetId,
+          assetLabel: existingAsset ? getRoadAssetLabel(existingAsset) : assetId,
+          data: {
+            name: data.name || undefined,
+            nameJa: data.nameJa || undefined,
+            ref: data.ref || undefined,
+            localRef: data.localRef || undefined,
+            geometry: geometry || undefined,
+            roadType: data.roadType,
+            lanes: data.lanes,
+            direction: data.direction,
+            ward: data.ward || undefined,
+            ownerDepartment: data.ownerDepartment || undefined,
+          },
+        });
+
+        notifications.show({
+          title: 'Change Queued',
+          message: 'Road asset modification will be applied when you finalize.',
+          color: 'blue',
+        });
+        handleClose();
+      } else if (action === 'retire' && assetId) {
+        onSavePending({
+          action: 'retire',
+          assetId,
+          assetLabel: existingAsset ? getRoadAssetLabel(existingAsset) : assetId,
+          replacedBy: data.replacedBy || undefined,
+        });
+
+        notifications.show({
+          title: 'Change Queued',
+          message: 'Road asset will be retired when you finalize.',
+          color: 'blue',
+        });
+        handleClose();
+      }
+      return;
+    }
+
+    // Legacy mode: call API directly (fallback)
     if (action === 'create') {
       if (!geometry) {
         notifications.show({
@@ -394,7 +483,9 @@ export function RoadChangeFormModal({
                       }))}
                     clearable
                     searchable
-                    {...field}
+                    value={field.value}
+                    onChange={(val) => field.onChange(val || '')}
+                    comboboxProps={{ zIndex: 500 }}
                   />
                 )}
               />
@@ -506,7 +597,9 @@ export function RoadChangeFormModal({
                       label="Road Type"
                       data={roadTypeOptions}
                       required
-                      {...field}
+                      value={field.value}
+                      onChange={(val) => field.onChange(val || 'local')}
+                      comboboxProps={{ zIndex: 500 }}
                     />
                   )}
                 />
@@ -535,7 +628,9 @@ export function RoadChangeFormModal({
                     label="Direction"
                     data={directionOptions}
                     required
-                    {...field}
+                    value={field.value}
+                    onChange={(val) => field.onChange(val || 'two-way')}
+                    comboboxProps={{ zIndex: 500 }}
                   />
                 )}
               />

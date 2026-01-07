@@ -291,6 +291,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     detailModalEventId: null,
     // Always clear selection when opening form to hide red highlight layer
     selectedEventId: null,
+    // Enable drawing context for event form
+    drawingContext: 'event-form',
     // Clear drawing state when opening form (will be restored from event data if editing)
     drawMode: null,
     selectedRoadAssetIdsForForm: [],
@@ -306,6 +308,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     isEventFormOpen: false,
     editingEventId: null,
     duplicateEventId: null,
+    // Clear drawing context when closing form
+    drawingContext: null,
     drawMode: null,
     selectedRoadAssetIdsForForm: [],
     previewGeometry: null,
@@ -323,6 +327,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     duplicateEventId: id,
     detailModalEventId: null,
     selectedEventId: null,
+    // Enable drawing context for event form
+    drawingContext: 'event-form',
     // Clear drawing state (will be restored from duplicate event data)
     drawMode: null,
     selectedRoadAssetIdsForForm: [],

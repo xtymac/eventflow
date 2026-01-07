@@ -189,6 +189,9 @@ export function MapView() {
   // Delayed geometry loading state - adds a small delay after draw loads to ensure rendering
   const [isGeometryLoadingDelayed, setIsGeometryLoadingDelayed] = useState(false);
   const geometryLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refs to access latest values in polling closure (avoids stale closure issues)
+  const isDrawReadyRef = useRef(false);
+  const restoreFeaturesRef = useRef<((features: Feature[] | null) => void) | null>(null);
   const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
 
   // Debounced asset search (consistent with AssetList behavior)
@@ -329,6 +332,10 @@ export function MapView() {
       currentMode: drawMode,
     }
   );
+
+  // Keep refs updated for use in polling closures (avoids stale closure issues)
+  isDrawReadyRef.current = isDrawReady;
+  restoreFeaturesRef.current = restoreFeatures;
 
   // Clear restore tracking when form closes
   useEffect(() => {
@@ -700,7 +707,7 @@ export function MapView() {
         filter: ['==', ['get', 'id'], ''], // Initial: match nothing
         paint: {
           'fill-color': '#f59e0b', // Amber/orange
-          'fill-opacity': 0.35,
+          'fill-opacity': 0.15, // Low opacity so roads underneath are visible
         },
       });
 
@@ -1509,6 +1516,7 @@ export function MapView() {
         })(),
         roadType: asset.roadType,
         color: ROAD_TYPE_COLORS[asset.roadType] || '#666',
+        direction: asset.direction || 'two-way',
       },
     }));
 
@@ -1678,6 +1686,34 @@ export function MapView() {
       }
     }
   }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status, selectedEventId, selectedEventResponse, hoveredEventId]);
+
+  // Reduce event polygon opacity in Road Update Mode so roads are visible underneath
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const fillLayers = [
+      'events-ended-fill',
+      'events-planned-fill',
+      'events-active-fill',
+      'selected-event-fill',
+    ];
+
+    const opacity = isRoadUpdateModeActive ? 0.08 : undefined; // Very low opacity in Road Update Mode
+
+    for (const layerId of fillLayers) {
+      if (map.current.getLayer(layerId)) {
+        if (opacity !== undefined) {
+          map.current.setPaintProperty(layerId, 'fill-opacity', opacity);
+        } else {
+          // Reset to original opacity based on layer
+          const originalOpacity = layerId === 'selected-event-fill' ? 0.5 :
+                                  layerId === 'events-active-fill' ? 0.2 :
+                                  layerId === 'events-planned-fill' ? 0.15 : 0.1;
+          map.current.setPaintProperty(layerId, 'fill-opacity', originalOpacity);
+        }
+      }
+    }
+  }, [isRoadUpdateModeActive, mapLoaded]);
 
   // Update inspections layer
   useEffect(() => {
@@ -1871,15 +1907,12 @@ export function MapView() {
         setIsGeometryLoadingDelayed(true);
       } else if (isManualGeometry) {
         if (hasDrawnFeatures) {
-          // Features are loaded - wait a bit before hiding the loading overlay
-          // This ensures the draw control has time to fully render
-          geometryLoadingTimerRef.current = setTimeout(() => {
-            // Force a map repaint to ensure draw control is rendered
-            if (map.current) {
-              map.current.triggerRepaint();
-            }
-            setIsGeometryLoadingDelayed(false);
-          }, 500); // 500ms delay for smooth transition
+          // Features are loaded - hide loading overlay immediately
+          // Force a map repaint to ensure draw control is rendered
+          if (map.current) {
+            map.current.triggerRepaint();
+          }
+          setIsGeometryLoadingDelayed(false);
         } else {
           // Still waiting for draw control to load features - show loading
           setIsGeometryLoadingDelayed(true);
@@ -1907,8 +1940,12 @@ export function MapView() {
 
             if (retryCount >= maxRetries) {
               // Max retries reached, force restore
-              console.log('[MapView] Poll: max retries reached, forcing restore');
-              if (sourceEvent?.geometry && isDrawReady) {
+              // Use refs to get latest values (avoids stale closure)
+              const currentIsDrawReady = isDrawReadyRef.current;
+              const currentRestoreFeatures = restoreFeaturesRef.current;
+              console.log('[MapView] Poll: max retries reached, forcing restore, isDrawReady=', currentIsDrawReady);
+
+              if (sourceEvent?.geometry && currentIsDrawReady && currentRestoreFeatures) {
                 const geometry = sourceEvent.geometry;
                 const featuresToRestore: Feature[] = [];
 
@@ -1946,12 +1983,17 @@ export function MapView() {
                 }
 
                 // Call restoreFeatures to reload the geometry into draw control
-                restoreFeatures(featuresToRestore);
+                currentRestoreFeatures(featuresToRestore);
 
                 // Also trigger a repaint
                 if (map.current) {
                   map.current.triggerRepaint();
                 }
+              } else if (!currentIsDrawReady) {
+                // Draw control not ready yet - schedule another check
+                console.log('[MapView] Poll: draw control not ready, scheduling retry');
+                geometryLoadingTimerRef.current = setTimeout(pollForFeatures, 300);
+                return;
               }
               return;
             }

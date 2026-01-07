@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Stack, Text, Button, Group, Checkbox, Paper, Alert, Badge, Divider, Loader, Center } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconEdit, IconTrashX, IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
+import { IconPlus, IconEdit, IconTrashX, IconCheck, IconX, IconAlertCircle, IconClock } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
-import { useEvent, useEventIntersectingAssets, useArchiveEvent } from '../../hooks/useApi';
+import { useEvent, useEventIntersectingAssets, useCreateAsset, useUpdateAsset, useRetireAsset } from '../../hooks/useApi';
 import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
-import { RoadChangeFormModal } from './RoadChangeFormModal';
+import { RoadChangeFormModal, type PendingChange } from './RoadChangeFormModal';
 import type { RoadAsset } from '@nagoya/shared';
 
 type ChangeAction = 'create' | 'modify' | 'retire';
@@ -24,11 +24,21 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
     cacheAssetDetails,
     setHoveredAsset,
     hoveredAssetId,
+    setFlyToGeometry,
   } = useUIStore();
 
   // Modal state for create/modify/retire
   const [modalAction, setModalAction] = useState<ChangeAction | null>(null);
   const [modalAssetId, setModalAssetId] = useState<string | null>(null);
+
+  // Pending changes (batch mode - submit all at once when finalizing)
+  const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Mutations for batch submission
+  const createAsset = useCreateAsset();
+  const updateAsset = useUpdateAsset();
+  const retireAsset = useRetireAsset();
 
   // Refs for scroll-to-view when map hover
   const assetRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -41,15 +51,23 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
     }
   }, [hoveredAssetId]);
 
+  // Track if we've already zoomed to prevent re-zooming on data updates
+  const hasZoomedRef = useRef(false);
+
   // Fetch event data
   const { data: eventData, isLoading: isLoadingEvent } = useEvent(eventId);
   const event = eventData?.data;
 
+  // Zoom to event geometry when panel opens (only once)
+  useEffect(() => {
+    if (event?.geometry && !hasZoomedRef.current) {
+      setFlyToGeometry(event.geometry, true); // closeUp: true to zoom in
+      hasZoomedRef.current = true;
+    }
+  }, [event?.geometry, setFlyToGeometry]);
+
   // Fetch intersecting assets
   const { data: intersectingData, isLoading: isLoadingIntersecting } = useEventIntersectingAssets(eventId);
-
-  // Archive mutation
-  const archiveEvent = useArchiveEvent();
 
   // Merge linked + intersecting assets (deduplicated)
   const allAssets = useMemo(() => {
@@ -83,39 +101,75 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
 
   const isLoading = isLoadingEvent || isLoadingIntersecting;
 
-  const handleFinalize = () => {
-    modals.openConfirmModal({
-      title: 'Finalize and Archive Event',
-      children: (
-        <Text size="sm">
-          This will archive the event. All road asset changes have been saved.
-          Are you sure you want to finalize?
-        </Text>
-      ),
-      labels: { confirm: 'Finalize & Archive', cancel: 'Cancel' },
-      confirmProps: { color: 'green' },
-      onConfirm: () => {
-        archiveEvent.mutate(eventId, {
-          onSuccess: () => {
-            notifications.show({
-              title: 'Event Finalized',
-              message: 'Road update completed and event archived.',
-              color: 'green',
-            });
-            exitRoadUpdateMode();
-            onClose();
-          },
-          onError: (error) => {
-            notifications.show({
-              title: 'Archive Failed',
-              message: error instanceof Error ? error.message : 'Failed to archive event',
-              color: 'red',
-            });
-          },
-        });
-      },
-      zIndex: 1100,
+  // Add a pending change (called from RoadChangeFormModal)
+  const handleAddPendingChange = useCallback((change: PendingChange) => {
+    setPendingChanges((prev) => {
+      // If modifying same asset, replace the previous change
+      if (change.action === 'modify' && change.assetId) {
+        const filtered = prev.filter((c) => !(c.action === 'modify' && c.assetId === change.assetId));
+        return [...filtered, change];
+      }
+      // If retiring same asset, replace previous changes for that asset
+      if (change.action === 'retire' && change.assetId) {
+        const filtered = prev.filter((c) => c.assetId !== change.assetId);
+        return [...filtered, change];
+      }
+      return [...prev, change];
     });
+  }, []);
+
+  // Submit all pending changes (without archiving)
+  const submitPendingChanges = async () => {
+    for (const change of pendingChanges) {
+      try {
+        if (change.action === 'create' && change.data) {
+          await createAsset.mutateAsync({
+            ...change.data,
+            eventId,
+          });
+        } else if (change.action === 'modify' && change.assetId && change.data) {
+          await updateAsset.mutateAsync({
+            id: change.assetId,
+            data: {
+              ...change.data,
+              eventId,
+            },
+          });
+        } else if (change.action === 'retire' && change.assetId) {
+          await retireAsset.mutateAsync({
+            id: change.assetId,
+            eventId,
+            replacedBy: change.replacedBy,
+          });
+        }
+      } catch (error) {
+        throw error; // Re-throw to stop processing
+      }
+    }
+  };
+
+  // Apply pending changes only (no archive)
+  const handleApplyChanges = async () => {
+    if (pendingChanges.length === 0) return;
+
+    setIsSubmitting(true);
+    try {
+      await submitPendingChanges();
+      notifications.show({
+        title: 'Changes Applied',
+        message: `${pendingChanges.length} change${pendingChanges.length > 1 ? 's' : ''} applied successfully.`,
+        color: 'green',
+      });
+      setPendingChanges([]); // Clear pending changes after successful submission
+    } catch (error) {
+      notifications.show({
+        title: 'Apply Failed',
+        message: error instanceof Error ? error.message : 'Failed to apply changes',
+        color: 'red',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -282,6 +336,15 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
 
       <Divider />
 
+      {/* Pending Changes Summary */}
+      {pendingChanges.length > 0 && (
+        <Alert icon={<IconClock size={16} />} color="blue" variant="light">
+          <Text size="sm">
+            {pendingChanges.length} pending change{pendingChanges.length > 1 ? 's' : ''}
+          </Text>
+        </Alert>
+      )}
+
       {/* Action Buttons */}
       <Group justify="space-between">
         <Button
@@ -289,16 +352,18 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
           color="gray"
           leftSection={<IconX size={16} />}
           onClick={handleCancel}
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
         <Button
-          color="green"
+          color="blue"
           leftSection={<IconCheck size={16} />}
-          onClick={handleFinalize}
-          loading={archiveEvent.isPending}
+          onClick={handleApplyChanges}
+          loading={isSubmitting}
+          disabled={pendingChanges.length === 0}
         >
-          Finalize & Archive
+          Apply Changes
         </Button>
       </Group>
 
@@ -310,6 +375,7 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
           action={modalAction}
           assetId={modalAssetId}
           eventId={eventId}
+          onSavePending={handleAddPendingChange}
         />
       )}
     </Stack>
