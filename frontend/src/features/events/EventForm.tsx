@@ -9,9 +9,10 @@ import {
   Divider,
   Alert,
   ActionIcon,
+  Badge,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser, IconFocus2 } from '@tabler/icons-react';
+import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser, IconFocus2, IconRefresh } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useForm, Controller } from 'react-hook-form';
 import * as turf from '@turf/turf';
@@ -210,11 +211,45 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     clearEditHistory();
   }, [triggerDrawAction, clearDrawing, setValue, setSelectedRoadAssetsForForm, setPreviewGeometry, clearAssetCache, clearEditHistory]);
 
+  // Handler for manual recalculation button
+  const handleRecalculateGeometry = useCallback(() => {
+    modals.openConfirmModal({
+      title: 'Recalculate Geometry',
+      children: 'This will regenerate the event geometry based on the currently selected roads and find all roads that intersect with it. Continue?',
+      labels: { confirm: 'Recalculate', cancel: 'Cancel' },
+      confirmProps: { color: 'blue' },
+      onConfirm: () => {
+        // Set flag to trigger recalculation
+        userRequestedRecalculationRef.current = true;
+        processedGeometryRef.current = null;
+
+        // Regenerate geometry from selected roads
+        if (selectedAssetsWithGeometry.length > 0) {
+          const corridorGeometry = generateCorridorGeometry(selectedAssetsWithGeometry);
+          if (corridorGeometry) {
+            const features = geometryToFeatures(corridorGeometry);
+            setDrawnFeatures(features);
+            setCurrentDrawType(getDrawTypeFromGeometry(corridorGeometry));
+            triggerDrawAction('restore');
+
+            // Flag will be reset after auto-intersection completes
+          }
+        }
+      },
+    });
+  }, [selectedAssetsWithGeometry, setDrawnFeatures, setCurrentDrawType, triggerDrawAction]);
+
   // Phase 1: Load event data immediately
   useEffect(() => {
     if (eventId && eventData?.data) {
       const event = eventData.data;
       const linkedRoadIds = event.roadAssets?.map((a) => a.id) || [];
+
+      // Reset modification tracking flags when loading new event
+      hasManuallyModifiedGeometryRef.current = false;
+      userRequestedRecalculationRef.current = false;
+      isReadyToTrackRef.current = false; // Will be set after geometry loads
+      didMergeIntersectingRef.current = false;
 
       reset({
         name: event.name,
@@ -236,6 +271,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
             label: getRoadAssetLabel(a),
             ward: a.ward,
             roadType: a.roadType,
+            geometry: a.geometry, // Important: cache geometry for preview
           }))
         );
       }
@@ -244,11 +280,23 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       if (event.geometry) {
         setFlyToGeometry(event.geometry, true);
       }
+
+      // For auto-generated geometry, we're ready immediately (no drawnFeatures to wait for)
+      // For manual geometry, isReadyToTrackRef will be set in Phase 3 after drawnFeatures loads
+      if (event.geometrySource === 'auto') {
+        // No need to wait for drawnFeatures - already have the selection
+        isReadyToTrackRef.current = true;
+      }
     } else if (!eventId) {
+      // CREATE mode - reset all refs
       reset(defaultValues);
       setSelectedRoadAssetsForForm([]);
       setGeometry(null);
       resetAssetSelectorFilters();
+      hasManuallyModifiedGeometryRef.current = false;
+      userRequestedRecalculationRef.current = false;
+      isReadyToTrackRef.current = true; // Create mode is ready immediately
+      didMergeIntersectingRef.current = false;
     }
   }, [eventId, eventData, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters, setFlyToGeometry]);
 
@@ -337,7 +385,44 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   // Phase 2: Merge intersecting roads when they arrive (background)
   useEffect(() => {
     if (eventId && eventData?.data && intersectingAssetsData?.data) {
-      const linkedRoadIds = eventData.data.roadAssets?.map((a) => a.id) || [];
+      const event = eventData.data;
+      const geometrySource = event.geometrySource || 'auto';
+
+      // GATE 1: Only run once to prevent late-arriving data from overwriting user changes
+      if (didMergeIntersectingRef.current) {
+        console.log('[EventForm] Phase 2: Already merged, skipping');
+        return;
+      }
+
+      // GATE 2: Skip auto-merge for auto-generated geometry UNLESS:
+      // 1. Geometry was manually drawn (geometrySource = 'manual'), OR
+      // 2. User has manually modified the geometry in this session, OR
+      // 3. User explicitly requested recalculation
+      const shouldAutoMerge =
+        geometrySource === 'manual' ||
+        hasManuallyModifiedGeometryRef.current ||
+        userRequestedRecalculationRef.current;
+
+      if (!shouldAutoMerge) {
+        console.log('[EventForm] Phase 2: Skipping auto-merge for auto-generated geometry');
+
+        // Still cache the intersecting assets for display purposes
+        cacheAssetDetails(
+          intersectingAssetsData.data.map(a => ({
+            id: a.id,
+            label: getRoadAssetLabel(a),
+            ward: a.ward,
+            roadType: a.roadType,
+          }))
+        );
+
+        // Mark as merged even though we didn't merge, to prevent future runs
+        didMergeIntersectingRef.current = true;
+        return;
+      }
+
+      // Proceed with merge for manual geometry or recalculation
+      const linkedRoadIds = event.roadAssets?.map((a) => a.id) || [];
       const intersectingRoadIds = intersectingAssetsData.data.map((a) => a.id);
       const mergedRoadIds = [...new Set([...linkedRoadIds, ...intersectingRoadIds])];
 
@@ -353,9 +438,17 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
       // Only update if there are new roads to add
       if (mergedRoadIds.length > linkedRoadIds.length) {
+        console.log('[EventForm] Phase 2: Auto-merging intersecting roads', {
+          linkedCount: linkedRoadIds.length,
+          intersectingCount: intersectingRoadIds.length,
+          mergedCount: mergedRoadIds.length,
+        });
         setValue('selectedRoadAssetIds', mergedRoadIds, { shouldValidate: true });
         setSelectedRoadAssetsForForm(mergedRoadIds);
       }
+
+      // Mark as merged
+      didMergeIntersectingRef.current = true;
     }
   }, [eventId, eventData, intersectingAssetsData, setValue, setSelectedRoadAssetsForForm, cacheAssetDetails]);
 
@@ -379,8 +472,20 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   // Track if we've already processed a duplicate event (prevent re-triggering)
   const processedDuplicateIdRef = useRef<string | null>(null);
 
+  // Track if we've completed initial load and ready to track user modifications
+  const isReadyToTrackRef = useRef(false);
+
+  // Track if user has manually modified geometry since load
+  const hasManuallyModifiedGeometryRef = useRef(false);
+
+  // Track if user has manually triggered recalculation
+  const userRequestedRecalculationRef = useRef(false);
+
+  // Track if Phase 2 merge has already run (prevent multiple runs)
+  const didMergeIntersectingRef = useRef(false);
+
   // Sync drawnFeatures from MapView to form state
-  // Also auto-select intersecting road assets
+  // Also auto-select intersecting road assets (only for CREATE mode or manual geometry changes)
   useEffect(() => {
     if (drawnFeatures && drawnFeatures.length > 0) {
       // Combine features into single geometry for form state
@@ -389,11 +494,44 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         setGeometry(combinedGeometry);
         // Note: Don't set preview geometry here - drawn features are rendered by maplibre-gl-draw
         // The preview layer only shows road buffer preview (dashed cyan)
+
+        // Track manual modification in EDIT mode
+        if (eventId && isReadyToTrackRef.current) {
+          // Generate hash to detect if this is a real change vs. initial restore
+          const geomHash = JSON.stringify(drawnFeatures);
+          if (geomHash !== processedGeometryRef.current) {
+            hasManuallyModifiedGeometryRef.current = true;
+            console.log('[EventForm] Detected manual geometry modification in edit mode');
+          }
+        } else if (eventId && !isReadyToTrackRef.current) {
+          // First drawnFeatures load in manual edit mode - mark as ready to track future changes
+          if (eventData?.data?.geometrySource === 'manual') {
+            isReadyToTrackRef.current = true;
+          }
+        }
       }
 
       // Skip auto-intersection during undo/redo - the assets are already restored from snapshot
       if (isUndoRedoInProgress()) {
         console.log('[EventForm] Skipping intersection check during undo/redo');
+        return;
+      }
+
+      // GATE: Determine if we should run auto-intersection
+      // Run if:
+      // 1. CREATE mode (!eventId), OR
+      // 2. Editing manual geometry (geometrySource = 'manual'), OR
+      // 3. User manually modified geometry in this session, OR
+      // 4. User explicitly clicked recalculate
+      const geometrySource = eventData?.data?.geometrySource;
+      const shouldAutoIntersect =
+        !eventId || // CREATE mode
+        geometrySource === 'manual' || // Manual geometry always auto-intersects
+        hasManuallyModifiedGeometryRef.current || // User modified geometry
+        userRequestedRecalculationRef.current; // Explicit recalculation
+
+      if (!shouldAutoIntersect) {
+        console.log('[EventForm] Skipping auto-intersection: editing auto-generated event without changes');
         return;
       }
 
@@ -404,7 +542,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       if (assetsData?.data && geomHash !== processedGeometryRef.current) {
         processedGeometryRef.current = geomHash;
 
-        console.log('[EventForm] Checking intersection with', assetsData.data.length, 'assets');
+        console.log('[EventForm] Running auto-intersection with', assetsData.data.length, 'assets');
 
         try {
           const intersectingIds: string[] = [];
@@ -418,7 +556,6 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                   // Check if geometries intersect
                   if (turf.booleanIntersects(drawnFeature, assetFeature)) {
                     if (!intersectingIds.includes(asset.id)) {
-                      console.log('[EventForm] Found intersecting asset:', asset.id, asset.name);
                       intersectingIds.push(asset.id);
                       // Cache asset details for display
                       cacheAssetDetails([{
@@ -440,16 +577,31 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
           console.log('[EventForm] Total intersecting assets:', intersectingIds.length);
 
           // Replace selection with only currently intersecting assets
-          // (Don't accumulate - only keep assets that intersect with final position)
-          console.log('[EventForm] Replacing selected roads with:', intersectingIds);
           setSelectedRoadAssetsForForm(intersectingIds);
           setValue('selectedRoadAssetIds', intersectingIds, { shouldValidate: true });
+
+          // Reset recalculation flag after completion
+          if (userRequestedRecalculationRef.current) {
+            console.log('[EventForm] Recalculation complete, resetting flag');
+            userRequestedRecalculationRef.current = false;
+          }
         } catch (e) {
           console.warn('Failed to find intersecting assets:', e);
         }
       }
     }
-  }, [drawnFeatures, assetsData, setPreviewGeometry, setSelectedRoadAssetsForForm, setValue, cacheAssetDetails, combineFeatures, isUndoRedoInProgress]);
+  }, [
+    drawnFeatures,
+    assetsData,
+    eventId,
+    eventData,
+    setPreviewGeometry,
+    setSelectedRoadAssetsForForm,
+    setValue,
+    cacheAssetDetails,
+    combineFeatures,
+    isUndoRedoInProgress
+  ]);
 
   // Generate PREVIEW geometry from selected roads
   // This now shows BOTH drawn shapes (via maplibre-gl-draw) AND road buffer preview (via preview-geometry layer)
@@ -464,20 +616,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   }, [selectedAssetsWithGeometry, setPreviewGeometry]);
 
   // Track asset selection changes for unified undo/redo
-  // Use a delay to skip initial data loading before starting to track changes
   const prevAssetsRef = useRef<string[]>([]);
-  const isReadyToTrackRef = useRef(false);
-
-  // Start tracking after a short delay to skip initial data load
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      isReadyToTrackRef.current = true;
-      // Initialize prevAssetsRef with current state when ready
-      prevAssetsRef.current = [...selectedRoadAssetIdsForForm];
-    }, 500); // Wait for initial data loading to complete
-
-    return () => clearTimeout(timer);
-  }, []); // Only run once on mount
 
   useEffect(() => {
     // Skip if not ready to track (still in initial loading phase)
@@ -503,12 +642,17 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       clearDrawing();
       // Reset the processed duplicate ref so the effect can run again if form reopens
       processedDuplicateIdRef.current = null;
+
+      // Reset geometry tracking refs
+      isReadyToTrackRef.current = false;
+      hasManuallyModifiedGeometryRef.current = false;
+      userRequestedRecalculationRef.current = false;
+      didMergeIntersectingRef.current = false;
     };
   }, [setPreviewGeometry, clearDrawing]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      // Determine if we have manually drawn geometry
       const hasDrawnGeometry = drawnFeatures && drawnFeatures.length > 0;
 
       const submitData = {
@@ -519,13 +663,15 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         department: data.department,
         ward: data.ward || undefined,
         roadAssetIds: data.selectedRoadAssetIds,
-        // Only submit geometry if manually drawn
+        // Submit geometry if manually drawn
         geometry: hasDrawnGeometry && geometry ? geometry : undefined,
-        // Signal backend to auto-generate if no manual geometry
-        regenerateGeometry: !hasDrawnGeometry,
+        // Signal backend to regenerate geometry if:
+        // 1. No manual geometry provided (!hasDrawnGeometry), OR
+        // 2. User explicitly requested recalculation
+        regenerateGeometry: !hasDrawnGeometry || userRequestedRecalculationRef.current,
       };
 
-      if (isEditing && eventId) {
+      if (eventId) {
         await updateEvent.mutateAsync({
           id: eventId,
           data: submitData,
@@ -548,9 +694,26 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       <Stack gap="md">
         {/* Step 1: Define Area (Geometry + Road Selection) */}
         <div>
-          <Text size="sm" fw={600} mb="xs">
-            Step 1: Define Area
-          </Text>
+          <Group gap="xs" mb="xs" align="center">
+            <Text size="sm" fw={600}>
+              Step 1: Define Area
+            </Text>
+            {eventId && eventData?.data?.geometrySource && (
+              <Badge
+                size="xs"
+                color={eventData.data.geometrySource === 'manual' ? 'blue' : 'gray'}
+                variant="light"
+                title={
+                  eventData.data.geometrySource === 'manual'
+                    ? 'This geometry was manually drawn'
+                    : 'This geometry was auto-generated from roads. Roads will not auto-update unless you modify the geometry or click Recalculate.'
+                }
+                style={{ cursor: 'help' }}
+              >
+                {eventData.data.geometrySource === 'manual' ? 'Manual' : 'Auto-generated'}
+              </Badge>
+            )}
+          </Group>
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
               Draw on the map or select roads below. Double-click to finish drawing.
@@ -623,6 +786,21 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               >
                 <IconFocus2 size={14} />
               </ActionIcon>
+
+              {/* Recalculate button - show in EDIT mode for auto-generated geometry */}
+              {eventId && eventData?.data?.geometrySource === 'auto' && (
+                <Button
+                  variant="light"
+                  color="blue"
+                  size="xs"
+                  onClick={handleRecalculateGeometry}
+                  disabled={selectedRoadAssetIds.length === 0}
+                  title="Regenerate geometry and selection from currently selected roads"
+                  leftSection={<IconRefresh size={14} />}
+                >
+                  Recalculate
+                </Button>
+              )}
 
               {/* Clear All button - clears geometry AND road assets */}
               <Button
