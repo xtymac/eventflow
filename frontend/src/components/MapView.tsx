@@ -193,6 +193,7 @@ export function MapView() {
   const isDrawReadyRef = useRef(false);
   const restoreFeaturesRef = useRef<((features: Feature[] | null) => void) | null>(null);
   const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
+  const lastAssetIdsRef = useRef<Set<string>>(new Set()); // Track rendered asset IDs to avoid flickering
 
   // Debounced asset search (consistent with AssetList behavior)
   const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
@@ -1363,8 +1364,12 @@ export function MapView() {
           const center = map.current?.getCenter();
           if (center) {
             useUIStore.getState().setMapCenter([center.lng, center.lat]);
+            // Persist to mapStore for localStorage persistence
+            useMapStore.getState().setCenter([center.lng, center.lat]);
           }
           useUIStore.getState().setMapZoom(zoom);
+          // Persist to mapStore for localStorage persistence
+          useMapStore.getState().setZoom(zoom);
 
           if (zoom >= 12) {
             const bounds = map.current!.getBounds();
@@ -1471,7 +1476,11 @@ export function MapView() {
     const shouldClearAssets = !showAssets || (!mapBbox && !hasActiveAssetFilters) || (currentZoom < 14 && !hasActiveAssetFilters);
 
     if (shouldClearAssets) {
-      source.setData({ type: 'FeatureCollection', features: [] });
+      // Only clear if there was data before
+      if (lastAssetIdsRef.current.size > 0) {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        lastAssetIdsRef.current = new Set();
+      }
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
       map.current.setLayoutProperty('assets-hit-area', 'visibility', 'none');
       map.current.setLayoutProperty('assets-label', 'visibility', 'none');
@@ -1480,6 +1489,19 @@ export function MapView() {
 
     // Get assets data (empty array if no data or loading)
     const assets = assetsData?.data ?? [];
+
+    // Compare asset IDs to avoid unnecessary re-renders (prevents flickering)
+    const newAssetIds = new Set(assets.map((a: RoadAsset) => a.id));
+    const hasChanged = newAssetIds.size !== lastAssetIdsRef.current.size ||
+      [...newAssetIds].some(id => !lastAssetIdsRef.current.has(id));
+
+    if (!hasChanged) {
+      // Data is identical, skip setData() to avoid flickering
+      return;
+    }
+
+    // Update ref for next comparison
+    lastAssetIdsRef.current = newAssetIds;
 
     const features = assets.map((asset: RoadAsset) => ({
       type: 'Feature' as const,
