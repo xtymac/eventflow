@@ -574,7 +574,7 @@ export function MapView() {
         'source-layer': 'roads',
         paint: {
           'line-color': [
-            'match', ['get', 'roadType'],
+            'match', ['get', 'road_type'],  // PMTiles uses snake_case
             'arterial', '#8B5CF6',
             'collector', '#06B6D4',
             'local', '#84CC16',
