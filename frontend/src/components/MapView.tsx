@@ -1388,6 +1388,19 @@ export function MapView() {
       handleMoveendRef.current = handleMoveend;
       map.current.on('moveend', handleMoveend);
 
+      // Also update on zoomend for faster response when zooming to selectable level
+      map.current.on('zoomend', () => {
+        const zoom = map.current?.getZoom() ?? 0;
+        setCurrentZoom(zoom);
+        // Immediately update bbox when crossing zoom 14 threshold
+        if (zoom >= 12 && map.current) {
+          const bounds = map.current.getBounds();
+          const bboxString = truncateBbox(bounds);
+          setMapBbox(bboxString);
+          useUIStore.getState().setMapBbox(bboxString);
+        }
+      });
+
       // Cancel delayed initial zoom when user interacts with the map
       const cancelInitialZoom = () => {
         userInteractedRef.current = true;
