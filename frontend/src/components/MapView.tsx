@@ -193,7 +193,7 @@ export function MapView() {
   const isDrawReadyRef = useRef(false);
   const restoreFeaturesRef = useRef<((features: Feature[] | null) => void) | null>(null);
   const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
-  const lastAssetIdsRef = useRef<Set<string>>(new Set()); // Track rendered asset IDs to avoid flickering
+  const lastAssetIdsHashRef = useRef<string>(''); // Track rendered asset IDs hash to avoid flickering
 
   // Debounced asset search (consistent with AssetList behavior)
   const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
@@ -520,14 +520,14 @@ export function MapView() {
         id: 'assets-label',
         type: 'symbol',
         source: 'assets',
-        minzoom: 15,
+        minzoom: 14,
         layout: {
           'text-field': [
             'get',
             'labelText',
           ],
           'text-font': ['Open Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 15, 11, 18, 14],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11, 18, 14],
           'symbol-placement': 'line',
           'text-max-angle': 30,
           'text-allow-overlap': false,
@@ -564,35 +564,9 @@ export function MapView() {
         },
       }, 'assets-line'); // Insert below assets-line
 
-      // Roads preview label layer (PMTiles, zoom 14-15, before API data kicks in)
-      map.current.addLayer({
-        id: 'roads-preview-label',
-        type: 'symbol',
-        source: 'roads-preview',
-        'source-layer': 'roads',
-        minzoom: 14,
-        maxzoom: 15,  // Exclusive - shows at zoom 14-14.99, then assets-label takes over
-        layout: {
-          'text-field': [
-            'coalesce',
-            ['get', 'displayName'],
-            ['get', 'name'],
-            ['get', 'ref'],
-            ['case', ['has', 'id'], ['concat', 'ID ', ['get', 'id']], ''],
-          ],
-          'text-font': ['Open Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11],
-          'text-anchor': 'center',
-          'symbol-placement': 'line',
-          'text-max-angle': 30,
-          'text-allow-overlap': false,
-        },
-        paint: {
-          'text-color': '#333',
-          'text-halo-color': '#fff',
-          'text-halo-width': 1.5,
-        },
-      });
+      // Roads preview label layer - DISABLED
+      // PMTiles labels removed because API data (assets-label) now shows at zoom 14+
+      // and provides more accurate/complete label text
 
       // Events source and layers
       // Status-based layers: ended (bottom) → planned (middle) → active (top)
@@ -1477,9 +1451,9 @@ export function MapView() {
 
     if (shouldClearAssets) {
       // Only clear if there was data before
-      if (lastAssetIdsRef.current.size > 0) {
+      if (lastAssetIdsHashRef.current !== '') {
         source.setData({ type: 'FeatureCollection', features: [] });
-        lastAssetIdsRef.current = new Set();
+        lastAssetIdsHashRef.current = '';
       }
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
       map.current.setLayoutProperty('assets-hit-area', 'visibility', 'none');
@@ -1490,18 +1464,16 @@ export function MapView() {
     // Get assets data (empty array if no data or loading)
     const assets = assetsData?.data ?? [];
 
-    // Compare asset IDs to avoid unnecessary re-renders (prevents flickering)
-    const newAssetIds = new Set(assets.map((a: RoadAsset) => a.id));
-    const hasChanged = newAssetIds.size !== lastAssetIdsRef.current.size ||
-      [...newAssetIds].some(id => !lastAssetIdsRef.current.has(id));
+    // Compare asset IDs using hash string (faster than Set comparison)
+    const newIdsHash = assets.map((a: RoadAsset) => a.id).sort().join(',');
 
-    if (!hasChanged) {
+    if (newIdsHash === lastAssetIdsHashRef.current) {
       // Data is identical, skip setData() to avoid flickering
       return;
     }
 
     // Update ref for next comparison
-    lastAssetIdsRef.current = newAssetIds;
+    lastAssetIdsHashRef.current = newIdsHash;
 
     const features = assets.map((asset: RoadAsset) => ({
       type: 'Feature' as const,
@@ -1624,7 +1596,6 @@ export function MapView() {
     try {
       const visibility = shouldHidePreview ? 'none' : 'visible';
       map.current.setLayoutProperty('roads-preview-line', 'visibility', visibility);
-      map.current.setLayoutProperty('roads-preview-label', 'visibility', visibility);
       // Apply opacity (no filter - show all road types)
       map.current.setPaintProperty('roads-preview-line', 'line-opacity', previewOpacity);
     } catch {
