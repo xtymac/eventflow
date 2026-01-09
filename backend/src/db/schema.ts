@@ -1,5 +1,5 @@
-import { pgTable, varchar, text, timestamp, integer, bigint, boolean, index, primaryKey, customType } from 'drizzle-orm/pg-core';
-import type { Geometry, Point } from 'geojson';
+import { pgTable, varchar, text, timestamp, integer, bigint, boolean, index, primaryKey, customType, unique } from 'drizzle-orm/pg-core';
+import type { Geometry, Point, Polygon, LineString } from 'geojson';
 
 // PostGIS geometry column types
 // These are type placeholders only - actual read/write MUST use toGeomSql/fromGeomSql helpers
@@ -13,6 +13,25 @@ const geometryColumn = customType<{ data: Geometry; driverData: unknown }>({
 const pointColumn = customType<{ data: Point; driverData: unknown }>({
   dataType() {
     return 'geometry(Point, 4326)';
+  },
+});
+
+const polygonColumn = customType<{ data: Polygon; driverData: unknown }>({
+  dataType() {
+    return 'geometry(Polygon, 4326)';
+  },
+});
+
+const lineStringColumn = customType<{ data: LineString; driverData: unknown }>({
+  dataType() {
+    return 'geometry(LineString, 4326)';
+  },
+});
+
+// JSONB column type for complex data
+const jsonbColumn = customType<{ data: unknown; driverData: unknown }>({
+  dataType() {
+    return 'jsonb';
   },
 });
 export const constructionEvents = pgTable('construction_events', {
@@ -47,7 +66,7 @@ export const roadAssets = pgTable('road_assets', {
   displayName: varchar('display_name', { length: 255 }),  // Computed fallback for display
   nameSource: varchar('name_source', { length: 20 }),  // 'osm' | 'municipal' | 'manual'
   nameConfidence: varchar('name_confidence', { length: 10 }),  // 'high' | 'medium' | 'low'
-  geometry: geometryColumn('geometry').notNull(),
+  geometry: geometryColumn('geometry').notNull(),  // LineString (legacy) or Polygon (new)
   roadType: varchar('road_type', { length: 50 }).notNull(),
   lanes: integer('lanes').notNull().default(2),
   direction: varchar('direction', { length: 50 }).notNull(),
@@ -59,10 +78,22 @@ export const roadAssets = pgTable('road_assets', {
   ward: varchar('ward', { length: 100 }),
   landmark: varchar('landmark', { length: 255 }),
   sublocality: varchar('sublocality', { length: 255 }),  // 町名/丁目 from Google Maps
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+
+  // NEW: Road polygon-specific fields
+  crossSection: varchar('cross_section', { length: 100 }),  // Cross-section type
+  managingDept: varchar('managing_dept', { length: 100 }),  // Managing department
+  intersection: varchar('intersection', { length: 255 }),  // Intersection info
+  pavementState: varchar('pavement_state', { length: 50 }),  // Pavement condition
+
+  // NEW: Data source tracking (common fields)
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),  // 'osm_test' | 'official_ledger' | 'manual'
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
 
   // OSM sync tracking fields
-  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap way ID
+  osmType: varchar('osm_type', { length: 10 }),  // 'node' | 'way' | 'relation'
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
   segmentIndex: integer('segment_index').default(0),  // Segment index within same OSM way
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),  // OSM last modified
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),  // Last sync from Overpass
@@ -70,10 +101,14 @@ export const roadAssets = pgTable('road_assets', {
   // Sync source and manual edit protection
   syncSource: varchar('sync_source', { length: 20 }).default('initial'),  // 'initial' | 'osm-sync' | 'manual'
   isManuallyEdited: boolean('is_manually_edited').default(false),  // If true, skip OSM sync updates
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   statusIdx: index('idx_assets_status').on(table.status),
   roadTypeIdx: index('idx_assets_road_type').on(table.roadType),
   ownerDepartmentIdx: index('idx_assets_owner_department').on(table.ownerDepartment),
+  dataSourceIdx: index('idx_assets_data_source').on(table.dataSource),
+  wardIdx: index('idx_assets_ward').on(table.ward),
 }));
 
 // Join table for Event-RoadAsset many-to-many relationship
@@ -121,13 +156,7 @@ export const inspectionRecords = pgTable('inspection_records', {
   inspectionDateIdx: index('idx_inspections_inspection_date').on(table.inspectionDate),
 }));
 
-// OSM sync logs table
-const jsonbColumn = customType<{ data: unknown; driverData: unknown }>({
-  dataType() {
-    return 'jsonb';
-  },
-});
-
+// OSM sync logs table (uses jsonbColumn defined at top)
 export const osmSyncLogs = pgTable('osm_sync_logs', {
   id: varchar('id', { length: 50 }).primaryKey(),
   syncType: varchar('sync_type', { length: 20 }).notNull(),  // 'bbox' | 'ward' | 'full'
@@ -156,6 +185,151 @@ export const osmSyncLogs = pgTable('osm_sync_logs', {
   statusIdx: index('idx_osm_sync_logs_status').on(table.status),
 }));
 
+// ============================================
+// NEW ASSET TYPES
+// ============================================
+
+// River assets table - supports both LineString (centerline) and Polygon (water body)
+export const riverAssets = pgTable('river_assets', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Name fields
+  name: varchar('name', { length: 255 }),
+  nameJa: varchar('name_ja', { length: 255 }),
+  displayName: varchar('display_name', { length: 255 }),  // Computed: name_ja || name || id
+
+  // Geometry - accepts both LineString and Polygon
+  geometry: geometryColumn('geometry').notNull(),
+  geometryType: varchar('geometry_type', { length: 20 }).notNull().default('line'),  // 'line' | 'polygon'
+
+  // River-specific fields
+  waterwayType: varchar('waterway_type', { length: 50 }),  // 'river' | 'stream' | 'canal' | 'drain'
+  waterType: varchar('water_type', { length: 50 }),  // 'river' | 'pond' | 'lake' (for polygons)
+  width: integer('width'),  // Average width in meters
+  managementLevel: varchar('management_level', { length: 50 }),  // 'national' | 'prefectural' | 'municipal'
+  maintainer: varchar('maintainer', { length: 100 }),
+
+  // Status and location
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  ward: varchar('ward', { length: 100 }),
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  // OSM tracking (osmType + osmId composite unique)
+  osmType: varchar('osm_type', { length: 10 }),
+  osmId: bigint('osm_id', { mode: 'number' }),
+  osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  isManuallyEdited: boolean('is_manually_edited').default(false),
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_rivers_status').on(table.status),
+  waterwayTypeIdx: index('idx_rivers_waterway_type').on(table.waterwayType),
+  geometryTypeIdx: index('idx_rivers_geometry_type').on(table.geometryType),
+  dataSourceIdx: index('idx_rivers_data_source').on(table.dataSource),
+  wardIdx: index('idx_rivers_ward').on(table.ward),
+  osmUniqueIdx: unique('idx_rivers_osm_unique').on(table.osmType, table.osmId),
+}));
+
+// Green space assets table - parks, plazas, green areas (Polygon only)
+export const greenSpaceAssets = pgTable('greenspace_assets', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Name fields
+  name: varchar('name', { length: 255 }),
+  nameJa: varchar('name_ja', { length: 255 }),
+  displayName: varchar('display_name', { length: 255 }),
+
+  // Geometry - always Polygon
+  geometry: polygonColumn('geometry').notNull(),
+
+  // Green space-specific fields
+  greenSpaceType: varchar('green_space_type', { length: 50 }).notNull(),  // 'park' | 'garden' | 'grass' | 'forest' | 'meadow' | 'playground'
+  leisureType: varchar('leisure_type', { length: 50 }),  // OSM leisure tag
+  landuseType: varchar('landuse_type', { length: 50 }),  // OSM landuse tag
+  naturalType: varchar('natural_type', { length: 50 }),  // OSM natural tag
+  areaM2: integer('area_m2'),  // Area in square meters (computed from geometry)
+  vegetationType: varchar('vegetation_type', { length: 100 }),  // 'trees' | 'grass' | 'mixed' | 'flower_beds'
+  operator: varchar('operator', { length: 255 }),  // Operating organization
+
+  // Status and location
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  ward: varchar('ward', { length: 100 }),
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  // OSM tracking
+  osmType: varchar('osm_type', { length: 10 }),
+  osmId: bigint('osm_id', { mode: 'number' }),
+  osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  isManuallyEdited: boolean('is_manually_edited').default(false),
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_greenspaces_status').on(table.status),
+  greenSpaceTypeIdx: index('idx_greenspaces_type').on(table.greenSpaceType),
+  dataSourceIdx: index('idx_greenspaces_data_source').on(table.dataSource),
+  wardIdx: index('idx_greenspaces_ward').on(table.ward),
+  osmUniqueIdx: unique('idx_greenspaces_osm_unique').on(table.osmType, table.osmId),
+}));
+
+// Street light assets table - Point geometry
+export const streetLightAssets = pgTable('streetlight_assets', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Identification
+  lampId: varchar('lamp_id', { length: 50 }),  // Physical identification number
+  displayName: varchar('display_name', { length: 255 }),
+
+  // Geometry - always Point
+  geometry: pointColumn('geometry').notNull(),
+
+  // Street light-specific fields
+  lampType: varchar('lamp_type', { length: 50 }).notNull(),  // 'led' | 'sodium' | 'mercury' | 'fluorescent'
+  wattage: integer('wattage'),  // Power consumption in watts
+  installDate: timestamp('install_date', { withTimezone: true }),
+  lampStatus: varchar('lamp_status', { length: 20 }).notNull().default('operational'),  // 'operational' | 'maintenance' | 'damaged' | 'replaced'
+
+  // Reference to road
+  roadRef: varchar('road_ref', { length: 50 }),  // Reference to road_assets.id (not FK for flexibility)
+
+  // Status and location
+  status: varchar('status', { length: 20 }).notNull().default('active'),  // Data lifecycle status
+  ward: varchar('ward', { length: 100 }),
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  // OSM tracking
+  osmType: varchar('osm_type', { length: 10 }),  // Always 'node' for streetlights
+  osmId: bigint('osm_id', { mode: 'number' }),
+  osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  isManuallyEdited: boolean('is_manually_edited').default(false),
+
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_streetlights_status').on(table.status),
+  lampStatusIdx: index('idx_streetlights_lamp_status').on(table.lampStatus),
+  lampTypeIdx: index('idx_streetlights_lamp_type').on(table.lampType),
+  dataSourceIdx: index('idx_streetlights_data_source').on(table.dataSource),
+  wardIdx: index('idx_streetlights_ward').on(table.ward),
+  osmUniqueIdx: unique('idx_streetlights_osm_unique').on(table.osmType, table.osmId),
+}));
+
 // Type exports for use in application
 export type ConstructionEvent = typeof constructionEvents.$inferSelect;
 export type NewConstructionEvent = typeof constructionEvents.$inferInsert;
@@ -174,3 +348,12 @@ export type NewInspectionRecord = typeof inspectionRecords.$inferInsert;
 
 export type OsmSyncLog = typeof osmSyncLogs.$inferSelect;
 export type NewOsmSyncLog = typeof osmSyncLogs.$inferInsert;
+
+export type RiverAsset = typeof riverAssets.$inferSelect;
+export type NewRiverAsset = typeof riverAssets.$inferInsert;
+
+export type GreenSpaceAsset = typeof greenSpaceAssets.$inferSelect;
+export type NewGreenSpaceAsset = typeof greenSpaceAssets.$inferInsert;
+
+export type StreetLightAsset = typeof streetLightAssets.$inferSelect;
+export type NewStreetLightAsset = typeof streetLightAssets.$inferInsert;
