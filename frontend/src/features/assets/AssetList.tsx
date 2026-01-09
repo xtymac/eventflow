@@ -13,15 +13,17 @@ import {
   Collapse,
   UnstyledButton,
   ActionIcon,
+  Tabs,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconRefresh } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAssets, useAsset, useWards } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
+import { OsmSyncPanel } from './OsmSyncPanel';
 import type { RoadAsset, RoadType, AssetStatus } from '@nagoya/shared';
 
 const LIMIT = 200;
@@ -293,128 +295,136 @@ export function AssetList() {
   }
 
   return (
-    <Stack gap="sm">
-      <Text fw={600}>Road Assets ({data?.meta?.total ?? loadedAssets.length})</Text>
+    <Tabs defaultValue="list">
+      <Tabs.List mb="md">
+        <Tabs.Tab value="list" leftSection={<IconRoad size={14} />}>
+          Roads ({data?.meta?.total ?? loadedAssets.length})
+        </Tabs.Tab>
+        <Tabs.Tab value="sync" leftSection={<IconRefresh size={14} />}>
+          OSM Sync
+        </Tabs.Tab>
+      </Tabs.List>
 
-      <TextInput
-        placeholder="Search by name or ID..."
-        leftSection={<IconSearch size={16} />}
-        value={searchInput}
-        onChange={(e) => setAssetFilter('search', e.target.value)}
-      />
-
-      <UnstyledButton
-        onClick={handleToggleFilters}
-        aria-expanded={filtersOpen}
-        aria-controls="asset-filters"
-        style={{ width: '100%', textAlign: 'left' }}
-      >
-        <Group justify="space-between">
-          <Group gap="xs">
-            <IconFilter size={14} />
-            <Text size="sm" fw={500}>Filters</Text>
-            {activeFilterCount > 0 && (
-              <Badge size="xs" radius="xl">{activeFilterCount}</Badge>
-            )}
-          </Group>
-          <IconChevronDown
-            size={14}
-            style={{
-              transform: filtersOpen ? 'rotate(180deg)' : undefined,
-              transition: 'transform 200ms',
-            }}
-          />
-        </Group>
-      </UnstyledButton>
-
-      <Collapse in={filtersOpen} id="asset-filters">
+      <Tabs.Panel value="list">
         <Stack gap="sm">
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Road Type</Text>
-            <Chip.Group
-              multiple
-              value={roadTypeFilter ? [roadTypeFilter] : []}
-              onChange={(val) => {
-                if (val.length === 0) {
-                  setAssetFilter('roadType', null);
-                } else {
-                  const newValue = val.find((v) => v !== roadTypeFilter);
-                  setAssetFilter('roadType', newValue || val[0]);
-                }
-              }}
-            >
-              <Group gap="xs">
-                <Chip value="arterial">Arterial</Chip>
-                <Chip value="collector">Collector</Chip>
-                <Chip value="local">Local</Chip>
-              </Group>
-            </Chip.Group>
-          </div>
+          <TextInput
+            placeholder="Search by name or ID..."
+            leftSection={<IconSearch size={16} />}
+            value={searchInput}
+            onChange={(e) => setAssetFilter('search', e.target.value)}
+          />
 
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Status</Text>
-            <Chip.Group
-              multiple
-              value={statusFilter ? [statusFilter] : []}
-              onChange={(val) => {
-                if (val.length === 0) {
-                  setAssetFilter('status', null);
-                } else {
-                  const newValue = val.find((v) => v !== statusFilter);
-                  setAssetFilter('status', newValue || val[0]);
-                }
-              }}
-            >
+          <UnstyledButton
+            onClick={handleToggleFilters}
+            aria-expanded={filtersOpen}
+            aria-controls="asset-filters"
+            style={{ width: '100%', textAlign: 'left' }}
+          >
+            <Group justify="space-between">
               <Group gap="xs">
-                <Chip value="active">Active</Chip>
-                <Chip value="inactive">Inactive</Chip>
+                <IconFilter size={14} />
+                <Text size="sm" fw={500}>Filters</Text>
+                {activeFilterCount > 0 && (
+                  <Badge size="xs" radius="xl">{activeFilterCount}</Badge>
+                )}
               </Group>
-            </Chip.Group>
-          </div>
-
-          {wardsData && wardsData.data.length > 0 && (
-            <div>
-              <Text size="xs" c="dimmed" fw={600} mb={4}>Ward</Text>
-              <Chip.Group
-                multiple
-                value={wardFilter ? [wardFilter] : []}
-                onChange={(val) => {
-                  if (val.length === 0) {
-                    setAssetFilter('ward', null);
-                  } else {
-                    const newValue = val.find((v) => v !== wardFilter);
-                    setAssetFilter('ward', newValue || val[0]);
-                  }
+              <IconChevronDown
+                size={14}
+                style={{
+                  transform: filtersOpen ? 'rotate(180deg)' : undefined,
+                  transition: 'transform 200ms',
                 }}
-              >
-                <Group gap="xs">
-                  {wardsData.data.map((ward) => (
-                    <Chip key={ward} value={ward} size="xs">
-                      {ward}
-                    </Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
-            </div>
-          )}
+              />
+            </Group>
+          </UnstyledButton>
 
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Special</Text>
-            <Chip.Group
-              multiple
-              value={unnamedFilter ? ['unnamed'] : []}
-              onChange={(val) => setAssetFilter('unnamed', val.includes('unnamed'))}
-            >
-              <Group gap="xs">
-                <Chip value="unnamed" size="xs">Unnamed Only</Chip>
-              </Group>
-            </Chip.Group>
-          </div>
+          <Collapse in={filtersOpen} id="asset-filters">
+            <Stack gap="sm">
+              <div>
+                <Text size="xs" c="dimmed" fw={600} mb={4}>Road Type</Text>
+                <Chip.Group
+                  multiple
+                  value={roadTypeFilter ? [roadTypeFilter] : []}
+                  onChange={(val) => {
+                    if (val.length === 0) {
+                      setAssetFilter('roadType', null);
+                    } else {
+                      const newValue = val.find((v) => v !== roadTypeFilter);
+                      setAssetFilter('roadType', newValue || val[0]);
+                    }
+                  }}
+                >
+                  <Group gap="xs">
+                    <Chip value="arterial">Arterial</Chip>
+                    <Chip value="collector">Collector</Chip>
+                    <Chip value="local">Local</Chip>
+                  </Group>
+                </Chip.Group>
+              </div>
 
-        </Stack>
-      </Collapse>
+              <div>
+                <Text size="xs" c="dimmed" fw={600} mb={4}>Status</Text>
+                <Chip.Group
+                  multiple
+                  value={statusFilter ? [statusFilter] : []}
+                  onChange={(val) => {
+                    if (val.length === 0) {
+                      setAssetFilter('status', null);
+                    } else {
+                      const newValue = val.find((v) => v !== statusFilter);
+                      setAssetFilter('status', newValue || val[0]);
+                    }
+                  }}
+                >
+                  <Group gap="xs">
+                    <Chip value="active">Active</Chip>
+                    <Chip value="inactive">Inactive</Chip>
+                  </Group>
+                </Chip.Group>
+              </div>
 
-      <Stack gap="xs">
+              {wardsData && wardsData.data.length > 0 && (
+                <div>
+                  <Text size="xs" c="dimmed" fw={600} mb={4}>Ward</Text>
+                  <Chip.Group
+                    multiple
+                    value={wardFilter ? [wardFilter] : []}
+                    onChange={(val) => {
+                      if (val.length === 0) {
+                        setAssetFilter('ward', null);
+                      } else {
+                        const newValue = val.find((v) => v !== wardFilter);
+                        setAssetFilter('ward', newValue || val[0]);
+                      }
+                    }}
+                  >
+                    <Group gap="xs">
+                      {wardsData.data.map((ward) => (
+                        <Chip key={ward} value={ward} size="xs">
+                          {ward}
+                        </Chip>
+                      ))}
+                    </Group>
+                  </Chip.Group>
+                </div>
+              )}
+
+              <div>
+                <Text size="xs" c="dimmed" fw={600} mb={4}>Special</Text>
+                <Chip.Group
+                  multiple
+                  value={unnamedFilter ? ['unnamed'] : []}
+                  onChange={(val) => setAssetFilter('unnamed', val.includes('unnamed'))}
+                >
+                  <Group gap="xs">
+                    <Chip value="unnamed" size="xs">Unnamed Only</Chip>
+                  </Group>
+                </Chip.Group>
+              </div>
+            </Stack>
+          </Collapse>
+
+          <Stack gap="xs">
         {displayList.map((asset: RoadAsset) => {
           const displayText = getRoadAssetLabel(asset);
           const isUnnamed = isRoadAssetUnnamed(asset);
@@ -556,7 +566,13 @@ export function AssetList() {
               : 'Load more...'}
           </Button>
         )}
-      </Stack>
-    </Stack>
+          </Stack>
+        </Stack>
+      </Tabs.Panel>
+
+      <Tabs.Panel value="sync">
+        <OsmSyncPanel />
+      </Tabs.Panel>
+    </Tabs>
   );
 }

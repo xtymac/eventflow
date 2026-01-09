@@ -5,6 +5,7 @@ import { eventsRoutes } from './routes/events.js';
 import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
 import { importExportRoutes } from './routes/import-export.js';
+import { osmSyncRoutes } from './routes/osm-sync.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 
@@ -55,6 +56,7 @@ async function main() {
   await fastify.register(inspectionsRoutes, { prefix: '/inspections' });
   await fastify.register(importExportRoutes, { prefix: '/import' });
   await fastify.register(importExportRoutes, { prefix: '/export' });
+  await fastify.register(osmSyncRoutes, { prefix: '/osm-sync' });
 
   // Initialize background job scheduler
   initScheduler();

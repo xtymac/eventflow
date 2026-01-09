@@ -42,7 +42,7 @@ async function main() {
     const totalCount = countResult.rows[0].count;
     console.log(`Exporting ${totalCount} road assets...`);
 
-    // Export all road assets with geometry
+    // Export all road assets with geometry (including OSM sync tracking fields)
     const result = await client.query(`
       SELECT
         id,
@@ -64,7 +64,12 @@ async function main() {
         owner_department,
         ward,
         landmark,
-        updated_at
+        updated_at,
+        osm_id,
+        segment_index,
+        sync_source,
+        is_manually_edited,
+        last_synced_at
       FROM road_assets
       ORDER BY id
     `);
@@ -91,6 +96,12 @@ async function main() {
         ownerDepartment: row.owner_department,
         ward: row.ward,
         landmark: row.landmark,
+        // OSM sync tracking fields
+        osmId: row.osm_id,
+        segmentIndex: row.segment_index,
+        syncSource: row.sync_source,
+        isManuallyEdited: row.is_manually_edited,
+        lastSyncedAt: row.last_synced_at?.toISOString() || null,
       },
       geometry: row.geometry,
     }));
@@ -121,14 +132,40 @@ async function main() {
     console.log(`Named: ${namedCount} (${((namedCount / features.length) * 100).toFixed(1)}%)`);
     console.log(`Unnamed: ${unnamedCount}`);
 
-    // Source distribution
+    // Name source distribution
     const bySource: Record<string, number> = {};
     for (const feature of features) {
       const source = feature.properties?.nameSource || 'none';
       bySource[source] = (bySource[source] || 0) + 1;
     }
-    console.log('\nBy source:');
+    console.log('\nBy name source:');
     for (const [source, count] of Object.entries(bySource)) {
+      console.log(`  ${source}: ${count}`);
+    }
+
+    // OSM sync statistics
+    const osmTracked = features.filter((f) => f.properties?.osmId).length;
+    const manuallyEdited = features.filter((f) => f.properties?.isManuallyEdited).length;
+    const syncedRecently = features.filter((f) => {
+      if (!f.properties?.lastSyncedAt) return false;
+      const syncDate = new Date(f.properties.lastSyncedAt as string);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      return syncDate > oneDayAgo;
+    }).length;
+
+    console.log('\nOSM Sync Status:');
+    console.log(`  OSM-tracked: ${osmTracked} (${((osmTracked / features.length) * 100).toFixed(1)}%)`);
+    console.log(`  Manually edited (protected): ${manuallyEdited}`);
+    console.log(`  Synced in last 24h: ${syncedRecently}`);
+
+    // Sync source distribution
+    const bySyncSource: Record<string, number> = {};
+    for (const feature of features) {
+      const source = feature.properties?.syncSource || 'unknown';
+      bySyncSource[source] = (bySyncSource[source] || 0) + 1;
+    }
+    console.log('\nBy sync source:');
+    for (const [source, count] of Object.entries(bySyncSource)) {
       console.log(`  ${source}: ${count}`);
     }
 

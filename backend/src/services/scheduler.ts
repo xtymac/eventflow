@@ -1,12 +1,17 @@
 import cron from 'node-cron';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import { db } from '../db/index.js';
-import { constructionEvents } from '../db/schema.js';
-import { eq, lte, and } from 'drizzle-orm';
+import { constructionEvents, roadAssets } from '../db/schema.js';
+import { eq, lte, and, sql, isNull } from 'drizzle-orm';
 import { syncEventToOrion } from './ngsi-sync.js';
 import { fromGeomSql } from '../db/geometry.js';
+import { osmSyncService } from './osm-sync.js';
+
+const execAsync = promisify(exec);
 
 // Configure dayjs for Asia/Tokyo timezone
 dayjs.extend(utc);
@@ -101,6 +106,118 @@ export function initScheduler() {
   }, {
     timezone: TIMEZONE,
   });
+
+  // ============================================
+  // OSM Sync Scheduled Tasks
+  // ============================================
+
+  const OSM_SYNC_HOURLY_ENABLED = process.env.OSM_SYNC_HOURLY_ENABLED === 'true';
+  const OSM_SYNC_DAILY_ENABLED = process.env.OSM_SYNC_DAILY_ENABLED === 'true';
+  const TILES_REBUILD_ENABLED = process.env.TILES_REBUILD_ENABLED === 'true';
+
+  // Helper to delay between ward syncs
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // Hourly sync - sync wards that haven't been synced in 24 hours
+  if (OSM_SYNC_HOURLY_ENABLED) {
+    cron.schedule('0 * * * *', async () => {
+      console.log('[Scheduler] Starting hourly OSM sync...');
+
+      try {
+        // Get wards that need syncing (null or > 24 hours since last sync)
+        const result = await db.execute<{ ward: string }>(sql`
+          SELECT DISTINCT ward
+          FROM road_assets
+          WHERE ward IS NOT NULL
+            AND (last_synced_at IS NULL OR last_synced_at < NOW() - INTERVAL '24 hours')
+          ORDER BY
+            CASE WHEN last_synced_at IS NULL THEN 0 ELSE 1 END,
+            last_synced_at ASC
+          LIMIT 3
+        `);
+
+        const wardsToSync = result.rows.map((r) => r.ward);
+
+        if (wardsToSync.length === 0) {
+          console.log('[Scheduler] No wards need syncing');
+          return;
+        }
+
+        console.log(`[Scheduler] Syncing ${wardsToSync.length} ward(s): ${wardsToSync.join(', ')}`);
+
+        for (const ward of wardsToSync) {
+          try {
+            const syncResult = await osmSyncService.syncWard(ward, 'cron-hourly');
+            console.log(`[Scheduler] Ward ${ward} sync completed: ${syncResult.roadsCreated} created, ${syncResult.roadsUpdated} updated`);
+          } catch (error) {
+            console.error(`[Scheduler] Ward ${ward} sync failed:`, error);
+          }
+          await delay(5000); // 5s delay between wards
+        }
+      } catch (error) {
+        console.error('[Scheduler] Hourly OSM sync error:', error);
+      }
+    }, { timezone: TIMEZONE });
+
+    console.log('[Scheduler] Hourly OSM sync enabled');
+  }
+
+  // Daily full sync - sync all wards at 3am JST
+  if (OSM_SYNC_DAILY_ENABLED) {
+    cron.schedule('0 3 * * *', async () => {
+      console.log('[Scheduler] Starting daily full OSM sync...');
+
+      try {
+        // Get all distinct wards
+        const result = await db.selectDistinct({ ward: roadAssets.ward })
+          .from(roadAssets)
+          .where(sql`${roadAssets.ward} IS NOT NULL`);
+
+        const allWards = result.map((r) => r.ward).filter((w): w is string => w !== null);
+
+        console.log(`[Scheduler] Syncing ${allWards.length} ward(s) for daily sync`);
+
+        for (const ward of allWards) {
+          try {
+            const syncResult = await osmSyncService.syncWard(ward, 'cron-daily');
+            console.log(`[Scheduler] Ward ${ward} daily sync completed: ${syncResult.roadsCreated} created, ${syncResult.roadsUpdated} updated`);
+          } catch (error) {
+            console.error(`[Scheduler] Ward ${ward} daily sync failed:`, error);
+          }
+          await delay(5000); // 5s delay between wards
+        }
+
+        console.log('[Scheduler] Daily full OSM sync completed');
+      } catch (error) {
+        console.error('[Scheduler] Daily OSM sync error:', error);
+      }
+    }, { timezone: TIMEZONE });
+
+    console.log('[Scheduler] Daily OSM sync enabled (3am JST)');
+  }
+
+  // PMTiles rebuild - rebuild at 4am JST (after OSM sync completes)
+  if (TILES_REBUILD_ENABLED) {
+    cron.schedule('0 4 * * *', async () => {
+      console.log('[Scheduler] Starting daily PMTiles rebuild...');
+
+      try {
+        // Export road assets to GeoJSON
+        console.log('[Scheduler] Exporting road assets to GeoJSON...');
+        await execAsync('npm run export:road-assets', { cwd: process.cwd() });
+
+        // Generate PMTiles
+        console.log('[Scheduler] Generating PMTiles...');
+        await execAsync('npm run tiles:generate', { cwd: process.cwd() });
+
+        console.log('[Scheduler] PMTiles rebuild completed');
+      } catch (error) {
+        console.error('[Scheduler] PMTiles rebuild failed:', error);
+      }
+    }, { timezone: TIMEZONE });
+
+    console.log('[Scheduler] Daily PMTiles rebuild enabled (4am JST)');
+  }
 
   console.log(`[Scheduler] Initialized with timezone ${TIMEZONE}`);
 }

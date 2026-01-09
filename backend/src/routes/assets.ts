@@ -365,15 +365,18 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const now = new Date();
 
     // Use raw SQL for geometry insert
+    // Set isManuallyEdited=true to protect from OSM sync overwrites
     await db.execute(sql`
       INSERT INTO road_assets (
         id, name, geometry, road_type, lanes, direction,
-        status, valid_from, owner_department, ward, landmark, updated_at
+        status, valid_from, owner_department, ward, landmark, updated_at,
+        sync_source, is_manually_edited
       ) VALUES (
         ${id}, ${body.name}, ${toGeomSql(body.geometry)}, ${body.roadType},
         ${body.lanes}, ${body.direction}, 'active', ${now},
         ${body.ownerDepartment ?? null}, ${body.ward ?? null},
-        ${body.landmark ?? null}, ${now}
+        ${body.landmark ?? null}, ${now},
+        'manual', true
       )
     `);
 
@@ -442,16 +445,19 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const now = new Date();
 
     // Handle geometry update separately with raw SQL
+    // Also set isManuallyEdited=true to protect from OSM sync overwrites
     if (body.geometry) {
       await db.execute(sql`
         UPDATE road_assets
-        SET geometry = ${toGeomSql(body.geometry)}, updated_at = ${now}
+        SET geometry = ${toGeomSql(body.geometry)}, updated_at = ${now},
+            is_manually_edited = true, sync_source = 'manual'
         WHERE id = ${id}
       `);
     }
 
     // Handle non-geometry updates with Drizzle
-    const updates: Record<string, unknown> = { updatedAt: now };
+    // Set isManuallyEdited=true for any manual update
+    const updates: Record<string, unknown> = { updatedAt: now, isManuallyEdited: true, syncSource: 'manual' };
     if (body.name) updates.name = body.name;
     if (body.roadType) updates.roadType = body.roadType;
     if (body.lanes !== undefined) updates.lanes = body.lanes;
@@ -664,12 +670,15 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       }
 
       // Update with manual source
+      // Set isManuallyEdited=true to protect from OSM sync overwrites
       await db
         .update(roadAssets)
         .set({
           displayName,
           nameSource: 'manual',
           nameConfidence: 'high',
+          isManuallyEdited: true,
+          syncSource: 'manual',
         })
         .where(eq(roadAssets.id, id));
 
@@ -826,6 +835,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         }
 
         // Update the asset with Google Maps name
+        // Set isManuallyEdited=true since user initiated this lookup
         await db
           .update(roadAssets)
           .set({
@@ -833,6 +843,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
             nameSource: 'google',
             nameConfidence: 'medium',
             updatedAt: new Date(),
+            isManuallyEdited: true,
+            syncSource: 'manual',
           })
           .where(eq(roadAssets.id, id));
 

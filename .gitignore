@@ -43,3 +43,4 @@ sample-data/road_assets_matched.geojson
 
 # Generated tiles
 *.pmtiles
+backup_*.sql

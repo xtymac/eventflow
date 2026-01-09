@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp, integer, index, primaryKey, customType } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, integer, bigint, boolean, index, primaryKey, customType } from 'drizzle-orm/pg-core';
 import type { Geometry, Point } from 'geojson';
 
 // PostGIS geometry column types
@@ -60,6 +60,16 @@ export const roadAssets = pgTable('road_assets', {
   landmark: varchar('landmark', { length: 255 }),
   sublocality: varchar('sublocality', { length: 255 }),  // 町名/丁目 from Google Maps
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+
+  // OSM sync tracking fields
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap way ID
+  segmentIndex: integer('segment_index').default(0),  // Segment index within same OSM way
+  osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),  // OSM last modified
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),  // Last sync from Overpass
+
+  // Sync source and manual edit protection
+  syncSource: varchar('sync_source', { length: 20 }).default('initial'),  // 'initial' | 'osm-sync' | 'manual'
+  isManuallyEdited: boolean('is_manually_edited').default(false),  // If true, skip OSM sync updates
 }, (table) => ({
   statusIdx: index('idx_assets_status').on(table.status),
   roadTypeIdx: index('idx_assets_road_type').on(table.roadType),
@@ -111,6 +121,41 @@ export const inspectionRecords = pgTable('inspection_records', {
   inspectionDateIdx: index('idx_inspections_inspection_date').on(table.inspectionDate),
 }));
 
+// OSM sync logs table
+const jsonbColumn = customType<{ data: unknown; driverData: unknown }>({
+  dataType() {
+    return 'jsonb';
+  },
+});
+
+export const osmSyncLogs = pgTable('osm_sync_logs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  syncType: varchar('sync_type', { length: 20 }).notNull(),  // 'bbox' | 'ward' | 'full'
+  bboxParam: varchar('bbox_param', { length: 255 }),  // 'minLng,minLat,maxLng,maxLat'
+  wardParam: varchar('ward_param', { length: 100 }),
+  status: varchar('status', { length: 20 }).notNull(),  // 'running' | 'completed' | 'failed' | 'partial'
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+
+  // Statistics
+  osmRoadsFetched: integer('osm_roads_fetched').default(0),
+  roadsCreated: integer('roads_created').default(0),
+  roadsUpdated: integer('roads_updated').default(0),
+  roadsMarkedInactive: integer('roads_marked_inactive').default(0),
+  roadsSkipped: integer('roads_skipped').default(0),
+
+  // Error tracking
+  errorMessage: text('error_message'),
+  errorDetails: jsonbColumn('error_details'),
+
+  // Metadata
+  triggeredBy: varchar('triggered_by', { length: 100 }),  // 'cron-hourly' | 'cron-daily' | 'frontend-user'
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  startedAtIdx: index('idx_osm_sync_logs_started').on(table.startedAt),
+  statusIdx: index('idx_osm_sync_logs_status').on(table.status),
+}));
+
 // Type exports for use in application
 export type ConstructionEvent = typeof constructionEvents.$inferSelect;
 export type NewConstructionEvent = typeof constructionEvents.$inferInsert;
@@ -126,3 +171,6 @@ export type NewRoadAssetChange = typeof roadAssetChanges.$inferInsert;
 
 export type InspectionRecord = typeof inspectionRecords.$inferSelect;
 export type NewInspectionRecord = typeof inspectionRecords.$inferInsert;
+
+export type OsmSyncLog = typeof osmSyncLogs.$inferSelect;
+export type NewOsmSyncLog = typeof osmSyncLogs.$inferInsert;
