@@ -564,9 +564,34 @@ export function MapView() {
         },
       }, 'assets-line'); // Insert below assets-line
 
-      // Roads preview label layer - DISABLED
-      // PMTiles labels removed because API data (assets-label) now shows at zoom 14+
-      // and provides more accurate/complete label text
+      // Roads preview label layer (PMTiles, zoom < 14 only)
+      // At zoom 14+, API data (assets-label) takes over with more accurate labels
+      map.current.addLayer({
+        id: 'roads-preview-label',
+        type: 'symbol',
+        source: 'roads-preview',
+        'source-layer': 'roads',
+        maxzoom: 14, // Hide at zoom 14+, where assets-label takes over
+        layout: {
+          'text-field': [
+            'coalesce',
+            ['get', 'displayName'],
+            ['get', 'name'],
+            ['get', 'ref'],
+            '',
+          ],
+          'text-font': ['Open Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 11],
+          'symbol-placement': 'line-center',
+          'text-max-angle': 30,
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#333',
+          'text-halo-color': '#fff',
+          'text-halo-width': 1.5,
+        },
+      });
 
       // Events source and layers
       // Status-based layers: ended (bottom) → planned (middle) → active (top)
@@ -1596,6 +1621,7 @@ export function MapView() {
     try {
       const visibility = shouldHidePreview ? 'none' : 'visible';
       map.current.setLayoutProperty('roads-preview-line', 'visibility', visibility);
+      map.current.setLayoutProperty('roads-preview-label', 'visibility', visibility);
       // Apply opacity (no filter - show all road types)
       map.current.setPaintProperty('roads-preview-line', 'line-opacity', previewOpacity);
     } catch {
