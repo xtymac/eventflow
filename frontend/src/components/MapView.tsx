@@ -79,6 +79,27 @@ const truncateBbox = (bounds: maplibregl.LngLatBounds) => {
   return `${fix(bounds.getWest())},${fix(bounds.getSouth())},${fix(bounds.getEast())},${fix(bounds.getNorth())}`;
 };
 
+// Shrink bbox to center portion (helps API return data centered on viewport)
+// At lower zoom levels, we shrink more to ensure data is centered
+const shrinkBbox = (bounds: maplibregl.LngLatBounds, zoom: number): maplibregl.LngLatBounds => {
+  // Shrink factor: at zoom 14 shrink to 60%, at zoom 16+ use full bbox
+  const shrinkFactor = zoom >= 16 ? 1.0 : zoom >= 15 ? 0.8 : 0.6;
+
+  const center = bounds.getCenter();
+  const west = bounds.getWest();
+  const east = bounds.getEast();
+  const south = bounds.getSouth();
+  const north = bounds.getNorth();
+
+  const halfWidth = (east - west) / 2 * shrinkFactor;
+  const halfHeight = (north - south) / 2 * shrinkFactor;
+
+  return new maplibregl.LngLatBounds(
+    [center.lng - halfWidth, center.lat - halfHeight],
+    [center.lng + halfWidth, center.lat + halfHeight]
+  );
+};
+
 export function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -1372,7 +1393,9 @@ export function MapView() {
 
           if (zoom >= 12) {
             const bounds = map.current!.getBounds();
-            const bboxString = truncateBbox(bounds);
+            // Shrink bbox at lower zoom levels to ensure API returns centered data
+            const shrunkBounds = shrinkBbox(bounds, zoom);
+            const bboxString = truncateBbox(shrunkBounds);
             setMapBbox(bboxString);
 
             // Sync to uiStore for asset list filtering
@@ -1395,7 +1418,9 @@ export function MapView() {
         // Immediately update bbox when crossing zoom 14 threshold
         if (zoom >= 12 && map.current) {
           const bounds = map.current.getBounds();
-          const bboxString = truncateBbox(bounds);
+          // Shrink bbox at lower zoom levels to ensure API returns centered data
+          const shrunkBounds = shrinkBbox(bounds, zoom);
+          const bboxString = truncateBbox(shrunkBounds);
           setMapBbox(bboxString);
           useUIStore.getState().setMapBbox(bboxString);
         }
