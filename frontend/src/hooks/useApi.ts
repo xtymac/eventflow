@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type {
   ConstructionEvent,
   RoadAsset,
@@ -220,6 +220,8 @@ export function useAssets(
         meta: { total: number | null; limit?: number; offset?: number };
       }>(`/assets${queryString}`),
     enabled: options?.enabled ?? true,
+    // Keep previous data while fetching new data to prevent UI flickering
+    placeholderData: keepPreviousData,
   });
 }
 
