@@ -563,18 +563,29 @@ export function MapView() {
         },
       });
 
-      // Roads preview source (PMTiles for low-zoom overview)
-      map.current.addSource('roads-preview', {
-        type: 'vector',
-        url: 'pmtiles:///tiles/roads.pmtiles',
-      });
+      // Roads preview source - use Martin (real-time) in production, PMTiles in dev
+      const useMartin = window.location.hostname !== 'localhost';
+      if (useMartin) {
+        // Add timestamp to bust browser cache on each page load
+        const cacheBuster = Date.now();
+        map.current.addSource('roads-preview', {
+          type: 'vector',
+          tiles: [`${window.location.origin}/tiles/road_assets/{z}/{x}/{y}?t=${cacheBuster}`],
+        });
+      } else {
+        map.current.addSource('roads-preview', {
+          type: 'vector',
+          url: 'pmtiles:///tiles/roads.pmtiles',
+        });
+      }
 
-      // Roads preview layer (PMTiles for all zoom levels, filtered by road type)
+      // Roads preview layer (Martin or PMTiles, filtered by road type)
+      const sourceLayer = useMartin ? 'road_assets' : 'roads';
       map.current.addLayer({
         id: 'roads-preview-line',
         type: 'line',
         source: 'roads-preview',
-        'source-layer': 'roads',
+        'source-layer': sourceLayer,
         paint: {
           'line-color': [
             'match', ['get', 'road_type'],  // PMTiles uses snake_case
@@ -588,13 +599,13 @@ export function MapView() {
         },
       }, 'assets-line'); // Insert below assets-line
 
-      // Roads preview label layer (PMTiles, zoom < 14 only)
+      // Roads preview label layer (Martin or PMTiles, zoom < 14 only)
       // At zoom 14+, API data (assets-label) takes over with more accurate labels
       map.current.addLayer({
         id: 'roads-preview-label',
         type: 'symbol',
         source: 'roads-preview',
-        'source-layer': 'roads',
+        'source-layer': sourceLayer,
         maxzoom: 14, // Hide at zoom 14+, where assets-label takes over
         layout: {
           'text-field': [

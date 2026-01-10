@@ -21,6 +21,7 @@
     "tiles:generate": "tippecanoe --output=frontend/public/tiles/roads.pmtiles --minimum-zoom=8 --maximum-zoom=16 --simplification=10 --drop-densest-as-needed --include=id --include=roadType --include=road_type --include=displayName --include=name --include=name_ja --include=ref --include=local_ref --include=ward --layer=roads --force sample-data/road_assets.geojson",
     "export:road-assets": "npx tsx scripts/export-road-assets.ts",
     "watch:road-assets": "npx tsx scripts/watch-road-assets.ts",
+    "watch:ec2": "bash scripts/watch-ec2.sh",
     "tiles:sync": "npm run export:road-assets && npm run tiles:generate"
   },
   "devDependencies": {
