@@ -31,7 +31,7 @@ async function main() {
   const pool = new pg.Pool({
     connectionString:
       process.env.DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5433/nagoya_construction',
+      'postgresql://mac@localhost:5432/nagoya_construction',
   });
 
   const client = await pool.connect();

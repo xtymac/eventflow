@@ -110,7 +110,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         unnamed: Type.Optional(Type.Union([Type.Boolean(), Type.Literal('true'), Type.Literal('false')])), // filter unnamed roads
         // Spatial & pagination params
         bbox: Type.Optional(Type.String()),  // "minLng,minLat,maxLng,maxLat"
-        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 10000 })),
         offset: Type.Optional(Type.Integer({ minimum: 0 })),
         includeTotal: Type.Optional(Type.Boolean()),
       }),
@@ -133,7 +133,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     // Parse unnamed boolean (handles string 'true' from querystring if coerceTypes is off)
     const unnamed = unnamedParam === true || (unnamedParam as unknown) === 'true';
     // Pagination with server-side hard limit enforcement
-    const MAX_LIMIT = 1000;
+    // Higher limits for viewport-based loading at low zoom (dense areas need more assets)
+    const MAX_LIMIT = 10000;
     const limit = Math.min(request.query.limit ?? 200, MAX_LIMIT);
     const offset = request.query.offset ?? 0;
     // Boolean from querystring may be string "false" - handle explicitly

@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5433/nagoya_construction';
+  const connectionString = process.env.DATABASE_URL || 'postgres://mac@localhost:5432/nagoya_construction';
 
   const pool = new Pool({ connectionString });
   const db = drizzle(pool);

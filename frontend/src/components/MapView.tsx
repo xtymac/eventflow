@@ -247,6 +247,9 @@ export function MapView() {
   // - filters active at high zoom: load filtered assets in viewport (bbox for performance)
   // PMTiles covers all zoom levels for preview; API enables selection and filtering
   const useGlobalFilter = hasActiveAssetFilters && currentZoom < 14;
+  // Dynamic limit based on zoom: lower zoom = larger area = need higher limit
+  // Zoom 14: ~9000 roads in viewport, zoom 16+: ~500 roads
+  const assetLimit = currentZoom >= 17 ? 2000 : currentZoom >= 16 ? 5000 : 10000;
   const { data: assetsData } = useAssets(
     {
       roadType: assetFilters.roadType as RoadType | undefined,
@@ -257,7 +260,7 @@ export function MapView() {
       // At low zoom with filters: skip bbox to show all filtered assets globally
       // At high zoom or no filters: use bbox for viewport-based loading
       bbox: useGlobalFilter ? undefined : (mapBbox ?? undefined),
-      limit: 1000,
+      limit: assetLimit,
       includeTotal: false,
     },
     // Enable when: showAssets AND (mapBbox exists for viewport mode OR global filter mode)
@@ -447,8 +450,8 @@ export function MapView() {
       container: mapContainer.current,
       style: {
         version: 8,
-        // Glyphs URL for text labels
-        glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+        // Glyphs URL for text labels - using Protomaps font service (reliable, free)
+        glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
         sources: {
           osm: {
             type: 'raster',
@@ -547,7 +550,7 @@ export function MapView() {
             'get',
             'labelText',
           ],
-          'text-font': ['Open Sans Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11, 18, 14],
           'symbol-placement': 'line',
           'text-max-angle': 30,
@@ -601,7 +604,7 @@ export function MapView() {
             ['get', 'ref'],
             '',
           ],
-          'text-font': ['Open Sans Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 11],
           'symbol-placement': 'line-center',
           'text-max-angle': 30,
@@ -921,7 +924,7 @@ export function MapView() {
         maxzoom: 15,  // Handoff to assets-label at zoom 15
         layout: {
           'text-field': ['coalesce', ['get', 'name'], ['get', 'name:ja'], ['get', 'ref'], ''],
-          'text-font': ['Noto Sans Regular', 'Open Sans Regular'],  // CJK support
+          'text-font': ['Noto Sans Regular'],  // CJK support
           'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 15, 14],
           'symbol-placement': 'line',
           'text-max-angle': 30,
