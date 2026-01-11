@@ -10,6 +10,7 @@ import { InspectionList } from './features/inspections/InspectionList';
 import { EventDetailPanel } from './features/events/EventDetailPanel';
 import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
+import { MapSearch } from './components/MapSearch';
 import { RecentEditsBar } from './components/RecentEditsBar';
 import { useUIStore } from './stores/uiStore';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
@@ -138,6 +139,10 @@ function App() {
             <img src="/favicon.svg" alt="EventFlow" width={44} height={44} style={{ marginLeft: 8 }} />
             <Title order={3}>EventFlow</Title>
           </Group>
+
+          {/* Map Search - centered in header */}
+          <MapSearch />
+
           <Tooltip label="Refresh data">
             <ActionIcon variant="subtle" onClick={handleRefresh}>
               <IconRefresh size={20} />

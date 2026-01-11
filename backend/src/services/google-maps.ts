@@ -1,7 +1,58 @@
 /**
- * Google Maps API service for road name lookup
+ * Google Maps API service for road name lookup and place search
  * Uses Reverse Geocoding API to get road names from coordinates
+ * Uses Places Text Search API for location search
  */
+
+// Nagoya city bounds for search restriction
+export const NAGOYA_BOUNDS = {
+  south: 35.05,
+  north: 35.30,
+  west: 136.80,
+  east: 137.05,
+};
+
+// Nagoya city center for biasing search results
+const NAGOYA_CENTER = { lat: 35.18, lng: 136.91 };
+const NAGOYA_SEARCH_RADIUS = 15000; // 15km radius
+
+/**
+ * Check if coordinates are within Nagoya city bounds
+ */
+export function isWithinNagoyaBounds(lng: number, lat: number): boolean {
+  return (
+    lng >= NAGOYA_BOUNDS.west &&
+    lng <= NAGOYA_BOUNDS.east &&
+    lat >= NAGOYA_BOUNDS.south &&
+    lat <= NAGOYA_BOUNDS.north
+  );
+}
+
+// Place search result from Google Places API
+export interface PlaceSearchResult {
+  placeId: string;
+  name: string;
+  address: string;
+  coordinates: [number, number]; // [lng, lat]
+  types: string[];
+}
+
+interface PlacesTextSearchResponse {
+  results: Array<{
+    place_id: string;
+    name: string;
+    formatted_address: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      };
+    };
+    types: string[];
+  }>;
+  status: string;
+  error_message?: string;
+}
 
 interface ReverseGeocodeResult {
   roadName: string | null;
@@ -179,4 +230,76 @@ export async function getRoadNameForLineString(
  */
 export function isGoogleMapsConfigured(): boolean {
   return !!GOOGLE_MAPS_API_KEY;
+}
+
+/**
+ * Search for places using Google Places Text Search API
+ * Results are filtered to Nagoya city bounds
+ * @param query Search query (supports Japanese)
+ * @param limit Maximum number of results (default 10)
+ * @returns Array of place results within Nagoya bounds
+ */
+export async function searchPlaces(
+  query: string,
+  limit: number = 10
+): Promise<PlaceSearchResult[]> {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error('GOOGLE_MAPS_API_KEY is not configured');
+  }
+
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+
+  const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+  url.searchParams.set('query', query.trim());
+  url.searchParams.set('key', GOOGLE_MAPS_API_KEY);
+  url.searchParams.set('language', 'ja');
+  url.searchParams.set('region', 'jp');
+  // Bias results toward Nagoya center
+  url.searchParams.set('location', `${NAGOYA_CENTER.lat},${NAGOYA_CENTER.lng}`);
+  url.searchParams.set('radius', NAGOYA_SEARCH_RADIUS.toString());
+
+  const response = await fetch(url.toString());
+
+  if (!response.ok) {
+    throw new Error(`Google Places API error: ${response.status}`);
+  }
+
+  const data: PlacesTextSearchResponse = await response.json();
+
+  if (data.status === 'ZERO_RESULTS') {
+    return [];
+  }
+
+  if (data.status !== 'OK') {
+    throw new Error(`Google Places API error: ${data.status} - ${data.error_message || 'Unknown error'}`);
+  }
+
+  // Filter to Nagoya bounds and transform results
+  const results: PlaceSearchResult[] = [];
+  for (const place of data.results) {
+    const lng = place.geometry.location.lng;
+    const lat = place.geometry.location.lat;
+
+    // Skip places outside Nagoya bounds
+    if (!isWithinNagoyaBounds(lng, lat)) {
+      continue;
+    }
+
+    results.push({
+      placeId: place.place_id,
+      name: place.name,
+      address: place.formatted_address,
+      coordinates: [lng, lat],
+      types: place.types,
+    });
+
+    // Respect limit
+    if (results.length >= limit) {
+      break;
+    }
+  }
+
+  return results;
 }

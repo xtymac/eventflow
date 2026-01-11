@@ -9,6 +9,7 @@ import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGre
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSearchStore } from '../stores/searchStore';
 import { useMapDraw } from '../hooks/useMapDraw';
 import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
 import type { ConstructionEvent, RoadAsset, InspectionRecord, EventStatus, RoadType, AssetStatus } from '@nagoya/shared';
@@ -174,6 +175,10 @@ export function MapView() {
     eventFilters,
     assetFilters,
   } = useUIStore();
+
+  // Search store for map search marker
+  const { searchCenter, clearSearch } = useSearchStore();
+
   const popup = useRef<maplibregl.Popup | null>(null);
 
   // Locked tooltip state (for selected event - stays visible)
@@ -872,23 +877,29 @@ export function MapView() {
         id: 'greenspaces-fill',
         type: 'fill',
         source: 'greenspaces',
+        layout: {
+          'visibility': 'visible',
+        },
         paint: {
           'fill-color': '#22C55E',
-          'fill-opacity': 0.25,
+          'fill-opacity': 0.4,
         },
-      }, 'roads-preview-line');
+      });
 
       // Green spaces outline layer
       map.current.addLayer({
         id: 'greenspaces-line',
         type: 'line',
         source: 'greenspaces',
+        layout: {
+          'visibility': 'visible',
+        },
         paint: {
           'line-color': '#16A34A',
-          'line-width': 1.5,
-          'line-opacity': 0.6,
+          'line-width': 2,
+          'line-opacity': 0.8,
         },
-      }, 'roads-preview-line');
+      });
 
       // Green spaces label layer
       map.current.addLayer({
@@ -897,6 +908,7 @@ export function MapView() {
         source: 'greenspaces',
         minzoom: 14,
         layout: {
+          'visibility': 'visible',
           'text-field': ['get', 'displayName'],
           'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 16, 12],
@@ -922,23 +934,20 @@ export function MapView() {
         type: 'circle',
         source: 'streetlights',
         minzoom: 14,
+        layout: {
+          'visibility': 'visible',
+        },
         paint: {
           'circle-radius': [
             'interpolate', ['linear'], ['zoom'],
-            14, 3,
-            16, 5,
-            18, 8
+            14, 4,
+            16, 6,
+            18, 10
           ],
-          'circle-color': [
-            'case',
-            ['==', ['get', 'lampStatus'], 'operational'], '#FBBF24', // Amber for working
-            ['==', ['get', 'lampStatus'], 'maintenance'], '#F97316', // Orange for maintenance
-            ['==', ['get', 'lampStatus'], 'damaged'], '#EF4444', // Red for damaged
-            '#9CA3AF' // Gray for unknown/other
-          ],
-          'circle-stroke-width': 1,
+          'circle-color': '#FBBF24', // Default amber for all (lampStatus might not be set)
+          'circle-stroke-width': 2,
           'circle-stroke-color': '#fff',
-          'circle-opacity': 0.9,
+          'circle-opacity': 1,
         },
       });
 
@@ -2564,6 +2573,85 @@ export function MapView() {
       setFlyToGeometry(null);
     }
   }, [flyToGeometry, flyToCloseUp, mapLoaded, setFlyToGeometry, isEventFormOpen]);
+
+  // Search marker layer - show temporary marker at search center (coordinate search)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const sourceId = 'search-marker';
+    const layerId = 'search-marker-layer';
+    const pulseLayerId = 'search-marker-pulse';
+
+    // If no search center, remove existing layers
+    if (!searchCenter) {
+      if (map.current.getLayer(pulseLayerId)) {
+        map.current.removeLayer(pulseLayerId);
+      }
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
+      if (map.current.getSource(sourceId)) {
+        map.current.removeSource(sourceId);
+      }
+      return;
+    }
+
+    const geojsonData: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: searchCenter,
+        },
+        properties: {},
+      }],
+    };
+
+    // Create or update source
+    const existingSource = map.current.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+    if (existingSource) {
+      existingSource.setData(geojsonData);
+    } else {
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: geojsonData,
+      });
+
+      // Pulse effect layer (larger, semi-transparent)
+      map.current.addLayer({
+        id: pulseLayerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': 20,
+          'circle-color': '#ff6b6b',
+          'circle-opacity': 0.3,
+          'circle-stroke-width': 0,
+        },
+      });
+
+      // Main marker layer
+      map.current.addLayer({
+        id: layerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#ff6b6b',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+    }
+
+    // Auto-clear search marker after 10 seconds
+    const timeout = setTimeout(() => {
+      clearSearch();
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [searchCenter, mapLoaded, clearSearch]);
 
   // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {

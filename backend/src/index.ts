@@ -10,6 +10,7 @@ import { sseRoutes } from './routes/sse.js';
 import { riversRoutes } from './routes/rivers.js';
 import { greenspacesRoutes } from './routes/greenspaces.js';
 import { streetlightsRoutes } from './routes/streetlights.js';
+import { searchRoutes } from './routes/search.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 
@@ -67,6 +68,9 @@ async function main() {
   await fastify.register(riversRoutes, { prefix: '/rivers' });
   await fastify.register(greenspacesRoutes, { prefix: '/greenspaces' });
   await fastify.register(streetlightsRoutes, { prefix: '/streetlights' });
+
+  // Search routes (Google Maps + local data)
+  await fastify.register(searchRoutes, { prefix: '/search' });
 
   // Initialize background job scheduler
   initScheduler();

@@ -394,3 +394,37 @@ export interface ApiError {
   message: string;
   statusCode: number;
 }
+
+// ============================================
+// Search Types (Map Navigation Search)
+// ============================================
+
+// Search result type (places only for map navigation)
+export type SearchResultType = 'place';
+
+// Search result format (Google Places)
+export interface SearchResult {
+  id: string;
+  type: SearchResultType;
+  name: string;
+  address?: string;
+  coordinates: [number, number]; // [lng, lat]
+  metadata?: {
+    placeId?: string; // Google Place ID
+  };
+}
+
+// Search API response (simplified - places only)
+export interface SearchResponse {
+  data: {
+    places: SearchResult[];
+    searchCenter?: [number, number]; // [lng, lat] for coordinate search
+    isCoordinateSearch: boolean;
+  };
+  meta: {
+    query: string;
+    processingTime: number;
+    error?: string;
+    errorMessage?: string;
+  };
+}
