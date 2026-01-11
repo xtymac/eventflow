@@ -1,0 +1,30 @@
+# Caddyfile for EventFlow production
+eventflow.uixai.org {
+    # API endpoints
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy api:3000
+    }
+
+    # SSE endpoints (no buffering)
+    handle /sse/* {
+        uri strip_prefix /sse
+        reverse_proxy api:3000 {
+            flush_interval -1
+        }
+    }
+
+    # Frontend (Vite dev server in Docker)
+    handle {
+        reverse_proxy web:5173
+    }
+
+    # Enable compression
+    encode gzip
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}

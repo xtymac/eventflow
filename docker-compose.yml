@@ -89,8 +89,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    ports:
-      - "5173:5173"
     environment:
       # API_PROXY_TARGET is for Vite server proxy (Docker internal)
       # VITE_API_URL defaults to /api which uses the proxy
@@ -99,6 +97,25 @@ services:
       - ./frontend/src:/app/src:ro
       - ./frontend/public/tiles:/app/public/tiles:ro
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: nagoya-caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      ACME_AGREE: "true"
+
 volumes:
   postgres_data:
   mongo_data:
+  caddy_data:
+  caddy_config:
