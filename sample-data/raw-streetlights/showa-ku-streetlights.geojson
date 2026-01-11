@@ -1,0 +1,421 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ttubgoll",
+        "lampId": null,
+        "displayName": "SL-ttubgoll",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3026866504",
+        "osmTimestamp": "2014-08-20T09:09:20Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9258622,
+          35.1572193
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-p668mwgq",
+        "lampId": null,
+        "displayName": "SL-p668mwgq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248600",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9258145,
+          35.1573738
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-vrf4hped",
+        "lampId": null,
+        "displayName": "SL-vrf4hped",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248601",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9256791,
+          35.1573866
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q2nxh05e",
+        "lampId": null,
+        "displayName": "SL-q2nxh05e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248603",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9261097,
+          35.1574006
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-12ewwq5h",
+        "lampId": null,
+        "displayName": "SL-12ewwq5h",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248604",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9260256,
+          35.1574347
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bo7waun0",
+        "lampId": null,
+        "displayName": "SL-bo7waun0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248605",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9255691,
+          35.1574615
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-08ym96ua",
+        "lampId": null,
+        "displayName": "SL-08ym96ua",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248607",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9256491,
+          35.1574744
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-4h773oua",
+        "lampId": null,
+        "displayName": "SL-4h773oua",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029248632",
+        "osmTimestamp": "2014-08-21T10:55:14Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9255485,
+          35.1576369
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-24ozcub2",
+        "lampId": null,
+        "displayName": "SL-24ozcub2",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272739",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9256709,
+          35.1576593
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-x4338v0s",
+        "lampId": null,
+        "displayName": "SL-x4338v0s",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272743",
+        "osmTimestamp": "2014-08-20T09:09:13Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9257748,
+          35.1576705
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-4a1u2fbd",
+        "lampId": null,
+        "displayName": "SL-4a1u2fbd",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272751",
+        "osmTimestamp": "2014-08-20T09:09:14Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9252207,
+          35.1577689
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ig5lqf53",
+        "lampId": null,
+        "displayName": "SL-ig5lqf53",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272754",
+        "osmTimestamp": "2014-08-20T13:26:29Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9254884,
+          35.1577716
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-th5ktco2",
+        "lampId": null,
+        "displayName": "SL-th5ktco2",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272785",
+        "osmTimestamp": "2014-08-20T09:09:14Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9251479,
+          35.1579084
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-e5bpxwdz",
+        "lampId": null,
+        "displayName": "SL-e5bpxwdz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3031317537",
+        "osmTimestamp": "2014-08-21T05:22:14Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9254357,
+          35.1568929
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-yqgk7s3o",
+        "lampId": null,
+        "displayName": "SL-yqgk7s3o",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3031317540",
+        "osmTimestamp": "2014-08-21T05:22:14Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9253106,
+          35.1569923
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-88zzn7ta",
+        "lampId": null,
+        "displayName": "SL-88zzn7ta",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "8910850251",
+        "osmTimestamp": "2025-04-12T05:39:05Z",
+        "status": "active",
+        "ward": "Showa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9171976,
+          35.1532419
+        ]
+      }
+    }
+  ]
+}

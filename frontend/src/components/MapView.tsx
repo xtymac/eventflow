@@ -128,6 +128,7 @@ export function MapView() {
     toggleRivers,
     toggleGreenSpaces,
     toggleStreetLights,
+    roadTileVersion,
   } = useMapStore();
   const {
     selectedEventId,
@@ -593,39 +594,26 @@ export function MapView() {
         },
       });
 
-      // Roads preview source - use Martin (real-time) in production, PMTiles in dev
-      const useMartin = window.location.hostname !== 'localhost';
-      if (useMartin) {
-        // Add timestamp to bust browser cache on each page load
-        const cacheBuster = Date.now();
-        map.current.addSource('roads-preview', {
-          type: 'vector',
-          tiles: [`${window.location.origin}/tiles/road_assets/{z}/{x}/{y}?t=${cacheBuster}`],
-        });
-      } else {
-        map.current.addSource('roads-preview', {
-          type: 'vector',
-          url: 'pmtiles:///tiles/roads.pmtiles',
-        });
-      }
+      // Roads preview source - always use PMTiles for performance
+      // PMTiles are pre-generated with optimized geometry simplification
+      // Martin is available for real-time data needs but slower
+      map.current.addSource('roads-preview', {
+        type: 'vector',
+        url: 'pmtiles:///tiles/roads.pmtiles',
+      });
 
-      // Roads preview layer (Martin or PMTiles, filtered by road type)
-      const sourceLayer = useMartin ? 'road_assets' : 'roads';
+      // Roads preview layer (PMTiles source layer is 'roads')
+      // Visible at all zoom levels as background; API data overlays on top at zoom >= 14
+      const sourceLayer = 'roads';
       map.current.addLayer({
         id: 'roads-preview-line',
         type: 'line',
         source: 'roads-preview',
         'source-layer': sourceLayer,
         paint: {
-          'line-color': [
-            'match', ['get', 'road_type'],  // PMTiles uses snake_case
-            'arterial', '#8B5CF6',
-            'collector', '#06B6D4',
-            'local', '#84CC16',
-            '#666'
-          ],
-          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 12, 2, 16, 4],
-          'line-opacity': 0.6,
+          'line-color': '#94a3b8', // Light blue-gray (slate-400)
+          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.8, 12, 1.5, 16, 2],
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.35, 14, 0.25, 18, 0.15],
         },
       }, 'assets-line'); // Insert below assets-line
 
@@ -1681,6 +1669,16 @@ export function MapView() {
       }, nextLayerId);
     }
   }, [mapTheme, mapLoaded]);
+
+  // Road tile refresh when roadTileVersion changes (triggered by SSE road edit events)
+  // Note: Preview layer uses PMTiles (static files) for performance, so real-time refresh
+  // only affects the API-loaded road data at zoom >= 14, not the preview layer.
+  // To update preview layer, regenerate PMTiles with: npm run tiles:roads
+  useEffect(() => {
+    // PMTiles are static - no real-time refresh needed for preview layer
+    // The zoom >= 14 API data already refreshes automatically via React Query
+    // roadTileVersion is kept in the dependency array for future use if needed
+  }, [roadTileVersion, mapLoaded]);
 
   // Update assets layer (API data for zoom >= 14, or any zoom when filters active)
   useEffect(() => {

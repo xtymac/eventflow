@@ -2,7 +2,7 @@
  * Fetch Rivers Script
  *
  * Queries Overpass API for rivers and waterways within Nagoya,
- * processes them into GeoJSON, and optionally inserts into database.
+ * processes them into GeoJSON, and inserts into database.
  *
  * Usage:
  *   npx tsx scripts/osm/fetch-rivers.ts [--output-only] [--ward=Naka-ku]
@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
 import * as turf from '@turf/turf';
+import { sql } from 'drizzle-orm';
 
 import {
   overpassClient,
@@ -31,6 +32,8 @@ import {
   getGeometryCategory,
   generateId,
 } from './shared/geometry-utils.js';
+import { db, pool } from '../../backend/src/db/index.js';
+import { riverAssets } from '../../backend/src/db/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -262,6 +265,96 @@ async function fetchRiversForWard(
 }
 
 /**
+ * Insert rivers into database with upsert (ON CONFLICT)
+ */
+async function insertRiversToDatabase(
+  features: Feature<Geometry, RiverAssetProperties>[]
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
+
+  console.log(`\nInserting ${features.length} rivers into database...`);
+
+  for (const feature of features) {
+    const props = feature.properties;
+    const geojson = JSON.stringify(feature.geometry);
+
+    try {
+      // Use raw SQL for upsert with geometry
+      await db.execute(sql`
+        INSERT INTO river_assets (
+          id, name, name_ja, display_name,
+          geometry, geometry_type,
+          waterway_type, water_type, width,
+          management_level, maintainer,
+          status, ward,
+          data_source, osm_type, osm_id, osm_timestamp,
+          last_synced_at, is_manually_edited, updated_at
+        ) VALUES (
+          ${props.id},
+          ${props.name},
+          ${props.nameJa},
+          ${props.displayName},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          ${props.geometryType},
+          ${props.waterwayType},
+          ${props.waterType},
+          ${props.width},
+          ${props.managementLevel},
+          ${props.maintainer},
+          ${props.status},
+          ${props.ward},
+          ${props.dataSource},
+          ${props.osmType},
+          ${props.osmId},
+          ${props.osmTimestamp ? new Date(props.osmTimestamp) : null},
+          NOW(),
+          FALSE,
+          NOW()
+        )
+        ON CONFLICT (osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL
+        DO UPDATE SET
+          name = EXCLUDED.name,
+          name_ja = EXCLUDED.name_ja,
+          display_name = CASE
+            WHEN river_assets.display_name_override = TRUE THEN river_assets.display_name
+            ELSE EXCLUDED.display_name
+          END,
+          geometry = CASE
+            WHEN river_assets.is_manually_edited = TRUE THEN river_assets.geometry
+            ELSE EXCLUDED.geometry
+          END,
+          geometry_type = EXCLUDED.geometry_type,
+          waterway_type = EXCLUDED.waterway_type,
+          water_type = EXCLUDED.water_type,
+          width = EXCLUDED.width,
+          maintainer = EXCLUDED.maintainer,
+          ward = EXCLUDED.ward,
+          osm_timestamp = EXCLUDED.osm_timestamp,
+          last_synced_at = NOW(),
+          updated_at = NOW()
+        WHERE river_assets.is_manually_edited = FALSE
+          OR river_assets.osm_timestamp < EXCLUDED.osm_timestamp
+      `);
+
+      // Check if it was an insert or update (simplified - count as insert)
+      inserted++;
+    } catch (error) {
+      errors++;
+      if (errors <= 5) {
+        console.error(`  Error inserting river ${props.id}:`, error);
+      } else if (errors === 6) {
+        console.error(`  ... suppressing further errors`);
+      }
+    }
+  }
+
+  console.log(`  Inserted/updated: ${inserted}, Errors: ${errors}`);
+  return { inserted, updated, errors };
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -320,13 +413,21 @@ async function main() {
   console.log(`Total rivers fetched: ${allFeatures.length}`);
   console.log(`Overpass requests: ${overpassClient.getStats().requestCount}`);
 
-  if (!outputOnly) {
-    console.log('\nNote: Database insertion not yet implemented.');
-    console.log('Use --output-only flag or implement database insertion in this script.');
+  // Insert into database unless --output-only is specified
+  if (!outputOnly && allFeatures.length > 0) {
+    const dbResult = await insertRiversToDatabase(allFeatures);
+    console.log(`\nDatabase: ${dbResult.inserted} inserted/updated, ${dbResult.errors} errors`);
+  } else if (outputOnly) {
+    console.log('\n--output-only mode: Skipping database insertion');
   }
+
+  // Close database connection
+  await pool.end();
+  console.log('\nDone!');
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Fatal error:', error);
+  await pool.end();
   process.exit(1);
 });

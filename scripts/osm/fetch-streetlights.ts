@@ -2,7 +2,7 @@
  * Fetch Street Lights Script
  *
  * Queries Overpass API for street lights within Nagoya,
- * processes them into GeoJSON, and optionally inserts into database.
+ * processes them into GeoJSON, and inserts into database.
  *
  * Usage:
  *   npx tsx scripts/osm/fetch-streetlights.ts [--output-only] [--ward=Naka-ku]
@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { Feature, FeatureCollection, Point, Polygon, MultiPolygon } from 'geojson';
 import * as turf from '@turf/turf';
+import { sql } from 'drizzle-orm';
 
 import {
   overpassClient,
@@ -26,6 +27,8 @@ import {
   type WardConfig,
 } from './shared/overpass-client.js';
 import { type OsmElement, generateId } from './shared/geometry-utils.js';
+import { db, pool } from '../../backend/src/db/index.js';
+import { streetLightAssets } from '../../backend/src/db/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -275,6 +278,93 @@ async function fetchStreetLightsForWard(
 }
 
 /**
+ * Insert street lights into database with upsert (ON CONFLICT)
+ */
+async function insertStreetLightsToDatabase(
+  features: Feature<Point, StreetLightAssetProperties>[]
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
+
+  console.log(`\nInserting ${features.length} street lights into database...`);
+
+  // Process in batches to avoid memory issues
+  const batchSize = 500;
+  for (let i = 0; i < features.length; i += batchSize) {
+    const batch = features.slice(i, i + batchSize);
+    console.log(`  Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(features.length / batchSize)}...`);
+
+    for (const feature of batch) {
+      const props = feature.properties;
+      const geojson = JSON.stringify(feature.geometry);
+
+      try {
+        await db.execute(sql`
+          INSERT INTO streetlight_assets (
+            id, lamp_id, display_name,
+            geometry,
+            lamp_type, wattage, install_date, lamp_status,
+            road_ref,
+            status, ward,
+            data_source, osm_type, osm_id, osm_timestamp,
+            last_synced_at, is_manually_edited, updated_at
+          ) VALUES (
+            ${props.id},
+            ${props.lampId},
+            ${props.displayName},
+            ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+            ${props.lampType},
+            ${props.wattage},
+            ${props.installDate},
+            ${props.lampStatus},
+            ${props.roadRef},
+            ${props.status},
+            ${props.ward},
+            ${props.dataSource},
+            ${props.osmType},
+            ${props.osmId},
+            ${props.osmTimestamp ? new Date(props.osmTimestamp) : null},
+            NOW(),
+            FALSE,
+            NOW()
+          )
+          ON CONFLICT (osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL
+          DO UPDATE SET
+            lamp_id = EXCLUDED.lamp_id,
+            display_name = EXCLUDED.display_name,
+            geometry = CASE
+              WHEN streetlight_assets.is_manually_edited = TRUE THEN streetlight_assets.geometry
+              ELSE EXCLUDED.geometry
+            END,
+            lamp_type = EXCLUDED.lamp_type,
+            wattage = EXCLUDED.wattage,
+            install_date = EXCLUDED.install_date,
+            ward = EXCLUDED.ward,
+            osm_timestamp = EXCLUDED.osm_timestamp,
+            last_synced_at = NOW(),
+            updated_at = NOW()
+          WHERE streetlight_assets.is_manually_edited = FALSE
+            OR streetlight_assets.osm_timestamp < EXCLUDED.osm_timestamp
+        `);
+
+        inserted++;
+      } catch (error) {
+        errors++;
+        if (errors <= 5) {
+          console.error(`  Error inserting street light ${props.id}:`, error);
+        } else if (errors === 6) {
+          console.error(`  ... suppressing further errors`);
+        }
+      }
+    }
+  }
+
+  console.log(`  Inserted/updated: ${inserted}, Errors: ${errors}`);
+  return { inserted, updated, errors };
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -329,12 +419,21 @@ async function main() {
   console.log(`Total street lights fetched: ${allFeatures.length}`);
   console.log(`Overpass requests: ${overpassClient.getStats().requestCount}`);
 
-  if (!outputOnly) {
-    console.log('\nNote: Database insertion not yet implemented.');
+  // Insert into database unless --output-only is specified
+  if (!outputOnly && allFeatures.length > 0) {
+    const dbResult = await insertStreetLightsToDatabase(allFeatures);
+    console.log(`\nDatabase: ${dbResult.inserted} inserted/updated, ${dbResult.errors} errors`);
+  } else if (outputOnly) {
+    console.log('\n--output-only mode: Skipping database insertion');
   }
+
+  // Close database connection
+  await pool.end();
+  console.log('\nDone!');
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Fatal error:', error);
+  await pool.end();
   process.exit(1);
 });

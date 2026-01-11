@@ -178,6 +178,7 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
     `);
 
     // Convert to GeoJSON FeatureCollection
+    type PointGeometry = { type: 'Point'; coordinates: number[] };
     const features = result.rows.map((row: Record<string, unknown>) => ({
       type: 'Feature' as const,
       properties: {
@@ -193,12 +194,12 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         roadRef: row.roadRef as string | null,
         dataSource: row.dataSource as string | null,
         osmType: row.osmType as string | null,
-        osmId: row.osmId as string | null,
+        osmId: row.osmId != null ? String(row.osmId) : null,  // Convert bigint to string
         status: row.status as string,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },
-      geometry: row.geometry,
+      geometry: row.geometry as PointGeometry,
     }));
 
     return {
@@ -244,6 +245,7 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
     }
 
     const row = result.rows[0] as Record<string, unknown>;
+    type PointGeometry = { type: 'Point'; coordinates: number[] };
 
     return {
       type: 'Feature' as const,
@@ -260,12 +262,12 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         roadRef: row.roadRef as string | null,
         dataSource: row.dataSource as string | null,
         osmType: row.osmType as string | null,
-        osmId: row.osmId as string | null,
+        osmId: row.osmId != null ? String(row.osmId) : null,  // Convert bigint to string
         status: row.status as string,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },
-      geometry: row.geometry,
+      geometry: row.geometry as PointGeometry,
     };
   });
 

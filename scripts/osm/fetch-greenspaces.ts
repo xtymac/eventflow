@@ -2,7 +2,7 @@
  * Fetch Green Spaces Script
  *
  * Queries Overpass API for parks, gardens, and green spaces within Nagoya,
- * processes them into GeoJSON, and optionally inserts into database.
+ * processes them into GeoJSON, and inserts into database.
  *
  * Usage:
  *   npx tsx scripts/osm/fetch-greenspaces.ts [--output-only] [--ward=Naka-ku]
@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
 import * as turf from '@turf/turf';
+import { sql } from 'drizzle-orm';
 
 import {
   overpassClient,
@@ -30,6 +31,8 @@ import {
   osmElementToGeometry,
   generateId,
 } from './shared/geometry-utils.js';
+import { db, pool } from '../../backend/src/db/index.js';
+import { greenSpaceAssets } from '../../backend/src/db/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -288,6 +291,96 @@ async function fetchGreenSpacesForWard(
 }
 
 /**
+ * Insert green spaces into database with upsert (ON CONFLICT)
+ */
+async function insertGreenSpacesToDatabase(
+  features: Feature<Geometry, GreenSpaceAssetProperties>[]
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
+
+  console.log(`\nInserting ${features.length} green spaces into database...`);
+
+  for (const feature of features) {
+    const props = feature.properties;
+    const geojson = JSON.stringify(feature.geometry);
+
+    try {
+      await db.execute(sql`
+        INSERT INTO greenspace_assets (
+          id, name, name_ja, display_name,
+          geometry,
+          green_space_type, leisure_type, landuse_type, natural_type,
+          area_m2, vegetation_type, operator,
+          status, ward,
+          data_source, osm_type, osm_id, osm_timestamp,
+          last_synced_at, is_manually_edited, updated_at
+        ) VALUES (
+          ${props.id},
+          ${props.name},
+          ${props.nameJa},
+          ${props.displayName},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          ${props.greenSpaceType},
+          ${props.leisureType},
+          ${props.landuseType},
+          ${props.naturalType},
+          ${props.areaM2},
+          ${props.vegetationType},
+          ${props.operator},
+          ${props.status},
+          ${props.ward},
+          ${props.dataSource},
+          ${props.osmType},
+          ${props.osmId},
+          ${props.osmTimestamp ? new Date(props.osmTimestamp) : null},
+          NOW(),
+          FALSE,
+          NOW()
+        )
+        ON CONFLICT (osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL
+        DO UPDATE SET
+          name = EXCLUDED.name,
+          name_ja = EXCLUDED.name_ja,
+          display_name = CASE
+            WHEN greenspace_assets.display_name_override = TRUE THEN greenspace_assets.display_name
+            ELSE EXCLUDED.display_name
+          END,
+          geometry = CASE
+            WHEN greenspace_assets.is_manually_edited = TRUE THEN greenspace_assets.geometry
+            ELSE EXCLUDED.geometry
+          END,
+          green_space_type = EXCLUDED.green_space_type,
+          leisure_type = EXCLUDED.leisure_type,
+          landuse_type = EXCLUDED.landuse_type,
+          natural_type = EXCLUDED.natural_type,
+          area_m2 = EXCLUDED.area_m2,
+          operator = EXCLUDED.operator,
+          ward = EXCLUDED.ward,
+          osm_timestamp = EXCLUDED.osm_timestamp,
+          last_synced_at = NOW(),
+          updated_at = NOW()
+        WHERE greenspace_assets.is_manually_edited = FALSE
+          OR greenspace_assets.osm_timestamp < EXCLUDED.osm_timestamp
+      `);
+
+      inserted++;
+    } catch (error) {
+      errors++;
+      if (errors <= 5) {
+        console.error(`  Error inserting green space ${props.id}:`, error);
+      } else if (errors === 6) {
+        console.error(`  ... suppressing further errors`);
+      }
+    }
+  }
+
+  console.log(`  Inserted/updated: ${inserted}, Errors: ${errors}`);
+  return { inserted, updated, errors };
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -342,12 +435,21 @@ async function main() {
   console.log(`Total green spaces fetched: ${allFeatures.length}`);
   console.log(`Overpass requests: ${overpassClient.getStats().requestCount}`);
 
-  if (!outputOnly) {
-    console.log('\nNote: Database insertion not yet implemented.');
+  // Insert into database unless --output-only is specified
+  if (!outputOnly && allFeatures.length > 0) {
+    const dbResult = await insertGreenSpacesToDatabase(allFeatures);
+    console.log(`\nDatabase: ${dbResult.inserted} inserted/updated, ${dbResult.errors} errors`);
+  } else if (outputOnly) {
+    console.log('\n--output-only mode: Skipping database insertion');
   }
+
+  // Close database connection
+  await pool.end();
+  console.log('\nDone!');
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Fatal error:', error);
+  await pool.end();
   process.exit(1);
 });

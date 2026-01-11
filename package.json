@@ -22,7 +22,11 @@
     "export:road-assets": "npx tsx scripts/export-road-assets.ts",
     "watch:road-assets": "npx tsx scripts/watch-road-assets.ts",
     "watch:ec2": "bash scripts/watch-ec2.sh",
-    "tiles:sync": "npm run export:road-assets && npm run tiles:generate"
+    "tiles:sync": "npm run export:road-assets && npm run tiles:generate",
+    "osm:rivers": "npx tsx scripts/osm/fetch-rivers.ts",
+    "osm:greenspaces": "npx tsx scripts/osm/fetch-greenspaces.ts",
+    "osm:streetlights": "npx tsx scripts/osm/fetch-streetlights.ts",
+    "osm:all": "npm run osm:rivers && npm run osm:greenspaces && npm run osm:streetlights"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -1,5 +1,5 @@
 import { Drawer, Stack, Group, Text, Badge, Button, ScrollArea, Paper, Loader } from '@mantine/core';
-import { IconCheck, IconRoad } from '@tabler/icons-react';
+import { IconTrash, IconRoad } from '@tabler/icons-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { useNotificationStore } from '../stores/notificationStore';
 import { useUIStore } from '../stores/uiStore';
@@ -16,7 +16,7 @@ const EDIT_TYPE_COLORS = {
 } as const;
 
 export function NotificationSidebar() {
-  const { edits, unreadCount, isLoading } = useNotifications();
+  const { edits, isLoading } = useNotifications();
   const isSidebarOpen = useNotificationStore((s) => s.isSidebarOpen);
   const closeSidebar = useNotificationStore((s) => s.closeSidebar);
   const viewedEditIds = useNotificationStore((s) => s.viewedEditIds);
@@ -126,6 +126,9 @@ export function NotificationSidebar() {
     }
   };
 
+  // Only show unread notifications (cleared items are hidden)
+  const unreadEdits = edits.filter((e) => !viewedEditIds.includes(e.id));
+
   return (
     <Drawer
       opened={isSidebarOpen}
@@ -141,26 +144,26 @@ export function NotificationSidebar() {
       size="md"
     >
       <Stack gap="sm">
-        {unreadCount > 0 && (
+        {unreadEdits.length > 0 && (
           <Button
             variant="light"
+            color="gray"
             size="xs"
-            leftSection={<IconCheck size={14} />}
-            onClick={() => markAllAsViewed(edits.map((e) => e.id))}
+            leftSection={<IconTrash size={14} />}
+            onClick={() => markAllAsViewed(unreadEdits.map((e) => e.id))}
           >
-            Mark all as read ({unreadCount})
+            Clear all
           </Button>
         )}
 
         <ScrollArea.Autosize mah="calc(100vh - 150px)" offsetScrollbars>
           <Stack gap="xs">
-            {edits.length === 0 ? (
+            {unreadEdits.length === 0 ? (
               <Text size="sm" c="dimmed" ta="center" py="xl">
-                No road edits yet
+                No new notifications
               </Text>
             ) : (
-              edits.map((edit) => {
-                const isRead = viewedEditIds.includes(edit.id);
+              unreadEdits.map((edit) => {
                 const color = EDIT_TYPE_COLORS[edit.editType as keyof typeof EDIT_TYPE_COLORS] || 'gray';
 
                 return (
@@ -170,9 +173,8 @@ export function NotificationSidebar() {
                     withBorder
                     style={{
                       cursor: 'pointer',
-                      opacity: isRead ? 0.6 : 1,
                       borderLeftWidth: 3,
-                      borderLeftColor: isRead ? undefined : `var(--mantine-color-${color}-6)`,
+                      borderLeftColor: `var(--mantine-color-${color}-6)`,
                     }}
                     onClick={() => void handleRoadClick(edit)}
                   >
@@ -181,7 +183,7 @@ export function NotificationSidebar() {
                         <IconRoad size={16} style={{ flexShrink: 0 }} />
                         <Text
                           size="sm"
-                          fw={isRead ? 400 : 600}
+                          fw={600}
                           style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         >
                           {getDisplayName(edit)}

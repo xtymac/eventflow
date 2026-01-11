@@ -1,0 +1,57 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-6hthvh99",
+        "lampId": null,
+        "displayName": "SL-6hthvh99",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3254620691",
+        "osmTimestamp": "2014-12-27T01:15:58Z",
+        "status": "active",
+        "ward": "Nishi-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8833422,
+          35.1852066
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-hv2ev2bc",
+        "lampId": null,
+        "displayName": "SL-hv2ev2bc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "6267372349",
+        "osmTimestamp": "2019-02-09T07:34:36Z",
+        "status": "active",
+        "ward": "Nishi-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8794688,
+          35.2151112
+        ]
+      }
+    }
+  ]
+}

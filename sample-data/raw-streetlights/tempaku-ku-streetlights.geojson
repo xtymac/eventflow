@@ -1,0 +1,1929 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ps43p3r4",
+        "lampId": null,
+        "displayName": "SL-ps43p3r4",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141801",
+        "osmTimestamp": "2025-04-11T03:37:09Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9993835,
+          35.1037778
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zfb4odq4",
+        "lampId": null,
+        "displayName": "SL-zfb4odq4",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141802",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9997386,
+          35.1034486
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-av858twj",
+        "lampId": null,
+        "displayName": "SL-av858twj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141804",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0000442,
+          35.1033277
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bw4tt2o6",
+        "lampId": null,
+        "displayName": "SL-bw4tt2o6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141805",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0001755,
+          35.1031434
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ikspib4y",
+        "lampId": null,
+        "displayName": "SL-ikspib4y",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141806",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0003753,
+          35.1031109
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-797h0pkp",
+        "lampId": null,
+        "displayName": "SL-797h0pkp",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141807",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.000854,
+          35.1028104
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-4ey9vbwo",
+        "lampId": null,
+        "displayName": "SL-4ey9vbwo",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141808",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0008874,
+          35.1027026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-gw6hyygk",
+        "lampId": null,
+        "displayName": "SL-gw6hyygk",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288141809",
+        "osmTimestamp": "2023-10-25T08:13:47Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0012377,
+          35.102568
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-p0qm1afp",
+        "lampId": null,
+        "displayName": "SL-p0qm1afp",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288165055",
+        "osmTimestamp": "2023-10-25T08:22:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0017755,
+          35.1022314
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-d84sybbl",
+        "lampId": null,
+        "displayName": "SL-d84sybbl",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288165056",
+        "osmTimestamp": "2023-10-25T08:22:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0020517,
+          35.1020591
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cy2wmuor",
+        "lampId": null,
+        "displayName": "SL-cy2wmuor",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288165057",
+        "osmTimestamp": "2023-10-25T08:22:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0021982,
+          35.101905
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-sjjqhctu",
+        "lampId": null,
+        "displayName": "SL-sjjqhctu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11288165059",
+        "osmTimestamp": "2023-10-25T08:22:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0024719,
+          35.1018242
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-l36wsfqg",
+        "lampId": null,
+        "displayName": "SL-l36wsfqg",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12318673322",
+        "osmTimestamp": "2024-11-06T13:51:23Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0154707,
+          35.1079579
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-scsvab90",
+        "lampId": null,
+        "displayName": "SL-scsvab90",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12318673323",
+        "osmTimestamp": "2024-11-06T13:51:23Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0144133,
+          35.1073665
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-n1oojjxy",
+        "lampId": null,
+        "displayName": "SL-n1oojjxy",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12336251583",
+        "osmTimestamp": "2024-11-13T04:00:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0163387,
+          35.1087019
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-y8m95gy2",
+        "lampId": null,
+        "displayName": "SL-y8m95gy2",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12336251584",
+        "osmTimestamp": "2024-11-13T04:00:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0167578,
+          35.1090106
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xams6cag",
+        "lampId": null,
+        "displayName": "SL-xams6cag",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12338304953",
+        "osmTimestamp": "2024-11-14T02:16:03Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0159779,
+          35.1084122
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-7qmjooar",
+        "lampId": null,
+        "displayName": "SL-7qmjooar",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12410493388",
+        "osmTimestamp": "2024-12-11T00:25:13Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0105035,
+          35.1084384
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-z0ziyijn",
+        "lampId": null,
+        "displayName": "SL-z0ziyijn",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12410493391",
+        "osmTimestamp": "2024-12-11T00:25:13Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.010292,
+          35.1088687
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xo2olvo7",
+        "lampId": null,
+        "displayName": "SL-xo2olvo7",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12414240714",
+        "osmTimestamp": "2024-12-12T04:06:31Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0074651,
+          35.1105342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-pzqdq0mr",
+        "lampId": null,
+        "displayName": "SL-pzqdq0mr",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12450298940",
+        "osmTimestamp": "2024-12-25T00:28:29Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.006273,
+          35.1102136
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-2nsofu55",
+        "lampId": null,
+        "displayName": "SL-2nsofu55",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12450298942",
+        "osmTimestamp": "2024-12-25T00:28:29Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0062811,
+          35.1103633
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-i0s93z6e",
+        "lampId": null,
+        "displayName": "SL-i0s93z6e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12452922125",
+        "osmTimestamp": "2024-12-26T11:49:42Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0066363,
+          35.1132028
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-u7kxvhba",
+        "lampId": null,
+        "displayName": "SL-u7kxvhba",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12452922127",
+        "osmTimestamp": "2024-12-26T11:49:42Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0068096,
+          35.1131314
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xx45y0cw",
+        "lampId": null,
+        "displayName": "SL-xx45y0cw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12452922128",
+        "osmTimestamp": "2024-12-26T11:49:42Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0069812,
+          35.1131399
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-rg9v5cr6",
+        "lampId": null,
+        "displayName": "SL-rg9v5cr6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12530885445",
+        "osmTimestamp": "2025-01-25T04:14:59Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.007423,
+          35.1044193
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-sptutunh",
+        "lampId": null,
+        "displayName": "SL-sptutunh",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12554942260",
+        "osmTimestamp": "2025-02-04T00:10:44Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0083866,
+          35.1047667
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-d1kbnrts",
+        "lampId": null,
+        "displayName": "SL-d1kbnrts",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12554942262",
+        "osmTimestamp": "2025-02-04T00:10:44Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0085917,
+          35.1048448
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-4v3jxaiq",
+        "lampId": null,
+        "displayName": "SL-4v3jxaiq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12554942265",
+        "osmTimestamp": "2025-02-04T00:10:44Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.009049,
+          35.1052994
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-npy0zq5d",
+        "lampId": null,
+        "displayName": "SL-npy0zq5d",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12554942268",
+        "osmTimestamp": "2025-02-04T00:10:44Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0093823,
+          35.105637
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-c3wlgyxz",
+        "lampId": null,
+        "displayName": "SL-c3wlgyxz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12602372049",
+        "osmTimestamp": "2025-02-20T02:29:25Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0026307,
+          35.1022052
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cpp8eb58",
+        "lampId": null,
+        "displayName": "SL-cpp8eb58",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12758645684",
+        "osmTimestamp": "2025-04-16T00:24:24Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9991336,
+          35.1032553
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-dk5sumuk",
+        "lampId": null,
+        "displayName": "SL-dk5sumuk",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12758645686",
+        "osmTimestamp": "2025-04-16T00:24:24Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9993783,
+          35.1032825
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-clyunbll",
+        "lampId": null,
+        "displayName": "SL-clyunbll",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12758645689",
+        "osmTimestamp": "2025-04-16T00:24:24Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9998828,
+          35.1036692
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-prd3w0f7",
+        "lampId": null,
+        "displayName": "SL-prd3w0f7",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12758645691",
+        "osmTimestamp": "2025-04-16T00:24:24Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0001595,
+          35.103875
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-uqkm334k",
+        "lampId": null,
+        "displayName": "SL-uqkm334k",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12759205353",
+        "osmTimestamp": "2025-04-16T08:17:31Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0006149,
+          35.102234
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-doonsdzy",
+        "lampId": null,
+        "displayName": "SL-doonsdzy",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12759205354",
+        "osmTimestamp": "2025-04-16T08:17:31Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0007854,
+          35.1023265
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-e7mytt3e",
+        "lampId": null,
+        "displayName": "SL-e7mytt3e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12759205356",
+        "osmTimestamp": "2025-04-16T08:17:31Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0010109,
+          35.1022982
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-g6wsrgbl",
+        "lampId": null,
+        "displayName": "SL-g6wsrgbl",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12759205358",
+        "osmTimestamp": "2025-04-16T08:17:31Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.00114,
+          35.1024199
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-5ygldf9d",
+        "lampId": null,
+        "displayName": "SL-5ygldf9d",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12762402793",
+        "osmTimestamp": "2025-04-17T14:07:41Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0006595,
+          35.1008986
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0a7nyzwh",
+        "lampId": null,
+        "displayName": "SL-0a7nyzwh",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12763944239",
+        "osmTimestamp": "2025-04-18T03:20:58Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0007547,
+          35.1011597
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-1ukcvp07",
+        "lampId": null,
+        "displayName": "SL-1ukcvp07",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12763944242",
+        "osmTimestamp": "2025-04-18T03:20:58Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0009416,
+          35.1013506
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ln6y7uq6",
+        "lampId": null,
+        "displayName": "SL-ln6y7uq6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514588",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0009103,
+          35.1015767
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0lqczu02",
+        "lampId": null,
+        "displayName": "SL-0lqczu02",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514589",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0008834,
+          35.1017281
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-klnufonb",
+        "lampId": null,
+        "displayName": "SL-klnufonb",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514590",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0008508,
+          35.1019445
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-z6n1ro35",
+        "lampId": null,
+        "displayName": "SL-z6n1ro35",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514593",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0008261,
+          35.1020756
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-a15a96vc",
+        "lampId": null,
+        "displayName": "SL-a15a96vc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514595",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0007641,
+          35.1024832
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-7p0zfxxc",
+        "lampId": null,
+        "displayName": "SL-7p0zfxxc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767514597",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0007636,
+          35.1025724
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-wo1firmf",
+        "lampId": null,
+        "displayName": "SL-wo1firmf",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12767836307",
+        "osmTimestamp": "2025-04-19T03:20:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0010236,
+          35.1025109
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-mgr0arjr",
+        "lampId": null,
+        "displayName": "SL-mgr0arjr",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184555",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.001646,
+          35.1021241
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ofc6u4hc",
+        "lampId": null,
+        "displayName": "SL-ofc6u4hc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184556",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0014003,
+          35.1020199
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q2ut1cfg",
+        "lampId": null,
+        "displayName": "SL-q2ut1cfg",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184558",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0011946,
+          35.1019395
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-awfhybvs",
+        "lampId": null,
+        "displayName": "SL-awfhybvs",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184562",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.002035,
+          35.1018391
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-n7b4i7td",
+        "lampId": null,
+        "displayName": "SL-n7b4i7td",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184564",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0016493,
+          35.1016862
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bhtbuwp3",
+        "lampId": null,
+        "displayName": "SL-bhtbuwp3",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184565",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0014716,
+          35.1016553
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-tle1xp9c",
+        "lampId": null,
+        "displayName": "SL-tle1xp9c",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12771184567",
+        "osmTimestamp": "2025-04-21T00:41:32Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0013122,
+          35.1015509
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bhy6g10e",
+        "lampId": null,
+        "displayName": "SL-bhy6g10e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12774131584",
+        "osmTimestamp": "2025-04-22T03:33:14Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0005826,
+          35.1014657
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xguodcm3",
+        "lampId": null,
+        "displayName": "SL-xguodcm3",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12777389544",
+        "osmTimestamp": "2025-04-22T23:42:11Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0004424,
+          35.1018352
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q4frv318",
+        "lampId": null,
+        "displayName": "SL-q4frv318",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12777977505",
+        "osmTimestamp": "2025-04-23T07:49:15Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0004544,
+          35.102568
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-b2nhltxv",
+        "lampId": null,
+        "displayName": "SL-b2nhltxv",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12778353332",
+        "osmTimestamp": "2025-04-23T11:01:11Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          137.0001127,
+          35.1030389
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-kccf5qjz",
+        "lampId": null,
+        "displayName": "SL-kccf5qjz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782043638",
+        "osmTimestamp": "2025-04-24T06:12:19Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9991036,
+          35.1041631
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-eqa40jnu",
+        "lampId": null,
+        "displayName": "SL-eqa40jnu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782173687",
+        "osmTimestamp": "2025-04-24T08:11:23Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9992847,
+          35.1042888
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-yccc5ty0",
+        "lampId": null,
+        "displayName": "SL-yccc5ty0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782173688",
+        "osmTimestamp": "2025-04-24T08:11:23Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9993867,
+          35.1043881
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-9xnfmusb",
+        "lampId": null,
+        "displayName": "SL-9xnfmusb",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782173694",
+        "osmTimestamp": "2025-04-24T08:11:23Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9988364,
+          35.1046439
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-g2592tiu",
+        "lampId": null,
+        "displayName": "SL-g2592tiu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782216195",
+        "osmTimestamp": "2025-04-24T08:21:57Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9992015,
+          35.1042937
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-27oyzh2f",
+        "lampId": null,
+        "displayName": "SL-27oyzh2f",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782216197",
+        "osmTimestamp": "2025-04-24T08:21:57Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9984984,
+          35.1049764
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-twl4n2w0",
+        "lampId": null,
+        "displayName": "SL-twl4n2w0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782216199",
+        "osmTimestamp": "2025-04-24T08:21:57Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9984283,
+          35.1051177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-1cx7z1a5",
+        "lampId": null,
+        "displayName": "SL-1cx7z1a5",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12782216200",
+        "osmTimestamp": "2025-04-24T08:21:57Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9985281,
+          35.1052145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xe77udmc",
+        "lampId": "天白51902",
+        "displayName": "天白51902",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12800222088",
+        "osmTimestamp": "2025-04-30T11:46:27Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9955459,
+          35.1062473
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-8ay9woj5",
+        "lampId": "天白50136",
+        "displayName": "天白50136",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12800222090",
+        "osmTimestamp": "2025-04-30T11:46:27Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9958921,
+          35.1062811
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-yaj3c9l7",
+        "lampId": null,
+        "displayName": "SL-yaj3c9l7",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12813200180",
+        "osmTimestamp": "2025-05-06T01:20:03Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9964997,
+          35.1059337
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-i6o3q0d4",
+        "lampId": "緑 7730",
+        "displayName": "緑 7730",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12813200182",
+        "osmTimestamp": "2025-05-06T01:20:03Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9970563,
+          35.1058986
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-em0x7eme",
+        "lampId": "緑 50135",
+        "displayName": "緑 50135",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12813200188",
+        "osmTimestamp": "2025-05-06T01:20:03Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9975241,
+          35.1056172
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-y4zpuh5p",
+        "lampId": null,
+        "displayName": "SL-y4zpuh5p",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12815957359",
+        "osmTimestamp": "2025-05-07T03:14:03Z",
+        "status": "active",
+        "ward": "Tempaku-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9964995,
+          35.1057948
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,8205 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-whhooorp",
+        "name": "元塩公園",
+        "nameJa": "元塩公園",
+        "displayName": "元塩公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 17336,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "194361724",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9255007,
+              35.0845278
+            ],
+            [
+              136.9234912,
+              35.0841697
+            ],
+            [
+              136.9236784,
+              35.0834454
+            ],
+            [
+              136.9236972,
+              35.0834347
+            ],
+            [
+              136.9237212,
+              35.0834292
+            ],
+            [
+              136.9237494,
+              35.0834315
+            ],
+            [
+              136.9243864,
+              35.0834953
+            ],
+            [
+              136.9244897,
+              35.0835045
+            ],
+            [
+              136.9245653,
+              35.0834854
+            ],
+            [
+              136.9255625,
+              35.0836582
+            ],
+            [
+              136.9256725,
+              35.0836927
+            ],
+            [
+              136.9256915,
+              35.0837528
+            ],
+            [
+              136.9255313,
+              35.0845073
+            ],
+            [
+              136.9255007,
+              35.0845278
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-fha4hgyi",
+        "name": "水袋公園",
+        "nameJa": "水袋公園",
+        "displayName": "水袋公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 14883,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "194365690",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9187773,
+              35.0846162
+            ],
+            [
+              136.9187964,
+              35.0846509
+            ],
+            [
+              136.9204698,
+              35.0847896
+            ],
+            [
+              136.9207139,
+              35.0840062
+            ],
+            [
+              136.9201292,
+              35.0839886
+            ],
+            [
+              136.9201372,
+              35.083914
+            ],
+            [
+              136.9198663,
+              35.0838635
+            ],
+            [
+              136.9189731,
+              35.0837713
+            ],
+            [
+              136.9187773,
+              35.0846162
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-41chbiol",
+        "name": "宝公園",
+        "nameJa": null,
+        "displayName": "宝公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 9764,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "194367629",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9175032,
+              35.0889445
+            ],
+            [
+              136.9172858,
+              35.0897809
+            ],
+            [
+              136.9162211,
+              35.0896269
+            ],
+            [
+              136.9163793,
+              35.0887579
+            ],
+            [
+              136.9175032,
+              35.0889445
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zjh7e27s",
+        "name": "道徳公園",
+        "nameJa": "道徳公園",
+        "displayName": "道徳公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 36811,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "194870824",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.905798,
+              35.1044905
+            ],
+            [
+              136.9057524,
+              35.1044203
+            ],
+            [
+              136.9061467,
+              35.1030905
+            ],
+            [
+              136.9061869,
+              35.1030773
+            ],
+            [
+              136.9085659,
+              35.1035445
+            ],
+            [
+              136.9081234,
+              35.1049489
+            ],
+            [
+              136.9080833,
+              35.1049623
+            ],
+            [
+              136.9069541,
+              35.1047626
+            ],
+            [
+              136.905798,
+              35.1044905
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-duelk2ot",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-duelk2ot",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4900,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "194871748",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9038991,
+              35.1087188
+            ],
+            [
+              136.9039475,
+              35.108741
+            ],
+            [
+              136.9047332,
+              35.1086201
+            ],
+            [
+              136.9047682,
+              35.1085698
+            ],
+            [
+              136.9046314,
+              35.1080696
+            ],
+            [
+              136.9037918,
+              35.1081966
+            ],
+            [
+              136.9038991,
+              35.1087188
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-djktjjpt",
+        "name": "南野公園",
+        "nameJa": null,
+        "displayName": "南野公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3377,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195039763",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9309758,
+              35.0777131
+            ],
+            [
+              136.9315072,
+              35.0780581
+            ],
+            [
+              136.9315203,
+              35.0781061
+            ],
+            [
+              136.93118,
+              35.078451
+            ],
+            [
+              136.9306382,
+              35.0780844
+            ],
+            [
+              136.9309758,
+              35.0777131
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-eyvi5jf0",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-eyvi5jf0",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2430,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040195",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9280202,
+              35.0753622
+            ],
+            [
+              136.9281598,
+              35.0748643
+            ],
+            [
+              136.9286129,
+              35.0749605
+            ],
+            [
+              136.9286398,
+              35.074989
+            ],
+            [
+              136.9284815,
+              35.0754171
+            ],
+            [
+              136.9284225,
+              35.0754259
+            ],
+            [
+              136.9280202,
+              35.0753622
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2pruutj9",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-2pruutj9",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2979,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040196",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9298548,
+              35.076969
+            ],
+            [
+              136.9295195,
+              35.0773115
+            ],
+            [
+              136.9288733,
+              35.0768706
+            ],
+            [
+              136.92901,
+              35.0767213
+            ],
+            [
+              136.9292595,
+              35.076875
+            ],
+            [
+              136.9294337,
+              35.0766881
+            ],
+            [
+              136.9298548,
+              35.076969
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-i87tedyi",
+        "name": "星崎第一公園",
+        "nameJa": null,
+        "displayName": "星崎第一公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3028,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040508",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.934039,
+              35.0814886
+            ],
+            [
+              136.9342884,
+              35.0810057
+            ],
+            [
+              136.934334,
+              35.0809859
+            ],
+            [
+              136.9347472,
+              35.0811241
+            ],
+            [
+              136.9347687,
+              35.0811461
+            ],
+            [
+              136.9346748,
+              35.0813655
+            ],
+            [
+              136.9345943,
+              35.0816487
+            ],
+            [
+              136.934554,
+              35.0816576
+            ],
+            [
+              136.934039,
+              35.0814886
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-a14fzh5b",
+        "name": "星崎第二公園",
+        "nameJa": null,
+        "displayName": "星崎第二公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3140,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040513",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9353398,
+              35.0791224
+            ],
+            [
+              136.9353291,
+              35.0790895
+            ],
+            [
+              136.9355975,
+              35.0785779
+            ],
+            [
+              136.9356511,
+              35.0785582
+            ],
+            [
+              136.9360454,
+              35.0787711
+            ],
+            [
+              136.9357343,
+              35.0793418
+            ],
+            [
+              136.9353398,
+              35.0791224
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-gvkee9c4",
+        "name": "南野第四公園",
+        "nameJa": null,
+        "displayName": "南野第四公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 849,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040571",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9319468,
+              35.0808103
+            ],
+            [
+              136.9321855,
+              35.0805315
+            ],
+            [
+              136.9323868,
+              35.0806634
+            ],
+            [
+              136.9321318,
+              35.080931
+            ],
+            [
+              136.9319468,
+              35.0808103
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-mh3qb4mi",
+        "name": "要公園",
+        "nameJa": null,
+        "displayName": "要公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5115,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040654",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9249303,
+              35.0765037
+            ],
+            [
+              136.9249761,
+              35.07651
+            ],
+            [
+              136.924984,
+              35.076552
+            ],
+            [
+              136.9248016,
+              35.0773225
+            ],
+            [
+              136.9247506,
+              35.0773225
+            ],
+            [
+              136.9238079,
+              35.0766864
+            ],
+            [
+              136.9238245,
+              35.0766561
+            ],
+            [
+              136.9249303,
+              35.0765037
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-vsbqd57y",
+        "name": "丹後公園 (Tango Park)",
+        "nameJa": "丹後公園",
+        "displayName": "丹後公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 18378,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195040972",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9280871,
+              35.0832116
+            ],
+            [
+              136.92824,
+              35.0817805
+            ],
+            [
+              136.9287362,
+              35.0823205
+            ],
+            [
+              136.9295677,
+              35.0828229
+            ],
+            [
+              136.9297367,
+              35.0829019
+            ],
+            [
+              136.930308,
+              35.0831436
+            ],
+            [
+              136.9306003,
+              35.0832687
+            ],
+            [
+              136.9307291,
+              35.0833323
+            ],
+            [
+              136.9308015,
+              35.0833782
+            ],
+            [
+              136.9306781,
+              35.0834311
+            ],
+            [
+              136.9303536,
+              35.0834882
+            ],
+            [
+              136.9300612,
+              35.0833738
+            ],
+            [
+              136.9297233,
+              35.0833236
+            ],
+            [
+              136.9296803,
+              35.0835626
+            ],
+            [
+              136.9294121,
+              35.0835891
+            ],
+            [
+              136.9293853,
+              35.0834991
+            ],
+            [
+              136.9292914,
+              35.0834026
+            ],
+            [
+              136.929219,
+              35.0833653
+            ],
+            [
+              136.9289857,
+              35.0833148
+            ],
+            [
+              136.9283607,
+              35.0832599
+            ],
+            [
+              136.9281354,
+              35.0832336
+            ],
+            [
+              136.9280871,
+              35.0832116
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-k6g8kcf4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-k6g8kcf4",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 379,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042247",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9175246,
+              35.0837472
+            ],
+            [
+              136.9175219,
+              35.0836199
+            ],
+            [
+              136.9178116,
+              35.0836133
+            ],
+            [
+              136.9178223,
+              35.0837406
+            ],
+            [
+              136.9175246,
+              35.0837472
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-j9i8pymv",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-j9i8pymv",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 743,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042248",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9133591,
+              35.0836813
+            ],
+            [
+              136.9133967,
+              35.0838152
+            ],
+            [
+              136.9128334,
+              35.0838723
+            ],
+            [
+              136.9128334,
+              35.0837406
+            ],
+            [
+              136.9133591,
+              35.0836813
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-tzpx4lid",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-tzpx4lid",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 674,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042249",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9143623,
+              35.0836967
+            ],
+            [
+              136.9143381,
+              35.0835782
+            ],
+            [
+              136.9148868,
+              35.0835308
+            ],
+            [
+              136.9148638,
+              35.083666
+            ],
+            [
+              136.9143623,
+              35.0836967
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-gca18tg2",
+        "name": "宝生公園",
+        "nameJa": "宝生公園",
+        "displayName": "宝生公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 16356,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042250",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9105703,
+              35.0849456
+            ],
+            [
+              136.9105314,
+              35.0849242
+            ],
+            [
+              136.9103926,
+              35.0843177
+            ],
+            [
+              136.9103572,
+              35.0842379
+            ],
+            [
+              136.9102477,
+              35.083734
+            ],
+            [
+              136.9102555,
+              35.0837022
+            ],
+            [
+              136.910292,
+              35.0836792
+            ],
+            [
+              136.9111104,
+              35.0835931
+            ],
+            [
+              136.9111638,
+              35.083611
+            ],
+            [
+              136.9115622,
+              35.0836197
+            ],
+            [
+              136.911752,
+              35.0847676
+            ],
+            [
+              136.911727,
+              35.0848127
+            ],
+            [
+              136.9105703,
+              35.0849456
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-pvh5g9l1",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-pvh5g9l1",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 683,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042251",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9179538,
+              35.084184
+            ],
+            [
+              136.9179538,
+              35.0841313
+            ],
+            [
+              136.918745,
+              35.0841093
+            ],
+            [
+              136.9187316,
+              35.0842081
+            ],
+            [
+              136.9187048,
+              35.0842279
+            ],
+            [
+              136.9179538,
+              35.084184
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-dyi6s1y7",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-dyi6s1y7",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 910,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042253",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9167602,
+              35.0837779
+            ],
+            [
+              136.9168004,
+              35.0834179
+            ],
+            [
+              136.9170513,
+              35.0834408
+            ],
+            [
+              136.9170043,
+              35.0837999
+            ],
+            [
+              136.9167602,
+              35.0837779
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-hdkc45to",
+        "name": "大江川緑地",
+        "nameJa": "大江川緑地",
+        "displayName": "大江川緑地",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 116317,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195042741",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9124445,
+              35.083396
+            ],
+            [
+              136.9102662,
+              35.0836212
+            ],
+            [
+              136.9102273,
+              35.0833071
+            ],
+            [
+              136.9102065,
+              35.083016
+            ],
+            [
+              136.9130507,
+              35.0827389
+            ],
+            [
+              136.9179538,
+              35.0822612
+            ],
+            [
+              136.9190592,
+              35.0821361
+            ],
+            [
+              136.9193539,
+              35.0821273
+            ],
+            [
+              136.9197318,
+              35.0821558
+            ],
+            [
+              136.926915,
+              35.083363
+            ],
+            [
+              136.9279477,
+              35.0832972
+            ],
+            [
+              136.9281032,
+              35.0833038
+            ],
+            [
+              136.9285592,
+              35.0833367
+            ],
+            [
+              136.9288623,
+              35.0833894
+            ],
+            [
+              136.929042,
+              35.0834113
+            ],
+            [
+              136.9291171,
+              35.0834113
+            ],
+            [
+              136.9291953,
+              35.0834483
+            ],
+            [
+              136.929257,
+              35.083501
+            ],
+            [
+              136.9292999,
+              35.0835668
+            ],
+            [
+              136.9293267,
+              35.0836546
+            ],
+            [
+              136.9292945,
+              35.0837336
+            ],
+            [
+              136.9290849,
+              35.0841553
+            ],
+            [
+              136.9291654,
+              35.0843155
+            ],
+            [
+              136.9291899,
+              35.084368
+            ],
+            [
+              136.9291815,
+              35.084434
+            ],
+            [
+              136.9291524,
+              35.0844843
+            ],
+            [
+              136.9291171,
+              35.0845174
+            ],
+            [
+              136.9289589,
+              35.0845109
+            ],
+            [
+              136.9285083,
+              35.0845877
+            ],
+            [
+              136.9279668,
+              35.0845172
+            ],
+            [
+              136.9277706,
+              35.0844757
+            ],
+            [
+              136.9276745,
+              35.0844272
+            ],
+            [
+              136.9275453,
+              35.0843001
+            ],
+            [
+              136.9272047,
+              35.0840082
+            ],
+            [
+              136.9270978,
+              35.0839312
+            ],
+            [
+              136.9269932,
+              35.0838785
+            ],
+            [
+              136.9269043,
+              35.0838525
+            ],
+            [
+              136.9245909,
+              35.0834256
+            ],
+            [
+              136.9243231,
+              35.0834
+            ],
+            [
+              136.9231228,
+              35.0831893
+            ],
+            [
+              136.9211992,
+              35.0828692
+            ],
+            [
+              136.9210732,
+              35.082856
+            ],
+            [
+              136.9191267,
+              35.0827511
+            ],
+            [
+              136.9186165,
+              35.0827633
+            ],
+            [
+              136.9170764,
+              35.0829222
+            ],
+            [
+              136.9124445,
+              35.083396
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-rkw73j66",
+        "name": "源兵衛公園",
+        "nameJa": null,
+        "displayName": "源兵衛公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5423,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195046444",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9174039,
+              35.0714395
+            ],
+            [
+              136.9173771,
+              35.0714154
+            ],
+            [
+              136.9174039,
+              35.0711761
+            ],
+            [
+              136.9178359,
+              35.0711865
+            ],
+            [
+              136.917892,
+              35.0709522
+            ],
+            [
+              136.9186001,
+              35.0710334
+            ],
+            [
+              136.9186028,
+              35.071119
+            ],
+            [
+              136.9187288,
+              35.0711388
+            ],
+            [
+              136.9186996,
+              35.0714807
+            ],
+            [
+              136.9186752,
+              35.071512
+            ],
+            [
+              136.9174039,
+              35.0714395
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-golmt16p",
+        "name": "千鳥公園",
+        "nameJa": "千鳥公園",
+        "displayName": "千鳥公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 15969,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195046446",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9246592,
+              35.0723813
+            ],
+            [
+              136.9246431,
+              35.0723483
+            ],
+            [
+              136.9249006,
+              35.0713715
+            ],
+            [
+              136.9249328,
+              35.0713385
+            ],
+            [
+              136.9262926,
+              35.0713232
+            ],
+            [
+              136.9263251,
+              35.0713599
+            ],
+            [
+              136.926062,
+              35.0724186
+            ],
+            [
+              136.9259922,
+              35.072491
+            ],
+            [
+              136.9246592,
+              35.0723813
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-diwz83jz",
+        "name": "三吉公園",
+        "nameJa": null,
+        "displayName": "三吉公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4318,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195046449",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9144562,
+              35.073424
+            ],
+            [
+              136.9144267,
+              35.0733954
+            ],
+            [
+              136.9143704,
+              35.0727522
+            ],
+            [
+              136.9144052,
+              35.0727149
+            ],
+            [
+              136.9150062,
+              35.0727473
+            ],
+            [
+              136.9150382,
+              35.072783
+            ],
+            [
+              136.9149633,
+              35.0734322
+            ],
+            [
+              136.9149336,
+              35.0734591
+            ],
+            [
+              136.9144562,
+              35.073424
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-0i73q8gi",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-0i73q8gi",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 52,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195047231",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9094074,
+              35.1109271
+            ],
+            [
+              136.9094298,
+              35.1109687
+            ],
+            [
+              136.9094867,
+              35.1109704
+            ],
+            [
+              136.9095009,
+              35.1109321
+            ],
+            [
+              136.909494,
+              35.1109043
+            ],
+            [
+              136.9094379,
+              35.1108989
+            ],
+            [
+              136.9094074,
+              35.1109271
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1wewalmd",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-1wewalmd",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 509,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195047236",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9100234,
+              35.1092144
+            ],
+            [
+              136.9100152,
+              35.1092393
+            ],
+            [
+              136.9101209,
+              35.1093341
+            ],
+            [
+              136.9101575,
+              35.1093341
+            ],
+            [
+              136.9103933,
+              35.1091828
+            ],
+            [
+              136.9103953,
+              35.1091612
+            ],
+            [
+              136.9103364,
+              35.1090897
+            ],
+            [
+              136.9103039,
+              35.1090814
+            ],
+            [
+              136.9100234,
+              35.1092144
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6189ipev",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-6189ipev",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 342,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195047237",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9102458,
+              35.1131604
+            ],
+            [
+              136.9103909,
+              35.1133949
+            ],
+            [
+              136.9103078,
+              35.1134267
+            ],
+            [
+              136.9102653,
+              35.1134282
+            ],
+            [
+              136.9101432,
+              35.1132342
+            ],
+            [
+              136.9101414,
+              35.1132067
+            ],
+            [
+              136.9101662,
+              35.1131937
+            ],
+            [
+              136.9102458,
+              35.1131604
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-f6iosa8t",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-f6iosa8t",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1407,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195047240",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9091872,
+              35.1118975
+            ],
+            [
+              136.9093022,
+              35.1119192
+            ],
+            [
+              136.909626,
+              35.1117976
+            ],
+            [
+              136.9096349,
+              35.1117744
+            ],
+            [
+              136.9093942,
+              35.1113792
+            ],
+            [
+              136.9093429,
+              35.1113792
+            ],
+            [
+              136.9091712,
+              35.1118584
+            ],
+            [
+              136.9091712,
+              35.1118772
+            ],
+            [
+              136.9091872,
+              35.1118975
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-rgnjoqew",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-rgnjoqew",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1018,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195047241",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9097977,
+              35.1104815
+            ],
+            [
+              136.9097794,
+              35.1104499
+            ],
+            [
+              136.909879,
+              35.1101556
+            ],
+            [
+              136.9099319,
+              35.1101389
+            ],
+            [
+              136.9101636,
+              35.1102005
+            ],
+            [
+              136.9100437,
+              35.1105364
+            ],
+            [
+              136.9097977,
+              35.1104815
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-vmtzkkhk",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-vmtzkkhk",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1382,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195958281",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9066553,
+              35.1140043
+            ],
+            [
+              136.9068907,
+              35.1140608
+            ],
+            [
+              136.9069066,
+              35.1140781
+            ],
+            [
+              136.9068606,
+              35.1144067
+            ],
+            [
+              136.9068358,
+              35.1144212
+            ],
+            [
+              136.9066058,
+              35.1143879
+            ],
+            [
+              136.906443,
+              35.1141158
+            ],
+            [
+              136.9064518,
+              35.1140854
+            ],
+            [
+              136.9066553,
+              35.1140043
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-izyuritl",
+        "name": "霞公園",
+        "nameJa": null,
+        "displayName": "霞公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1168,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "347881484",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9373341,
+              35.1044814
+            ],
+            [
+              136.9372928,
+              35.1042233
+            ],
+            [
+              136.9377327,
+              35.1041762
+            ],
+            [
+              136.937774,
+              35.1044343
+            ],
+            [
+              136.9373341,
+              35.1044814
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-buwvgjrx",
+        "name": "桜公園",
+        "nameJa": null,
+        "displayName": "桜公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2811,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "403779807",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9390947,
+              35.1059634
+            ],
+            [
+              136.938987,
+              35.1053747
+            ],
+            [
+              136.9393773,
+              35.1054097
+            ],
+            [
+              136.9394444,
+              35.1056857
+            ],
+            [
+              136.9397025,
+              35.1056524
+            ],
+            [
+              136.9397737,
+              35.1058703
+            ],
+            [
+              136.9390947,
+              35.1059634
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-n31wdv0v",
+        "name": "明豊公園",
+        "nameJa": null,
+        "displayName": "明豊公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1468,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "428880214",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.916098,
+              35.1090693
+            ],
+            [
+              136.9161041,
+              35.1092817
+            ],
+            [
+              136.916682,
+              35.1092731
+            ],
+            [
+              136.9166809,
+              35.1090783
+            ],
+            [
+              136.9167661,
+              35.1090764
+            ],
+            [
+              136.9167644,
+              35.1089396
+            ],
+            [
+              136.9164894,
+              35.1090697
+            ],
+            [
+              136.9162781,
+              35.1090716
+            ],
+            [
+              136.9162229,
+              35.1090015
+            ],
+            [
+              136.916098,
+              35.1090693
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-cpdb04hx",
+        "name": "道徳東部公園",
+        "nameJa": null,
+        "displayName": "道徳東部公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3441,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "449016447",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9196349,
+              35.1023652
+            ],
+            [
+              136.919507,
+              35.1028269
+            ],
+            [
+              136.9203015,
+              35.1028849
+            ],
+            [
+              136.9202881,
+              35.1024153
+            ],
+            [
+              136.9196349,
+              35.1023652
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-yefndgbo",
+        "name": "呼続公園",
+        "nameJa": null,
+        "displayName": "呼続公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 39360,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "449020102",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9299224,
+              35.1041439
+            ],
+            [
+              136.9302961,
+              35.1042587
+            ],
+            [
+              136.9306223,
+              35.1043748
+            ],
+            [
+              136.9306499,
+              35.1043941
+            ],
+            [
+              136.9306655,
+              35.1044147
+            ],
+            [
+              136.9307973,
+              35.1054669
+            ],
+            [
+              136.9308713,
+              35.1058783
+            ],
+            [
+              136.9311525,
+              35.105983
+            ],
+            [
+              136.9314106,
+              35.1061955
+            ],
+            [
+              136.9315472,
+              35.1063581
+            ],
+            [
+              136.9318071,
+              35.1064941
+            ],
+            [
+              136.9323184,
+              35.1064884
+            ],
+            [
+              136.9323099,
+              35.1065332
+            ],
+            [
+              136.9320331,
+              35.1066009
+            ],
+            [
+              136.9317841,
+              35.1067442
+            ],
+            [
+              136.9306823,
+              35.1067642
+            ],
+            [
+              136.9306433,
+              35.1068757
+            ],
+            [
+              136.9306087,
+              35.1074729
+            ],
+            [
+              136.9305552,
+              35.1074717
+            ],
+            [
+              136.9305217,
+              35.1074721
+            ],
+            [
+              136.9302298,
+              35.1074691
+            ],
+            [
+              136.9301073,
+              35.1074687
+            ],
+            [
+              136.9300303,
+              35.1074704
+            ],
+            [
+              136.9295623,
+              35.1074616
+            ],
+            [
+              136.9299224,
+              35.1041439
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-966hunof",
+        "name": "戸部下公園",
+        "nameJa": null,
+        "displayName": "戸部下公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3372,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "449025688",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9197519,
+              35.1047921
+            ],
+            [
+              136.9196422,
+              35.1047244
+            ],
+            [
+              136.9189379,
+              35.1046073
+            ],
+            [
+              136.9187807,
+              35.1052679
+            ],
+            [
+              136.9188179,
+              35.1053168
+            ],
+            [
+              136.9197519,
+              35.1047921
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-0hnt51ct",
+        "name": "戸部下公園",
+        "nameJa": null,
+        "displayName": "戸部下公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3830,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "449025689",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9188179,
+              35.1053168
+            ],
+            [
+              136.9175469,
+              35.1057616
+            ],
+            [
+              136.9176131,
+              35.1055364
+            ],
+            [
+              136.9176349,
+              35.1053986
+            ],
+            [
+              136.9176703,
+              35.1051516
+            ],
+            [
+              136.9187807,
+              35.1052679
+            ],
+            [
+              136.9188179,
+              35.1053168
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2e8dmlu4",
+        "name": "鶴里公園",
+        "nameJa": null,
+        "displayName": "鶴里公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 7531,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "506171337",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9477309,
+              35.1035304
+            ],
+            [
+              136.9477463,
+              35.1035024
+            ],
+            [
+              136.9485003,
+              35.103303
+            ],
+            [
+              136.9485794,
+              35.1038492
+            ],
+            [
+              136.9486361,
+              35.1044117
+            ],
+            [
+              136.9482749,
+              35.1044837
+            ],
+            [
+              136.9482125,
+              35.1044735
+            ],
+            [
+              136.9481112,
+              35.1044952
+            ],
+            [
+              136.9480743,
+              35.1044871
+            ],
+            [
+              136.9479778,
+              35.104211
+            ],
+            [
+              136.9477309,
+              35.1035304
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-3103ed0s",
+        "name": "元柴田公園",
+        "nameJa": null,
+        "displayName": "元柴田公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 8092,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "542270857",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9061523,
+              35.0741657
+            ],
+            [
+              136.9061038,
+              35.0736807
+            ],
+            [
+              136.9078335,
+              35.0735527
+            ],
+            [
+              136.907839,
+              35.0739993
+            ],
+            [
+              136.9061523,
+              35.0741657
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-c47hy89b",
+        "name": "上浜南公園",
+        "nameJa": null,
+        "displayName": "上浜南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 7276,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "542295079",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9293214,
+              35.0724238
+            ],
+            [
+              136.9294675,
+              35.0719134
+            ],
+            [
+              136.9307912,
+              35.072156
+            ],
+            [
+              136.9306504,
+              35.0726762
+            ],
+            [
+              136.9293214,
+              35.0724238
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-r3lil0lq",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-r3lil0lq",
+        "greenSpaceType": "park",
+        "leisureType": null,
+        "landuseType": "recreation_ground",
+        "naturalType": null,
+        "areaM2": 1283,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "542413553",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9062826,
+              35.0740713
+            ],
+            [
+              136.9066862,
+              35.0740374
+            ],
+            [
+              136.9066466,
+              35.0737256
+            ],
+            [
+              136.9062487,
+              35.0737561
+            ],
+            [
+              136.9062826,
+              35.0740713
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2nxyo4gu",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-2nxyo4gu",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 4808,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "584493619",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.940785,
+              35.102923
+            ],
+            [
+              136.9407703,
+              35.1021088
+            ],
+            [
+              136.9408454,
+              35.1020364
+            ],
+            [
+              136.9409467,
+              35.1020282
+            ],
+            [
+              136.9410024,
+              35.102044
+            ],
+            [
+              136.9413899,
+              35.1022596
+            ],
+            [
+              136.9414389,
+              35.1023008
+            ],
+            [
+              136.9414643,
+              35.1023689
+            ],
+            [
+              136.9414905,
+              35.1026355
+            ],
+            [
+              136.9411793,
+              35.1027101
+            ],
+            [
+              136.9412223,
+              35.1028965
+            ],
+            [
+              136.940785,
+              35.102923
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-re43uwvn",
+        "name": "明円公園",
+        "nameJa": null,
+        "displayName": "明円公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2656,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "584493625",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.94623,
+              35.101344
+            ],
+            [
+              136.9466806,
+              35.1012453
+            ],
+            [
+              136.9468147,
+              35.1018027
+            ],
+            [
+              136.9463721,
+              35.1019014
+            ],
+            [
+              136.94623,
+              35.101344
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-3fhg5o7z",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-3fhg5o7z",
+        "greenSpaceType": "meadow",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "grassland",
+        "areaM2": 6137,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666653379",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9068132,
+              35.0795174
+            ],
+            [
+              136.9067556,
+              35.0790576
+            ],
+            [
+              136.9070372,
+              35.0789566
+            ],
+            [
+              136.9075803,
+              35.0789204
+            ],
+            [
+              136.9075844,
+              35.0789434
+            ],
+            [
+              136.9082184,
+              35.0788995
+            ],
+            [
+              136.908256,
+              35.0792133
+            ],
+            [
+              136.9079254,
+              35.0792383
+            ],
+            [
+              136.9078528,
+              35.0791965
+            ],
+            [
+              136.9075569,
+              35.0792157
+            ],
+            [
+              136.9075698,
+              35.0793482
+            ],
+            [
+              136.9073955,
+              35.0793596
+            ],
+            [
+              136.9074088,
+              35.0794962
+            ],
+            [
+              136.9068468,
+              35.0795328
+            ],
+            [
+              136.9068132,
+              35.0795174
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-a3xkp32c",
+        "name": "滝春南公園",
+        "nameJa": null,
+        "displayName": "滝春南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1254,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666653381",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9065111,
+              35.0774619
+            ],
+            [
+              136.9077221,
+              35.0773607
+            ],
+            [
+              136.9076429,
+              35.0772998
+            ],
+            [
+              136.9064921,
+              35.0773179
+            ],
+            [
+              136.9065111,
+              35.0774619
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zkg4dp8m",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-zkg4dp8m",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3506,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666654982",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9062651,
+              35.079326
+            ],
+            [
+              136.9061624,
+              35.0793102
+            ],
+            [
+              136.9061022,
+              35.079094
+            ],
+            [
+              136.905975,
+              35.0789353
+            ],
+            [
+              136.9059202,
+              35.0789084
+            ],
+            [
+              136.9058518,
+              35.0788927
+            ],
+            [
+              136.9057697,
+              35.0788748
+            ],
+            [
+              136.9057231,
+              35.0788748
+            ],
+            [
+              136.9056353,
+              35.0788836
+            ],
+            [
+              136.9055744,
+              35.0789133
+            ],
+            [
+              136.9055042,
+              35.0789224
+            ],
+            [
+              136.9054142,
+              35.0789772
+            ],
+            [
+              136.9053494,
+              35.0784462
+            ],
+            [
+              136.9057543,
+              35.0784146
+            ],
+            [
+              136.9058185,
+              35.0785144
+            ],
+            [
+              136.905806,
+              35.0785359
+            ],
+            [
+              136.9057954,
+              35.0785783
+            ],
+            [
+              136.9057985,
+              35.0786036
+            ],
+            [
+              136.9058064,
+              35.078626
+            ],
+            [
+              136.9058404,
+              35.0786666
+            ],
+            [
+              136.9058896,
+              35.0786941
+            ],
+            [
+              136.9059166,
+              35.0787012
+            ],
+            [
+              136.9059758,
+              35.0787013
+            ],
+            [
+              136.9060252,
+              35.0786852
+            ],
+            [
+              136.9061794,
+              35.0787147
+            ],
+            [
+              136.9062651,
+              35.079326
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-dh9x42kn",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-dh9x42kn",
+        "greenSpaceType": "park",
+        "leisureType": null,
+        "landuseType": "recreation_ground",
+        "naturalType": null,
+        "areaM2": 3241,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666654985",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9098474,
+              35.0803804
+            ],
+            [
+              136.9106397,
+              35.0803148
+            ],
+            [
+              136.9105903,
+              35.0799147
+            ],
+            [
+              136.909798,
+              35.0799802
+            ],
+            [
+              136.9098474,
+              35.0803804
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-dwf8niug",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-dwf8niug",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1004,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666656145",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9087277,
+              35.0788198
+            ],
+            [
+              136.9087117,
+              35.0786185
+            ],
+            [
+              136.9082209,
+              35.0786446
+            ],
+            [
+              136.9082369,
+              35.078846
+            ],
+            [
+              136.9087277,
+              35.0788198
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-v6jtjvhx",
+        "name": "白水東公園",
+        "nameJa": null,
+        "displayName": "白水東公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 358,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666658092",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9089204,
+              35.0768724
+            ],
+            [
+              136.9090444,
+              35.0768644
+            ],
+            [
+              136.9090585,
+              35.0768402
+            ],
+            [
+              136.909058,
+              35.0766437
+            ],
+            [
+              136.9090314,
+              35.0766098
+            ],
+            [
+              136.9089141,
+              35.0766165
+            ],
+            [
+              136.9089204,
+              35.0768724
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xonix34z",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xonix34z",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 245,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "666658094",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9063782,
+              35.0773777
+            ],
+            [
+              136.9058904,
+              35.0773635
+            ],
+            [
+              136.9058863,
+              35.0775034
+            ],
+            [
+              136.9060186,
+              35.0774634
+            ],
+            [
+              136.9060582,
+              35.0774074
+            ],
+            [
+              136.9063782,
+              35.0773777
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-worc22bc",
+        "name": "本城公園",
+        "nameJa": null,
+        "displayName": "本城公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3508,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "667386333",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9374935,
+              35.08959
+            ],
+            [
+              136.937463,
+              35.0896055
+            ],
+            [
+              136.9363484,
+              35.0893257
+            ],
+            [
+              136.936644,
+              35.0888109
+            ],
+            [
+              136.9374935,
+              35.08959
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xxywt2fn",
+        "name": "星宮公園",
+        "nameJa": null,
+        "displayName": "星宮公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3045,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "667386334",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9405854,
+              35.089099
+            ],
+            [
+              136.9401047,
+              35.0891779
+            ],
+            [
+              136.9399713,
+              35.0885832
+            ],
+            [
+              136.9404766,
+              35.0885102
+            ],
+            [
+              136.9405745,
+              35.08904
+            ],
+            [
+              136.9405854,
+              35.089099
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-yervstmp",
+        "name": "粕畠公園",
+        "nameJa": null,
+        "displayName": "粕畠公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2846,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "667388301",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9338888,
+              35.0959837
+            ],
+            [
+              136.9339532,
+              35.0960188
+            ],
+            [
+              136.934393,
+              35.0955701
+            ],
+            [
+              136.9342335,
+              35.0950862
+            ],
+            [
+              136.9340296,
+              35.0950565
+            ],
+            [
+              136.9338821,
+              35.0959201
+            ],
+            [
+              136.9338888,
+              35.0959837
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-4b5869s6",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-4b5869s6",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 2784,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "682315504",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9321961,
+              35.112066
+            ],
+            [
+              136.9322377,
+              35.1120693
+            ],
+            [
+              136.9322474,
+              35.1121834
+            ],
+            [
+              136.9324308,
+              35.1122124
+            ],
+            [
+              136.9324965,
+              35.1121845
+            ],
+            [
+              136.9326843,
+              35.1119881
+            ],
+            [
+              136.9327205,
+              35.1119157
+            ],
+            [
+              136.9325817,
+              35.1116524
+            ],
+            [
+              136.9324751,
+              35.1116052
+            ],
+            [
+              136.9324766,
+              35.1115713
+            ],
+            [
+              136.9324525,
+              35.1115504
+            ],
+            [
+              136.9324122,
+              35.1115367
+            ],
+            [
+              136.9323988,
+              35.1114945
+            ],
+            [
+              136.9324283,
+              35.1114396
+            ],
+            [
+              136.9321668,
+              35.1113672
+            ],
+            [
+              136.9321004,
+              35.1113639
+            ],
+            [
+              136.9318215,
+              35.1113765
+            ],
+            [
+              136.9318188,
+              35.1113925
+            ],
+            [
+              136.9320689,
+              35.1114287
+            ],
+            [
+              136.9321246,
+              35.1114495
+            ],
+            [
+              136.932144,
+              35.1114692
+            ],
+            [
+              136.9323948,
+              35.1117611
+            ],
+            [
+              136.9324042,
+              35.1118401
+            ],
+            [
+              136.932435,
+              35.1118872
+            ],
+            [
+              136.9324565,
+              35.1119245
+            ],
+            [
+              136.9324994,
+              35.1119476
+            ],
+            [
+              136.9325142,
+              35.1119805
+            ],
+            [
+              136.9325037,
+              35.112011
+            ],
+            [
+              136.932417,
+              35.1120265
+            ],
+            [
+              136.9323854,
+              35.1120178
+            ],
+            [
+              136.9323452,
+              35.1120112
+            ],
+            [
+              136.9323184,
+              35.1119662
+            ],
+            [
+              136.9323371,
+              35.1118938
+            ],
+            [
+              136.9322285,
+              35.1118466
+            ],
+            [
+              136.9321869,
+              35.1118675
+            ],
+            [
+              136.9321735,
+              35.1118872
+            ],
+            [
+              136.932144,
+              35.1118971
+            ],
+            [
+              136.9320837,
+              35.1119092
+            ],
+            [
+              136.9320568,
+              35.1119563
+            ],
+            [
+              136.9320689,
+              35.1120584
+            ],
+            [
+              136.9320837,
+              35.1120836
+            ],
+            [
+              136.9321078,
+              35.1121012
+            ],
+            [
+              136.9321668,
+              35.112099
+            ],
+            [
+              136.9321789,
+              35.1120858
+            ],
+            [
+              136.9321961,
+              35.112066
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-x1ogx3r3",
+        "name": "駈上公園",
+        "nameJa": null,
+        "displayName": "駈上公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 806,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "692428799",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9383773,
+              35.1126022
+            ],
+            [
+              136.9387031,
+              35.1125869
+            ],
+            [
+              136.9386576,
+              35.1123357
+            ],
+            [
+              136.9383437,
+              35.1123598
+            ],
+            [
+              136.9383773,
+              35.1126022
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-clinc125",
+        "name": "駈上第二公園",
+        "nameJa": null,
+        "displayName": "駈上第二公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 248,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "692428800",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9388051,
+              35.1129708
+            ],
+            [
+              136.9389459,
+              35.1129445
+            ],
+            [
+              136.9388963,
+              35.1127624
+            ],
+            [
+              136.9387823,
+              35.1127811
+            ],
+            [
+              136.9388051,
+              35.1129708
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-uflelgae",
+        "name": "駈上第三公園",
+        "nameJa": null,
+        "displayName": "駈上第三公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 278,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "692428801",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9398015,
+              35.1127931
+            ],
+            [
+              136.9397626,
+              35.1126297
+            ],
+            [
+              136.9398994,
+              35.1126022
+            ],
+            [
+              136.9399839,
+              35.1127591
+            ],
+            [
+              136.9398015,
+              35.1127931
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-586i8ivh",
+        "name": "浜田南公園",
+        "nameJa": null,
+        "displayName": "浜田南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 429,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729257682",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9241135,
+              35.0866297
+            ],
+            [
+              136.9240514,
+              35.0868553
+            ],
+            [
+              136.9242219,
+              35.0868869
+            ],
+            [
+              136.9242877,
+              35.0866501
+            ],
+            [
+              136.9241344,
+              35.0866218
+            ],
+            [
+              136.9241135,
+              35.0866297
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ooa12839",
+        "name": "松下町公園",
+        "nameJa": null,
+        "displayName": "松下町公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 954,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729260765",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9123921,
+              35.0759214
+            ],
+            [
+              136.9124203,
+              35.0757689
+            ],
+            [
+              136.9130023,
+              35.0758347
+            ],
+            [
+              136.9129822,
+              35.0759982
+            ],
+            [
+              136.9123921,
+              35.0759214
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-b7yjs7lv",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-b7yjs7lv",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 683,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729267601",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.921959,
+              35.0774629
+            ],
+            [
+              136.9220214,
+              35.0772006
+            ],
+            [
+              136.9223198,
+              35.0773383
+            ],
+            [
+              136.9222876,
+              35.0774096
+            ],
+            [
+              136.9222534,
+              35.0774524
+            ],
+            [
+              136.9221917,
+              35.0774733
+            ],
+            [
+              136.92214,
+              35.0774826
+            ],
+            [
+              136.9220844,
+              35.0774952
+            ],
+            [
+              136.9219831,
+              35.0774892
+            ],
+            [
+              136.921959,
+              35.0774629
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-a9vb41eu",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-a9vb41eu",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "scrub",
+        "areaM2": 1,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729295384",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.924219,
+              35.0867996
+            ],
+            [
+              136.924222,
+              35.0867999
+            ],
+            [
+              136.9242268,
+              35.0867984
+            ],
+            [
+              136.9242318,
+              35.0867963
+            ],
+            [
+              136.9242364,
+              35.0867938
+            ],
+            [
+              136.9242385,
+              35.0867926
+            ],
+            [
+              136.9242393,
+              35.0867909
+            ],
+            [
+              136.9242395,
+              35.0867882
+            ],
+            [
+              136.9242351,
+              35.0867886
+            ],
+            [
+              136.9242308,
+              35.0867898
+            ],
+            [
+              136.9242268,
+              35.0867917
+            ],
+            [
+              136.9242232,
+              35.086794
+            ],
+            [
+              136.9242204,
+              35.0867969
+            ],
+            [
+              136.924219,
+              35.0867996
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-348gb786",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-348gb786",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "scrub",
+        "areaM2": 56,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729295390",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9242486,
+              35.086788
+            ],
+            [
+              136.924244,
+              35.0867878
+            ],
+            [
+              136.9242394,
+              35.0867876
+            ],
+            [
+              136.9242348,
+              35.0867882
+            ],
+            [
+              136.9242305,
+              35.0867894
+            ],
+            [
+              136.9242265,
+              35.0867912
+            ],
+            [
+              136.924223,
+              35.0867936
+            ],
+            [
+              136.92422,
+              35.0867965
+            ],
+            [
+              136.9242178,
+              35.0867997
+            ],
+            [
+              136.9242163,
+              35.0868033
+            ],
+            [
+              136.9242005,
+              35.0868612
+            ],
+            [
+              136.9240663,
+              35.0868362
+            ],
+            [
+              136.9240606,
+              35.0868567
+            ],
+            [
+              136.9242214,
+              35.0868866
+            ],
+            [
+              136.9242486,
+              35.086788
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-gbstee1v",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-gbstee1v",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729295392",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9240614,
+              35.0868225
+            ],
+            [
+              136.9240524,
+              35.0868551
+            ],
+            [
+              136.9240594,
+              35.0868564
+            ],
+            [
+              136.9240684,
+              35.0868238
+            ],
+            [
+              136.9240614,
+              35.0868225
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-axews59l",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-axews59l",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 11,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729295393",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9240732,
+              35.0868065
+            ],
+            [
+              136.9241153,
+              35.0866549
+            ],
+            [
+              136.9241083,
+              35.0866536
+            ],
+            [
+              136.9240662,
+              35.0868052
+            ],
+            [
+              136.9240732,
+              35.0868065
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-68ct6i65",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-68ct6i65",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 17,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "729295397",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9241358,
+              35.086623
+            ],
+            [
+              136.9242868,
+              35.0866502
+            ],
+            [
+              136.9242841,
+              35.0866604
+            ],
+            [
+              136.9241181,
+              35.0866305
+            ],
+            [
+              136.9241358,
+              35.086623
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-emj2lab1",
+        "name": "平子第一公園",
+        "nameJa": "平子第一公園",
+        "displayName": "平子第一公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3799,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733615616",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9439643,
+              35.1139794
+            ],
+            [
+              136.9440697,
+              35.1132052
+            ],
+            [
+              136.944586,
+              35.1132487
+            ],
+            [
+              136.9448384,
+              35.11351
+            ],
+            [
+              136.9439643,
+              35.1139794
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1ylo6xa1",
+        "name": "笠寺公園",
+        "nameJa": "笠寺公園",
+        "displayName": "笠寺公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 65235,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733633603",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9407861,
+              35.1009641
+            ],
+            [
+              136.9408236,
+              35.1009992
+            ],
+            [
+              136.9413292,
+              35.1009093
+            ],
+            [
+              136.9413936,
+              35.1009466
+            ],
+            [
+              136.9420092,
+              35.1007941
+            ],
+            [
+              136.942036,
+              35.100771
+            ],
+            [
+              136.9413091,
+              35.0989046
+            ],
+            [
+              136.9411656,
+              35.0986424
+            ],
+            [
+              136.9409859,
+              35.0983747
+            ],
+            [
+              136.9407043,
+              35.0980971
+            ],
+            [
+              136.9405219,
+              35.0979731
+            ],
+            [
+              136.9403569,
+              35.0978809
+            ],
+            [
+              136.9394571,
+              35.0978919
+            ],
+            [
+              136.9393793,
+              35.0979193
+            ],
+            [
+              136.9388965,
+              35.0981289
+            ],
+            [
+              136.938757,
+              35.0982562
+            ],
+            [
+              136.9384606,
+              35.0985535
+            ],
+            [
+              136.9383587,
+              35.0988103
+            ],
+            [
+              136.9385532,
+              35.0988772
+            ],
+            [
+              136.9386242,
+              35.0989255
+            ],
+            [
+              136.9388656,
+              35.0993161
+            ],
+            [
+              136.9389676,
+              35.0993721
+            ],
+            [
+              136.9391003,
+              35.0994203
+            ],
+            [
+              136.9391875,
+              35.0994313
+            ],
+            [
+              136.9393404,
+              35.0994313
+            ],
+            [
+              136.9393404,
+              35.1002071
+            ],
+            [
+              136.9393833,
+              35.1002378
+            ],
+            [
+              136.9401853,
+              35.1002839
+            ],
+            [
+              136.9403677,
+              35.1003299
+            ],
+            [
+              136.9404817,
+              35.100387
+            ],
+            [
+              136.9406252,
+              35.1004912
+            ],
+            [
+              136.9407217,
+              35.1006064
+            ],
+            [
+              136.9407767,
+              35.1007326
+            ],
+            [
+              136.9407928,
+              35.1008401
+            ],
+            [
+              136.9407861,
+              35.1009641
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-jmxni7j3",
+        "name": "戸部公園",
+        "nameJa": null,
+        "displayName": "戸部公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 567,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733676882",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9292821,
+              35.1028155
+            ],
+            [
+              136.9293523,
+              35.1027122
+            ],
+            [
+              136.9295117,
+              35.1027373
+            ],
+            [
+              136.9295447,
+              35.1025721
+            ],
+            [
+              136.9293062,
+              35.1025468
+            ],
+            [
+              136.9291726,
+              35.102782
+            ],
+            [
+              136.9292821,
+              35.1028155
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-545ra0z9",
+        "name": "弥次衛公園",
+        "nameJa": null,
+        "displayName": "弥次衛公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3696,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733678618",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9230992,
+              35.0903253
+            ],
+            [
+              136.9231857,
+              35.0899996
+            ],
+            [
+              136.9220975,
+              35.0898081
+            ],
+            [
+              136.9220209,
+              35.0901276
+            ],
+            [
+              136.9230992,
+              35.0903253
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ezc8r33f",
+        "name": "星崎公園",
+        "nameJa": null,
+        "displayName": "星崎公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1339,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733681454",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9368906,
+              35.0868915
+            ],
+            [
+              136.936901,
+              35.0868656
+            ],
+            [
+              136.9368259,
+              35.0866837
+            ],
+            [
+              136.9367999,
+              35.0866671
+            ],
+            [
+              136.9363259,
+              35.0868161
+            ],
+            [
+              136.9363066,
+              35.0868427
+            ],
+            [
+              136.9363941,
+              35.0870378
+            ],
+            [
+              136.9364277,
+              35.0870491
+            ],
+            [
+              136.9368906,
+              35.0868915
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-w134b3kq",
+        "name": "笠寺一里塚",
+        "nameJa": null,
+        "displayName": "笠寺一里塚",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 185,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733685712",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9389448,
+              35.0957253
+            ],
+            [
+              136.9391336,
+              35.0957804
+            ],
+            [
+              136.9391109,
+              35.0956542
+            ],
+            [
+              136.9389962,
+              35.0956194
+            ],
+            [
+              136.9389448,
+              35.0957253
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6h6joa9z",
+        "name": "平子第二公園",
+        "nameJa": "平子第二公園",
+        "displayName": "平子第二公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3048,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733714004",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9473998,
+              35.1125739
+            ],
+            [
+              136.9474597,
+              35.1125748
+            ],
+            [
+              136.9477708,
+              35.1129507
+            ],
+            [
+              136.947725,
+              35.1130024
+            ],
+            [
+              136.9474355,
+              35.1130852
+            ],
+            [
+              136.9472177,
+              35.1131792
+            ],
+            [
+              136.9471639,
+              35.113182
+            ],
+            [
+              136.9469078,
+              35.1129116
+            ],
+            [
+              136.9469235,
+              35.1128465
+            ],
+            [
+              136.9473998,
+              35.1125739
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-5v1sw8eu",
+        "name": "中江公園",
+        "nameJa": null,
+        "displayName": "中江公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5079,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733772214",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9474526,
+              35.1066693
+            ],
+            [
+              136.9484786,
+              35.1066774
+            ],
+            [
+              136.9483962,
+              35.1061619
+            ],
+            [
+              136.9474782,
+              35.1061511
+            ],
+            [
+              136.9474526,
+              35.1066693
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-frc8jbf3",
+        "name": "白雲公園",
+        "nameJa": null,
+        "displayName": "白雲公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1415,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733976966",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9397467,
+              35.0955951
+            ],
+            [
+              136.9398739,
+              35.0959964
+            ],
+            [
+              136.9402005,
+              35.0959271
+            ],
+            [
+              136.9400733,
+              35.0955259
+            ],
+            [
+              136.939816,
+              35.0955805
+            ],
+            [
+              136.9397467,
+              35.0955951
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-55z62k4f",
+        "name": "白水公園",
+        "nameJa": null,
+        "displayName": "白水公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 16713,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "734568632",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9053824,
+              35.0755092
+            ],
+            [
+              136.9053341,
+              35.0754632
+            ],
+            [
+              136.903478,
+              35.0755499
+            ],
+            [
+              136.9034821,
+              35.0757551
+            ],
+            [
+              136.9035267,
+              35.0757927
+            ],
+            [
+              136.9037047,
+              35.0759428
+            ],
+            [
+              136.903989,
+              35.0760273
+            ],
+            [
+              136.90428,
+              35.0763653
+            ],
+            [
+              136.904394,
+              35.0763796
+            ],
+            [
+              136.9044798,
+              35.0766189
+            ],
+            [
+              136.904858,
+              35.0766419
+            ],
+            [
+              136.9051424,
+              35.076744
+            ],
+            [
+              136.9051491,
+              35.0765903
+            ],
+            [
+              136.9054521,
+              35.0765256
+            ],
+            [
+              136.9053824,
+              35.0755092
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-8x9ux2bh",
+        "name": "菊住公園",
+        "nameJa": null,
+        "displayName": "菊住公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1335,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "735031186",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9349053,
+              35.1134649
+            ],
+            [
+              136.9349451,
+              35.1134849
+            ],
+            [
+              136.9349979,
+              35.1136513
+            ],
+            [
+              136.934994,
+              35.1136642
+            ],
+            [
+              136.9343048,
+              35.1136724
+            ],
+            [
+              136.9342942,
+              35.1134788
+            ],
+            [
+              136.9349053,
+              35.1134649
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-yfuadj24",
+        "name": "杓子田公園",
+        "nameJa": null,
+        "displayName": "杓子田公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3104,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "735447661",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9447276,
+              35.1012576
+            ],
+            [
+              136.944618,
+              35.1008781
+            ],
+            [
+              136.9438677,
+              35.101028
+            ],
+            [
+              136.9439751,
+              35.1014202
+            ],
+            [
+              136.9447276,
+              35.1012576
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-c0ub3y3y",
+        "name": "赤坪公園",
+        "nameJa": null,
+        "displayName": "赤坪公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 8674,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "735464593",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9450361,
+              35.0953934
+            ],
+            [
+              136.9460647,
+              35.0951739
+            ],
+            [
+              136.9460982,
+              35.0951257
+            ],
+            [
+              136.9457053,
+              35.0947625
+            ],
+            [
+              136.9452037,
+              35.0943521
+            ],
+            [
+              136.94515,
+              35.0943543
+            ],
+            [
+              136.9445801,
+              35.094972
+            ],
+            [
+              136.9445774,
+              35.0949984
+            ],
+            [
+              136.9450361,
+              35.0953934
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-pkl9rdwi",
+        "name": "滝春公園",
+        "nameJa": null,
+        "displayName": "滝春公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1097,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "737475597",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9071966,
+              35.0832079
+            ],
+            [
+              136.9074219,
+              35.0831859
+            ],
+            [
+              136.9073683,
+              35.0827118
+            ],
+            [
+              136.907143,
+              35.0827294
+            ],
+            [
+              136.9071966,
+              35.0832079
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-o9mdw6qx",
+        "name": "元柴田南公園",
+        "nameJa": null,
+        "displayName": "元柴田南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 261,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "737476241",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9088381,
+              35.0715214
+            ],
+            [
+              136.908879,
+              35.0715197
+            ],
+            [
+              136.9089092,
+              35.0715005
+            ],
+            [
+              136.9089428,
+              35.0712635
+            ],
+            [
+              136.9089118,
+              35.0712366
+            ],
+            [
+              136.9088271,
+              35.0712405
+            ],
+            [
+              136.9088381,
+              35.0715214
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-efr1v3oc",
+        "name": "大堀公園",
+        "nameJa": null,
+        "displayName": "大堀公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 513,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "766231082",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9484247,
+              35.1115644
+            ],
+            [
+              136.9487848,
+              35.1114649
+            ],
+            [
+              136.9488028,
+              35.1114507
+            ],
+            [
+              136.948765,
+              35.1113564
+            ],
+            [
+              136.9483853,
+              35.1114173
+            ],
+            [
+              136.9484247,
+              35.1115644
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-do8jvg28",
+        "name": "観音公園",
+        "nameJa": null,
+        "displayName": "観音公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2668,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836432975",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9050337,
+              35.0994665
+            ],
+            [
+              136.9051713,
+              35.0989807
+            ],
+            [
+              136.9056808,
+              35.0990796
+            ],
+            [
+              136.9055467,
+              35.0995713
+            ],
+            [
+              136.9050337,
+              35.0994665
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xgzk9ium",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xgzk9ium",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 6402,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836433093",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9042619,
+              35.0970473
+            ],
+            [
+              136.9052542,
+              35.0972613
+            ],
+            [
+              136.9054457,
+              35.0966977
+            ],
+            [
+              136.9043646,
+              35.0964818
+            ],
+            [
+              136.904209,
+              35.0970275
+            ],
+            [
+              136.9042619,
+              35.0970473
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zaf0nwmu",
+        "name": "豊田南公園",
+        "nameJa": null,
+        "displayName": "豊田南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2923,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836433452",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9143176,
+              35.1014348
+            ],
+            [
+              136.9143605,
+              35.1012505
+            ],
+            [
+              136.9144275,
+              35.1011298
+            ],
+            [
+              136.9145107,
+              35.1010135
+            ],
+            [
+              136.9145911,
+              35.1009301
+            ],
+            [
+              136.9147387,
+              35.1007765
+            ],
+            [
+              136.9148486,
+              35.1006229
+            ],
+            [
+              136.9149157,
+              35.1005131
+            ],
+            [
+              136.9149613,
+              35.1005197
+            ],
+            [
+              136.9147735,
+              35.1014984
+            ],
+            [
+              136.9143176,
+              35.1014348
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-hrwcarp5",
+        "name": "忠道公園",
+        "nameJa": null,
+        "displayName": "忠道公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 18455,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836433961",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9162191,
+              35.0987818
+            ],
+            [
+              136.9175316,
+              35.0990162
+            ],
+            [
+              136.9172081,
+              35.1003699
+            ],
+            [
+              136.9159264,
+              35.1001279
+            ],
+            [
+              136.9162191,
+              35.0987818
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-fhivrwos",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-fhivrwos",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 940,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836434528",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9192396,
+              35.1065436
+            ],
+            [
+              136.9194538,
+              35.1062966
+            ],
+            [
+              136.9197526,
+              35.1063911
+            ],
+            [
+              136.9196756,
+              35.1065928
+            ],
+            [
+              136.9192396,
+              35.1065436
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-4rbuw0ge",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-4rbuw0ge",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 640,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836434695",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9183585,
+              35.1064113
+            ],
+            [
+              136.9183739,
+              35.1063332
+            ],
+            [
+              136.9184709,
+              35.1063332
+            ],
+            [
+              136.9184894,
+              35.1062462
+            ],
+            [
+              136.9185633,
+              35.1062311
+            ],
+            [
+              136.9186111,
+              35.1061794
+            ],
+            [
+              136.9187189,
+              35.1062084
+            ],
+            [
+              136.9187744,
+              35.1062197
+            ],
+            [
+              136.9186573,
+              35.1064453
+            ],
+            [
+              136.9183585,
+              35.1064113
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-uoeslml3",
+        "name": "御替地公園",
+        "nameJa": null,
+        "displayName": "御替地公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1447,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836435060",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9142237,
+              35.1042501
+            ],
+            [
+              136.9143115,
+              35.103935
+            ],
+            [
+              136.9147428,
+              35.1040094
+            ],
+            [
+              136.914655,
+              35.104327
+            ],
+            [
+              136.9142237,
+              35.1042501
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-rjlz8w47",
+        "name": "豊代住宅児童遊園地",
+        "nameJa": null,
+        "displayName": "豊代住宅児童遊園地",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 561,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836435871",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9158525,
+              35.1037165
+            ],
+            [
+              136.9159834,
+              35.1037342
+            ],
+            [
+              136.9160543,
+              35.1033359
+            ],
+            [
+              136.915911,
+              35.1033208
+            ],
+            [
+              136.9158525,
+              35.1037165
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9vkx6vi4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-9vkx6vi4",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5310,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836435969",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9171259,
+              35.0969016
+            ],
+            [
+              136.9180972,
+              35.0970927
+            ],
+            [
+              136.918242,
+              35.0969819
+            ],
+            [
+              136.9183097,
+              35.0968577
+            ],
+            [
+              136.9183658,
+              35.0966418
+            ],
+            [
+              136.9172496,
+              35.0964584
+            ],
+            [
+              136.9171259,
+              35.0969016
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-yr5ne66z",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-yr5ne66z",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 664,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836436187",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9152514,
+              35.093952
+            ],
+            [
+              136.9153039,
+              35.0937686
+            ],
+            [
+              136.9156262,
+              35.0938135
+            ],
+            [
+              136.9155795,
+              35.0940169
+            ],
+            [
+              136.9152514,
+              35.093952
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9twuvt5v",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-9twuvt5v",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2125,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836436271",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9136603,
+              35.0894749
+            ],
+            [
+              136.913616,
+              35.0890841
+            ],
+            [
+              136.9141262,
+              35.0890373
+            ],
+            [
+              136.9141985,
+              35.0894386
+            ],
+            [
+              136.9136603,
+              35.0894749
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-7z17x3o3",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-7z17x3o3",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1221,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836436330",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9143987,
+              35.0886057
+            ],
+            [
+              136.9147846,
+              35.088565
+            ],
+            [
+              136.9147347,
+              35.0882484
+            ],
+            [
+              136.9144624,
+              35.0882771
+            ],
+            [
+              136.9144672,
+              35.0883073
+            ],
+            [
+              136.9143536,
+              35.0883193
+            ],
+            [
+              136.9143987,
+              35.0886057
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ujj97v2u",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ujj97v2u",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 897,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836436435",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9119963,
+              35.0876525
+            ],
+            [
+              136.9119467,
+              35.0872706
+            ],
+            [
+              136.9122404,
+              35.0872553
+            ],
+            [
+              136.912257,
+              35.0874789
+            ],
+            [
+              136.9121237,
+              35.0874934
+            ],
+            [
+              136.9121519,
+              35.087635
+            ],
+            [
+              136.9119963,
+              35.0876525
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-tz5mv6so",
+        "name": "氷室どんぐりひろば",
+        "nameJa": null,
+        "displayName": "氷室どんぐりひろば",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 219,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836437546",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.906828,
+              35.1061122
+            ],
+            [
+              136.9069074,
+              35.1061351
+            ],
+            [
+              136.9070241,
+              35.1058811
+            ],
+            [
+              136.9069552,
+              35.1058581
+            ],
+            [
+              136.906828,
+              35.1061122
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-pj9kl2gl",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-pj9kl2gl",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 299,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836438371",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9011005,
+              35.1062729
+            ],
+            [
+              136.9010774,
+              35.1061589
+            ],
+            [
+              136.901327,
+              35.1061192
+            ],
+            [
+              136.9013447,
+              35.1062124
+            ],
+            [
+              136.9013093,
+              35.1062175
+            ],
+            [
+              136.9013177,
+              35.1062483
+            ],
+            [
+              136.9011005,
+              35.1062729
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xikh18rf",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xikh18rf",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 327,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836438625",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9029659,
+              35.1058101
+            ],
+            [
+              136.902994,
+              35.1057075
+            ],
+            [
+              136.9030349,
+              35.1057097
+            ],
+            [
+              136.9030651,
+              35.105606
+            ],
+            [
+              136.9031878,
+              35.1056241
+            ],
+            [
+              136.9031254,
+              35.1058458
+            ],
+            [
+              136.9029659,
+              35.1058101
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-8f9x17xe",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-8f9x17xe",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 903,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836439951",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9257188,
+              35.0886669
+            ],
+            [
+              136.9257974,
+              35.0884312
+            ],
+            [
+              136.9261486,
+              35.088474
+            ],
+            [
+              136.9260654,
+              35.0887261
+            ],
+            [
+              136.9257188,
+              35.0886669
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-8urcskfh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-8urcskfh",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 468,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836440403",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9240422,
+              35.0868605
+            ],
+            [
+              136.9241059,
+              35.0866284
+            ],
+            [
+              136.9241361,
+              35.0866152
+            ],
+            [
+              136.9242876,
+              35.086641
+            ],
+            [
+              136.9242193,
+              35.0868923
+            ],
+            [
+              136.9240422,
+              35.0868605
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-jo11fz0i",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-jo11fz0i",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1068,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836440928",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9225994,
+              35.088354
+            ],
+            [
+              136.9226369,
+              35.0882136
+            ],
+            [
+              136.9233222,
+              35.0883035
+            ],
+            [
+              136.923282,
+              35.0884605
+            ],
+            [
+              136.9225994,
+              35.088354
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xuc9q3a4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xuc9q3a4",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 562,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836443195",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9216852,
+              35.0879613
+            ],
+            [
+              136.9217967,
+              35.0879743
+            ],
+            [
+              136.9218824,
+              35.0876092
+            ],
+            [
+              136.9217932,
+              35.0875877
+            ],
+            [
+              136.9217967,
+              35.0875703
+            ],
+            [
+              136.9217135,
+              35.087566
+            ],
+            [
+              136.9216852,
+              35.0879613
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1ryy80qz",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-1ryy80qz",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3090,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836446562",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9014731,
+              35.0957646
+            ],
+            [
+              136.90334,
+              35.0961454
+            ],
+            [
+              136.9032904,
+              35.0963061
+            ],
+            [
+              136.9014784,
+              35.0959268
+            ],
+            [
+              136.9014731,
+              35.0957646
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ygfy1ul9",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ygfy1ul9",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1222,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836446922",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9055938,
+              35.0966973
+            ],
+            [
+              136.9056322,
+              35.0965806
+            ],
+            [
+              136.9066544,
+              35.0967935
+            ],
+            [
+              136.9066272,
+              35.0968987
+            ],
+            [
+              136.9055938,
+              35.0966973
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-f4qvim72",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-f4qvim72",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1678,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836446923",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.906745,
+              35.0969075
+            ],
+            [
+              136.906787,
+              35.0967871
+            ],
+            [
+              136.9079428,
+              35.0969992
+            ],
+            [
+              136.9079102,
+              35.0971501
+            ],
+            [
+              136.906745,
+              35.0969075
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-hkzuck6b",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-hkzuck6b",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 465,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836446924",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9089306,
+              35.0973526
+            ],
+            [
+              136.9089819,
+              35.097173
+            ],
+            [
+              136.9092224,
+              35.0972189
+            ],
+            [
+              136.9091687,
+              35.0974023
+            ],
+            [
+              136.9089306,
+              35.0973526
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-nkfs5063",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-nkfs5063",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 969,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836447878",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9143378,
+              35.0931083
+            ],
+            [
+              136.9147236,
+              35.0931908
+            ],
+            [
+              136.9147926,
+              35.0929577
+            ],
+            [
+              136.9144051,
+              35.0928752
+            ],
+            [
+              136.9143378,
+              35.0931083
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-188a1f60",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-188a1f60",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2622,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836448240",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9159635,
+              35.093379
+            ],
+            [
+              136.9160679,
+              35.0930547
+            ],
+            [
+              136.9167758,
+              35.0931691
+            ],
+            [
+              136.9166714,
+              35.0935369
+            ],
+            [
+              136.9159635,
+              35.093379
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-5w4g17f2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-5w4g17f2",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1685,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836450139",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9147256,
+              35.1072172
+            ],
+            [
+              136.9147433,
+              35.1069624
+            ],
+            [
+              136.9150265,
+              35.1068147
+            ],
+            [
+              136.9152992,
+              35.1070804
+            ],
+            [
+              136.9153177,
+              35.1072048
+            ],
+            [
+              136.9147256,
+              35.1072172
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-soyf2ym1",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-soyf2ym1",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 837,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836456158",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9020975,
+              35.1122847
+            ],
+            [
+              136.9019989,
+              35.1121058
+            ],
+            [
+              136.9024087,
+              35.111952
+            ],
+            [
+              136.9024919,
+              35.1121108
+            ],
+            [
+              136.9020975,
+              35.1122847
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-aqlsyp9a",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-aqlsyp9a",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 298,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836636230",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9036992,
+              35.1016217
+            ],
+            [
+              136.90374,
+              35.1014927
+            ],
+            [
+              136.9039548,
+              35.1015367
+            ],
+            [
+              136.9039046,
+              35.1016685
+            ],
+            [
+              136.9036992,
+              35.1016217
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-inylxkj4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-inylxkj4",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1053,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836636718",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.915144,
+              35.0997442
+            ],
+            [
+              136.9151837,
+              35.0995646
+            ],
+            [
+              136.9157254,
+              35.0996334
+            ],
+            [
+              136.9156787,
+              35.0998283
+            ],
+            [
+              136.915144,
+              35.0997442
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ykbakac3",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ykbakac3",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1839,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836636722",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9255163,
+              35.0897005
+            ],
+            [
+              136.9255956,
+              35.0893844
+            ],
+            [
+              136.9261355,
+              35.0894542
+            ],
+            [
+              136.9260306,
+              35.0897986
+            ],
+            [
+              136.9255163,
+              35.0897005
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-7w1zlqyv",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-7w1zlqyv",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1729,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "836636723",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9270721,
+              35.09004
+            ],
+            [
+              136.9272155,
+              35.0896259
+            ],
+            [
+              136.9275924,
+              35.0897548
+            ],
+            [
+              136.9274685,
+              35.0901443
+            ],
+            [
+              136.9270721,
+              35.09004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-4fekk68p",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-4fekk68p",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 509,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "837496689",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9198315,
+              35.0927291
+            ],
+            [
+              136.919887,
+              35.0925375
+            ],
+            [
+              136.9199655,
+              35.0925388
+            ],
+            [
+              136.9200657,
+              35.0925917
+            ],
+            [
+              136.9200102,
+              35.0928476
+            ],
+            [
+              136.9199255,
+              35.0928312
+            ],
+            [
+              136.9198315,
+              35.0927291
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-znvcoctc",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-znvcoctc",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 168,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "837496690",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9190964,
+              35.0935691
+            ],
+            [
+              136.9192102,
+              35.0935893
+            ],
+            [
+              136.9192471,
+              35.0934499
+            ],
+            [
+              136.9191333,
+              35.0934298
+            ],
+            [
+              136.9190964,
+              35.0935691
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ulwyj63c",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ulwyj63c",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4402,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127347",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9394477,
+              35.0830627
+            ],
+            [
+              136.9394397,
+              35.0828519
+            ],
+            [
+              136.939775,
+              35.0826237
+            ],
+            [
+              136.9400861,
+              35.0824327
+            ],
+            [
+              136.9401655,
+              35.082395
+            ],
+            [
+              136.9403221,
+              35.0823208
+            ],
+            [
+              136.9403211,
+              35.0823751
+            ],
+            [
+              136.9403194,
+              35.082471
+            ],
+            [
+              136.9403087,
+              35.0830714
+            ],
+            [
+              136.9403005,
+              35.0830713
+            ],
+            [
+              136.9394477,
+              35.0830627
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2xfgrboo",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-2xfgrboo",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2320,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127348",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.938197,
+              35.0773917
+            ],
+            [
+              136.9385644,
+              35.0777671
+            ],
+            [
+              136.9386368,
+              35.0777517
+            ],
+            [
+              136.9386422,
+              35.0775871
+            ],
+            [
+              136.9389372,
+              35.0775168
+            ],
+            [
+              136.9388648,
+              35.0773324
+            ],
+            [
+              136.9386395,
+              35.0771503
+            ],
+            [
+              136.938197,
+              35.0773917
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-177wzi7f",
+        "name": "砂口公園",
+        "nameJa": null,
+        "displayName": "砂口公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1559,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127349",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9408741,
+              35.0927606
+            ],
+            [
+              136.9411405,
+              35.0930446
+            ],
+            [
+              136.9414882,
+              35.0928324
+            ],
+            [
+              136.9412083,
+              35.0925506
+            ],
+            [
+              136.9408741,
+              35.0927606
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-s9itfa0a",
+        "name": "芝公園",
+        "nameJa": null,
+        "displayName": "芝公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2749,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127350",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9442311,
+              35.0978004
+            ],
+            [
+              136.9449868,
+              35.0976548
+            ],
+            [
+              136.9448887,
+              35.097314
+            ],
+            [
+              136.944133,
+              35.0974598
+            ],
+            [
+              136.9442311,
+              35.0978004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9ds82v3q",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-9ds82v3q",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 202,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127351",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9332713,
+              35.0853944
+            ],
+            [
+              136.9333673,
+              35.0852244
+            ],
+            [
+              136.9331727,
+              35.0851523
+            ],
+            [
+              136.9332713,
+              35.0853944
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-vhsnz4t3",
+        "name": "赤坪南公園",
+        "nameJa": null,
+        "displayName": "赤坪南公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2489,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127352",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9437593,
+              35.0942676
+            ],
+            [
+              136.9437928,
+              35.0942731
+            ],
+            [
+              136.9440396,
+              35.0941798
+            ],
+            [
+              136.9439256,
+              35.0940174
+            ],
+            [
+              136.9442596,
+              35.0938813
+            ],
+            [
+              136.9443601,
+              35.0940426
+            ],
+            [
+              136.9446015,
+              35.093934
+            ],
+            [
+              136.9446082,
+              35.0938956
+            ],
+            [
+              136.9443293,
+              35.0936641
+            ],
+            [
+              136.9435756,
+              35.0939801
+            ],
+            [
+              136.9437258,
+              35.0941096
+            ],
+            [
+              136.9436333,
+              35.0941469
+            ],
+            [
+              136.9437593,
+              35.0942676
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-wndc91p1",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-wndc91p1",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2649,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127353",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9327429,
+              35.0926507
+            ],
+            [
+              136.9333035,
+              35.0927802
+            ],
+            [
+              136.9334857,
+              35.0924416
+            ],
+            [
+              136.9334778,
+              35.092339
+            ],
+            [
+              136.9334161,
+              35.0922249
+            ],
+            [
+              136.9331077,
+              35.0921876
+            ],
+            [
+              136.9329789,
+              35.092519
+            ],
+            [
+              136.9327911,
+              35.0924795
+            ],
+            [
+              136.9327429,
+              35.0926507
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-hcup7mb2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-hcup7mb2",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2726,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127354",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9263883,
+              35.0783655
+            ],
+            [
+              136.9268486,
+              35.0786801
+            ],
+            [
+              136.9271921,
+              35.0783185
+            ],
+            [
+              136.9267211,
+              35.0780172
+            ],
+            [
+              136.9263883,
+              35.0783655
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-lzw0s4o4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-lzw0s4o4",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1801,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127355",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9126132,
+              35.1107854
+            ],
+            [
+              136.9129234,
+              35.1111046
+            ],
+            [
+              136.9132653,
+              35.1108823
+            ],
+            [
+              136.912955,
+              35.1105631
+            ],
+            [
+              136.9126132,
+              35.1107854
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-02hn1fxy",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-02hn1fxy",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5861,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127356",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9348727,
+              35.0746737
+            ],
+            [
+              136.9357953,
+              35.0751917
+            ],
+            [
+              136.9361065,
+              35.07479
+            ],
+            [
+              136.9353233,
+              35.0742083
+            ],
+            [
+              136.9348727,
+              35.0746737
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-rovptdhh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-rovptdhh",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 257,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894127357",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9203386,
+              35.075392
+            ],
+            [
+              136.9205773,
+              35.0754183
+            ],
+            [
+              136.9205319,
+              35.0752983
+            ],
+            [
+              136.920344,
+              35.075269
+            ],
+            [
+              136.9203386,
+              35.075392
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-b7lohrmy",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-b7lohrmy",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1095,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "924425931",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9485105,
+              35.1066724
+            ],
+            [
+              136.9484685,
+              35.1063665
+            ],
+            [
+              136.9484612,
+              35.1063133
+            ],
+            [
+              136.9487693,
+              35.1062994
+            ],
+            [
+              136.9487749,
+              35.1063696
+            ],
+            [
+              136.9487986,
+              35.1066636
+            ],
+            [
+              136.9485105,
+              35.1066724
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ad5l17yk",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ad5l17yk",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2642,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1239424346",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.904342,
+              35.072031
+            ],
+            [
+              136.9049447,
+              35.0719981
+            ],
+            [
+              136.9049232,
+              35.0716022
+            ],
+            [
+              136.9049044,
+              35.0715781
+            ],
+            [
+              136.9043161,
+              35.0715883
+            ],
+            [
+              136.904342,
+              35.072031
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-fg1kt481",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-fg1kt481",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 1008,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1239630626",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9035278,
+              35.0718726
+            ],
+            [
+              136.9037826,
+              35.0719354
+            ],
+            [
+              136.9039278,
+              35.0719498
+            ],
+            [
+              136.9040634,
+              35.0719402
+            ],
+            [
+              136.9041436,
+              35.0718987
+            ],
+            [
+              136.904192,
+              35.0718427
+            ],
+            [
+              136.9041944,
+              35.0718166
+            ],
+            [
+              136.9041283,
+              35.0717616
+            ],
+            [
+              136.9041224,
+              35.0717336
+            ],
+            [
+              136.9040528,
+              35.0717703
+            ],
+            [
+              136.9039643,
+              35.0717548
+            ],
+            [
+              136.9039254,
+              35.0717625
+            ],
+            [
+              136.9038888,
+              35.0717731
+            ],
+            [
+              136.9038593,
+              35.0717558
+            ],
+            [
+              136.9038534,
+              35.0717394
+            ],
+            [
+              136.9037767,
+              35.0717606
+            ],
+            [
+              136.9037071,
+              35.0717587
+            ],
+            [
+              136.9036175,
+              35.0717847
+            ],
+            [
+              136.903562,
+              35.0718263
+            ],
+            [
+              136.9035325,
+              35.0718272
+            ],
+            [
+              136.9035278,
+              35.0718726
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-43uoxvd6",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-43uoxvd6",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 1213,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1239630627",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9028684,
+              35.0719315
+            ],
+            [
+              136.9029179,
+              35.0719634
+            ],
+            [
+              136.9030217,
+              35.0719817
+            ],
+            [
+              136.9031314,
+              35.0719576
+            ],
+            [
+              136.9033237,
+              35.0718938
+            ],
+            [
+              136.9034641,
+              35.0718707
+            ],
+            [
+              136.903562,
+              35.0717548
+            ],
+            [
+              136.9034842,
+              35.0717123
+            ],
+            [
+              136.9033485,
+              35.0716901
+            ],
+            [
+              136.9031845,
+              35.0716959
+            ],
+            [
+              136.9030453,
+              35.0717451
+            ],
+            [
+              136.9029674,
+              35.0718427
+            ],
+            [
+              136.9028684,
+              35.0719315
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-m8l146dh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-m8l146dh",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 1353,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1239630628",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9022997,
+              35.0719383
+            ],
+            [
+              136.9023811,
+              35.0719769
+            ],
+            [
+              136.9024991,
+              35.0719904
+            ],
+            [
+              136.9025781,
+              35.0719817
+            ],
+            [
+              136.9028141,
+              35.071917
+            ],
+            [
+              136.9028318,
+              35.0718967
+            ],
+            [
+              136.9027822,
+              35.0718707
+            ],
+            [
+              136.9028625,
+              35.0717789
+            ],
+            [
+              136.9029391,
+              35.0718156
+            ],
+            [
+              136.9029934,
+              35.0717461
+            ],
+            [
+              136.9029037,
+              35.0717171
+            ],
+            [
+              136.9027893,
+              35.0717133
+            ],
+            [
+              136.9026938,
+              35.0717403
+            ],
+            [
+              136.9025958,
+              35.071748
+            ],
+            [
+              136.902505,
+              35.0717336
+            ],
+            [
+              136.9023799,
+              35.0717297
+            ],
+            [
+              136.9022879,
+              35.071776
+            ],
+            [
+              136.9022631,
+              35.0718214
+            ],
+            [
+              136.9022596,
+              35.0718794
+            ],
+            [
+              136.9022997,
+              35.0719383
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-3iw2ux3l",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-3iw2ux3l",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 156,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1289056393",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9190488,
+              35.0937387
+            ],
+            [
+              136.9191661,
+              35.0937595
+            ],
+            [
+              136.9191957,
+              35.0936503
+            ],
+            [
+              136.9191788,
+              35.0936291
+            ],
+            [
+              136.9190823,
+              35.093612
+            ],
+            [
+              136.9190488,
+              35.0937387
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-v47vlrcf",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-v47vlrcf",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 342,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1307388420",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Minami-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9039989,
+              35.082142
+            ],
+            [
+              136.9041055,
+              35.0821366
+            ],
+            [
+              136.9042236,
+              35.0824488
+            ],
+            [
+              136.9041887,
+              35.0824641
+            ],
+            [
+              136.9041565,
+              35.082451
+            ],
+            [
+              136.9040908,
+              35.0823434
+            ],
+            [
+              136.9040412,
+              35.0823248
+            ],
+            [
+              136.9039989,
+              35.082142
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

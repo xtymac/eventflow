@@ -7,6 +7,67 @@ import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { toGeomSql, toGeomSqlNullable, fromGeomSql } from '../db/geometry.js';
 import { getRoadNameForLineString, isGoogleMapsConfigured } from '../services/google-maps.js';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Regenerate PMTiles in the background
+// Runs: export-road-assets.ts then tiles:generate
+function regenerateTilesInBackground(): void {
+  const projectRoot = join(__dirname, '../../..');
+
+  console.log('[TileRefresh] Starting background tile regeneration...');
+
+  // Run export script first, then generate tiles
+  const exportProcess = spawn('npx', ['tsx', 'scripts/export-road-assets.ts'], {
+    cwd: projectRoot,
+    stdio: 'pipe',
+    shell: true,
+  });
+
+  exportProcess.stdout?.on('data', (data) => {
+    console.log(`[TileRefresh/Export] ${data.toString().trim()}`);
+  });
+
+  exportProcess.stderr?.on('data', (data) => {
+    console.error(`[TileRefresh/Export] ${data.toString().trim()}`);
+  });
+
+  exportProcess.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`[TileRefresh] Export failed with code ${code}`);
+      return;
+    }
+
+    console.log('[TileRefresh] Export complete, generating PMTiles...');
+
+    // Now run tiles:generate
+    const tilesProcess = spawn('npm', ['run', 'tiles:generate'], {
+      cwd: projectRoot,
+      stdio: 'pipe',
+      shell: true,
+    });
+
+    tilesProcess.stdout?.on('data', (data) => {
+      console.log(`[TileRefresh/Tiles] ${data.toString().trim()}`);
+    });
+
+    tilesProcess.stderr?.on('data', (data) => {
+      console.error(`[TileRefresh/Tiles] ${data.toString().trim()}`);
+    });
+
+    tilesProcess.on('close', (tilesCode) => {
+      if (tilesCode === 0) {
+        console.log('[TileRefresh] PMTiles regeneration complete!');
+      } else {
+        console.error(`[TileRefresh] PMTiles generation failed with code ${tilesCode}`);
+      }
+    });
+  });
+}
 
 // BBOX validation helper
 function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
@@ -27,25 +88,25 @@ const GeometrySchema = Type.Object({
 
 const AssetSchema = Type.Object({
   id: Type.String(),
-  name: Type.Optional(Type.String()),           // Nullable - no placeholder for unnamed
-  nameJa: Type.Optional(Type.String()),         // Japanese name from OSM
-  ref: Type.Optional(Type.String()),            // Route reference
-  localRef: Type.Optional(Type.String()),       // Local reference code
-  displayName: Type.Optional(Type.String()),    // Computed fallback for display
-  nameSource: Type.Optional(Type.String()),     // Source of name: osm, municipal, manual
-  nameConfidence: Type.Optional(Type.String()), // Match confidence: high, medium, low
+  name: Type.Union([Type.String(), Type.Null()]),           // Nullable - no placeholder for unnamed
+  nameJa: Type.Union([Type.String(), Type.Null()]),         // Japanese name from OSM
+  ref: Type.Union([Type.String(), Type.Null()]),            // Route reference
+  localRef: Type.Union([Type.String(), Type.Null()]),       // Local reference code
+  displayName: Type.Union([Type.String(), Type.Null()]),    // Computed fallback for display
+  nameSource: Type.Union([Type.String(), Type.Null()]),     // Source of name: osm, municipal, manual
+  nameConfidence: Type.Union([Type.String(), Type.Null()]), // Match confidence: high, medium, low
   geometry: GeometrySchema,
   roadType: Type.String(),
   lanes: Type.Number(),
   direction: Type.String(),
   status: Type.Union([Type.Literal('active'), Type.Literal('inactive')]),
   validFrom: Type.String({ format: 'date-time' }),
-  validTo: Type.Optional(Type.String({ format: 'date-time' })),
-  replacedBy: Type.Optional(Type.String()),
-  ownerDepartment: Type.Optional(Type.String()),
-  ward: Type.Optional(Type.String()),
-  landmark: Type.Optional(Type.String()),
-  sublocality: Type.Optional(Type.String()),    // 町名/丁目 from Google Maps
+  validTo: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  replacedBy: Type.Union([Type.String(), Type.Null()]),
+  ownerDepartment: Type.Union([Type.String(), Type.Null()]),
+  ward: Type.Union([Type.String(), Type.Null()]),
+  landmark: Type.Union([Type.String(), Type.Null()]),
+  sublocality: Type.Union([Type.String(), Type.Null()]),    // 町名/丁目 from Google Maps
   updatedAt: Type.String({ format: 'date-time' }),
 });
 
@@ -244,8 +305,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     const MAX_LIMIT = 10000;
     const limit = Math.min(request.query.limit ?? 200, MAX_LIMIT);
     const offset = request.query.offset ?? 0;
-    // Boolean from querystring may be string "false" - handle explicitly
-    const includeTotal = request.query.includeTotal !== false && request.query.includeTotal !== 'false';
+    // Boolean from querystring - TypeBox coerces to boolean, but handle string edge case
+    const includeTotal = request.query.includeTotal !== false && String(request.query.includeTotal) !== 'false';
 
     // Validate bbox if provided
     let bboxParsed: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
@@ -341,11 +402,36 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     `);
 
     // Format timestamps (raw SQL returns Date objects for timestamp columns)
-    const assets = assetsResult.rows.map((a: Record<string, unknown>) => ({
+    // Cast to expected shape for TypeBox response validation
+    type RawAssetRow = {
+      id: string;
+      name: string | null;
+      nameJa: string | null;
+      ref: string | null;
+      localRef: string | null;
+      displayName: string | null;
+      nameSource: string | null;
+      nameConfidence: string | null;
+      geometry: { type: string; coordinates: unknown };
+      roadType: string;
+      lanes: number;
+      direction: string;
+      status: 'active' | 'inactive';
+      validFrom: Date | string;
+      validTo: Date | string | null;
+      replacedBy: string | null;
+      ownerDepartment: string | null;
+      ward: string | null;
+      landmark: string | null;
+      sublocality: string | null;
+      updatedAt: Date | string;
+    };
+
+    const assets = (assetsResult.rows as RawAssetRow[]).map((a) => ({
       ...a,
-      validFrom: a.validFrom instanceof Date ? a.validFrom.toISOString() : a.validFrom,
-      validTo: a.validTo instanceof Date ? a.validTo.toISOString() : a.validTo,
-      updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : a.updatedAt,
+      validFrom: a.validFrom instanceof Date ? a.validFrom.toISOString() : String(a.validFrom),
+      validTo: a.validTo instanceof Date ? a.validTo.toISOString() : a.validTo ? String(a.validTo) : null,
+      updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : String(a.updatedAt),
     }));
 
     return {
@@ -997,4 +1083,101 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       }
     }
   );
+
+  // DELETE /assets/bulk - Bulk delete assets by bbox or IDs
+  // Used for cleaning up QGIS leftovers or incorrect data
+  app.delete('/bulk', {
+    schema: {
+      querystring: Type.Object({
+        bbox: Type.Optional(Type.String()), // "minLng,minLat,maxLng,maxLat"
+        ids: Type.Optional(Type.String()),  // Comma-separated IDs
+        dryRun: Type.Optional(Type.Boolean({ default: true })), // Preview mode by default
+        refreshTiles: Type.Optional(Type.Boolean({ default: true })), // Auto-regenerate PMTiles
+      }),
+      response: {
+        200: Type.Object({
+          dryRun: Type.Boolean(),
+          deletedCount: Type.Integer(),
+          deletedIds: Type.Array(Type.String()),
+          message: Type.String(),
+          tilesRefreshing: Type.Optional(Type.Boolean()),
+        }),
+        400: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { bbox, ids, dryRun = true, refreshTiles = true } = request.query;
+
+    if (!bbox && !ids) {
+      return reply.status(400).send({ error: 'Either bbox or ids parameter is required' });
+    }
+
+    const conditions: ReturnType<typeof sql>[] = [];
+
+    // Handle bbox filter
+    if (bbox) {
+      const bboxParsed = parseBbox(bbox);
+      if (!bboxParsed) {
+        return reply.status(400).send({ error: 'Invalid bbox format. Expected: minLng,minLat,maxLng,maxLat' });
+      }
+      const { minLng, minLat, maxLng, maxLat } = bboxParsed;
+      conditions.push(sql`ST_Intersects(geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))`);
+    }
+
+    // Handle IDs filter
+    if (ids) {
+      const idList = ids.split(',').map(id => id.trim()).filter(Boolean);
+      if (idList.length === 0) {
+        return reply.status(400).send({ error: 'No valid IDs provided' });
+      }
+      conditions.push(sql`id IN (${sql.join(idList.map(id => sql`${id}`), sql`, `)})`);
+    }
+
+    const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+
+    // First, get the IDs that will be deleted
+    const selectResult = await db.execute<{ id: string }>(sql`
+      SELECT id FROM road_assets ${whereClause}
+    `);
+    const deletedIds = selectResult.rows.map(r => r.id);
+
+    if (dryRun) {
+      return {
+        dryRun: true,
+        deletedCount: deletedIds.length,
+        deletedIds,
+        message: `Dry run: ${deletedIds.length} assets would be deleted. Set dryRun=false to execute.`,
+      };
+    }
+
+    // Actually delete the assets
+    // First, remove from event_road_assets to avoid FK constraint errors
+    if (deletedIds.length > 0) {
+      await db.execute(sql`
+        DELETE FROM event_road_assets
+        WHERE road_asset_id IN (${sql.join(deletedIds.map(id => sql`${id}`), sql`, `)})
+      `);
+
+      // Delete the road assets
+      await db.execute(sql`
+        DELETE FROM road_assets ${whereClause}
+      `);
+    }
+
+    // Trigger tile refresh in background if requested
+    const shouldRefreshTiles = refreshTiles && deletedIds.length > 0;
+    if (shouldRefreshTiles) {
+      regenerateTilesInBackground();
+    }
+
+    return {
+      dryRun: false,
+      deletedCount: deletedIds.length,
+      deletedIds,
+      message: shouldRefreshTiles
+        ? `Successfully deleted ${deletedIds.length} assets. Martin tiles updated immediately. PMTiles refreshing in background (~1 min).`
+        : `Successfully deleted ${deletedIds.length} assets. Martin tiles updated immediately. PMTiles not refreshed (refreshTiles=false).`,
+      tilesRefreshing: shouldRefreshTiles,
+    };
+  });
 }

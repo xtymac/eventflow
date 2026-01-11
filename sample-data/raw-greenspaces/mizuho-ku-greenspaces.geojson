@@ -1,0 +1,6219 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-rmgjrwy8",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-rmgjrwy8",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 389,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "48857641",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9264668,
+              35.1379398
+            ],
+            [
+              136.9264429,
+              35.1377565
+            ],
+            [
+              136.9266503,
+              35.1377385
+            ],
+            [
+              136.9266741,
+              35.1379218
+            ],
+            [
+              136.9264668,
+              35.1379398
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-5lfmdd08",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-5lfmdd08",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 7951,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "51538227",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9448985,
+              35.1238401
+            ],
+            [
+              136.945048,
+              35.1234376
+            ],
+            [
+              136.9450861,
+              35.1233634
+            ],
+            [
+              136.9452307,
+              35.1223133
+            ],
+            [
+              136.9457156,
+              35.1223677
+            ],
+            [
+              136.9455828,
+              35.1232968
+            ],
+            [
+              136.94543,
+              35.1239651
+            ],
+            [
+              136.9448985,
+              35.1238401
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-i1ms9cuo",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-i1ms9cuo",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 8318,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "51538230",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9447418,
+              35.1213877
+            ],
+            [
+              136.9450756,
+              35.1218333
+            ],
+            [
+              136.945244,
+              35.1222603
+            ],
+            [
+              136.9457256,
+              35.1223011
+            ],
+            [
+              136.9458751,
+              35.1218121
+            ],
+            [
+              136.9459249,
+              35.1213095
+            ],
+            [
+              136.9457482,
+              35.1212815
+            ],
+            [
+              136.9454036,
+              35.1212735
+            ],
+            [
+              136.9450347,
+              35.1213178
+            ],
+            [
+              136.9447418,
+              35.1213877
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-u8sn9jkk",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-u8sn9jkk",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 2300,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "51538231",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.945983,
+              35.1217849
+            ],
+            [
+              136.9460428,
+              35.1213068
+            ],
+            [
+              136.9463417,
+              35.1213394
+            ],
+            [
+              136.9468267,
+              35.1215132
+            ],
+            [
+              136.9461159,
+              35.1217795
+            ],
+            [
+              136.945983,
+              35.1217849
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zo03ofiz",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-zo03ofiz",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 5834,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "51538232",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9458169,
+              35.1223174
+            ],
+            [
+              136.9459631,
+              35.1218501
+            ],
+            [
+              136.9461291,
+              35.1218501
+            ],
+            [
+              136.9468665,
+              35.1215839
+            ],
+            [
+              136.9465543,
+              35.1225782
+            ],
+            [
+              136.9458169,
+              35.1223174
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-mpxkrpgo",
+        "name": "新開公園",
+        "nameJa": null,
+        "displayName": "新開公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3545,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "51543036",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9175818,
+              35.1238596
+            ],
+            [
+              136.9176875,
+              35.1245745
+            ],
+            [
+              136.9177139,
+              35.1245845
+            ],
+            [
+              136.9181571,
+              35.1245413
+            ],
+            [
+              136.9181672,
+              35.1245163
+            ],
+            [
+              136.9180575,
+              35.1238496
+            ],
+            [
+              136.9180432,
+              35.1238363
+            ],
+            [
+              136.9176001,
+              35.1238363
+            ],
+            [
+              136.9175818,
+              35.1238596
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-e480ovxs",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-e480ovxs",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 2198,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "53207575",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9274074,
+              35.1381293
+            ],
+            [
+              136.9268637,
+              35.1381091
+            ],
+            [
+              136.9268034,
+              35.1380144
+            ],
+            [
+              136.9268002,
+              35.1379467
+            ],
+            [
+              136.9268488,
+              35.1379182
+            ],
+            [
+              136.9268978,
+              35.1378853
+            ],
+            [
+              136.9269267,
+              35.1378496
+            ],
+            [
+              136.9269594,
+              35.1377998
+            ],
+            [
+              136.9269801,
+              35.1377499
+            ],
+            [
+              136.9272515,
+              35.1377213
+            ],
+            [
+              136.9273206,
+              35.1377362
+            ],
+            [
+              136.9273741,
+              35.1377633
+            ],
+            [
+              136.9274136,
+              35.1377999
+            ],
+            [
+              136.9274386,
+              35.1378366
+            ],
+            [
+              136.9274703,
+              35.1378937
+            ],
+            [
+              136.9274619,
+              35.1380708
+            ],
+            [
+              136.9274074,
+              35.1381293
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-blin0wds",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-blin0wds",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 1001,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "53207578",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9267047,
+              35.1391685
+            ],
+            [
+              136.926664,
+              35.1391578
+            ],
+            [
+              136.9266502,
+              35.1390932
+            ],
+            [
+              136.9266107,
+              35.1388632
+            ],
+            [
+              136.9266484,
+              35.1388338
+            ],
+            [
+              136.9268771,
+              35.1388339
+            ],
+            [
+              136.926981,
+              35.1389574
+            ],
+            [
+              136.926974,
+              35.1390876
+            ],
+            [
+              136.9269537,
+              35.1391105
+            ],
+            [
+              136.9267047,
+              35.1391685
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zei17jo2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-zei17jo2",
+        "greenSpaceType": "park",
+        "leisureType": null,
+        "landuseType": "recreation_ground",
+        "naturalType": null,
+        "areaM2": 1960,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "53207579",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9265961,
+              35.1387801
+            ],
+            [
+              136.9265246,
+              35.1383791
+            ],
+            [
+              136.9265484,
+              35.1383581
+            ],
+            [
+              136.9269908,
+              35.1383779
+            ],
+            [
+              136.9270158,
+              35.1384003
+            ],
+            [
+              136.9269848,
+              35.1388923
+            ],
+            [
+              136.9268971,
+              35.1387973
+            ],
+            [
+              136.9266386,
+              35.1387968
+            ],
+            [
+              136.9265961,
+              35.1387801
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-69ld69um",
+        "name": "八高2号墳 (Hachikō Kofun (Burial mound) No.2)",
+        "nameJa": "八高2号墳",
+        "displayName": "八高2号墳",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 664,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405660",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9269024,
+              35.1390694
+            ],
+            [
+              136.9269337,
+              35.1390239
+            ],
+            [
+              136.9269409,
+              35.1389702
+            ],
+            [
+              136.9269226,
+              35.1389205
+            ],
+            [
+              136.9268804,
+              35.1388792
+            ],
+            [
+              136.9268183,
+              35.1388543
+            ],
+            [
+              136.9267586,
+              35.1388517
+            ],
+            [
+              136.9266964,
+              35.1388694
+            ],
+            [
+              136.9266518,
+              35.1389018
+            ],
+            [
+              136.9266225,
+              35.1389511
+            ],
+            [
+              136.9266187,
+              35.1389973
+            ],
+            [
+              136.9266404,
+              35.1390505
+            ],
+            [
+              136.9266756,
+              35.1390844
+            ],
+            [
+              136.9267275,
+              35.1391083
+            ],
+            [
+              136.9267853,
+              35.1391153
+            ],
+            [
+              136.9268531,
+              35.139101
+            ],
+            [
+              136.9269024,
+              35.1390694
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-35uugwfx",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-35uugwfx",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 1355,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405671",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9255018,
+              35.1381541
+            ],
+            [
+              136.9254613,
+              35.1379082
+            ],
+            [
+              136.9259936,
+              35.1378552
+            ],
+            [
+              136.9260287,
+              35.1381082
+            ],
+            [
+              136.9255018,
+              35.1381541
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2d3fea8s",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-2d3fea8s",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 109,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405677",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9270897,
+              35.1376306
+            ],
+            [
+              136.9271308,
+              35.1374995
+            ],
+            [
+              136.9271989,
+              35.1374995
+            ],
+            [
+              136.9271914,
+              35.1376239
+            ],
+            [
+              136.9270897,
+              35.1376306
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-578og6gl",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-578og6gl",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 688,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405678",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9267327,
+              35.1374736
+            ],
+            [
+              136.9263204,
+              35.1375655
+            ],
+            [
+              136.9263231,
+              35.1373424
+            ],
+            [
+              136.9267413,
+              35.1373679
+            ],
+            [
+              136.9267327,
+              35.1374736
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-q20ltvsi",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-q20ltvsi",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 432,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405686",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9261274,
+              35.1390411
+            ],
+            [
+              136.926478,
+              35.1390055
+            ],
+            [
+              136.9265057,
+              35.1390228
+            ],
+            [
+              136.9265188,
+              35.1390885
+            ],
+            [
+              136.9264951,
+              35.1391144
+            ],
+            [
+              136.9261736,
+              35.139151
+            ],
+            [
+              136.9261301,
+              35.1391338
+            ],
+            [
+              136.9261169,
+              35.139068
+            ],
+            [
+              136.9261274,
+              35.1390411
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-iehp75td",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-iehp75td",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 1017,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405687",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9260411,
+              35.138106
+            ],
+            [
+              136.9260076,
+              35.1378543
+            ],
+            [
+              136.9264007,
+              35.1378173
+            ],
+            [
+              136.9264357,
+              35.1380699
+            ],
+            [
+              136.9260411,
+              35.138106
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-mz4cofqc",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-mz4cofqc",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 935,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70405688",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9264058,
+              35.1376921
+            ],
+            [
+              136.9263197,
+              35.1376209
+            ],
+            [
+              136.9263203,
+              35.1375712
+            ],
+            [
+              136.926736,
+              35.1374785
+            ],
+            [
+              136.9268811,
+              35.1374901
+            ],
+            [
+              136.9269475,
+              35.1376461
+            ],
+            [
+              136.9264058,
+              35.1376921
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-aiom66qj",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-aiom66qj",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 235,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70409788",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9263976,
+              35.1378005
+            ],
+            [
+              136.9260349,
+              35.1378331
+            ],
+            [
+              136.9260258,
+              35.1377691
+            ],
+            [
+              136.9263899,
+              35.1377383
+            ],
+            [
+              136.9263976,
+              35.1378005
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-x4cpw61e",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-x4cpw61e",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 585,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70409790",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9259957,
+              35.1378358
+            ],
+            [
+              136.9251387,
+              35.1379246
+            ],
+            [
+              136.925129,
+              35.1378557
+            ],
+            [
+              136.9259877,
+              35.1377716
+            ],
+            [
+              136.9259957,
+              35.1378358
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-3ctmq761",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-3ctmq761",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1147,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416049",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9255889,
+              35.1385355
+            ],
+            [
+              136.925572,
+              35.1384361
+            ],
+            [
+              136.9263885,
+              35.1383429
+            ],
+            [
+              136.9264129,
+              35.1384855
+            ],
+            [
+              136.9257149,
+              35.1385651
+            ],
+            [
+              136.9257076,
+              35.1385219
+            ],
+            [
+              136.9255889,
+              35.1385355
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-a69h3sv6",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-a69h3sv6",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 188,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416052",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9255168,
+              35.1382012
+            ],
+            [
+              136.9255117,
+              35.1381652
+            ],
+            [
+              136.9260257,
+              35.1381239
+            ],
+            [
+              136.9260301,
+              35.1381595
+            ],
+            [
+              136.9255168,
+              35.1382012
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-g12si59k",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-g12si59k",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 289,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416057",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9252787,
+              35.1385728
+            ],
+            [
+              136.92556,
+              35.1385388
+            ],
+            [
+              136.9255421,
+              35.1384394
+            ],
+            [
+              136.9252607,
+              35.1384734
+            ],
+            [
+              136.9252787,
+              35.1385728
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-tk15gfb4",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-tk15gfb4",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 85,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416059",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.92605,
+              35.1381214
+            ],
+            [
+              136.9262872,
+              35.1381013
+            ],
+            [
+              136.9262918,
+              35.1381365
+            ],
+            [
+              136.9260546,
+              35.1381566
+            ],
+            [
+              136.92605,
+              35.1381214
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-szwjy3k0",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-szwjy3k0",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 420,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416061",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9267437,
+              35.1379393
+            ],
+            [
+              136.9267343,
+              35.1378629
+            ],
+            [
+              136.9267184,
+              35.1377337
+            ],
+            [
+              136.926731,
+              35.1377241
+            ],
+            [
+              136.9269001,
+              35.1377068
+            ],
+            [
+              136.9270279,
+              35.1376937
+            ],
+            [
+              136.9270188,
+              35.1377002
+            ],
+            [
+              136.9270085,
+              35.1377075
+            ],
+            [
+              136.9269866,
+              35.1377241
+            ],
+            [
+              136.9269604,
+              35.1377496
+            ],
+            [
+              136.9269469,
+              35.1377841
+            ],
+            [
+              136.9269334,
+              35.1378165
+            ],
+            [
+              136.926909,
+              35.1378503
+            ],
+            [
+              136.9268769,
+              35.137882
+            ],
+            [
+              136.9268373,
+              35.1379082
+            ],
+            [
+              136.9267926,
+              35.1379282
+            ],
+            [
+              136.9267437,
+              35.1379393
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-s26mjvs1",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-s26mjvs1",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 97,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70416062",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.925232,
+              35.1382294
+            ],
+            [
+              136.9252272,
+              35.1381932
+            ],
+            [
+              136.9254835,
+              35.1381676
+            ],
+            [
+              136.9254903,
+              35.1382049
+            ],
+            [
+              136.925232,
+              35.1382294
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-0cj2pazi",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-0cj2pazi",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 197,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70418034",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9257054,
+              35.1388496
+            ],
+            [
+              136.9257123,
+              35.1389033
+            ],
+            [
+              136.9253533,
+              35.1389343
+            ],
+            [
+              136.9253463,
+              35.1388806
+            ],
+            [
+              136.9257054,
+              35.1388496
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-dfcnr1lf",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-dfcnr1lf",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 189,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70418035",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9260837,
+              35.1388669
+            ],
+            [
+              136.9264818,
+              35.1388288
+            ],
+            [
+              136.9264744,
+              35.1387836
+            ],
+            [
+              136.926077,
+              35.1388194
+            ],
+            [
+              136.9260837,
+              35.1388669
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xs56tpba",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xs56tpba",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 120,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "70418036",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9257484,
+              35.1388995
+            ],
+            [
+              136.9257424,
+              35.1388474
+            ],
+            [
+              136.9259684,
+              35.1388301
+            ],
+            [
+              136.9259743,
+              35.1388822
+            ],
+            [
+              136.9257484,
+              35.1388995
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-44fdv960",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-44fdv960",
+        "greenSpaceType": "playground",
+        "leisureType": "playground",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1335,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "100487182",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9581983,
+              35.1137945
+            ],
+            [
+              136.9588979,
+              35.1140324
+            ],
+            [
+              136.9588258,
+              35.1141867
+            ],
+            [
+              136.9581184,
+              35.1139659
+            ],
+            [
+              136.9581983,
+              35.1137945
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-z7nxvgcq",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-z7nxvgcq",
+        "greenSpaceType": "playground",
+        "leisureType": "playground",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 412,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "100487196",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9498051,
+              35.1119688
+            ],
+            [
+              136.9499401,
+              35.1118454
+            ],
+            [
+              136.9497564,
+              35.1117185
+            ],
+            [
+              136.9496164,
+              35.1118536
+            ],
+            [
+              136.9498051,
+              35.1119688
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ij537caz",
+        "name": "中根南部公園",
+        "nameJa": null,
+        "displayName": "中根南部公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4685,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "100487213",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9537777,
+              35.1141475
+            ],
+            [
+              136.95459,
+              35.1143194
+            ],
+            [
+              136.9547955,
+              35.1137068
+            ],
+            [
+              136.9542833,
+              35.1136975
+            ],
+            [
+              136.9539727,
+              35.1136665
+            ],
+            [
+              136.9538563,
+              35.1139391
+            ],
+            [
+              136.9537777,
+              35.1141475
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-aw48k60o",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-aw48k60o",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 999,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "147551790",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9216201,
+              35.1188081
+            ],
+            [
+              136.9216335,
+              35.1187206
+            ],
+            [
+              136.9216484,
+              35.1186248
+            ],
+            [
+              136.9218479,
+              35.1186434
+            ],
+            [
+              136.9222196,
+              35.1186781
+            ],
+            [
+              136.9222104,
+              35.1187288
+            ],
+            [
+              136.9221965,
+              35.1188044
+            ],
+            [
+              136.9221156,
+              35.1187951
+            ],
+            [
+              136.922089,
+              35.1188009
+            ],
+            [
+              136.9220723,
+              35.1188156
+            ],
+            [
+              136.9220572,
+              35.1188381
+            ],
+            [
+              136.922027,
+              35.1188465
+            ],
+            [
+              136.9217294,
+              35.1188184
+            ],
+            [
+              136.9216201,
+              35.1188081
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-41qh2va5",
+        "name": "八高古墳",
+        "nameJa": "八高古墳",
+        "displayName": "八高古墳",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 985,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "147608235",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9273615,
+              35.1380821
+            ],
+            [
+              136.9273126,
+              35.1380897
+            ],
+            [
+              136.9271253,
+              35.1380849
+            ],
+            [
+              136.9271009,
+              35.1380718
+            ],
+            [
+              136.9270591,
+              35.1380337
+            ],
+            [
+              136.9270354,
+              35.1380225
+            ],
+            [
+              136.926966,
+              35.1380233
+            ],
+            [
+              136.9269497,
+              35.1380159
+            ],
+            [
+              136.9269397,
+              35.1379979
+            ],
+            [
+              136.9269346,
+              35.1378999
+            ],
+            [
+              136.9269465,
+              35.1378737
+            ],
+            [
+              136.9269777,
+              35.1378596
+            ],
+            [
+              136.9271296,
+              35.13786
+            ],
+            [
+              136.9272122,
+              35.1378324
+            ],
+            [
+              136.9272704,
+              35.1378297
+            ],
+            [
+              136.927305,
+              35.1378386
+            ],
+            [
+              136.9273952,
+              35.1379201
+            ],
+            [
+              136.9274091,
+              35.1379404
+            ],
+            [
+              136.927412,
+              35.1380382
+            ],
+            [
+              136.9273932,
+              35.1380676
+            ],
+            [
+              136.9273615,
+              35.1380821
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6z9zdrmy",
+        "name": "堀田公園",
+        "nameJa": null,
+        "displayName": "堀田公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5076,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "181383536",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9160071,
+              35.1212281
+            ],
+            [
+              136.9160668,
+              35.1212554
+            ],
+            [
+              136.9170868,
+              35.1210456
+            ],
+            [
+              136.9179978,
+              35.1208453
+            ],
+            [
+              136.9188601,
+              35.1206457
+            ],
+            [
+              136.9189065,
+              35.1205555
+            ],
+            [
+              136.9189127,
+              35.1204685
+            ],
+            [
+              136.9186939,
+              35.1205127
+            ],
+            [
+              136.9183016,
+              35.1205928
+            ],
+            [
+              136.9159949,
+              35.1211162
+            ],
+            [
+              136.9160071,
+              35.1212281
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-thukf1mo",
+        "name": "牛巻公園",
+        "nameJa": null,
+        "displayName": "牛巻公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2272,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "195031303",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9186994,
+              35.1278063
+            ],
+            [
+              136.9190829,
+              35.1278305
+            ],
+            [
+              136.9191607,
+              35.1278721
+            ],
+            [
+              136.9191124,
+              35.1283153
+            ],
+            [
+              136.9186457,
+              35.1282911
+            ],
+            [
+              136.9186994,
+              35.1278063
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-r9m8xr7x",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-r9m8xr7x",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 951,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "196001200",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9252144,
+              35.1335866
+            ],
+            [
+              136.9252359,
+              35.1334089
+            ],
+            [
+              136.9253349,
+              35.1334106
+            ],
+            [
+              136.9253351,
+              35.1332356
+            ],
+            [
+              136.9255548,
+              35.1332417
+            ],
+            [
+              136.9255253,
+              35.1336058
+            ],
+            [
+              136.9252144,
+              35.1335866
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-vkqllodq",
+        "name": "瑞穂公園",
+        "nameJa": null,
+        "displayName": "瑞穂公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 239836,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "312445042",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9420563,
+              35.1253618
+            ],
+            [
+              136.9419978,
+              35.1257922
+            ],
+            [
+              136.9421173,
+              35.1260362
+            ],
+            [
+              136.9421422,
+              35.1261131
+            ],
+            [
+              136.9421417,
+              35.1261935
+            ],
+            [
+              136.9421327,
+              35.126298
+            ],
+            [
+              136.9421095,
+              35.1263781
+            ],
+            [
+              136.942071,
+              35.1265415
+            ],
+            [
+              136.9420754,
+              35.1266328
+            ],
+            [
+              136.9421181,
+              35.1267875
+            ],
+            [
+              136.9423828,
+              35.1271691
+            ],
+            [
+              136.9424386,
+              35.1271682
+            ],
+            [
+              136.9432889,
+              35.1274151
+            ],
+            [
+              136.9440557,
+              35.1276296
+            ],
+            [
+              136.9441145,
+              35.1277769
+            ],
+            [
+              136.9441442,
+              35.1282806
+            ],
+            [
+              136.9439317,
+              35.1286361
+            ],
+            [
+              136.9440841,
+              35.1286714
+            ],
+            [
+              136.9443255,
+              35.1282424
+            ],
+            [
+              136.9444709,
+              35.1279004
+            ],
+            [
+              136.9445563,
+              35.1273585
+            ],
+            [
+              136.9446386,
+              35.1266153
+            ],
+            [
+              136.9446736,
+              35.1257639
+            ],
+            [
+              136.9445567,
+              35.1255113
+            ],
+            [
+              136.9445724,
+              35.1247624
+            ],
+            [
+              136.9446942,
+              35.124441
+            ],
+            [
+              136.9448215,
+              35.1238795
+            ],
+            [
+              136.944972,
+              35.1235853
+            ],
+            [
+              136.945048,
+              35.1234376
+            ],
+            [
+              136.9450861,
+              35.1233634
+            ],
+            [
+              136.9451507,
+              35.1228056
+            ],
+            [
+              136.9451983,
+              35.1222792
+            ],
+            [
+              136.9450187,
+              35.121842
+            ],
+            [
+              136.9446217,
+              35.1213277
+            ],
+            [
+              136.9445802,
+              35.1212523
+            ],
+            [
+              136.944167,
+              35.1204695
+            ],
+            [
+              136.9428974,
+              35.1203724
+            ],
+            [
+              136.9414901,
+              35.1202906
+            ],
+            [
+              136.9414072,
+              35.1204889
+            ],
+            [
+              136.94138,
+              35.1205247
+            ],
+            [
+              136.9415817,
+              35.1211599
+            ],
+            [
+              136.9419177,
+              35.1221126
+            ],
+            [
+              136.942064,
+              35.1222563
+            ],
+            [
+              136.9420311,
+              35.12235
+            ],
+            [
+              136.9407704,
+              35.1227767
+            ],
+            [
+              136.9407313,
+              35.1228199
+            ],
+            [
+              136.94047,
+              35.125156
+            ],
+            [
+              136.9404956,
+              35.1251942
+            ],
+            [
+              136.9421222,
+              35.1253076
+            ],
+            [
+              136.9420563,
+              35.1253618
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-kufh7i13",
+        "name": "浜新公園",
+        "nameJa": null,
+        "displayName": "浜新公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 780,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "428880209",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9244218,
+              35.1121356
+            ],
+            [
+              136.9244648,
+              35.1121601
+            ],
+            [
+              136.9247635,
+              35.1120737
+            ],
+            [
+              136.9247824,
+              35.1120407
+            ],
+            [
+              136.9245326,
+              35.1117817
+            ],
+            [
+              136.9244867,
+              35.1117918
+            ],
+            [
+              136.9244711,
+              35.1118604
+            ],
+            [
+              136.9244218,
+              35.1121356
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zer10rn8",
+        "name": "内浜公園",
+        "nameJa": null,
+        "displayName": "内浜公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4593,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "428880210",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.916386,
+              35.1152321
+            ],
+            [
+              136.9174643,
+              35.1150182
+            ],
+            [
+              136.9174173,
+              35.1146145
+            ],
+            [
+              136.9166221,
+              35.1146419
+            ],
+            [
+              136.916386,
+              35.1152321
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-4utko8zj",
+        "name": "浮島公園",
+        "nameJa": null,
+        "displayName": "浮島公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2026,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "428880211",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9141525,
+              35.1167963
+            ],
+            [
+              136.9140426,
+              35.1163299
+            ],
+            [
+              136.9140674,
+              35.1163054
+            ],
+            [
+              136.914457,
+              35.1162459
+            ],
+            [
+              136.9145636,
+              35.1166437
+            ],
+            [
+              136.9141931,
+              35.1168061
+            ],
+            [
+              136.9141525,
+              35.1167963
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9e1lf3j8",
+        "name": "惣作公園",
+        "nameJa": null,
+        "displayName": "惣作公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 4342,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "428880212",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9248905,
+              35.1204849
+            ],
+            [
+              136.9260325,
+              35.1205839
+            ],
+            [
+              136.9260762,
+              35.1201981
+            ],
+            [
+              136.9249307,
+              35.1201262
+            ],
+            [
+              136.9248905,
+              35.1204849
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-d00g2uj2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-d00g2uj2",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3354,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "493218464",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9536834,
+              35.1220016
+            ],
+            [
+              136.9541447,
+              35.1218809
+            ],
+            [
+              136.9545631,
+              35.121848
+            ],
+            [
+              136.9549231,
+              35.1217211
+            ],
+            [
+              136.9551318,
+              35.1216176
+            ],
+            [
+              136.9551157,
+              35.1215694
+            ],
+            [
+              136.9545878,
+              35.1215763
+            ],
+            [
+              136.9541211,
+              35.1216487
+            ],
+            [
+              136.9538309,
+              35.1217076
+            ],
+            [
+              136.9535975,
+              35.1217076
+            ],
+            [
+              136.9536834,
+              35.1220016
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ac4rzily",
+        "name": "弥富公園",
+        "nameJa": null,
+        "displayName": "弥富公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 17008,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "493218466",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9543056,
+              35.1234824
+            ],
+            [
+              136.9542654,
+              35.1234429
+            ],
+            [
+              136.9542547,
+              35.123331
+            ],
+            [
+              136.9542472,
+              35.1231888
+            ],
+            [
+              136.9542606,
+              35.1230659
+            ],
+            [
+              136.9542659,
+              35.1229167
+            ],
+            [
+              136.9542735,
+              35.1228308
+            ],
+            [
+              136.9542574,
+              35.1227124
+            ],
+            [
+              136.9542311,
+              35.1226052
+            ],
+            [
+              136.9542091,
+              35.12255
+            ],
+            [
+              136.9541748,
+              35.1225021
+            ],
+            [
+              136.954097,
+              35.1224078
+            ],
+            [
+              136.954024,
+              35.1223175
+            ],
+            [
+              136.9538556,
+              35.1222323
+            ],
+            [
+              136.9537504,
+              35.1222253
+            ],
+            [
+              136.9537027,
+              35.1222015
+            ],
+            [
+              136.9537536,
+              35.1221226
+            ],
+            [
+              136.9538636,
+              35.1220743
+            ],
+            [
+              136.9540326,
+              35.1220151
+            ],
+            [
+              136.9542064,
+              35.1220016
+            ],
+            [
+              136.9544719,
+              35.1219687
+            ],
+            [
+              136.9546302,
+              35.1219445
+            ],
+            [
+              136.9549628,
+              35.1218085
+            ],
+            [
+              136.9552047,
+              35.1216882
+            ],
+            [
+              136.9553174,
+              35.1217584
+            ],
+            [
+              136.9558511,
+              35.122173
+            ],
+            [
+              136.9559418,
+              35.1222999
+            ],
+            [
+              136.9552122,
+              35.122697
+            ],
+            [
+              136.9546543,
+              35.1230919
+            ],
+            [
+              136.9545122,
+              35.1232279
+            ],
+            [
+              136.9544398,
+              35.1233288
+            ],
+            [
+              136.954392,
+              35.1234038
+            ],
+            [
+              136.9543056,
+              35.1234824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1079yrgu",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-1079yrgu",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 671,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "545842295",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9305236,
+              35.1222729
+            ],
+            [
+              136.9305498,
+              35.1220171
+            ],
+            [
+              136.9305729,
+              35.1219995
+            ],
+            [
+              136.9307485,
+              35.1219667
+            ],
+            [
+              136.9307809,
+              35.1222818
+            ],
+            [
+              136.9305236,
+              35.1222729
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-mh671pdh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-mh671pdh",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 7053,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "545842299",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9307756,
+              35.1219596
+            ],
+            [
+              136.9309432,
+              35.1219253
+            ],
+            [
+              136.9310608,
+              35.1219722
+            ],
+            [
+              136.9311706,
+              35.1232041
+            ],
+            [
+              136.9312122,
+              35.123354
+            ],
+            [
+              136.9309981,
+              35.1234095
+            ],
+            [
+              136.9310335,
+              35.1235141
+            ],
+            [
+              136.9308949,
+              35.1235418
+            ],
+            [
+              136.9304358,
+              35.1235267
+            ],
+            [
+              136.9303803,
+              35.12348
+            ],
+            [
+              136.9304866,
+              35.1224871
+            ],
+            [
+              136.9307439,
+              35.1224909
+            ],
+            [
+              136.9307855,
+              35.1226358
+            ],
+            [
+              136.9308486,
+              35.1228425
+            ],
+            [
+              136.9307624,
+              35.1229962
+            ],
+            [
+              136.9307855,
+              35.1232129
+            ],
+            [
+              136.9309118,
+              35.1232167
+            ],
+            [
+              136.9309765,
+              35.1231071
+            ],
+            [
+              136.9309981,
+              35.1228589
+            ],
+            [
+              136.9311105,
+              35.1228147
+            ],
+            [
+              136.9310941,
+              35.1225348
+            ],
+            [
+              136.9308323,
+              35.1224179
+            ],
+            [
+              136.9307756,
+              35.1219596
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-sr7ottqt",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-sr7ottqt",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 2855,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "547455591",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9296958,
+              35.1296725
+            ],
+            [
+              136.9302751,
+              35.1297076
+            ],
+            [
+              136.9303073,
+              35.1292162
+            ],
+            [
+              136.9297548,
+              35.1291723
+            ],
+            [
+              136.9296958,
+              35.1296725
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ri6tlcbn",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ri6tlcbn",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 1106,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "547686051",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9300006,
+              35.118133
+            ],
+            [
+              136.9300211,
+              35.117978
+            ],
+            [
+              136.9301243,
+              35.1179649
+            ],
+            [
+              136.9301735,
+              35.1178685
+            ],
+            [
+              136.9302237,
+              35.1178865
+            ],
+            [
+              136.9304317,
+              35.1178999
+            ],
+            [
+              136.9304032,
+              35.1179827
+            ],
+            [
+              136.9304548,
+              35.1181186
+            ],
+            [
+              136.9304825,
+              35.1182114
+            ],
+            [
+              136.9304157,
+              35.1182239
+            ],
+            [
+              136.9304067,
+              35.1181623
+            ],
+            [
+              136.9303182,
+              35.1181687
+            ],
+            [
+              136.9303135,
+              35.1181315
+            ],
+            [
+              136.9301511,
+              35.118145
+            ],
+            [
+              136.9301259,
+              35.1182111
+            ],
+            [
+              136.9301329,
+              35.1182718
+            ],
+            [
+              136.9300551,
+              35.1182636
+            ],
+            [
+              136.9300763,
+              35.1181815
+            ],
+            [
+              136.9300819,
+              35.1181599
+            ],
+            [
+              136.9300006,
+              35.118133
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-d1gadf92",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-d1gadf92",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 260,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "547686078",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9292729,
+              35.1189816
+            ],
+            [
+              136.929337,
+              35.1190905
+            ],
+            [
+              136.929403,
+              35.1188335
+            ],
+            [
+              136.9294727,
+              35.1188313
+            ],
+            [
+              136.9296001,
+              35.1188762
+            ],
+            [
+              136.9296216,
+              35.1188269
+            ],
+            [
+              136.9294794,
+              35.1187951
+            ],
+            [
+              136.9293734,
+              35.1187995
+            ],
+            [
+              136.9292729,
+              35.1189816
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-v826kynt",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-v826kynt",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 57,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "547686079",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9299716,
+              35.1189826
+            ],
+            [
+              136.9299797,
+              35.1189267
+            ],
+            [
+              136.9301299,
+              35.1189399
+            ],
+            [
+              136.9301205,
+              35.1189706
+            ],
+            [
+              136.9300146,
+              35.1189618
+            ],
+            [
+              136.9300052,
+              35.1189859
+            ],
+            [
+              136.9299716,
+              35.1189826
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9n0nkrso",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-9n0nkrso",
+        "greenSpaceType": "playground",
+        "leisureType": "playground",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5801,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "548627646",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9407835,
+              35.1231612
+            ],
+            [
+              136.9417169,
+              35.123192
+            ],
+            [
+              136.9421273,
+              35.1232951
+            ],
+            [
+              136.9417732,
+              35.1225711
+            ],
+            [
+              136.9407996,
+              35.1228431
+            ],
+            [
+              136.9407835,
+              35.1231612
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-25sedotx",
+        "name": "東山荘",
+        "nameJa": null,
+        "displayName": "東山荘",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 13509,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "548861083",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9428017,
+              35.1355461
+            ],
+            [
+              136.9426106,
+              35.1350631
+            ],
+            [
+              136.9425871,
+              35.1349236
+            ],
+            [
+              136.9425411,
+              35.1348667
+            ],
+            [
+              136.9426636,
+              35.1347874
+            ],
+            [
+              136.9427243,
+              35.1347165
+            ],
+            [
+              136.9429319,
+              35.1342832
+            ],
+            [
+              136.9437876,
+              35.1343115
+            ],
+            [
+              136.9437649,
+              35.134631
+            ],
+            [
+              136.9438561,
+              35.1346003
+            ],
+            [
+              136.9440123,
+              35.1345138
+            ],
+            [
+              136.9439698,
+              35.1352322
+            ],
+            [
+              136.9428017,
+              35.1355461
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-sgsfsmz6",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-sgsfsmz6",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 1377,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "549066204",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9298623,
+              35.1195856
+            ],
+            [
+              136.9301721,
+              35.1196157
+            ],
+            [
+              136.9304262,
+              35.1195011
+            ],
+            [
+              136.9303645,
+              35.1193804
+            ],
+            [
+              136.9302224,
+              35.1194068
+            ],
+            [
+              136.9301764,
+              35.1193819
+            ],
+            [
+              136.9301433,
+              35.1193026
+            ],
+            [
+              136.9303283,
+              35.1192493
+            ],
+            [
+              136.9302794,
+              35.1191731
+            ],
+            [
+              136.9301835,
+              35.1191737
+            ],
+            [
+              136.9300494,
+              35.1192362
+            ],
+            [
+              136.9299777,
+              35.119313
+            ],
+            [
+              136.9299608,
+              35.1195001
+            ],
+            [
+              136.9298422,
+              35.1195181
+            ],
+            [
+              136.9298623,
+              35.1195856
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-eiipo264",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-eiipo264",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 434,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311703",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9297775,
+              35.1192099
+            ],
+            [
+              136.9300438,
+              35.1192107
+            ],
+            [
+              136.930179,
+              35.11915
+            ],
+            [
+              136.9302515,
+              35.1191468
+            ],
+            [
+              136.9302595,
+              35.119042
+            ],
+            [
+              136.930121,
+              35.119022
+            ],
+            [
+              136.930118,
+              35.1191093
+            ],
+            [
+              136.9299137,
+              35.119106
+            ],
+            [
+              136.929872,
+              35.1191791
+            ],
+            [
+              136.9298019,
+              35.11916
+            ],
+            [
+              136.9297775,
+              35.1192099
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-hwgd4wqw",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-hwgd4wqw",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 372,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311705",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9295275,
+              35.119313
+            ],
+            [
+              136.9295407,
+              35.1192057
+            ],
+            [
+              136.9294147,
+              35.1191999
+            ],
+            [
+              136.9292358,
+              35.1191276
+            ],
+            [
+              136.9292632,
+              35.1190794
+            ],
+            [
+              136.929496,
+              35.1191559
+            ],
+            [
+              136.9295082,
+              35.1191293
+            ],
+            [
+              136.9296698,
+              35.1191791
+            ],
+            [
+              136.929623,
+              35.1192723
+            ],
+            [
+              136.9296749,
+              35.1192889
+            ],
+            [
+              136.9296505,
+              35.119318
+            ],
+            [
+              136.9295275,
+              35.119313
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-o0uak5vp",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-o0uak5vp",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 260,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311707",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9298743,
+              35.1184248
+            ],
+            [
+              136.9299544,
+              35.1182874
+            ],
+            [
+              136.9301015,
+              35.1183019
+            ],
+            [
+              136.9300738,
+              35.1184487
+            ],
+            [
+              136.9298743,
+              35.1184248
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-tjkxdulg",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-tjkxdulg",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 403,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311709",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9301909,
+              35.1185313
+            ],
+            [
+              136.9302109,
+              35.118416
+            ],
+            [
+              136.9302633,
+              35.1183813
+            ],
+            [
+              136.9302556,
+              35.1182912
+            ],
+            [
+              136.9304181,
+              35.1182566
+            ],
+            [
+              136.9304697,
+              35.1184349
+            ],
+            [
+              136.9304674,
+              35.1184758
+            ],
+            [
+              136.9303958,
+              35.1184777
+            ],
+            [
+              136.9303996,
+              35.1184449
+            ],
+            [
+              136.9302509,
+              35.118433
+            ],
+            [
+              136.9302355,
+              35.1185363
+            ],
+            [
+              136.9301909,
+              35.1185313
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-3m0yi2z9",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-3m0yi2z9",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 236,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311711",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9304474,
+              35.1186917
+            ],
+            [
+              136.9304647,
+              35.1185726
+            ],
+            [
+              136.9303802,
+              35.1185644
+            ],
+            [
+              136.9303769,
+              35.1185872
+            ],
+            [
+              136.9302427,
+              35.1185742
+            ],
+            [
+              136.9302287,
+              35.1186705
+            ],
+            [
+              136.9304474,
+              35.1186917
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-zrcyml6b",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-zrcyml6b",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "wood",
+        "areaM2": 180,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "561311713",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9297433,
+              35.1186699
+            ],
+            [
+              136.9297596,
+              35.1186411
+            ],
+            [
+              136.9299736,
+              35.1186743
+            ],
+            [
+              136.9301077,
+              35.1186894
+            ],
+            [
+              136.9300961,
+              35.1187606
+            ],
+            [
+              136.9299074,
+              35.1187367
+            ],
+            [
+              136.929912,
+              35.118685
+            ],
+            [
+              136.9297433,
+              35.1186699
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-jb7ql661",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-jb7ql661",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 252,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "565127609",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9284518,
+              35.1189328
+            ],
+            [
+              136.9284386,
+              35.1188039
+            ],
+            [
+              136.9284762,
+              35.1187598
+            ],
+            [
+              136.9285128,
+              35.1187415
+            ],
+            [
+              136.9285768,
+              35.1187316
+            ],
+            [
+              136.928592,
+              35.1189219
+            ],
+            [
+              136.9284518,
+              35.1189328
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-a7xn0k1r",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-a7xn0k1r",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 208,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "565145493",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9306792,
+              35.1184053
+            ],
+            [
+              136.9306846,
+              35.1183347
+            ],
+            [
+              136.9306507,
+              35.1182112
+            ],
+            [
+              136.9307724,
+              35.1181892
+            ],
+            [
+              136.9307724,
+              35.118404
+            ],
+            [
+              136.9306792,
+              35.1184053
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-u6bhhsgq",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-u6bhhsgq",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 89,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "565145494",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9304807,
+              35.1184366
+            ],
+            [
+              136.9306505,
+              35.1184366
+            ],
+            [
+              136.9306541,
+              35.1183701
+            ],
+            [
+              136.9304727,
+              35.1184033
+            ],
+            [
+              136.9304807,
+              35.1184366
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ysf6zfsg",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-ysf6zfsg",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 595,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "565150641",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9317768,
+              35.1200092
+            ],
+            [
+              136.931823,
+              35.1195909
+            ],
+            [
+              136.9319416,
+              35.1195972
+            ],
+            [
+              136.9319309,
+              35.11979
+            ],
+            [
+              136.9319771,
+              35.1199865
+            ],
+            [
+              136.9317768,
+              35.1200092
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-oo6n8ufa",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-oo6n8ufa",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": "grass",
+        "naturalType": null,
+        "areaM2": 622,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "565150677",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9307372,
+              35.1196209
+            ],
+            [
+              136.9306587,
+              35.1194969
+            ],
+            [
+              136.930985,
+              35.1193182
+            ],
+            [
+              136.9310754,
+              35.119484
+            ],
+            [
+              136.9307372,
+              35.1196209
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1t8ddcf8",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-1t8ddcf8",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 1062,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "567351554",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9311488,
+              35.1197542
+            ],
+            [
+              136.9310358,
+              35.11951
+            ],
+            [
+              136.93074,
+              35.1196295
+            ],
+            [
+              136.9306655,
+              35.1196682
+            ],
+            [
+              136.9308336,
+              35.1199031
+            ],
+            [
+              136.9311488,
+              35.1197542
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-egpfbrql",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-egpfbrql",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 1123,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "569954719",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9398848,
+              35.1232511
+            ],
+            [
+              136.9402845,
+              35.1231173
+            ],
+            [
+              136.9402657,
+              35.1233213
+            ],
+            [
+              136.940145,
+              35.1234222
+            ],
+            [
+              136.9400592,
+              35.1234354
+            ],
+            [
+              136.939911,
+              35.1233959
+            ],
+            [
+              136.9398788,
+              35.1233169
+            ],
+            [
+              136.9396508,
+              35.1233937
+            ],
+            [
+              136.9396401,
+              35.1235388
+            ],
+            [
+              136.9396005,
+              35.1235451
+            ],
+            [
+              136.9395496,
+              35.1233762
+            ],
+            [
+              136.9398848,
+              35.1232511
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-f137dd4x",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-f137dd4x",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 695,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "570158847",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9408666,
+              35.1218571
+            ],
+            [
+              136.9408076,
+              35.1218505
+            ],
+            [
+              136.9407324,
+              35.1225172
+            ],
+            [
+              136.940834,
+              35.122572
+            ],
+            [
+              136.9412487,
+              35.122429
+            ],
+            [
+              136.9412223,
+              35.1223709
+            ],
+            [
+              136.9408645,
+              35.1224972
+            ],
+            [
+              136.9407914,
+              35.1224606
+            ],
+            [
+              136.9408666,
+              35.1218571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2jm8xaep",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-2jm8xaep",
+        "greenSpaceType": "forest",
+        "leisureType": null,
+        "landuseType": "forest",
+        "naturalType": null,
+        "areaM2": 562,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "570158850",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.941419,
+              35.12237
+            ],
+            [
+              136.9416815,
+              35.122277
+            ],
+            [
+              136.9415409,
+              35.1219695
+            ],
+            [
+              136.9414767,
+              35.1219902
+            ],
+            [
+              136.941558,
+              35.1221586
+            ],
+            [
+              136.9413495,
+              35.1222259
+            ],
+            [
+              136.941419,
+              35.12237
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-7rj0uyqs",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-7rj0uyqs",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 192,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "591104651",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9425704,
+              35.1314305
+            ],
+            [
+              136.942596,
+              35.1313527
+            ],
+            [
+              136.9426535,
+              35.1311782
+            ],
+            [
+              136.9427152,
+              35.1311497
+            ],
+            [
+              136.9426482,
+              35.1314502
+            ],
+            [
+              136.9425704,
+              35.1314305
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6jluifnh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-6jluifnh",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1324,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "682319560",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9339278,
+              35.1366443
+            ],
+            [
+              136.9345511,
+              35.1366551
+            ],
+            [
+              136.9345591,
+              35.136438
+            ],
+            [
+              136.9339644,
+              35.136432
+            ],
+            [
+              136.9339278,
+              35.1366443
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-mwtyhs2s",
+        "name": "豆田公園",
+        "nameJa": null,
+        "displayName": "豆田公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1775,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733619572",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9231394,
+              35.130601
+            ],
+            [
+              136.9226259,
+              35.1305637
+            ],
+            [
+              136.9226538,
+              35.130225
+            ],
+            [
+              136.9231751,
+              35.1302659
+            ],
+            [
+              136.9231394,
+              35.130601
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-vpqtbfdn",
+        "name": "本願寺公園",
+        "nameJa": null,
+        "displayName": "本願寺公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 912,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733839573",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9324725,
+              35.1290353
+            ],
+            [
+              136.9325064,
+              35.1288022
+            ],
+            [
+              136.9328802,
+              35.1288265
+            ],
+            [
+              136.9328602,
+              35.1290632
+            ],
+            [
+              136.9324725,
+              35.1290353
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-8c59i94b",
+        "name": "瑞穂ヶ丘公園",
+        "nameJa": null,
+        "displayName": "瑞穂ヶ丘公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1640,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "733989151",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9387538,
+              35.1198485
+            ],
+            [
+              136.9387846,
+              35.1195764
+            ],
+            [
+              136.9382029,
+              35.1195282
+            ],
+            [
+              136.9381643,
+              35.1198044
+            ],
+            [
+              136.9387538,
+              35.1198485
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-x2ncl296",
+        "name": "中根公園",
+        "nameJa": null,
+        "displayName": "中根公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 9442,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "734428820",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9613331,
+              35.1161872
+            ],
+            [
+              136.9611898,
+              35.1165604
+            ],
+            [
+              136.9608505,
+              35.1176282
+            ],
+            [
+              136.961891,
+              35.117887
+            ],
+            [
+              136.9618925,
+              35.1175036
+            ],
+            [
+              136.9613331,
+              35.1161872
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-ehjnhjur",
+        "name": "瑞穂公園",
+        "nameJa": null,
+        "displayName": "瑞穂公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 24049,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "734762814",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9453343,
+              35.1288416
+            ],
+            [
+              136.9442248,
+              35.1287439
+            ],
+            [
+              136.9445767,
+              35.1280032
+            ],
+            [
+              136.9447435,
+              35.1266481
+            ],
+            [
+              136.9448291,
+              35.1259761
+            ],
+            [
+              136.9448226,
+              35.1255694
+            ],
+            [
+              136.9448608,
+              35.1255644
+            ],
+            [
+              136.9454436,
+              35.1264896
+            ],
+            [
+              136.9456146,
+              35.1273643
+            ],
+            [
+              136.9453968,
+              35.1280296
+            ],
+            [
+              136.9453343,
+              35.1288416
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-2plpjmfs",
+        "name": "密柑山公園",
+        "nameJa": null,
+        "displayName": "密柑山公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 5523,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "736616489",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9519233,
+              35.1273873
+            ],
+            [
+              136.9517533,
+              35.1276312
+            ],
+            [
+              136.9517031,
+              35.1277887
+            ],
+            [
+              136.9517962,
+              35.1278113
+            ],
+            [
+              136.9517834,
+              35.1278405
+            ],
+            [
+              136.9518068,
+              35.1279499
+            ],
+            [
+              136.9520564,
+              35.1279381
+            ],
+            [
+              136.9521144,
+              35.1281165
+            ],
+            [
+              136.952206,
+              35.1284698
+            ],
+            [
+              136.9526043,
+              35.1284445
+            ],
+            [
+              136.9526172,
+              35.1285367
+            ],
+            [
+              136.9526645,
+              35.1284887
+            ],
+            [
+              136.9528988,
+              35.1283456
+            ],
+            [
+              136.9523993,
+              35.1278378
+            ],
+            [
+              136.9519373,
+              35.1273857
+            ],
+            [
+              136.9519233,
+              35.1273873
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-kafvigwe",
+        "name": "柏木公園",
+        "nameJa": null,
+        "displayName": "柏木公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1486,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "736618970",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.957454,
+              35.1281282
+            ],
+            [
+              136.9574115,
+              35.1281508
+            ],
+            [
+              136.9572827,
+              35.1284795
+            ],
+            [
+              136.957313,
+              35.1284947
+            ],
+            [
+              136.9575623,
+              35.1284806
+            ],
+            [
+              136.9577122,
+              35.1284973
+            ],
+            [
+              136.9577497,
+              35.128481
+            ],
+            [
+              136.9578193,
+              35.128235
+            ],
+            [
+              136.957806,
+              35.1281934
+            ],
+            [
+              136.957454,
+              35.1281282
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-tjqd4c7q",
+        "name": "茨木第一公園",
+        "nameJa": null,
+        "displayName": "茨木第一公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2095,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "736621370",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9586611,
+              35.1245641
+            ],
+            [
+              136.9588392,
+              35.1244752
+            ],
+            [
+              136.9589568,
+              35.1241751
+            ],
+            [
+              136.9584345,
+              35.1240569
+            ],
+            [
+              136.9583031,
+              35.124245
+            ],
+            [
+              136.9582968,
+              35.1243061
+            ],
+            [
+              136.9586611,
+              35.1245641
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-kk3scqc0",
+        "name": "田辺公園",
+        "nameJa": null,
+        "displayName": "田辺公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 3169,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "749243753",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9444576,
+              35.1288268
+            ],
+            [
+              136.9442537,
+              35.1291755
+            ],
+            [
+              136.9437002,
+              35.1301802
+            ],
+            [
+              136.9435284,
+              35.1301256
+            ],
+            [
+              136.943495,
+              35.1301158
+            ],
+            [
+              136.9442436,
+              35.1287889
+            ],
+            [
+              136.9444576,
+              35.1288268
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-dg92h4lu",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-dg92h4lu",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 149,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "771125735",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9350878,
+              35.1247824
+            ],
+            [
+              136.9353258,
+              35.1246994
+            ],
+            [
+              136.9353623,
+              35.1247184
+            ],
+            [
+              136.9353492,
+              35.1248016
+            ],
+            [
+              136.9352911,
+              35.124797
+            ],
+            [
+              136.9350878,
+              35.1247824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6cug2n8d",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-6cug2n8d",
+        "greenSpaceType": "grass",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "scrub",
+        "areaM2": 439,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "771217066",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9356135,
+              35.1165378
+            ],
+            [
+              136.9355802,
+              35.1165338
+            ],
+            [
+              136.9354654,
+              35.1165012
+            ],
+            [
+              136.9354107,
+              35.1164896
+            ],
+            [
+              136.9353742,
+              35.1164873
+            ],
+            [
+              136.9353595,
+              35.1164941
+            ],
+            [
+              136.9353533,
+              35.1165085
+            ],
+            [
+              136.9353561,
+              35.1165216
+            ],
+            [
+              136.9353641,
+              35.1165326
+            ],
+            [
+              136.9353789,
+              35.1165399
+            ],
+            [
+              136.9353989,
+              35.1165474
+            ],
+            [
+              136.9354566,
+              35.1165634
+            ],
+            [
+              136.9355384,
+              35.116585
+            ],
+            [
+              136.9355994,
+              35.1165944
+            ],
+            [
+              136.9357869,
+              35.1166244
+            ],
+            [
+              136.9359015,
+              35.1166362
+            ],
+            [
+              136.9359767,
+              35.1166446
+            ],
+            [
+              136.9360098,
+              35.1166446
+            ],
+            [
+              136.9360311,
+              35.1166386
+            ],
+            [
+              136.9360401,
+              35.1166258
+            ],
+            [
+              136.9360418,
+              35.1166114
+            ],
+            [
+              136.936035,
+              35.116604
+            ],
+            [
+              136.9360186,
+              35.1165915
+            ],
+            [
+              136.935987,
+              35.1165833
+            ],
+            [
+              136.9359094,
+              35.1165706
+            ],
+            [
+              136.9357362,
+              35.1165423
+            ],
+            [
+              136.9356135,
+              35.1165378
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-xrwy6baw",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-xrwy6baw",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2423,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "838296159",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9174112,
+              35.1204237
+            ],
+            [
+              136.9173681,
+              35.120396
+            ],
+            [
+              136.917328,
+              35.1199802
+            ],
+            [
+              136.9173712,
+              35.1198945
+            ],
+            [
+              136.9177409,
+              35.119834
+            ],
+            [
+              136.9178303,
+              35.120396
+            ],
+            [
+              136.9174112,
+              35.1204237
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-0g04uhyp",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-0g04uhyp",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2354,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "838296160",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9164962,
+              35.1205926
+            ],
+            [
+              136.9164099,
+              35.1203355
+            ],
+            [
+              136.9166564,
+              35.1202775
+            ],
+            [
+              136.9166102,
+              35.120086
+            ],
+            [
+              136.9169367,
+              35.1200054
+            ],
+            [
+              136.9170045,
+              35.1205648
+            ],
+            [
+              136.9164962,
+              35.1205926
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6m77yust",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-6m77yust",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1475,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "838296161",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9181846,
+              35.1201616
+            ],
+            [
+              136.9181322,
+              35.1197534
+            ],
+            [
+              136.9185081,
+              35.1196551
+            ],
+            [
+              136.9184649,
+              35.1201339
+            ],
+            [
+              136.9181846,
+              35.1201616
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-an5pe8mw",
+        "name": "茨木第二公園",
+        "nameJa": null,
+        "displayName": "茨木第二公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2195,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119711",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9584601,
+              35.1257169
+            ],
+            [
+              136.9591099,
+              35.126108
+            ],
+            [
+              136.9594147,
+              35.1257664
+            ],
+            [
+              136.9585549,
+              35.1256244
+            ],
+            [
+              136.9584601,
+              35.1257169
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-7qoyn6t9",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-7qoyn6t9",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1320,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119712",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9473245,
+              35.1250661
+            ],
+            [
+              136.9475578,
+              35.1250946
+            ],
+            [
+              136.9477161,
+              35.1244628
+            ],
+            [
+              136.9475551,
+              35.1244321
+            ],
+            [
+              136.9473245,
+              35.1250661
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-b9cmfwy3",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-b9cmfwy3",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 779,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119713",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9363817,
+              35.1305889
+            ],
+            [
+              136.9364252,
+              35.1303039
+            ],
+            [
+              136.9366914,
+              35.1303311
+            ],
+            [
+              136.9366479,
+              35.1306162
+            ],
+            [
+              136.9363817,
+              35.1305889
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-orwno33u",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-orwno33u",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 938,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119714",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9439184,
+              35.1336192
+            ],
+            [
+              136.9439667,
+              35.1336301
+            ],
+            [
+              136.9443395,
+              35.1336455
+            ],
+            [
+              136.9443664,
+              35.1334195
+            ],
+            [
+              136.9440123,
+              35.1333845
+            ],
+            [
+              136.9439184,
+              35.1336192
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-5m94lomx",
+        "name": "仁所公園",
+        "nameJa": null,
+        "displayName": "仁所公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 691,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119715",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9495949,
+              35.1156609
+            ],
+            [
+              136.9495922,
+              35.1154371
+            ],
+            [
+              136.9498685,
+              35.1154196
+            ],
+            [
+              136.949957,
+              35.1155578
+            ],
+            [
+              136.9497156,
+              35.1156697
+            ],
+            [
+              136.9495949,
+              35.1156609
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-om4zf3sh",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-om4zf3sh",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 307,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119716",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.923433,
+              35.124842
+            ],
+            [
+              136.9235876,
+              35.1248264
+            ],
+            [
+              136.9235584,
+              35.1246327
+            ],
+            [
+              136.9234038,
+              35.1246483
+            ],
+            [
+              136.923433,
+              35.124842
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-d56hqyue",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-d56hqyue",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 808,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119717",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.924099,
+              35.138773
+            ],
+            [
+              136.9243835,
+              35.138789
+            ],
+            [
+              136.924384,
+              35.1384986
+            ],
+            [
+              136.9241102,
+              35.1384913
+            ],
+            [
+              136.924099,
+              35.138773
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-n3t2u7cw",
+        "name": "下山公園",
+        "nameJa": null,
+        "displayName": "下山公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2945,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119718",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9463122,
+              35.1292748
+            ],
+            [
+              136.945883,
+              35.1292814
+            ],
+            [
+              136.9459045,
+              35.1285465
+            ],
+            [
+              136.9462639,
+              35.1285333
+            ],
+            [
+              136.9463122,
+              35.1292748
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-6xq3krc6",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-6xq3krc6",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 1099,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119719",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9313776,
+              35.1164484
+            ],
+            [
+              136.9315815,
+              35.1164747
+            ],
+            [
+              136.9316297,
+              35.1159679
+            ],
+            [
+              136.9312274,
+              35.1159964
+            ],
+            [
+              136.9312167,
+              35.1160381
+            ],
+            [
+              136.9314286,
+              35.1160535
+            ],
+            [
+              136.9313776,
+              35.1164484
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-9j489d11",
+        "name": "東栄公園",
+        "nameJa": null,
+        "displayName": "東栄公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 966,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "894119720",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9350884,
+              35.1342652
+            ],
+            [
+              136.9352413,
+              35.1342564
+            ],
+            [
+              136.935539,
+              35.1342214
+            ],
+            [
+              136.9355336,
+              35.1341424
+            ],
+            [
+              136.9353566,
+              35.134127
+            ],
+            [
+              136.9353673,
+              35.1339362
+            ],
+            [
+              136.935142,
+              35.1339362
+            ],
+            [
+              136.9350884,
+              35.1342652
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-73foy7vt",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-73foy7vt",
+        "greenSpaceType": "meadow",
+        "leisureType": null,
+        "landuseType": null,
+        "naturalType": "grassland",
+        "areaM2": 42,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "962589250",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9477095,
+              35.1216868
+            ],
+            [
+              136.9477135,
+              35.1216414
+            ],
+            [
+              136.947605,
+              35.121663
+            ],
+            [
+              136.9476577,
+              35.1217016
+            ],
+            [
+              136.9476872,
+              35.1217056
+            ],
+            [
+              136.9476999,
+              35.1216971
+            ],
+            [
+              136.9477095,
+              35.1216868
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-x6152pxt",
+        "name": "駒場公園",
+        "nameJa": null,
+        "displayName": "駒場公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 814,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1035930350",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.931369,
+              35.1369462
+            ],
+            [
+              136.931602,
+              35.136965
+            ],
+            [
+              136.9316387,
+              35.1366174
+            ],
+            [
+              136.9314069,
+              35.1366056
+            ],
+            [
+              136.931369,
+              35.1369462
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-fld3z9ce",
+        "name": "名古屋市博物館 日本庭園",
+        "nameJa": null,
+        "displayName": "名古屋市博物館 日本庭園",
+        "greenSpaceType": "garden",
+        "leisureType": "garden",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 2571,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1035930351",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9345811,
+              35.1363795
+            ],
+            [
+              136.9339687,
+              35.1363829
+            ],
+            [
+              136.9340579,
+              35.1359201
+            ],
+            [
+              136.9346034,
+              35.1359681
+            ],
+            [
+              136.9345811,
+              35.1363795
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1pfevgw2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "GS-1pfevgw2",
+        "greenSpaceType": "playground",
+        "leisureType": "playground",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 428,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1282742547",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9440423,
+              35.1159112
+            ],
+            [
+              136.9441509,
+              35.1159101
+            ],
+            [
+              136.9445372,
+              35.1155623
+            ],
+            [
+              136.9443923,
+              35.1155689
+            ],
+            [
+              136.9440423,
+              35.1159112
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-1jgnw1f4",
+        "name": "中電なかよし遊園",
+        "nameJa": null,
+        "displayName": "中電なかよし遊園",
+        "greenSpaceType": "playground",
+        "leisureType": "playground",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 421,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1282742548",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9435662,
+              35.1163105
+            ],
+            [
+              136.9439498,
+              35.1159649
+            ],
+            [
+              136.9440866,
+              35.1159594
+            ],
+            [
+              136.9436842,
+              35.1163039
+            ],
+            [
+              136.9435662,
+              35.1163105
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "GS-wp8ojcq4",
+        "name": "緑ヶ丘東公園",
+        "nameJa": null,
+        "displayName": "緑ヶ丘東公園",
+        "greenSpaceType": "park",
+        "leisureType": "park",
+        "landuseType": null,
+        "naturalType": null,
+        "areaM2": 236,
+        "vegetationType": null,
+        "operator": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1282746187",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Mizuho-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9569692,
+              35.1348521
+            ],
+            [
+              136.9573072,
+              35.1346876
+            ],
+            [
+              136.9573393,
+              35.1347381
+            ],
+            [
+              136.9570121,
+              35.1349048
+            ],
+            [
+              136.9569692,
+              35.1348521
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

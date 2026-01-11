@@ -1,13 +1,16 @@
 import { sql } from 'drizzle-orm';
 import type { Geometry, Point } from 'geojson';
 
+// Loose geometry type for accepting TypeBox schema output
+type GeoJSONLike = { type: string; coordinates: unknown };
+
 /** Convert GeoJSON to PostGIS geometry for INSERT/UPDATE */
-export function toGeomSql(geojson: Geometry | Point) {
+export function toGeomSql(geojson: Geometry | Point | GeoJSONLike) {
   return sql`ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(geojson)}), 4326)`;
 }
 
 /** Convert GeoJSON to PostGIS geometry, or NULL if input is null */
-export function toGeomSqlNullable(geojson: Geometry | Point | null | undefined) {
+export function toGeomSqlNullable(geojson: Geometry | Point | GeoJSONLike | null | undefined) {
   if (geojson == null) return sql`NULL`;
   return toGeomSql(geojson);
 }

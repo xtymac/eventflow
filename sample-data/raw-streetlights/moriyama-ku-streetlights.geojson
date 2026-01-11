@@ -1,0 +1,135 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-rpzxa8ci",
+        "lampId": null,
+        "displayName": "SL-rpzxa8ci",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11119442700",
+        "osmTimestamp": "2023-08-16T15:42:14Z",
+        "status": "active",
+        "ward": "Moriyama-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9513936,
+          35.2068748
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-c2hcxib0",
+        "lampId": null,
+        "displayName": "SL-c2hcxib0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11119442701",
+        "osmTimestamp": "2023-08-16T15:42:14Z",
+        "status": "active",
+        "ward": "Moriyama-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9514921,
+          35.2069768
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-l1uk5k01",
+        "lampId": null,
+        "displayName": "SL-l1uk5k01",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11119442702",
+        "osmTimestamp": "2023-08-16T15:42:14Z",
+        "status": "active",
+        "ward": "Moriyama-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9514036,
+          35.2069937
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-dmyxd6jj",
+        "lampId": null,
+        "displayName": "SL-dmyxd6jj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11119442703",
+        "osmTimestamp": "2023-08-16T15:42:14Z",
+        "status": "active",
+        "ward": "Moriyama-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9512601,
+          35.2070798
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-e38bkr8m",
+        "lampId": null,
+        "displayName": "SL-e38bkr8m",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11119442704",
+        "osmTimestamp": "2023-08-16T15:42:14Z",
+        "status": "active",
+        "ward": "Moriyama-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9513654,
+          35.2072562
+        ]
+      }
+    }
+  ]
+}

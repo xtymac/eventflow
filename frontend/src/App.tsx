@@ -140,7 +140,7 @@ function App() {
           <MapSearch />
 
           <Tooltip label="Notifications">
-            <Indicator label={unreadCount} size={16} disabled={unreadCount === 0} color="red">
+            <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
               <ActionIcon variant="subtle" onClick={toggleSidebar}>
                 <IconBell size={20} />
               </ActionIcon>

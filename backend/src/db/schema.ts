@@ -73,7 +73,8 @@ export const roadAssets = pgTable('road_assets', {
   status: varchar('status', { length: 20 }).notNull().default('active'),
   validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
   validTo: timestamp('valid_to', { withTimezone: true }),
-  replacedBy: varchar('replaced_by', { length: 50 }).references(() => roadAssets.id),
+  // Self-reference for replaced_by - no FK constraint to avoid circular type inference
+  replacedBy: varchar('replaced_by', { length: 50 }),
   ownerDepartment: varchar('owner_department', { length: 100 }),
   ward: varchar('ward', { length: 100 }),
   landmark: varchar('landmark', { length: 255 }),

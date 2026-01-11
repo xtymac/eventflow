@@ -1,0 +1,2241 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-y0zfzl1k",
+        "lampId": null,
+        "displayName": "SL-y0zfzl1k",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251376",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8763121,
+          35.1609151
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-7tpna9io",
+        "lampId": null,
+        "displayName": "SL-7tpna9io",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251380",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8791015,
+          35.1611437
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0x5ui3yv",
+        "lampId": null,
+        "displayName": "SL-0x5ui3yv",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251384",
+        "osmTimestamp": "2021-07-08T04:01:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8763121,
+          35.160973
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-8gwibmxz",
+        "lampId": null,
+        "displayName": "SL-8gwibmxz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251389",
+        "osmTimestamp": "2021-07-08T04:01:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8768127,
+          35.1610031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-a6fv7yw0",
+        "lampId": null,
+        "displayName": "SL-a6fv7yw0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251393",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8771053,
+          35.1610734
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-dsmb1703",
+        "lampId": null,
+        "displayName": "SL-dsmb1703",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251397",
+        "osmTimestamp": "2021-07-08T04:01:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8772386,
+          35.1607326
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-y6bkf47h",
+        "lampId": null,
+        "displayName": "SL-y6bkf47h",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251403",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8773404,
+          35.1602896
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-1245z5iy",
+        "lampId": null,
+        "displayName": "SL-1245z5iy",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251408",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8757797,
+          35.1613405
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-2hojoaco",
+        "lampId": null,
+        "displayName": "SL-2hojoaco",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251410",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8773586,
+          35.1603966
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-qanb898f",
+        "lampId": null,
+        "displayName": "SL-qanb898f",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251412",
+        "osmTimestamp": "2013-10-25T12:04:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8757979,
+          35.1611756
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-t6v32ucb",
+        "lampId": null,
+        "displayName": "SL-t6v32ucb",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251414",
+        "osmTimestamp": "2013-10-25T12:04:22Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8758523,
+          35.1609348
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-vzu8sz87",
+        "lampId": null,
+        "displayName": "SL-vzu8sz87",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251416",
+        "osmTimestamp": "2013-10-25T12:04:22Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8783875,
+          35.1608013
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-myecsrhj",
+        "lampId": null,
+        "displayName": "SL-myecsrhj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251420",
+        "osmTimestamp": "2021-07-08T04:01:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8760323,
+          35.1609794
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-2ir0yz1t",
+        "lampId": null,
+        "displayName": "SL-2ir0yz1t",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2508251425",
+        "osmTimestamp": "2013-10-25T12:04:22Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8787276,
+          35.1609009
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-hgyt0k7j",
+        "lampId": null,
+        "displayName": "SL-hgyt0k7j",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111830",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8912836,
+          35.1623053
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q5uf45ju",
+        "lampId": null,
+        "displayName": "SL-q5uf45ju",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111831",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8538015,
+          35.1504525
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0mvk0ho1",
+        "lampId": null,
+        "displayName": "SL-0mvk0ho1",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111833",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8912836,
+          35.1622489
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-sc3vmv0m",
+        "lampId": null,
+        "displayName": "SL-sc3vmv0m",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111834",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8535831,
+          35.1504184
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-dtf4036j",
+        "lampId": null,
+        "displayName": "SL-dtf4036j",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111836",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8418116,
+          35.1470907
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-4ja4927g",
+        "lampId": null,
+        "displayName": "SL-4ja4927g",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111838",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8715408,
+          35.1637557
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-njmy9jfw",
+        "lampId": null,
+        "displayName": "SL-njmy9jfw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111839",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8312175,
+          35.1473166
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0vzxkx1i",
+        "lampId": null,
+        "displayName": "SL-0vzxkx1i",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111841",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8714981,
+          35.1635979
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cbx4cfls",
+        "lampId": null,
+        "displayName": "SL-cbx4cfls",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111844",
+        "osmTimestamp": "2013-10-26T07:53:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8759445,
+          35.1637642
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-67twnqef",
+        "lampId": null,
+        "displayName": "SL-67twnqef",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111847",
+        "osmTimestamp": "2013-10-26T07:53:08Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8786845,
+          35.1638406
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-p09631vz",
+        "lampId": null,
+        "displayName": "SL-p09631vz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111850",
+        "osmTimestamp": "2013-10-26T07:53:08Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8789122,
+          35.1636497
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-5p5qfqos",
+        "lampId": null,
+        "displayName": "SL-5p5qfqos",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111854",
+        "osmTimestamp": "2013-10-26T07:53:08Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8436899,
+          35.1484811
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-3dueu0wy",
+        "lampId": null,
+        "displayName": "SL-3dueu0wy",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111858",
+        "osmTimestamp": "2013-10-26T07:53:08Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8434357,
+          35.1485325
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-fbrrxfj6",
+        "lampId": null,
+        "displayName": "SL-fbrrxfj6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111860",
+        "osmTimestamp": "2013-10-26T07:53:08Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8416603,
+          35.1471718
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zlazeszx",
+        "lampId": null,
+        "displayName": "SL-zlazeszx",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111863",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.871843,
+          35.1637648
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-wettcjx8",
+        "lampId": null,
+        "displayName": "SL-wettcjx8",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111865",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8716246,
+          35.1641845
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-abkt0rh6",
+        "lampId": null,
+        "displayName": "SL-abkt0rh6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111868",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8719189,
+          35.163662
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-vg04gu1b",
+        "lampId": null,
+        "displayName": "SL-vg04gu1b",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111874",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8913065,
+          35.1621274
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-8114nvyu",
+        "lampId": null,
+        "displayName": "SL-8114nvyu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111875",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8481901,
+          35.149036
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-qc5n5d5k",
+        "lampId": null,
+        "displayName": "SL-qc5n5d5k",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111878",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.847806,
+          35.1490808
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-98dhthpd",
+        "lampId": null,
+        "displayName": "SL-98dhthpd",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111882",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8718177,
+          35.1636367
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0epxe74d",
+        "lampId": null,
+        "displayName": "SL-0epxe74d",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111885",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8717813,
+          35.1635449
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xppf15v4",
+        "lampId": null,
+        "displayName": "SL-xppf15v4",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2509111888",
+        "osmTimestamp": "2013-10-26T07:53:09Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8715629,
+          35.1638838
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xr1rrw6d",
+        "lampId": null,
+        "displayName": "SL-xr1rrw6d",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595943",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8740367,
+          35.1636768
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zozsixgv",
+        "lampId": null,
+        "displayName": "SL-zozsixgv",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595948",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8742433,
+          35.163536
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q6y1ggka",
+        "lampId": null,
+        "displayName": "SL-q6y1ggka",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595952",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8742553,
+          35.1631873
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-qfagvzes",
+        "lampId": null,
+        "displayName": "SL-qfagvzes",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595958",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8747549,
+          35.1615186
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-mmoypw00",
+        "lampId": null,
+        "displayName": "SL-mmoypw00",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595963",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8746573,
+          35.1613142
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-58tb2vrq",
+        "lampId": null,
+        "displayName": "SL-58tb2vrq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595970",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8747017,
+          35.1609054
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-q1sefhus",
+        "lampId": null,
+        "displayName": "SL-q1sefhus",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595980",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8729737,
+          35.1637555
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ftfd3p3s",
+        "lampId": null,
+        "displayName": "SL-ftfd3p3s",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595984",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8733488,
+          35.1636871
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-735fnn0k",
+        "lampId": null,
+        "displayName": "SL-735fnn0k",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595989",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8737882,
+          35.1637666
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-fodox6gw",
+        "lampId": null,
+        "displayName": "SL-fodox6gw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595992",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8747313,
+          35.1624302
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-5udbvenl",
+        "lampId": null,
+        "displayName": "SL-5udbvenl",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539595997",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8746855,
+          35.162043
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0hedw2dp",
+        "lampId": null,
+        "displayName": "SL-0hedw2dp",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539596006",
+        "osmTimestamp": "2013-11-19T11:48:23Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8746021,
+          35.1617476
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-vildplsq",
+        "lampId": null,
+        "displayName": "SL-vildplsq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539596015",
+        "osmTimestamp": "2013-11-19T11:48:24Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8722531,
+          35.1637584
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-2xmpx04e",
+        "lampId": null,
+        "displayName": "SL-2xmpx04e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539596016",
+        "osmTimestamp": "2013-11-19T11:48:24Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8726445,
+          35.1636765
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-nv0ejjlw",
+        "lampId": null,
+        "displayName": "SL-nv0ejjlw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539596017",
+        "osmTimestamp": "2013-11-19T11:48:24Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8744634,
+          35.1628552
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-qfvdpzdw",
+        "lampId": null,
+        "displayName": "SL-qfvdpzdw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2539596018",
+        "osmTimestamp": "2013-11-19T11:48:24Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8745582,
+          35.1622935
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-e312nj7a",
+        "lampId": null,
+        "displayName": "SL-e312nj7a",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041457",
+        "osmTimestamp": "2014-10-12T13:12:17Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8726132,
+          35.168026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-pplei9em",
+        "lampId": null,
+        "displayName": "SL-pplei9em",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041502",
+        "osmTimestamp": "2014-01-04T07:15:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8763418,
+          35.1636924
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ujfhc1vq",
+        "lampId": null,
+        "displayName": "SL-ujfhc1vq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041506",
+        "osmTimestamp": "2014-01-04T07:15:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8789905,
+          35.1637202
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-c165tp5z",
+        "lampId": null,
+        "displayName": "SL-c165tp5z",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041532",
+        "osmTimestamp": "2014-10-12T13:12:17Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8723602,
+          35.1679775
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-llxasqpg",
+        "lampId": null,
+        "displayName": "SL-llxasqpg",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041535",
+        "osmTimestamp": "2014-10-12T13:12:17Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8723429,
+          35.1678696
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-s8rw1gzr",
+        "lampId": null,
+        "displayName": "SL-s8rw1gzr",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2609041538",
+        "osmTimestamp": "2014-01-04T07:15:54Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8725478,
+          35.1678176
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0k9dxeb0",
+        "lampId": null,
+        "displayName": "SL-0k9dxeb0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2639464467",
+        "osmTimestamp": "2014-01-27T09:48:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8792892,
+          35.1628903
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ngjsv5tu",
+        "lampId": null,
+        "displayName": "SL-ngjsv5tu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2825637088",
+        "osmTimestamp": "2014-04-30T03:02:07Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8721139,
+          35.1677442
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-9ohaiya5",
+        "lampId": null,
+        "displayName": "SL-9ohaiya5",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2833316254",
+        "osmTimestamp": "2014-05-03T10:14:42Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8542593,
+          35.1684804
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cmekda26",
+        "lampId": null,
+        "displayName": "SL-cmekda26",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3228020642",
+        "osmTimestamp": "2014-12-10T13:01:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.891124,
+          35.1620407
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-1p8kbphy",
+        "lampId": null,
+        "displayName": "SL-1p8kbphy",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3228020643",
+        "osmTimestamp": "2014-12-10T13:01:21Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8902847,
+          35.1659619
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-sln0tsak",
+        "lampId": null,
+        "displayName": "SL-sln0tsak",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3326672072",
+        "osmTimestamp": "2015-02-02T10:21:29Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8648077,
+          35.1583047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-7tmvzj2n",
+        "lampId": null,
+        "displayName": "SL-7tmvzj2n",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3326672077",
+        "osmTimestamp": "2015-02-02T10:21:29Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8648961,
+          35.1588641
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-v787rjlw",
+        "lampId": null,
+        "displayName": "SL-v787rjlw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3326672081",
+        "osmTimestamp": "2015-02-02T10:21:29Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8647943,
+          35.1586429
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-qlvz6nzu",
+        "lampId": null,
+        "displayName": "SL-qlvz6nzu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3553934116",
+        "osmTimestamp": "2015-05-28T11:44:35Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8864933,
+          35.1614401
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-3hq76cf8",
+        "lampId": null,
+        "displayName": "SL-3hq76cf8",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3553934118",
+        "osmTimestamp": "2015-05-28T11:44:35Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8862424,
+          35.1612688
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-3k03dgbr",
+        "lampId": null,
+        "displayName": "SL-3k03dgbr",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3837259160",
+        "osmTimestamp": "2015-11-15T13:25:28Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8735129,
+          35.1634975
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zn3yjmwa",
+        "lampId": null,
+        "displayName": "SL-zn3yjmwa",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4293175667",
+        "osmTimestamp": "2016-07-09T14:09:52Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8796319,
+          35.1614512
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-lu0r4chh",
+        "lampId": null,
+        "displayName": "SL-lu0r4chh",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4293175668",
+        "osmTimestamp": "2016-07-09T14:09:52Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8797884,
+          35.1617961
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-767yejwj",
+        "lampId": null,
+        "displayName": "SL-767yejwj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4293175669",
+        "osmTimestamp": "2016-07-09T14:09:52Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.879545,
+          35.1623471
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-n9tl2r6h",
+        "lampId": null,
+        "displayName": "SL-n9tl2r6h",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4293175670",
+        "osmTimestamp": "2016-07-09T14:09:52Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8799361,
+          35.1617718
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cgms02pm",
+        "lampId": null,
+        "displayName": "SL-cgms02pm",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4447434362",
+        "osmTimestamp": "2016-10-14T10:50:18Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.885102,
+          35.1674567
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-kr1h1d0k",
+        "lampId": null,
+        "displayName": "SL-kr1h1d0k",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4447434383",
+        "osmTimestamp": "2016-10-14T10:50:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8856336,
+          35.1675086
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-5wtjnxrx",
+        "lampId": null,
+        "displayName": "SL-5wtjnxrx",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4524280178",
+        "osmTimestamp": "2016-11-27T07:17:28Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8836776,
+          35.1686691
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-a4nkzyja",
+        "lampId": null,
+        "displayName": "SL-a4nkzyja",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "4524280179",
+        "osmTimestamp": "2016-11-27T07:17:28Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8837876,
+          35.1683245
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-hweic95r",
+        "lampId": null,
+        "displayName": "SL-hweic95r",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12149401267",
+        "osmTimestamp": "2024-09-01T09:17:12Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8848594,
+          35.1642026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-cn73aqpt",
+        "lampId": null,
+        "displayName": "SL-cn73aqpt",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12149401268",
+        "osmTimestamp": "2024-09-01T09:17:12Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8844097,
+          35.1636037
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-9twerffm",
+        "lampId": null,
+        "displayName": "SL-9twerffm",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367457",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8756868,
+          35.1713531
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-jz1nwxqu",
+        "lampId": null,
+        "displayName": "SL-jz1nwxqu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367460",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8755319,
+          35.1712358
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-l59injew",
+        "lampId": null,
+        "displayName": "SL-l59injew",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367466",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8756123,
+          35.1710643
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-5s77407j",
+        "lampId": null,
+        "displayName": "SL-5s77407j",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367467",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8755484,
+          35.170921
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ywrwqqik",
+        "lampId": null,
+        "displayName": "SL-ywrwqqik",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367468",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.87539,
+          35.1709764
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-odp8och6",
+        "lampId": null,
+        "displayName": "SL-odp8och6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12898367471",
+        "osmTimestamp": "2025-06-09T00:43:19Z",
+        "status": "active",
+        "ward": "Nakamura-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8758247,
+          35.1710625
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-sxt4tjml",
+        "lampId": null,
+        "displayName": "SL-sxt4tjml",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272787",
+        "osmTimestamp": "2014-08-20T09:09:14Z",
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9243181,
+          35.1579807
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-z9j6lxr5",
+        "lampId": null,
+        "displayName": "SL-z9j6lxr5",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272790",
+        "osmTimestamp": "2014-08-22T01:04:38Z",
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9244419,
+          35.158033
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-v4kwtnld",
+        "lampId": null,
+        "displayName": "SL-v4kwtnld",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272793",
+        "osmTimestamp": "2014-08-20T09:09:15Z",
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9248298,
+          35.1581301
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-7hqobuse",
+        "lampId": null,
+        "displayName": "SL-7hqobuse",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272794",
+        "osmTimestamp": "2014-08-20T09:58:24Z",
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9243938,
+          35.1583155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-3jyt7z49",
+        "lampId": null,
+        "displayName": "SL-3jyt7z49",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3029272795",
+        "osmTimestamp": "2014-08-20T09:09:15Z",
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9244441,
+          35.15866
+        ]
+      }
+    }
+  ]
+}
