@@ -5,7 +5,7 @@ import { Protocol } from 'pmtiles';
 import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox } from '../hooks/useApi';
+import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
@@ -119,10 +119,14 @@ export function MapView() {
     showAssets,
     showInspections,
     showRivers,
+    showGreenSpaces,
+    showStreetLights,
     toggleEvents,
     toggleAssets,
     toggleInspections,
     toggleRivers,
+    toggleGreenSpaces,
+    toggleStreetLights,
   } = useMapStore();
   const {
     selectedEventId,
@@ -273,6 +277,20 @@ export function MapView() {
     mapBbox ?? null,
     undefined, // no filters for now
     { enabled: showRivers && !!mapBbox && currentZoom >= 12 }
+  );
+
+  // Green spaces data - load when visible and zoom >= 12
+  const { data: greenSpacesData } = useGreenSpacesInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showGreenSpaces && !!mapBbox && currentZoom >= 12 }
+  );
+
+  // Street lights data - load when visible and zoom >= 14 (higher zoom due to quantity)
+  const { data: streetLightsData } = useStreetLightsInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showStreetLights && !!mapBbox && currentZoom >= 14 }
   );
 
   // Drawing mode: enable when any editor has active drawing context
@@ -840,6 +858,87 @@ export function MapView() {
           'text-color': '#1e40af',
           'text-halo-color': 'rgba(255,255,255,0.9)',
           'text-halo-width': 2,
+        },
+      });
+
+      // Green spaces source and layers (green for parks/gardens)
+      map.current.addSource('greenspaces', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Green spaces fill layer - render below roads
+      map.current.addLayer({
+        id: 'greenspaces-fill',
+        type: 'fill',
+        source: 'greenspaces',
+        paint: {
+          'fill-color': '#22C55E',
+          'fill-opacity': 0.25,
+        },
+      }, 'roads-preview-line');
+
+      // Green spaces outline layer
+      map.current.addLayer({
+        id: 'greenspaces-line',
+        type: 'line',
+        source: 'greenspaces',
+        paint: {
+          'line-color': '#16A34A',
+          'line-width': 1.5,
+          'line-opacity': 0.6,
+        },
+      }, 'roads-preview-line');
+
+      // Green spaces label layer
+      map.current.addLayer({
+        id: 'greenspaces-label',
+        type: 'symbol',
+        source: 'greenspaces',
+        minzoom: 14,
+        layout: {
+          'text-field': ['get', 'displayName'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 16, 12],
+          'text-anchor': 'center',
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#166534',
+          'text-halo-color': 'rgba(255,255,255,0.9)',
+          'text-halo-width': 2,
+        },
+      });
+
+      // Street lights source and layers (amber for lights)
+      map.current.addSource('streetlights', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Street lights circle layer
+      map.current.addLayer({
+        id: 'streetlights-circle',
+        type: 'circle',
+        source: 'streetlights',
+        minzoom: 14,
+        paint: {
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            14, 3,
+            16, 5,
+            18, 8
+          ],
+          'circle-color': [
+            'case',
+            ['==', ['get', 'lampStatus'], 'operational'], '#FBBF24', // Amber for working
+            ['==', ['get', 'lampStatus'], 'maintenance'], '#F97316', // Orange for maintenance
+            ['==', ['get', 'lampStatus'], 'damaged'], '#EF4444', // Red for damaged
+            '#9CA3AF' // Gray for unknown/other
+          ],
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.9,
         },
       });
 
@@ -1683,6 +1782,50 @@ export function MapView() {
     map.current.setLayoutProperty('rivers-line', 'visibility', 'visible');
     map.current.setLayoutProperty('rivers-label', 'visibility', 'visible');
   }, [riversData, showRivers, mapLoaded, currentZoom]);
+
+  // Update green spaces layer (API data for zoom >= 12)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('greenspaces') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    // Clear greenspaces when showGreenSpaces is off or zoom too low
+    if (!showGreenSpaces || currentZoom < 12) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      map.current.setLayoutProperty('greenspaces-fill', 'visibility', 'none');
+      map.current.setLayoutProperty('greenspaces-line', 'visibility', 'none');
+      map.current.setLayoutProperty('greenspaces-label', 'visibility', 'none');
+      return;
+    }
+
+    const features = greenSpacesData?.features ?? [];
+
+    source.setData({ type: 'FeatureCollection', features });
+    map.current.setLayoutProperty('greenspaces-fill', 'visibility', 'visible');
+    map.current.setLayoutProperty('greenspaces-line', 'visibility', 'visible');
+    map.current.setLayoutProperty('greenspaces-label', 'visibility', 'visible');
+  }, [greenSpacesData, showGreenSpaces, mapLoaded, currentZoom]);
+
+  // Update street lights layer (API data for zoom >= 14)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('streetlights') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    // Clear streetlights when showStreetLights is off or zoom too low
+    if (!showStreetLights || currentZoom < 14) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      map.current.setLayoutProperty('streetlights-circle', 'visibility', 'none');
+      return;
+    }
+
+    const features = streetLightsData?.features ?? [];
+
+    source.setData({ type: 'FeatureCollection', features });
+    map.current.setLayoutProperty('streetlights-circle', 'visibility', 'visible');
+  }, [streetLightsData, showStreetLights, mapLoaded, currentZoom]);
 
   // Highlight selected assets while editing an event
   // Uses separate source so it shows at all zoom levels
@@ -2599,6 +2742,18 @@ export function MapView() {
             onChange={toggleRivers}
             size="sm"
           />
+          <Switch
+            label="Green Spaces"
+            checked={showGreenSpaces}
+            onChange={toggleGreenSpaces}
+            size="sm"
+          />
+          <Switch
+            label="Street Lights"
+            checked={showStreetLights}
+            onChange={toggleStreetLights}
+            size="sm"
+          />
         </Stack>
       </Paper>
 
@@ -2653,6 +2808,38 @@ export function MapView() {
               <Group gap="xs">
                 <Box style={{ width: 12, height: 3, backgroundColor: '#3B82F6' }} />
                 <Text size="xs">River/Stream</Text>
+              </Group>
+            </Stack>
+          </>
+        )}
+
+        {showGreenSpaces && (
+          <>
+            <Text size="sm" fw={600} mt="sm" mb="xs">Green Spaces</Text>
+            <Stack gap={4}>
+              <Group gap="xs">
+                <Box style={{ width: 12, height: 12, backgroundColor: '#22C55E', opacity: 0.5, borderRadius: 2 }} />
+                <Text size="xs">Park/Garden</Text>
+              </Group>
+            </Stack>
+          </>
+        )}
+
+        {showStreetLights && (
+          <>
+            <Text size="sm" fw={600} mt="sm" mb="xs">Street Lights</Text>
+            <Stack gap={4}>
+              <Group gap="xs">
+                <Box style={{ width: 10, height: 10, backgroundColor: '#FBBF24', borderRadius: '50%' }} />
+                <Text size="xs">Operational</Text>
+              </Group>
+              <Group gap="xs">
+                <Box style={{ width: 10, height: 10, backgroundColor: '#F97316', borderRadius: '50%' }} />
+                <Text size="xs">Maintenance</Text>
+              </Group>
+              <Group gap="xs">
+                <Box style={{ width: 10, height: 10, backgroundColor: '#EF4444', borderRadius: '50%' }} />
+                <Text size="xs">Damaged</Text>
               </Group>
             </Stack>
           </>

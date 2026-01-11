@@ -13,6 +13,8 @@ interface MapState {
   showAssets: boolean;
   showInspections: boolean;
   showRivers: boolean;
+  showGreenSpaces: boolean;
+  showStreetLights: boolean;
   highlightedFeatureId: string | null;
   drawnGeometry: GeoJSON.Geometry | null;
 
@@ -25,6 +27,8 @@ interface MapState {
   toggleAssets: () => void;
   toggleInspections: () => void;
   toggleRivers: () => void;
+  toggleGreenSpaces: () => void;
+  toggleStreetLights: () => void;
   setHighlightedFeature: (id: string | null) => void;
   setDrawnGeometry: (geometry: GeoJSON.Geometry | null) => void;
 }
@@ -44,6 +48,8 @@ export const useMapStore = create<MapState>()(
       showAssets: true,
       showInspections: true,
       showRivers: true,
+      showGreenSpaces: true,
+      showStreetLights: false, // Off by default (large quantity)
       highlightedFeatureId: null,
       drawnGeometry: null,
 
@@ -55,6 +61,8 @@ export const useMapStore = create<MapState>()(
       toggleAssets: () => set((state) => ({ showAssets: !state.showAssets })),
       toggleInspections: () => set((state) => ({ showInspections: !state.showInspections })),
       toggleRivers: () => set((state) => ({ showRivers: !state.showRivers })),
+      toggleGreenSpaces: () => set((state) => ({ showGreenSpaces: !state.showGreenSpaces })),
+      toggleStreetLights: () => set((state) => ({ showStreetLights: !state.showStreetLights })),
       setHighlightedFeature: (id) => set({ highlightedFeatureId: id }),
       setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
     }),
