@@ -6,9 +6,9 @@ import { streetLightAssets } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { fromGeomSql } from '../db/geometry.js';
 
-// Maximum bbox area in square meters (1 km²)
+// Maximum bbox area in square meters (2 km²)
 // Street lights are dense, so we limit the query area
-const MAX_BBOX_AREA_M2 = 1_000_000;
+const MAX_BBOX_AREA_M2 = 2_000_000;
 
 // BBOX validation helper
 function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
@@ -103,7 +103,7 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
 
     if (bboxArea > MAX_BBOX_AREA_M2) {
       return reply.status(400).send({
-        error: `Requested area (${Math.round(bboxArea / 1000)}km²) exceeds maximum (${MAX_BBOX_AREA_M2 / 1_000_000}km²). Please zoom in.`,
+        error: `Requested area (${(bboxArea / 1_000_000).toFixed(1)}km²) exceeds maximum (${MAX_BBOX_AREA_M2 / 1_000_000}km²). Please zoom in.`,
       });
     }
 
