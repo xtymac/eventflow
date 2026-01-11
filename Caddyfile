@@ -1,5 +1,12 @@
 # Caddyfile for EventFlow production
 eventflow.uixai.org {
+    # Vector tiles from Martin (with caching)
+    handle /tiles/* {
+        header Cache-Control "public, max-age=300"
+        uri strip_prefix /tiles
+        reverse_proxy martin:3000
+    }
+
     # API endpoints
     handle /api/* {
         uri strip_prefix /api

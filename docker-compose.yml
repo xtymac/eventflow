@@ -97,6 +97,17 @@ services:
       - ./frontend/src:/app/src:ro
       - ./frontend/public/tiles:/app/public/tiles:ro
 
+  martin:
+    image: ghcr.io/maplibre/martin:v0.14.2
+    container_name: nagoya-martin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+    command: --auto-bounds calc
+
   caddy:
     image: caddy:2-alpine
     container_name: nagoya-caddy
@@ -104,6 +115,7 @@ services:
     depends_on:
       - web
       - api
+      - martin
     ports:
       - "80:80"
       - "443:443"
