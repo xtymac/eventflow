@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text } from '@mantine/core';
+import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text, Indicator } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconRefresh, IconX } from '@tabler/icons-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { IconBell, IconX } from '@tabler/icons-react';
 import { useShallow } from 'zustand/shallow';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
@@ -11,8 +10,10 @@ import { EventDetailPanel } from './features/events/EventDetailPanel';
 import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
 import { MapSearch } from './components/MapSearch';
-import { RecentEditsBar } from './components/RecentEditsBar';
+import { NotificationSidebar } from './components/NotificationSidebar';
 import { useUIStore } from './stores/uiStore';
+import { useNotificationStore } from './stores/notificationStore';
+import { useNotifications } from './hooks/useNotifications';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
@@ -52,8 +53,6 @@ function App() {
     closeInspectionForm,
     selectedInspectionId,
     selectInspection,
-    showRecentEditsBar,
-    setShowRecentEditsBar,
   } = useUIStore(useShallow((state) => ({
     currentView: state.currentView,
     setCurrentView: state.setCurrentView,
@@ -73,10 +72,11 @@ function App() {
     closeInspectionForm: state.closeInspectionForm,
     selectedInspectionId: state.selectedInspectionId,
     selectInspection: state.selectInspection,
-    showRecentEditsBar: state.showRecentEditsBar,
-    setShowRecentEditsBar: state.setShowRecentEditsBar,
   })));
-  const queryClient = useQueryClient();
+
+  // Notification state
+  const { unreadCount } = useNotifications();
+  const toggleSidebar = useNotificationStore((s) => s.toggleSidebar);
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const prevDetailModalEventId = useRef(detailModalEventId);
 
@@ -88,10 +88,6 @@ function App() {
     }
     prevDetailModalEventId.current = detailModalEventId;
   }, [detailModalEventId, openDesktop, openMobile]);
-
-  const handleRefresh = () => {
-    queryClient.invalidateQueries();
-  };
 
   const renderSidebarContent = () => {
     switch (currentView) {
@@ -143,10 +139,12 @@ function App() {
           {/* Map Search - centered in header */}
           <MapSearch />
 
-          <Tooltip label="Refresh data">
-            <ActionIcon variant="subtle" onClick={handleRefresh}>
-              <IconRefresh size={20} />
-            </ActionIcon>
+          <Tooltip label="Notifications">
+            <Indicator label={unreadCount} size={16} disabled={unreadCount === 0} color="red">
+              <ActionIcon variant="subtle" onClick={toggleSidebar}>
+                <IconBell size={20} />
+              </ActionIcon>
+            </Indicator>
           </Tooltip>
         </Group>
       </AppShell.Header>
@@ -170,12 +168,6 @@ function App() {
 
       <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
         <MapView />
-
-        {/* Recent Edits Bar - above map, centered */}
-        <RecentEditsBar
-          visible={showRecentEditsBar && !isEditing}
-          onDismiss={() => setShowRecentEditsBar(false)}
-        />
 
         {isEventFormOpen && (
           <EventEditorOverlay
@@ -227,6 +219,9 @@ function App() {
           onClose={() => selectInspection(null)}
         />
       )}
+
+      {/* Notification Sidebar - slides from right */}
+      <NotificationSidebar />
     </AppShell>
   );
 }
