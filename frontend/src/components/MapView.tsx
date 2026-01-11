@@ -145,6 +145,8 @@ export function MapView() {
     openEventDetailModal,
     closeEventDetailModal,
     hoveredAssetId,
+    hoveredGreenspaceId,
+    hoveredStreetlightId,
     hoveredEventId,
     selectedRoadAssetIdsForForm,
     selectedAssetDetailsCache,
@@ -285,18 +287,18 @@ export function MapView() {
     { enabled: showRivers && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
   );
 
-  // Green spaces data - load when visible and zoom >= 13 (with geometry simplification)
+  // Green spaces data - load when zoom >= 12 (for map display and sidebar hover support)
   const { data: greenSpacesData } = useGreenSpacesInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: showGreenSpaces && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
+    { enabled: !!mapBbox && currentZoom >= 12, zoom: currentZoom }
   );
 
-  // Street lights data - load when visible and zoom >= 15 (higher zoom due to quantity)
+  // Street lights data - load when zoom >= 14 (for map display and sidebar hover support)
   const { data: streetLightsData } = useStreetLightsInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: showStreetLights && !!mapBbox && currentZoom >= 15 }
+    { enabled: !!mapBbox && currentZoom >= 14 }
   );
 
   // Drawing mode: enable when any editor has active drawing context
@@ -611,9 +613,16 @@ export function MapView() {
         source: 'roads-preview',
         'source-layer': sourceLayer,
         paint: {
-          'line-color': '#94a3b8', // Light blue-gray (slate-400)
-          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.8, 12, 1.5, 16, 2],
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.35, 14, 0.25, 18, 0.15],
+          'line-color': [
+            'match',
+            ['get', 'roadType'],
+            'arterial', '#8B5CF6', // purple
+            'collector', '#06B6D4', // cyan
+            'local', '#84CC16', // lime
+            '#84CC16' // default
+          ],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 2, 14, 4],
+          'line-opacity': 0.8,
         },
       }, 'assets-line'); // Insert below assets-line
 
@@ -1074,6 +1083,45 @@ export function MapView() {
           'line-opacity': 1,
         },
       }, 'selected-asset-line'); // Insert below selected layer
+
+      // Greenspace hover highlight layers
+      map.current.addLayer({
+        id: 'hovered-greenspace-fill',
+        type: 'fill',
+        source: 'greenspaces',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'fill-color': '#f59e0b', // Amber/orange
+          'fill-opacity': 0.5,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'hovered-greenspace-line',
+        type: 'line',
+        source: 'greenspaces',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'line-color': '#f59e0b', // Amber/orange
+          'line-width': 5,
+          'line-opacity': 1,
+        },
+      });
+
+      // Streetlight hover highlight layer
+      map.current.addLayer({
+        id: 'hovered-streetlight-circle',
+        type: 'circle',
+        source: 'streetlights',
+        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        paint: {
+          'circle-radius': 18,
+          'circle-color': '#f59e0b', // Amber/orange
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.9,
+        },
+      });
 
       // Preview geometry source and layers (for EventForm corridor preview)
       map.current.addSource('preview-geometry', {
@@ -1791,47 +1839,47 @@ export function MapView() {
   }, [riversData, showRivers, mapLoaded, currentZoom]);
 
   // Update green spaces layer (API data for zoom >= 12)
+  // Always load data to source for hover support, only toggle layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     const source = map.current.getSource('greenspaces') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Clear greenspaces when showGreenSpaces is off or zoom too low
-    if (!showGreenSpaces || currentZoom < 12) {
+    // Load data if zoom is high enough (for hover support even when layer is hidden)
+    if (currentZoom >= 12) {
+      const features = greenSpacesData?.features ?? [];
+      source.setData({ type: 'FeatureCollection', features });
+    } else {
       source.setData({ type: 'FeatureCollection', features: [] });
-      map.current.setLayoutProperty('greenspaces-fill', 'visibility', 'none');
-      map.current.setLayoutProperty('greenspaces-line', 'visibility', 'none');
-      map.current.setLayoutProperty('greenspaces-label', 'visibility', 'none');
-      return;
     }
 
-    const features = greenSpacesData?.features ?? [];
-
-    source.setData({ type: 'FeatureCollection', features });
-    map.current.setLayoutProperty('greenspaces-fill', 'visibility', 'visible');
-    map.current.setLayoutProperty('greenspaces-line', 'visibility', 'visible');
-    map.current.setLayoutProperty('greenspaces-label', 'visibility', 'visible');
+    // Toggle layer visibility based on showGreenSpaces setting
+    const visibility = showGreenSpaces && currentZoom >= 12 ? 'visible' : 'none';
+    map.current.setLayoutProperty('greenspaces-fill', 'visibility', visibility);
+    map.current.setLayoutProperty('greenspaces-line', 'visibility', visibility);
+    map.current.setLayoutProperty('greenspaces-label', 'visibility', visibility);
   }, [greenSpacesData, showGreenSpaces, mapLoaded, currentZoom]);
 
   // Update street lights layer (API data for zoom >= 14)
+  // Always load data to source for hover support, only toggle layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     const source = map.current.getSource('streetlights') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Clear streetlights when showStreetLights is off or zoom too low
-    if (!showStreetLights || currentZoom < 14) {
+    // Load data if zoom is high enough (for hover support even when layer is hidden)
+    if (currentZoom >= 14) {
+      const features = streetLightsData?.features ?? [];
+      source.setData({ type: 'FeatureCollection', features });
+    } else {
       source.setData({ type: 'FeatureCollection', features: [] });
-      map.current.setLayoutProperty('streetlights-circle', 'visibility', 'none');
-      return;
     }
 
-    const features = streetLightsData?.features ?? [];
-
-    source.setData({ type: 'FeatureCollection', features });
-    map.current.setLayoutProperty('streetlights-circle', 'visibility', 'visible');
+    // Toggle layer visibility based on showStreetLights setting
+    const visibility = showStreetLights && currentZoom >= 14 ? 'visible' : 'none';
+    map.current.setLayoutProperty('streetlights-circle', 'visibility', visibility);
   }, [streetLightsData, showStreetLights, mapLoaded, currentZoom]);
 
   // Highlight selected assets while editing an event
@@ -2515,10 +2563,47 @@ export function MapView() {
     }
   }, [hoveredEventId, selectedEventId, isEventFormOpen, mapLoaded]);
 
+  // Update hover highlight layer filter when hoveredGreenspaceId changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    if (!map.current.getLayer('hovered-greenspace-fill')) return;
+
+    const filter: maplibregl.FilterSpecification = hoveredGreenspaceId
+      ? ['==', ['get', 'id'], hoveredGreenspaceId]
+      : ['==', ['get', 'id'], '']; // Match nothing
+
+    map.current.setFilter('hovered-greenspace-fill', filter);
+    if (map.current.getLayer('hovered-greenspace-line')) {
+      map.current.setFilter('hovered-greenspace-line', filter);
+    }
+  }, [hoveredGreenspaceId, mapLoaded]);
+
+  // Update hover highlight layer filter when hoveredStreetlightId changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    if (!map.current.getLayer('hovered-streetlight-circle')) return;
+
+    const filter: maplibregl.FilterSpecification = hoveredStreetlightId
+      ? ['==', ['get', 'id'], hoveredStreetlightId]
+      : ['==', ['get', 'id'], '']; // Match nothing
+
+    map.current.setFilter('hovered-streetlight-circle', filter);
+  }, [hoveredStreetlightId, mapLoaded]);
+
   // Fly to geometry when triggered (e.g., clicking road badge in selector or event in list)
   useEffect(() => {
-    console.log('[MapView] flyTo effect: mapLoaded=', mapLoaded, 'flyToGeometry=', flyToGeometry?.type || 'null');
-    if (!map.current || !mapLoaded || !flyToGeometry) return;
+    console.log('[MapView] flyTo effect triggered:', {
+      mapLoaded,
+      hasMapRef: !!map.current,
+      geometryType: flyToGeometry?.type || 'null',
+      flyToCloseUp
+    });
+    if (!map.current || !mapLoaded || !flyToGeometry) {
+      if (flyToGeometry) {
+        console.warn('[MapView] flyTo skipped: map not ready', { mapLoaded, hasMapRef: !!map.current });
+      }
+      return;
+    }
 
     console.log('[MapView] Flying to geometry:', flyToGeometry.type, 'closeUp:', flyToCloseUp);
 
@@ -2567,7 +2652,7 @@ export function MapView() {
         setFlyToGeometry(null);
       }, 100);
     } catch (e) {
-      console.warn('Could not calculate bounds for flyTo geometry');
+      console.error('[MapView] flyTo error:', e, 'geometry:', flyToGeometry);
       setFlyToGeometry(null);
     }
   }, [flyToGeometry, flyToCloseUp, mapLoaded, setFlyToGeometry, isEventFormOpen]);

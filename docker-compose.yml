@@ -89,6 +89,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    ports:
+      - "5173:5173"
     environment:
       # API_PROXY_TARGET is for Vite server proxy (Docker internal)
       # VITE_API_URL defaults to /api which uses the proxy

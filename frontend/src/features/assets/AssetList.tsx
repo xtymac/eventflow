@@ -16,15 +16,14 @@ import {
   Tabs,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAssets, useAsset, useWards } from '../../hooks/useApi';
+import { useAssets, useAsset, useWards, useGreenSpacesInBbox, useStreetLightsInBbox } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
-import { OsmSyncPanel } from './OsmSyncPanel';
-import type { RoadAsset, RoadType, AssetStatus } from '@nagoya/shared';
+import type { RoadAsset, RoadType, AssetStatus, GreenSpaceAsset, StreetLightAsset } from '@nagoya/shared';
 
 const LIMIT = 200;
 
@@ -40,6 +39,22 @@ const ROAD_TYPE_LABELS: Record<RoadType, string> = {
   local: 'Local',
 };
 
+const GREENSPACE_TYPE_COLORS: Record<string, string> = {
+  park: 'green',
+  garden: 'teal',
+  playground: 'orange',
+  forest: 'lime',
+  other: 'gray',
+};
+
+const GREENSPACE_TYPE_LABELS: Record<string, string> = {
+  park: 'Park',
+  garden: 'Garden',
+  playground: 'Playground',
+  forest: 'Forest',
+  other: 'Other',
+};
+
 export function AssetList() {
   // Local UI state
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -52,7 +67,7 @@ export function AssetList() {
   const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Persisted filter state from store (including filtersOpen)
-  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, mapCenter, setHoveredAsset, setSidebarAssets, filtersOpen, setFiltersOpen } = useUIStore();
+  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, mapCenter, mapZoom, setHoveredAsset, setHoveredGreenspace, setHoveredStreetlight, setSidebarAssets, filtersOpen, setFiltersOpen, setFlyToGeometry } = useUIStore();
   const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter } = assetFilters;
   const [debouncedSearch] = useDebouncedValue(searchInput, 300);
 
@@ -73,6 +88,46 @@ export function AssetList() {
 
   // Always fetch selected asset individually to pin it at top until deselected
   const { data: selectedAssetData } = useAsset(selectedAssetId);
+
+  // Fetch greenspaces and streetlights for their tabs
+  const { data: greenSpacesData, isLoading: isLoadingGreenspaces } = useGreenSpacesInBbox(
+    mapBbox,
+    undefined,
+    { enabled: !!mapBbox, zoom: mapZoom }
+  );
+  const { data: streetLightsData, isLoading: isLoadingStreetlights } = useStreetLightsInBbox(
+    mapBbox,
+    undefined,
+    { enabled: !!mapBbox && mapZoom >= 14 }
+  );
+
+  // Sort greenspaces by distance from map center
+  const sortedGreenspaces = useMemo(() => {
+    if (!greenSpacesData?.features || !mapCenter) return greenSpacesData?.features ?? [];
+    return [...greenSpacesData.features].sort((a, b) => {
+      try {
+        const centerPoint = turf.point(mapCenter);
+        const centerA = turf.center(a);
+        const centerB = turf.center(b);
+        return turf.distance(centerPoint, centerA) - turf.distance(centerPoint, centerB);
+      } catch {
+        return 0;
+      }
+    });
+  }, [greenSpacesData?.features, mapCenter]);
+
+  // Sort streetlights by distance from map center
+  const sortedStreetlights = useMemo(() => {
+    if (!streetLightsData?.features || !mapCenter) return streetLightsData?.features ?? [];
+    return [...streetLightsData.features].sort((a, b) => {
+      try {
+        const centerPoint = turf.point(mapCenter);
+        return turf.distance(centerPoint, a) - turf.distance(centerPoint, b);
+      } catch {
+        return 0;
+      }
+    });
+  }, [streetLightsData?.features, mapCenter]);
 
   // Compute active filter count (include unnamed toggle)
   const activeFilterCount = [roadTypeFilter, statusFilter, wardFilter, unnamedFilter].filter(Boolean).length;
@@ -300,8 +355,11 @@ export function AssetList() {
         <Tabs.Tab value="list" leftSection={<IconRoad size={14} />}>
           Roads ({data?.meta?.total ?? loadedAssets.length})
         </Tabs.Tab>
-        <Tabs.Tab value="sync" leftSection={<IconRefresh size={14} />}>
-          OSM Sync
+        <Tabs.Tab value="greenspaces" leftSection={<IconTree size={14} />}>
+          Green Spaces ({sortedGreenspaces.length})
+        </Tabs.Tab>
+        <Tabs.Tab value="streetlights" leftSection={<IconBulb size={14} />}>
+          Lights ({sortedStreetlights.length})
         </Tabs.Tab>
       </Tabs.List>
 
@@ -570,8 +628,168 @@ export function AssetList() {
         </Stack>
       </Tabs.Panel>
 
-      <Tabs.Panel value="sync">
-        <OsmSyncPanel />
+      <Tabs.Panel value="greenspaces">
+        <Stack gap="xs">
+          {isLoadingGreenspaces ? (
+            <Center py="xl">
+              <Loader />
+            </Center>
+          ) : sortedGreenspaces.length === 0 ? (
+            <Text c="dimmed" ta="center" py="lg">
+              {mapZoom < 12 ? 'Zoom in to see green spaces' : 'No green spaces in current view'}
+            </Text>
+          ) : (
+            sortedGreenspaces.map((feature) => {
+              const gs = feature.properties as GreenSpaceAsset;
+              const displayName = gs.displayName || gs.nameJa || gs.name || 'Unnamed Green Space';
+              const gsType = gs.greenSpaceType || 'other';
+              const areaM2 = gs.areaM2 || 0;
+              const areaDisplay = areaM2 >= 10000
+                ? `${(areaM2 / 10000).toFixed(1)} ha`
+                : `${Math.round(areaM2)} m²`;
+
+              return (
+                <Card
+                  key={gs.id}
+                  padding="sm"
+                  radius="sm"
+                  withBorder
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  className="asset-card-hover"
+                  onClick={() => {
+                    console.log('[AssetList] Greenspace clicked:', gs.id, 'geometry type:', feature.geometry?.type);
+                    if (feature.geometry) {
+                      setFlyToGeometry(feature.geometry, true);
+                    } else {
+                      console.error('[AssetList] Greenspace geometry is undefined for:', gs.id);
+                    }
+                  }}
+                  onMouseEnter={() => setHoveredGreenspace(gs.id)}
+                  onMouseLeave={() => setHoveredGreenspace(null)}
+                >
+                  <Group gap="sm" wrap="nowrap" align="center">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Group justify="space-between" wrap="nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                          {displayName}
+                        </Text>
+                        <Badge color={GREENSPACE_TYPE_COLORS[gsType] || 'gray'} size="sm" style={{ flexShrink: 0 }}>
+                          {GREENSPACE_TYPE_LABELS[gsType] || gsType}
+                        </Badge>
+                      </Group>
+
+                      <Group gap="xs" mt={4}>
+                        <Badge variant="outline" size="xs" color="gray">
+                          {areaDisplay}
+                        </Badge>
+                        {gs.ward && (
+                          <Badge variant="outline" size="xs" color="blue">
+                            {gs.ward}
+                          </Badge>
+                        )}
+                      </Group>
+
+                      <Text size="xs" c="dimmed" ff="monospace" mt={4}>
+                        ID: {gs.id}
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+              );
+            })
+          )}
+        </Stack>
+      </Tabs.Panel>
+
+      <Tabs.Panel value="streetlights">
+        <Stack gap="xs">
+          {mapZoom < 14 ? (
+            <Text c="dimmed" ta="center" py="lg">
+              Zoom in to see street lights (zoom level 14+)
+            </Text>
+          ) : isLoadingStreetlights ? (
+            <Center py="xl">
+              <Loader />
+            </Center>
+          ) : sortedStreetlights.length === 0 ? (
+            <Text c="dimmed" ta="center" py="lg">
+              No street lights in current view
+            </Text>
+          ) : (
+            sortedStreetlights.map((feature) => {
+              const sl = feature.properties as StreetLightAsset;
+              const displayName = sl.displayName || sl.lampId || 'Street Light';
+              const lampType = sl.lampType || 'unknown';
+              const wattage = sl.wattage;
+
+              return (
+                <Card
+                  key={sl.id}
+                  padding="sm"
+                  radius="sm"
+                  withBorder
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                  }}
+                  className="asset-card-hover"
+                  onClick={() => {
+                    console.log('[AssetList] Streetlight clicked:', sl.id, 'geometry type:', feature.geometry?.type);
+                    if (feature.geometry) {
+                      setFlyToGeometry(feature.geometry, true);
+                    } else {
+                      console.error('[AssetList] Streetlight geometry is undefined for:', sl.id);
+                    }
+                  }}
+                  onMouseEnter={() => setHoveredStreetlight(sl.id)}
+                  onMouseLeave={() => setHoveredStreetlight(null)}
+                >
+                  <Group gap="sm" wrap="nowrap" align="center">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Group justify="space-between" wrap="nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                          {displayName}
+                        </Text>
+                        <Badge color="yellow" size="sm" style={{ flexShrink: 0 }}>
+                          {lampType}
+                        </Badge>
+                      </Group>
+
+                      <Group gap="xs" mt={4}>
+                        {wattage && (
+                          <Badge variant="outline" size="xs" color="orange">
+                            {wattage}W
+                          </Badge>
+                        )}
+                        {sl.ward && (
+                          <Badge variant="outline" size="xs" color="blue">
+                            {sl.ward}
+                          </Badge>
+                        )}
+                        {sl.lampStatus && (
+                          <Badge
+                            variant="outline"
+                            size="xs"
+                            color={sl.lampStatus === 'operational' ? 'green' : sl.lampStatus === 'damaged' ? 'red' : 'gray'}
+                          >
+                            {sl.lampStatus}
+                          </Badge>
+                        )}
+                      </Group>
+
+                      <Text size="xs" c="dimmed" ff="monospace" mt={4}>
+                        ID: {sl.id}
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+              );
+            })
+          )}
+        </Stack>
       </Tabs.Panel>
     </Tabs>
   );
