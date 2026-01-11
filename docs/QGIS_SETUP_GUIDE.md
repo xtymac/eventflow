@@ -62,6 +62,9 @@
    - **event_road_assets** （事件-道路关联）
    - **road_asset_changes** （道路资产变更历史）
    - **osm_sync_logs** （OSM 同步日志）
+   - **river_assets** （河流资产 - OSM 同步）
+   - **greenspace_assets** （绿地资产 - OSM 同步）
+   - **streetlight_assets** （路灯资产 - OSM 同步）
 5. 点击 **添加** 加载图层
 
 ---
@@ -248,6 +251,97 @@
 **说明**：记录从 OpenStreetMap 同步道路数据的操作日志。
 
 **用途**：查看 OSM 数据同步的历史和状态。
+
+---
+
+### river_assets (河流资产) - 只读
+
+**权限**：SELECT（仅查询）
+
+**说明**：从 OpenStreetMap 同步的河流和水道数据。此表为只读，不支持 QGIS 编辑。
+
+**几何类型**：LineString（河流中心线）或 Polygon（水体面）
+
+**数据来源**：OpenStreetMap 自动同步
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `id` | VARCHAR(50) | 主键，格式 RV-XXXXXXXX |
+| `name` | VARCHAR(255) | 河流名称 |
+| `name_ja` | VARCHAR(255) | 日文名称 |
+| `display_name` | VARCHAR(255) | 显示名称（自动计算） |
+| `geometry` | Geometry | 几何形状（SRID 4326） |
+| `geometry_type` | VARCHAR(20) | 几何类型：'line'、'polygon'、'collection' |
+| `waterway_type` | VARCHAR(50) | 水道类型：river、stream、canal、drain |
+| `water_type` | VARCHAR(50) | 水体类型：river、pond、lake |
+| `width` | INTEGER | 宽度（米） |
+| `management_level` | VARCHAR(50) | 管理级别：national、prefectural、municipal |
+| `ward` | VARCHAR(100) | 所属行政区 |
+| `status` | VARCHAR(20) | 数据状态：active、inactive |
+
+**用途**：查看名古屋市内的河流和水道分布。
+
+---
+
+### greenspace_assets (绿地资产) - 只读
+
+**权限**：SELECT（仅查询）
+
+**说明**：从 OpenStreetMap 同步的公园、绿地数据。此表为只读，不支持 QGIS 编辑。
+
+**几何类型**：Polygon
+
+**数据来源**：OpenStreetMap 自动同步
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `id` | VARCHAR(50) | 主键，格式 GS-XXXXXXXX |
+| `name` | VARCHAR(255) | 绿地名称 |
+| `name_ja` | VARCHAR(255) | 日文名称 |
+| `display_name` | VARCHAR(255) | 显示名称（自动计算） |
+| `geometry` | Polygon | 几何形状（SRID 4326） |
+| `green_space_type` | VARCHAR(50) | 绿地类型：park、garden、grass、forest、meadow、playground |
+| `leisure_type` | VARCHAR(50) | OSM leisure 标签 |
+| `landuse_type` | VARCHAR(50) | OSM landuse 标签 |
+| `natural_type` | VARCHAR(50) | OSM natural 标签 |
+| `area_m2` | INTEGER | 面积（平方米） |
+| `operator` | VARCHAR(255) | 运营组织 |
+| `ward` | VARCHAR(100) | 所属行政区 |
+| `status` | VARCHAR(20) | 数据状态：active、inactive |
+
+**用途**：查看名古屋市内的公园和绿地分布。
+
+---
+
+### streetlight_assets (路灯资产) - 只读
+
+**权限**：SELECT（仅查询）
+
+**说明**：从 OpenStreetMap 同步的路灯数据。此表为只读，不支持 QGIS 编辑。
+
+**几何类型**：Point
+
+**数据来源**：OpenStreetMap 自动同步
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| `id` | VARCHAR(50) | 主键，格式 SL-XXXXXXXX |
+| `lamp_id` | VARCHAR(50) | 物理灯具编号 |
+| `display_name` | VARCHAR(255) | 显示名称 |
+| `geometry` | Point | 位置坐标（SRID 4326） |
+| `lamp_type` | VARCHAR(50) | 灯具类型：led、sodium、mercury、fluorescent、halogen |
+| `wattage` | INTEGER | 功率（瓦） |
+| `install_date` | DATE | 安装日期 |
+| `lamp_status` | VARCHAR(50) | 设备状态：operational、maintenance、damaged、replaced |
+| `road_ref` | VARCHAR(50) | 关联道路 ID |
+| `ward` | VARCHAR(100) | 所属行政区 |
+| `status` | VARCHAR(20) | 数据状态：active、inactive |
+
+**注意**：`status` 和 `lamp_status` 含义不同：
+- `status`：数据生命周期状态（active = 有效数据）
+- `lamp_status`：设备运行状态（operational = 正常工作）
+
+**用途**：查看名古屋市内的路灯分布和状态。
 
 ---
 
@@ -464,6 +558,6 @@
 
 ---
 
-**文档版本**：3.0（实时同步版）
-**最后更新**：2026-01-10
+**文档版本**：4.0（多资产类型支持）
+**最后更新**：2026-01-11
 **适用 QGIS 版本**：3.28+

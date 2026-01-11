@@ -93,7 +93,7 @@ export const roadAssets = pgTable('road_assets', {
 
   // OSM sync tracking fields
   osmType: varchar('osm_type', { length: 10 }),  // 'node' | 'way' | 'relation'
-  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
+  osmId: bigint('osm_id', { mode: 'string' }),  // OpenStreetMap ID (string to avoid JS 2^53 overflow)
   segmentIndex: integer('segment_index').default(0),  // Segment index within same OSM way
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),  // OSM last modified
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),  // Last sync from Overpass
@@ -185,6 +185,26 @@ export const osmSyncLogs = pgTable('osm_sync_logs', {
   statusIdx: index('idx_osm_sync_logs_status').on(table.status),
 }));
 
+// Road asset edit logs table - tracks QGIS edits for notification feature
+// NO FK to road_assets to preserve delete logs
+export const roadAssetEditLogs = pgTable('road_asset_edit_logs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  roadAssetId: varchar('road_asset_id', { length: 50 }).notNull(),
+  editType: varchar('edit_type', { length: 20 }).notNull(),  // 'create' | 'update' | 'delete'
+  roadName: varchar('road_name', { length: 255 }),
+  roadDisplayName: varchar('road_display_name', { length: 255 }),
+  roadWard: varchar('road_ward', { length: 100 }),
+  roadType: varchar('road_type', { length: 50 }),
+  centroid: pointColumn('centroid').notNull(),
+  bbox: jsonbColumn('bbox'),  // [minLng, minLat, maxLng, maxLat]
+  editSource: varchar('edit_source', { length: 20 }).default('manual'),
+  editedAt: timestamp('edited_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  editedAtIdx: index('idx_edit_logs_edited_at').on(table.editedAt),
+  editSourceIdx: index('idx_edit_logs_edit_source').on(table.editSource),
+  roadAssetIdIdx: index('idx_edit_logs_road_asset_id').on(table.roadAssetId),
+}));
+
 // ============================================
 // NEW ASSET TYPES
 // ============================================
@@ -221,7 +241,7 @@ export const riverAssets = pgTable('river_assets', {
 
   // OSM tracking (osmType + osmId composite unique)
   osmType: varchar('osm_type', { length: 10 }),
-  osmId: bigint('osm_id', { mode: 'number' }),
+  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
@@ -269,7 +289,7 @@ export const greenSpaceAssets = pgTable('greenspace_assets', {
 
   // OSM tracking
   osmType: varchar('osm_type', { length: 10 }),
-  osmId: bigint('osm_id', { mode: 'number' }),
+  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
@@ -315,7 +335,7 @@ export const streetLightAssets = pgTable('streetlight_assets', {
 
   // OSM tracking
   osmType: varchar('osm_type', { length: 10 }),  // Always 'node' for streetlights
-  osmId: bigint('osm_id', { mode: 'number' }),
+  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
@@ -348,6 +368,9 @@ export type NewInspectionRecord = typeof inspectionRecords.$inferInsert;
 
 export type OsmSyncLog = typeof osmSyncLogs.$inferSelect;
 export type NewOsmSyncLog = typeof osmSyncLogs.$inferInsert;
+
+export type RoadAssetEditLog = typeof roadAssetEditLogs.$inferSelect;
+export type NewRoadAssetEditLog = typeof roadAssetEditLogs.$inferInsert;
 
 export type RiverAsset = typeof riverAssets.$inferSelect;
 export type NewRiverAsset = typeof riverAssets.$inferInsert;

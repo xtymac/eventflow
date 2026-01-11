@@ -85,6 +85,20 @@
       "when": 1736413300000,
       "tag": "0011_new_asset_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1736499600000,
+      "tag": "0012_road_edit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1736499700000,
+      "tag": "0013_phase2_risk_fixes",
+      "breakpoints": true
     }
   ]
 }

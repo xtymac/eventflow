@@ -3,12 +3,14 @@ import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, To
 import { useDisclosure } from '@mantine/hooks';
 import { IconRefresh, IconX } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useShallow } from 'zustand/shallow';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
 import { InspectionList } from './features/inspections/InspectionList';
 import { EventDetailPanel } from './features/events/EventDetailPanel';
 import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
+import { RecentEditsBar } from './components/RecentEditsBar';
 import { useUIStore } from './stores/uiStore';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
@@ -18,6 +20,12 @@ import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
 
+const VIEW_OPTIONS = [
+  { label: 'Events', value: 'events' },
+  { label: 'Assets', value: 'assets' },
+  { label: 'Inspections', value: 'inspections' },
+];
+
 function App() {
   // Sync UI state with URL parameters (filters, tabs, selections)
   useUrlState();
@@ -25,13 +33,48 @@ function App() {
   const [mobileOpened, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop, open: openDesktop }] = useDisclosure(true);
   const {
-    currentView, setCurrentView,
-    isEventFormOpen, editingEventId, duplicateEventId, closeEventForm,
-    detailModalEventId, closeEventDetailModal,
-    isRoadUpdateModeActive, roadUpdateEventId, exitRoadUpdateMode,
-    isInspectionFormOpen, selectedInspectionForEdit, inspectionFormEventId, inspectionFormAssetId, closeInspectionForm,
-    selectedInspectionId, selectInspection,
-  } = useUIStore();
+    currentView,
+    setCurrentView,
+    isEventFormOpen,
+    editingEventId,
+    duplicateEventId,
+    closeEventForm,
+    detailModalEventId,
+    closeEventDetailModal,
+    isRoadUpdateModeActive,
+    roadUpdateEventId,
+    exitRoadUpdateMode,
+    isInspectionFormOpen,
+    selectedInspectionForEdit,
+    inspectionFormEventId,
+    inspectionFormAssetId,
+    closeInspectionForm,
+    selectedInspectionId,
+    selectInspection,
+    showRecentEditsBar,
+    setShowRecentEditsBar,
+  } = useUIStore(useShallow((state) => ({
+    currentView: state.currentView,
+    setCurrentView: state.setCurrentView,
+    isEventFormOpen: state.isEventFormOpen,
+    editingEventId: state.editingEventId,
+    duplicateEventId: state.duplicateEventId,
+    closeEventForm: state.closeEventForm,
+    detailModalEventId: state.detailModalEventId,
+    closeEventDetailModal: state.closeEventDetailModal,
+    isRoadUpdateModeActive: state.isRoadUpdateModeActive,
+    roadUpdateEventId: state.roadUpdateEventId,
+    exitRoadUpdateMode: state.exitRoadUpdateMode,
+    isInspectionFormOpen: state.isInspectionFormOpen,
+    selectedInspectionForEdit: state.selectedInspectionForEdit,
+    inspectionFormEventId: state.inspectionFormEventId,
+    inspectionFormAssetId: state.inspectionFormAssetId,
+    closeInspectionForm: state.closeInspectionForm,
+    selectedInspectionId: state.selectedInspectionId,
+    selectInspection: state.selectInspection,
+    showRecentEditsBar: state.showRecentEditsBar,
+    setShowRecentEditsBar: state.setShowRecentEditsBar,
+  })));
   const queryClient = useQueryClient();
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const prevDetailModalEventId = useRef(detailModalEventId);
@@ -109,11 +152,7 @@ function App() {
             <SegmentedControl
               value={currentView}
               onChange={(value) => setCurrentView(value as View)}
-              data={[
-                { label: 'Events', value: 'events' },
-                { label: 'Assets', value: 'assets' },
-                { label: 'Inspections', value: 'inspections' },
-              ]}
+              data={VIEW_OPTIONS}
               fullWidth
             />
           </Stack>
@@ -126,6 +165,12 @@ function App() {
 
       <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
         <MapView />
+
+        {/* Recent Edits Bar - above map, centered */}
+        <RecentEditsBar
+          visible={showRecentEditsBar && !isEditing}
+          onDismiss={() => setShowRecentEditsBar(false)}
+        />
 
         {isEventFormOpen && (
           <EventEditorOverlay

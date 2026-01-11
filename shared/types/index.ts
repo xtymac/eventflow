@@ -44,8 +44,8 @@ export type OsmType = 'node' | 'way' | 'relation';
 // NEW: River Asset Types
 // ============================================
 
-// River geometry type (line = centerline, polygon = water body)
-export type RiverGeometryType = 'line' | 'polygon';
+// River geometry type (line = centerline, polygon = water body, collection = complex OSM relation)
+export type RiverGeometryType = 'line' | 'polygon' | 'collection';
 
 // Waterway types from OSM
 export type WaterwayType = 'river' | 'stream' | 'canal' | 'drain';
@@ -119,7 +119,7 @@ export interface DataSourceTracking {
 // Common OSM tracking fields
 export interface OsmTracking {
   osmType?: OsmType;
-  osmId?: number;
+  osmId?: string;             // String to avoid JS 2^53 overflow for large OSM IDs
   osmTimestamp?: string;      // ISO 8601 timestamp
   lastSyncedAt?: string;      // ISO 8601 timestamp
   isManuallyEdited?: boolean;

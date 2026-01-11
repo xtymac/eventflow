@@ -96,6 +96,113 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     return { data: wards };
   });
 
+  // GET /assets/recent-edits - Get recent road asset edits for notification bar
+  app.get('/recent-edits', {
+    schema: {
+      querystring: Type.Object({
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Array(Type.Object({
+            id: Type.String(),
+            roadAssetId: Type.String(),
+            editType: Type.String(),
+            roadName: Type.Union([Type.String(), Type.Null()]),
+            roadDisplayName: Type.Union([Type.String(), Type.Null()]),
+            roadWard: Type.Union([Type.String(), Type.Null()]),
+            roadType: Type.Union([Type.String(), Type.Null()]),
+            centroid: Type.Object({
+              type: Type.Literal('Point'),
+              coordinates: Type.Array(Type.Number()),
+            }),
+            bbox: Type.Array(Type.Number()),
+            editSource: Type.Union([Type.String(), Type.Null()]),
+            editedAt: Type.String({ format: 'date-time' }),
+          })),
+          meta: Type.Object({
+            total: Type.Integer(),
+            hasMore: Type.Boolean(),
+          }),
+        }),
+      },
+    },
+  }, async (request) => {
+    const { limit = 10 } = request.query;
+
+    // Get total count of manual edits
+    const countResult = await db.execute<{ total: number }>(sql`
+      SELECT COUNT(*)::int as total FROM road_asset_edit_logs
+      WHERE edit_source IN ('manual', 'initial', '')
+         OR edit_source IS NULL
+    `);
+    const total = countResult.rows[0]?.total ?? 0;
+
+    // Get recent edits with DISTINCT ON to avoid duplicates for same road
+    // Filter for manual/QGIS edits only (exclude osm-sync and api)
+    const editsResult = await db.execute(sql`
+      SELECT DISTINCT ON (road_asset_id)
+        id,
+        road_asset_id as "roadAssetId",
+        edit_type as "editType",
+        road_name as "roadName",
+        road_display_name as "roadDisplayName",
+        road_ward as "roadWard",
+        road_type as "roadType",
+        ST_AsGeoJSON(centroid)::json as centroid,
+        bbox,
+        edit_source as "editSource",
+        edited_at as "editedAt"
+      FROM road_asset_edit_logs
+      WHERE edit_source IN ('manual', 'initial', '')
+         OR edit_source IS NULL
+      ORDER BY road_asset_id, edited_at DESC
+    `);
+
+    // Define the expected row type
+    interface EditLogRow {
+      id: string;
+      roadAssetId: string;
+      editType: string;
+      roadName: string | null;
+      roadDisplayName: string | null;
+      roadWard: string | null;
+      roadType: string | null;
+      centroid: { type: 'Point'; coordinates: number[] };
+      bbox: number[];
+      editSource: string | null;
+      editedAt: Date | string;
+    }
+
+    // Sort by editedAt DESC and apply limit
+    const typedRows = editsResult.rows as unknown as EditLogRow[];
+    const sortedEdits = typedRows
+      .sort((a, b) =>
+        new Date(b.editedAt).getTime() - new Date(a.editedAt).getTime()
+      )
+      .slice(0, limit + 1);
+
+    const hasMore = sortedEdits.length > limit;
+    const data = sortedEdits.slice(0, limit).map((row) => ({
+      id: row.id,
+      roadAssetId: row.roadAssetId,
+      editType: row.editType,
+      roadName: row.roadName,
+      roadDisplayName: row.roadDisplayName,
+      roadWard: row.roadWard,
+      roadType: row.roadType,
+      centroid: row.centroid,
+      bbox: row.bbox,
+      editSource: row.editSource,
+      editedAt: row.editedAt instanceof Date ? row.editedAt.toISOString() : String(row.editedAt),
+    }));
+
+    return {
+      data,
+      meta: { total, hasMore },
+    };
+  });
+
   // GET /assets - List road assets
   app.get('/', {
     schema: {

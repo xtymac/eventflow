@@ -86,6 +86,7 @@ interface UIState {
   sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
   flyToGeometry: Geometry | null;   // Geometry to fly to (set to trigger flyTo, auto-clears after animation)
   flyToCloseUp: boolean;            // If true, zoom closer when flying to geometry
+  showRecentEditsBar: boolean;      // Show/hide the recent edits notification bar
 
   // Filter panel state (persisted across tab switches)
   filtersOpen: boolean;
@@ -185,6 +186,7 @@ interface UIState {
   setHoveredEvent: (id: string | null) => void;
   setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
   setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
+  setShowRecentEditsBar: (show: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -253,6 +255,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   sidebarAssets: [],
   flyToGeometry: null,
   flyToCloseUp: false,
+  showRecentEditsBar: true,  // Default visible
 
   // Filter panel state
   filtersOpen: false,
@@ -604,4 +607,5 @@ export const useUIStore = create<UIState>((set, get) => ({
   setHoveredEvent: (id) => set({ hoveredEventId: id }),
   setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
   setFlyToGeometry: (geometry, closeUp = false) => set({ flyToGeometry: geometry, flyToCloseUp: closeUp }),
+  setShowRecentEditsBar: (show) => set({ showRecentEditsBar: show }),
 }));

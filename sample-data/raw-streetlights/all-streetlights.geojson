@@ -1,0 +1,993 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-8i70vyqj",
+        "lampId": null,
+        "displayName": "SL-8i70vyqj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141315",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8991451,
+          35.1511974
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-9omnw86c",
+        "lampId": null,
+        "displayName": "SL-9omnw86c",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141316",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8991054,
+          35.1510045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ssrsii4n",
+        "lampId": null,
+        "displayName": "SL-ssrsii4n",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141317",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8991335,
+          35.1506457
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-fjqxrtm6",
+        "lampId": null,
+        "displayName": "SL-fjqxrtm6",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141318",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8991766,
+          35.1499859
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-hcs6ojz5",
+        "lampId": null,
+        "displayName": "SL-hcs6ojz5",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141321",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8992077,
+          35.1492548
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zw3f71bz",
+        "lampId": null,
+        "displayName": "SL-zw3f71bz",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141323",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8992458,
+          35.1487054
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-ecyrgxxx",
+        "lampId": null,
+        "displayName": "SL-ecyrgxxx",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2533141334",
+        "osmTimestamp": "2013-11-15T03:57:46Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8991009,
+          35.151587
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-axqjm6fx",
+        "lampId": null,
+        "displayName": "SL-axqjm6fx",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303632",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9013392,
+          35.1444617
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-kfqsiagc",
+        "lampId": null,
+        "displayName": "SL-kfqsiagc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303633",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9012889,
+          35.1450373
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-xgk8xxtr",
+        "lampId": null,
+        "displayName": "SL-xgk8xxtr",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303634",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9011881,
+          35.1452122
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-0yjdnd5e",
+        "lampId": null,
+        "displayName": "SL-0yjdnd5e",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303635",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9018513,
+          35.1470441
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-fw1sz4t1",
+        "lampId": null,
+        "displayName": "SL-fw1sz4t1",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303636",
+        "osmTimestamp": "2020-01-27T16:33:54Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9021982,
+          35.1468663
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-jzbqpray",
+        "lampId": null,
+        "displayName": "SL-jzbqpray",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303637",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9023357,
+          35.1475019
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-u7j4rhd0",
+        "lampId": null,
+        "displayName": "SL-u7j4rhd0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303638",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8985741,
+          35.1516726
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-9oxzgz39",
+        "lampId": null,
+        "displayName": "SL-9oxzgz39",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303639",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9013727,
+          35.1446141
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-pujgg3ne",
+        "lampId": null,
+        "displayName": "SL-pujgg3ne",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303640",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9012693,
+          35.1469255
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-rj8ehjiq",
+        "lampId": null,
+        "displayName": "SL-rj8ehjiq",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303641",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9014368,
+          35.1469975
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-78v8n2np",
+        "lampId": null,
+        "displayName": "SL-78v8n2np",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303643",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8960023,
+          35.151594
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-n4qbjwd4",
+        "lampId": null,
+        "displayName": "SL-n4qbjwd4",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303644",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8986415,
+          35.1512525
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-38hevjjw",
+        "lampId": null,
+        "displayName": "SL-38hevjjw",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303645",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9011908,
+          35.1457115
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-j2hzz66b",
+        "lampId": null,
+        "displayName": "SL-j2hzz66b",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303646",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9012143,
+          35.145968
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-gz0vw5fe",
+        "lampId": null,
+        "displayName": "SL-gz0vw5fe",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2798303647",
+        "osmTimestamp": "2014-04-18T09:25:20Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.901256,
+          35.1462422
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-uqzy1fit",
+        "lampId": null,
+        "displayName": "SL-uqzy1fit",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2844109649",
+        "osmTimestamp": "2014-05-08T14:17:12Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8993474,
+          35.1470842
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-fx4bphsj",
+        "lampId": null,
+        "displayName": "SL-fx4bphsj",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2844109653",
+        "osmTimestamp": "2014-09-29T09:32:31Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8993386,
+          35.1474001
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bhoinq6c",
+        "lampId": null,
+        "displayName": "SL-bhoinq6c",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2844109655",
+        "osmTimestamp": "2014-05-08T14:17:12Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.898908,
+          35.1474669
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-iyfxobue",
+        "lampId": null,
+        "displayName": "SL-iyfxobue",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2844109663",
+        "osmTimestamp": "2014-05-08T14:17:12Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.898929,
+          35.1472206
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-v1w5pyxu",
+        "lampId": null,
+        "displayName": "SL-v1w5pyxu",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "2914344819",
+        "osmTimestamp": "2014-06-13T12:18:52Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8992535,
+          35.1515157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-y2jkudct",
+        "lampId": null,
+        "displayName": "SL-y2jkudct",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "3217098399",
+        "osmTimestamp": "2014-12-03T09:51:45Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8940673,
+          35.1524077
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-nzd61fts",
+        "lampId": null,
+        "displayName": "SL-nzd61fts",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "7152765714",
+        "osmTimestamp": "2020-01-23T02:02:01Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8941675,
+          35.151821
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-a3kf1m9n",
+        "lampId": null,
+        "displayName": "SL-a3kf1m9n",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "11221440891",
+        "osmTimestamp": "2023-09-26T23:12:22Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.8987974,
+          35.1441722
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-bh3qg32n",
+        "lampId": null,
+        "displayName": "SL-bh3qg32n",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135386088",
+        "osmTimestamp": "2024-08-25T09:02:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9087337,
+          35.1824988
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-aec092bt",
+        "lampId": null,
+        "displayName": "SL-aec092bt",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135386089",
+        "osmTimestamp": "2024-08-25T09:02:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9087833,
+          35.1824286
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-p9pdzdrc",
+        "lampId": null,
+        "displayName": "SL-p9pdzdrc",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135386090",
+        "osmTimestamp": "2024-08-25T09:02:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9085594,
+          35.1823069
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-w9gjrlf0",
+        "lampId": null,
+        "displayName": "SL-w9gjrlf0",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135386091",
+        "osmTimestamp": "2024-08-25T09:02:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.908507,
+          35.1823826
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-zwujk6po",
+        "lampId": null,
+        "displayName": "SL-zwujk6po",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135705557",
+        "osmTimestamp": "2024-08-25T12:50:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9083743,
+          35.1823289
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-gwe76ef9",
+        "lampId": null,
+        "displayName": "SL-gwe76ef9",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135705559",
+        "osmTimestamp": "2024-08-25T12:50:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9078057,
+          35.1821009
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-r7a74gg7",
+        "lampId": null,
+        "displayName": "SL-r7a74gg7",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12135705560",
+        "osmTimestamp": "2024-08-25T12:50:48Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9079384,
+          35.1821064
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "SL-06ksissa",
+        "lampId": null,
+        "displayName": "SL-06ksissa",
+        "lampType": "led",
+        "wattage": null,
+        "installDate": null,
+        "lampStatus": "operational",
+        "roadRef": null,
+        "dataSource": "osm_test",
+        "osmType": "node",
+        "osmId": "12640475070",
+        "osmTimestamp": "2025-03-06T09:47:22Z",
+        "status": "active",
+        "ward": "Naka-ku"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          136.9079029,
+          35.1699652
+        ]
+      }
+    }
+  ]
+}

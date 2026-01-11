@@ -1,13 +1,21 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import type {
   ConstructionEvent,
   RoadAsset,
+  RiverAsset,
+  GreenSpaceAsset,
+  StreetLightAsset,
   InspectionRecord,
   EventFilters,
   AssetFilters,
+  RiverFilters,
+  GreenSpaceFilters,
+  StreetLightFilters,
   CreateEventRequest,
   UpdateEventRequest,
 } from '@nagoya/shared';
+import type { FeatureCollection, Geometry, Point } from 'geojson';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -343,5 +351,251 @@ export function useDeleteInspection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
     },
+  });
+}
+
+// Recent edits types and hooks
+export interface RecentEdit {
+  id: string;
+  roadAssetId: string;
+  editType: 'create' | 'update' | 'delete';
+  roadName: string | null;
+  roadDisplayName: string | null;
+  roadWard: string | null;
+  roadType: string | null;
+  centroid: { type: 'Point'; coordinates: [number, number] };
+  bbox: [number, number, number, number];
+  editSource: string | null;
+  editedAt: string;
+}
+
+export function useRecentEdits(options?: { limit?: number }) {
+  const limit = options?.limit ?? 10;
+
+  return useQuery({
+    queryKey: ['recent-edits', limit],
+    queryFn: () =>
+      fetchApi<{
+        data: RecentEdit[];
+        meta: { total: number; hasMore: boolean };
+      }>(`/assets/recent-edits?limit=${limit}`),
+    refetchInterval: 30000, // Fallback: auto-refresh every 30 seconds (SSE is primary)
+  });
+}
+
+// SSE hook for real-time road edit notifications
+export function useRoadEditSSE(options?: { onEdit?: (edit: { id: string; roadAssetId: string; editType: string; roadName: string | null; roadDisplayName: string | null }) => void }) {
+  const queryClient = useQueryClient();
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Use ref for callback to avoid infinite loop (options object changes every render)
+  const onEditRef = useRef(options?.onEdit);
+  onEditRef.current = options?.onEdit;
+
+  useEffect(() => {
+    const connect = () => {
+      // Clean up existing connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
+      const sseUrl = `${API_BASE}/sse/road-edits`;
+      const eventSource = new EventSource(sseUrl);
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        console.log('SSE connected for road edit notifications');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          // Skip connection/heartbeat messages
+          if (data.type === 'connected') {
+            return;
+          }
+
+          // Road edit received - invalidate query to refresh data
+          queryClient.invalidateQueries({ queryKey: ['recent-edits'] });
+
+          // Also invalidate assets query since a road was edited
+          queryClient.invalidateQueries({ queryKey: ['assets'] });
+
+          // Call optional callback via ref
+          if (onEditRef.current && data.id) {
+            onEditRef.current(data);
+          }
+        } catch (err) {
+          console.error('Failed to parse SSE message:', err);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.warn('SSE connection error, will reconnect...');
+        eventSource.close();
+        eventSourceRef.current = null;
+
+        // Reconnect after 5 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, 5000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+  }, [queryClient]); // Only depend on queryClient, not options
+
+  return {
+    isConnected: !!eventSourceRef.current,
+  };
+}
+
+// ============================================
+// Rivers hooks
+// ============================================
+
+export function useRiversInBbox(
+  bbox: string | null,
+  filters?: Omit<RiverFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['rivers', bbox, filters?.waterwayType, filters?.geometryType, filters?.ward, filters?.dataSource],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Geometry, RiverAsset>>(`/rivers${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000, // 1 minute
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useRiver(id: string | null) {
+  return useQuery({
+    queryKey: ['river', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: RiverAsset; geometry: Geometry }>(`/rivers/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useRiverWards() {
+  return useQuery({
+    queryKey: ['river-wards'],
+    queryFn: () => fetchApi<{ data: string[] }>('/rivers/wards'),
+  });
+}
+
+// ============================================
+// Green Spaces hooks
+// ============================================
+
+export function useGreenSpacesInBbox(
+  bbox: string | null,
+  filters?: Omit<GreenSpaceFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['greenspaces', bbox, filters?.greenSpaceType, filters?.ward, filters?.dataSource, filters?.minArea],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Geometry, GreenSpaceAsset>>(`/greenspaces${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useGreenSpace(id: string | null) {
+  return useQuery({
+    queryKey: ['greenspace', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: GreenSpaceAsset; geometry: Geometry }>(`/greenspaces/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useGreenSpaceWards() {
+  return useQuery({
+    queryKey: ['greenspace-wards'],
+    queryFn: () => fetchApi<{ data: string[] }>('/greenspaces/wards'),
+  });
+}
+
+// ============================================
+// Street Lights hooks
+// ============================================
+
+export function useStreetLightsInBbox(
+  bbox: string | null,
+  filters?: Omit<StreetLightFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['streetlights', bbox, filters?.lampType, filters?.lampStatus, filters?.ward, filters?.dataSource],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Point, StreetLightAsset>>(`/streetlights${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useStreetLight(id: string | null) {
+  return useQuery({
+    queryKey: ['streetlight', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: StreetLightAsset; geometry: Point }>(`/streetlights/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useStreetLightWards() {
+  return useQuery({
+    queryKey: ['streetlight-wards'],
+    queryFn: () => fetchApi<{ data: string[] }>('/streetlights/wards'),
   });
 }

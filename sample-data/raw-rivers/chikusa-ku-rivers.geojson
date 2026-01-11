@@ -1,0 +1,1827 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-gmv2nk3y",
+        "name": "奥池",
+        "nameJa": null,
+        "displayName": "奥池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "50894733",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9836623,
+              35.156074
+            ],
+            [
+              136.9836522,
+              35.156081
+            ],
+            [
+              136.9836346,
+              35.1560812
+            ],
+            [
+              136.9835933,
+              35.1560736
+            ],
+            [
+              136.9835593,
+              35.1560746
+            ],
+            [
+              136.9835235,
+              35.1560796
+            ],
+            [
+              136.9834954,
+              35.1560802
+            ],
+            [
+              136.9834808,
+              35.1560764
+            ],
+            [
+              136.9834697,
+              35.1560765
+            ],
+            [
+              136.9834499,
+              35.1560786
+            ],
+            [
+              136.9834311,
+              35.1560768
+            ],
+            [
+              136.9834065,
+              35.1560726
+            ],
+            [
+              136.9834188,
+              35.1560515
+            ],
+            [
+              136.9833321,
+              35.156019
+            ],
+            [
+              136.9833251,
+              35.1560322
+            ],
+            [
+              136.9832758,
+              35.1560302
+            ],
+            [
+              136.9832662,
+              35.1560241
+            ],
+            [
+              136.9832236,
+              35.1559689
+            ],
+            [
+              136.9831727,
+              35.1559106
+            ],
+            [
+              136.9831528,
+              35.1558791
+            ],
+            [
+              136.9831364,
+              35.1558466
+            ],
+            [
+              136.9831309,
+              35.1558098
+            ],
+            [
+              136.9831426,
+              35.1557921
+            ],
+            [
+              136.9831782,
+              35.1557633
+            ],
+            [
+              136.9832592,
+              35.1557096
+            ],
+            [
+              136.9833142,
+              35.1556882
+            ],
+            [
+              136.9833496,
+              35.1556806
+            ],
+            [
+              136.983391,
+              35.1556806
+            ],
+            [
+              136.9834342,
+              35.1556885
+            ],
+            [
+              136.9834562,
+              35.1557013
+            ],
+            [
+              136.983479,
+              35.1557229
+            ],
+            [
+              136.9834862,
+              35.1557389
+            ],
+            [
+              136.9834859,
+              35.1557639
+            ],
+            [
+              136.9834678,
+              35.1557933
+            ],
+            [
+              136.9834637,
+              35.1558038
+            ],
+            [
+              136.9834642,
+              35.1558157
+            ],
+            [
+              136.9834731,
+              35.1558252
+            ],
+            [
+              136.9835048,
+              35.155835
+            ],
+            [
+              136.9835323,
+              35.1558326
+            ],
+            [
+              136.9835534,
+              35.1558331
+            ],
+            [
+              136.9835703,
+              35.1558388
+            ],
+            [
+              136.983585,
+              35.1558465
+            ],
+            [
+              136.9836201,
+              35.1558837
+            ],
+            [
+              136.9836224,
+              35.1559073
+            ],
+            [
+              136.9836282,
+              35.1559157
+            ],
+            [
+              136.9836669,
+              35.1559373
+            ],
+            [
+              136.9836822,
+              35.155949
+            ],
+            [
+              136.9837052,
+              35.1559842
+            ],
+            [
+              136.9837286,
+              35.1560116
+            ],
+            [
+              136.9837509,
+              35.1560299
+            ],
+            [
+              136.9837535,
+              35.156041
+            ],
+            [
+              136.983752,
+              35.156051
+            ],
+            [
+              136.983744,
+              35.1560531
+            ],
+            [
+              136.9836695,
+              35.1560546
+            ],
+            [
+              136.98367,
+              35.1560672
+            ],
+            [
+              136.9836623,
+              35.156074
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-nnlm9gi6",
+        "name": "香流川",
+        "nameJa": "香流川",
+        "displayName": "香流川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "58686172",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.985049,
+            35.187353
+          ],
+          [
+            136.984905,
+            35.187379
+          ],
+          [
+            136.98473,
+            35.187438
+          ],
+          [
+            136.984395,
+            35.187588
+          ],
+          [
+            136.984194,
+            35.18763
+          ],
+          [
+            136.983843,
+            35.18768
+          ],
+          [
+            136.982944,
+            35.187781
+          ],
+          [
+            136.981714,
+            35.187898
+          ],
+          [
+            136.981179,
+            35.187973
+          ],
+          [
+            136.980669,
+            35.188031
+          ],
+          [
+            136.980234,
+            35.188123
+          ],
+          [
+            136.979774,
+            35.188206
+          ],
+          [
+            136.979356,
+            35.188282
+          ],
+          [
+            136.978603,
+            35.188441
+          ],
+          [
+            136.977602,
+            35.188788
+          ],
+          [
+            136.975863,
+            35.189322
+          ],
+          [
+            136.975069,
+            35.18959
+          ],
+          [
+            136.974453,
+            35.189788
+          ],
+          [
+            136.974057,
+            35.189916
+          ],
+          [
+            136.973568,
+            35.190066
+          ],
+          [
+            136.973299,
+            35.190252
+          ],
+          [
+            136.973277,
+            35.190267
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-clkv5e53",
+        "name": "山崎川",
+        "nameJa": "山崎川",
+        "displayName": "山崎川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "58686502",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9625143,
+            35.163279
+          ],
+          [
+            136.9614431,
+            35.1626761
+          ],
+          [
+            136.9603702,
+            35.1620489
+          ],
+          [
+            136.9602443,
+            35.1619607
+          ],
+          [
+            136.9595067,
+            35.1611243
+          ],
+          [
+            136.9594143,
+            35.161003
+          ],
+          [
+            136.958904,
+            35.1599902
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-7gwbvv5l",
+        "name": "千種台川",
+        "nameJa": "千種台川",
+        "displayName": "千種台川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "58688455",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.972043,
+            35.188673
+          ],
+          [
+            136.971703,
+            35.188946
+          ],
+          [
+            136.971387,
+            35.189208
+          ],
+          [
+            136.970966,
+            35.189543
+          ],
+          [
+            136.970828,
+            35.189615
+          ],
+          [
+            136.97065,
+            35.189763
+          ],
+          [
+            136.970395,
+            35.190016
+          ],
+          [
+            136.970152,
+            35.190242
+          ],
+          [
+            136.970051,
+            35.190456
+          ],
+          [
+            136.970043,
+            35.190473
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-gl4jpa2z",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-gl4jpa2z",
+        "geometryType": "line",
+        "waterwayType": "stream",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "58689094",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9864822,
+            35.1839816
+          ],
+          [
+            136.9865094,
+            35.1847322
+          ],
+          [
+            136.986464,
+            35.185271
+          ],
+          [
+            136.986409,
+            35.185485
+          ],
+          [
+            136.9863735,
+            35.1857408
+          ],
+          [
+            136.9863313,
+            35.1858905
+          ],
+          [
+            136.986242,
+            35.185976
+          ],
+          [
+            136.986039,
+            35.186307
+          ],
+          [
+            136.985867,
+            35.186499
+          ],
+          [
+            136.985586,
+            35.18678
+          ],
+          [
+            136.985147,
+            35.187192
+          ],
+          [
+            136.985049,
+            35.187353
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-vyfysb6t",
+        "name": "きんぎょ池",
+        "nameJa": "きんぎょ池",
+        "displayName": "きんぎょ池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "321580607",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9827272,
+              35.1693442
+            ],
+            [
+              136.9826376,
+              35.1692355
+            ],
+            [
+              136.982662,
+              35.1691867
+            ],
+            [
+              136.9827462,
+              35.1691467
+            ],
+            [
+              136.9828222,
+              35.1690957
+            ],
+            [
+              136.9829036,
+              35.1692444
+            ],
+            [
+              136.9829633,
+              35.1693752
+            ],
+            [
+              136.9828167,
+              35.1694418
+            ],
+            [
+              136.9827272,
+              35.1693442
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-c84l5u7y",
+        "name": "奥池",
+        "nameJa": null,
+        "displayName": "奥池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "321580610",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9862513,
+              35.1676821
+            ],
+            [
+              136.9862679,
+              35.1676141
+            ],
+            [
+              136.9863511,
+              35.1675869
+            ],
+            [
+              136.9863594,
+              35.1676396
+            ],
+            [
+              136.9863199,
+              35.1676821
+            ],
+            [
+              136.9862513,
+              35.1676821
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-dnm5k3cu",
+        "name": "大坂池",
+        "nameJa": null,
+        "displayName": "大坂池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "321580611",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9784721,
+              35.1650936
+            ],
+            [
+              136.9784721,
+              35.1650303
+            ],
+            [
+              136.9785689,
+              35.164948
+            ],
+            [
+              136.9787237,
+              35.164967
+            ],
+            [
+              136.9788243,
+              35.1650208
+            ],
+            [
+              136.9788785,
+              35.1651062
+            ],
+            [
+              136.9788707,
+              35.165179
+            ],
+            [
+              136.9788232,
+              35.1652034
+            ],
+            [
+              136.9787662,
+              35.1652328
+            ],
+            [
+              136.9786114,
+              35.1652391
+            ],
+            [
+              136.9785069,
+              35.1651663
+            ],
+            [
+              136.9784721,
+              35.1650936
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-de6wlsfd",
+        "name": "山崎川",
+        "nameJa": "山崎川",
+        "displayName": "山崎川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "367463860",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9715094,
+            35.1711585
+          ],
+          [
+            136.9712595,
+            35.1708899
+          ],
+          [
+            136.9712521,
+            35.1706804
+          ],
+          [
+            136.9711478,
+            35.1700249
+          ],
+          [
+            136.9708967,
+            35.169219
+          ],
+          [
+            136.9705825,
+            35.1684419
+          ],
+          [
+            136.9698179,
+            35.1682705
+          ],
+          [
+            136.9695027,
+            35.1682056
+          ],
+          [
+            136.9690855,
+            35.168075
+          ],
+          [
+            136.9637448,
+            35.1640266
+          ],
+          [
+            136.9635519,
+            35.1638865
+          ],
+          [
+            136.9634431,
+            35.1638074
+          ],
+          [
+            136.9633851,
+            35.1637653
+          ],
+          [
+            136.9631729,
+            35.1636454
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-hel8sfia",
+        "name": "千種台川",
+        "nameJa": "千種台川",
+        "displayName": "千種台川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "446845285",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9721544,
+            35.1883731
+          ],
+          [
+            136.972691,
+            35.1869285
+          ],
+          [
+            136.97341,
+            35.184993
+          ],
+          [
+            136.973258,
+            35.183709
+          ],
+          [
+            136.973853,
+            35.183353
+          ],
+          [
+            136.974732,
+            35.182349
+          ],
+          [
+            136.975663,
+            35.180948
+          ],
+          [
+            136.9766157,
+            35.1792284
+          ],
+          [
+            136.976991,
+            35.178551
+          ],
+          [
+            136.977383,
+            35.177308
+          ],
+          [
+            136.97736,
+            35.176368
+          ],
+          [
+            136.976801,
+            35.175684
+          ],
+          [
+            136.9762029,
+            35.1747417
+          ],
+          [
+            136.9757928,
+            35.1745519
+          ],
+          [
+            136.9751145,
+            35.1742599
+          ],
+          [
+            136.9746769,
+            35.1741051
+          ],
+          [
+            136.9742393,
+            35.1739349
+          ],
+          [
+            136.9739114,
+            35.1737738
+          ],
+          [
+            136.9738287,
+            35.1736355
+          ],
+          [
+            136.9739402,
+            35.1733554
+          ],
+          [
+            136.9739081,
+            35.1730264
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-30uxq9xi",
+        "name": null,
+        "nameJa": "千種台川",
+        "displayName": "千種台川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "446845296",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9739081,
+            35.1730264
+          ],
+          [
+            136.972505,
+            35.172488
+          ],
+          [
+            136.97165,
+            35.172007
+          ],
+          [
+            136.971455,
+            35.171416
+          ],
+          [
+            136.972229,
+            35.171057
+          ],
+          [
+            136.973674,
+            35.170984
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-k7x86sga",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-k7x86sga",
+        "geometryType": "line",
+        "waterwayType": "stream",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "498576452",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9860506,
+            35.1675263
+          ],
+          [
+            136.98574,
+            35.1673927
+          ],
+          [
+            136.9855018,
+            35.1670682
+          ],
+          [
+            136.9854738,
+            35.1668793
+          ],
+          [
+            136.9853991,
+            35.1667456
+          ],
+          [
+            136.9853244,
+            35.1666655
+          ],
+          [
+            136.9853617,
+            35.1665509
+          ],
+          [
+            136.9852847,
+            35.1663181
+          ],
+          [
+            136.9850535,
+            35.1662627
+          ],
+          [
+            136.984736,
+            35.1661615
+          ],
+          [
+            136.9845375,
+            35.1660184
+          ],
+          [
+            136.9843694,
+            35.1659535
+          ],
+          [
+            136.9842246,
+            35.1659554
+          ],
+          [
+            136.9840074,
+            35.165858
+          ],
+          [
+            136.9837973,
+            35.1659096
+          ],
+          [
+            136.9833116,
+            35.1658809
+          ],
+          [
+            136.9827559,
+            35.1658141
+          ],
+          [
+            136.9823753,
+            35.1657721
+          ],
+          [
+            136.9822889,
+            35.1657454
+          ],
+          [
+            136.9821651,
+            35.1658046
+          ],
+          [
+            136.9820017,
+            35.1658218
+          ],
+          [
+            136.9817658,
+            35.1658351
+          ],
+          [
+            136.9814997,
+            35.1658294
+          ],
+          [
+            136.9812335,
+            35.1658084
+          ],
+          [
+            136.981007,
+            35.1658351
+          ],
+          [
+            136.9809042,
+            35.1657798
+          ],
+          [
+            136.9801897,
+            35.1656042
+          ],
+          [
+            136.9798511,
+            35.1656423
+          ],
+          [
+            136.9795289,
+            35.1655583
+          ],
+          [
+            136.9792511,
+            35.1654915
+          ],
+          [
+            136.979132,
+            35.1654705
+          ],
+          [
+            136.9790269,
+            35.1653197
+          ],
+          [
+            136.9788891,
+            35.1652358
+          ],
+          [
+            136.9788232,
+            35.1652034
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-75kpf2xi",
+        "name": "スイレン池",
+        "nameJa": null,
+        "displayName": "スイレン池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "551751824",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9823171,
+              35.154109
+            ],
+            [
+              136.9823123,
+              35.1540762
+            ],
+            [
+              136.9823243,
+              35.1540677
+            ],
+            [
+              136.9823296,
+              35.1540571
+            ],
+            [
+              136.9823353,
+              35.1540435
+            ],
+            [
+              136.9823312,
+              35.1540187
+            ],
+            [
+              136.9823144,
+              35.1539965
+            ],
+            [
+              136.9822901,
+              35.153982
+            ],
+            [
+              136.9822845,
+              35.1539464
+            ],
+            [
+              136.9818659,
+              35.1540059
+            ],
+            [
+              136.9818713,
+              35.1540367
+            ],
+            [
+              136.9818569,
+              35.1540503
+            ],
+            [
+              136.9818484,
+              35.1540641
+            ],
+            [
+              136.9818458,
+              35.1540855
+            ],
+            [
+              136.9818512,
+              35.1541008
+            ],
+            [
+              136.9818622,
+              35.1541158
+            ],
+            [
+              136.9818801,
+              35.1541283
+            ],
+            [
+              136.9818872,
+              35.1541342
+            ],
+            [
+              136.9818924,
+              35.1541435
+            ],
+            [
+              136.9818962,
+              35.1541679
+            ],
+            [
+              136.9823171,
+              35.154109
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-0j5v7qhh",
+        "name": "山崎川",
+        "nameJa": "山崎川",
+        "displayName": "山崎川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "653683325",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.958904,
+            35.1599902
+          ],
+          [
+            136.9588035,
+            35.1596326
+          ],
+          [
+            136.958161,
+            35.158837
+          ],
+          [
+            136.9538203,
+            35.159418
+          ],
+          [
+            136.9535734,
+            35.1594425
+          ],
+          [
+            136.953533,
+            35.159421
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-0e2xfcgs",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-0e2xfcgs",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "684076335",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9782129,
+              35.1698159
+            ],
+            [
+              136.9783175,
+              35.1698312
+            ],
+            [
+              136.9784596,
+              35.1698291
+            ],
+            [
+              136.9785696,
+              35.169794
+            ],
+            [
+              136.9786152,
+              35.1696887
+            ],
+            [
+              136.9786098,
+              35.1695813
+            ],
+            [
+              136.9785321,
+              35.1695046
+            ],
+            [
+              136.9783926,
+              35.1694497
+            ],
+            [
+              136.978237,
+              35.1694519
+            ],
+            [
+              136.978127,
+              35.1694739
+            ],
+            [
+              136.9780439,
+              35.1695331
+            ],
+            [
+              136.9779956,
+              35.1696208
+            ],
+            [
+              136.9780117,
+              35.1697216
+            ],
+            [
+              136.9781136,
+              35.1697896
+            ],
+            [
+              136.9782129,
+              35.1698159
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-98cvrzls",
+        "name": "山崎川",
+        "nameJa": "山崎川",
+        "displayName": "山崎川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "837851570",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9631729,
+            35.1636454
+          ],
+          [
+            136.9625143,
+            35.163279
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-izjr26ef",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-izjr26ef",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "936681918",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9561474,
+              35.1702503
+            ],
+            [
+              136.9561774,
+              35.1701628
+            ],
+            [
+              136.956176,
+              35.1701264
+            ],
+            [
+              136.9562591,
+              35.1701159
+            ],
+            [
+              136.9562935,
+              35.1701544
+            ],
+            [
+              136.9562309,
+              35.1702838
+            ],
+            [
+              136.9561474,
+              35.1702503
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-lynwo79v",
+        "name": "千種台川",
+        "nameJa": "千種台川",
+        "displayName": "千種台川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "936699058",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9720935,
+            35.188537
+          ],
+          [
+            136.9721544,
+            35.1883731
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-zxi01ivr",
+        "name": "千種台川",
+        "nameJa": "千種台川",
+        "displayName": "千種台川",
+        "geometryType": "line",
+        "waterwayType": "river",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "936699059",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.972043,
+            35.188673
+          ],
+          [
+            136.9720935,
+            35.188537
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-7g48z1d5",
+        "name": "古代池",
+        "nameJa": null,
+        "displayName": "古代池",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1186177990",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9763744,
+              35.1559378
+            ],
+            [
+              136.9763552,
+              35.1559423
+            ],
+            [
+              136.9763243,
+              35.1559578
+            ],
+            [
+              136.9763101,
+              35.1559691
+            ],
+            [
+              136.976334,
+              35.1559603
+            ],
+            [
+              136.9763533,
+              35.1559638
+            ],
+            [
+              136.9763679,
+              35.1559788
+            ],
+            [
+              136.9763731,
+              35.1559898
+            ],
+            [
+              136.9763696,
+              35.1560034
+            ],
+            [
+              136.9763974,
+              35.156001
+            ],
+            [
+              136.976458,
+              35.156015
+            ],
+            [
+              136.9764585,
+              35.1560368
+            ],
+            [
+              136.9764187,
+              35.1560666
+            ],
+            [
+              136.976372,
+              35.1560675
+            ],
+            [
+              136.9763303,
+              35.1560476
+            ],
+            [
+              136.9763073,
+              35.1560545
+            ],
+            [
+              136.9763197,
+              35.1561347
+            ],
+            [
+              136.9763872,
+              35.156149
+            ],
+            [
+              136.9764503,
+              35.1561118
+            ],
+            [
+              136.976512,
+              35.1560415
+            ],
+            [
+              136.9765247,
+              35.1559791
+            ],
+            [
+              136.9765051,
+              35.1559495
+            ],
+            [
+              136.9764731,
+              35.1559742
+            ],
+            [
+              136.9764524,
+              35.1559851
+            ],
+            [
+              136.9764274,
+              35.1559831
+            ],
+            [
+              136.9764058,
+              35.1559723
+            ],
+            [
+              136.9763991,
+              35.1559533
+            ],
+            [
+              136.9763891,
+              35.1559368
+            ],
+            [
+              136.9763744,
+              35.1559378
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-sehs97g2",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-sehs97g2",
+        "geometryType": "polygon",
+        "waterwayType": null,
+        "waterType": "pond",
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1186177991",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              136.9765173,
+              35.1557513
+            ],
+            [
+              136.9766248,
+              35.1557707
+            ],
+            [
+              136.9766725,
+              35.1557439
+            ],
+            [
+              136.9766496,
+              35.1557188
+            ],
+            [
+              136.976621,
+              35.1557206
+            ],
+            [
+              136.9765915,
+              35.1557374
+            ],
+            [
+              136.9765414,
+              35.155706
+            ],
+            [
+              136.9765146,
+              35.1557228
+            ],
+            [
+              136.9765173,
+              35.1557513
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "RV-el4gusnr",
+        "name": null,
+        "nameJa": null,
+        "displayName": "RV-el4gusnr",
+        "geometryType": "line",
+        "waterwayType": "stream",
+        "waterType": null,
+        "width": null,
+        "managementLevel": null,
+        "maintainer": null,
+        "dataSource": "osm_test",
+        "osmType": "way",
+        "osmId": "1186178003",
+        "osmTimestamp": null,
+        "status": "active",
+        "ward": "Chikusa-ku"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            136.9767664,
+            35.157304
+          ],
+          [
+            136.9767779,
+            35.1572987
+          ],
+          [
+            136.9767844,
+            35.1572887
+          ],
+          [
+            136.9767877,
+            35.157273
+          ],
+          [
+            136.9767839,
+            35.1572622
+          ],
+          [
+            136.9767704,
+            35.1572188
+          ]
+        ]
+      }
+    }
+  ]
+}

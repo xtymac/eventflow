@@ -5,7 +5,7 @@ import { Protocol } from 'pmtiles';
 import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections, useEvent } from '../hooks/useApi';
+import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
@@ -118,11 +118,11 @@ export function MapView() {
     showEvents,
     showAssets,
     showInspections,
-    showOsmLabels,
+    showRivers,
     toggleEvents,
     toggleAssets,
     toggleInspections,
-    toggleOsmLabels,
+    toggleRivers,
   } = useMapStore();
   const {
     selectedEventId,
@@ -267,6 +267,13 @@ export function MapView() {
     { enabled: showAssets && (!!mapBbox || useGlobalFilter) && (currentZoom >= 14 || hasActiveAssetFilters) }
   );
   const { data: inspectionsData } = useInspections();
+
+  // Rivers data - load when visible and zoom >= 12
+  const { data: riversData } = useRiversInBbox(
+    mapBbox ?? null,
+    undefined, // no filters for now
+    { enabled: showRivers && !!mapBbox && currentZoom >= 12 }
+  );
 
   // Drawing mode: enable when any editor has active drawing context
   const isDrawingEnabled = !!drawingContext;
@@ -777,6 +784,65 @@ export function MapView() {
         },
       });
 
+      // Rivers source and layers (blue for water)
+      map.current.addSource('rivers', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Rivers fill layer (for polygon rivers - water body areas)
+      // Very low opacity so roads on bridges are still clearly visible
+      // Insert before roads-preview-line so rivers render BELOW roads
+      map.current.addLayer({
+        id: 'rivers-fill',
+        type: 'fill',
+        source: 'rivers',
+        filter: ['==', ['get', 'geometryType'], 'polygon'],
+        paint: {
+          'fill-color': '#60A5FA', // Lighter blue for water body
+          'fill-opacity': 0.15,   // Very low opacity
+        },
+      }, 'roads-preview-line'); // Insert below roads
+
+      // Rivers line layer (for line rivers only - not polygon outlines)
+      map.current.addLayer({
+        id: 'rivers-line',
+        type: 'line',
+        source: 'rivers',
+        filter: ['!=', ['get', 'geometryType'], 'polygon'], // Only line rivers
+        paint: {
+          'line-color': '#3B82F6',
+          'line-width': [
+            'case',
+            ['==', ['get', 'waterwayType'], 'river'], 4,   // Wider for major rivers
+            ['==', ['get', 'waterwayType'], 'canal'], 3,   // Medium for canals
+            2 // Default for streams/drains
+          ],
+          'line-opacity': 0.8,
+        },
+      }, 'roads-preview-line'); // Insert below roads
+
+      // Rivers label layer
+      map.current.addLayer({
+        id: 'rivers-label',
+        type: 'symbol',
+        source: 'rivers',
+        minzoom: 13,
+        layout: {
+          'text-field': ['get', 'displayName'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 16, 12],
+          'symbol-placement': 'line',
+          'text-max-angle': 30,
+          'text-allow-overlap': false,
+        },
+        paint: {
+          'text-color': '#1e40af',
+          'text-halo-color': 'rgba(255,255,255,0.9)',
+          'text-halo-width': 2,
+        },
+      });
+
       // Highlight layers for selected features
       map.current.addSource('selected-event', {
         type: 'geojson',
@@ -862,6 +928,30 @@ export function MapView() {
         },
       });
 
+      // Fill layer for polygon geometries (selected asset)
+      map.current.addLayer({
+        id: 'selected-asset-fill',
+        type: 'fill',
+        source: 'selected-asset',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'fill-color': '#EF4444',
+          'fill-opacity': 0.3,
+        },
+      });
+
+      // Outline for polygon geometries (selected asset)
+      map.current.addLayer({
+        id: 'selected-asset-outline',
+        type: 'line',
+        source: 'selected-asset',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'line-color': '#EF4444',
+          'line-width': 4,
+        },
+      });
+
       // Hover highlight glow layer (outer glow for visibility)
       map.current.addLayer({
         id: 'hovered-asset-glow',
@@ -918,35 +1008,6 @@ export function MapView() {
           'line-width': 3,
         },
       });
-
-      // OSM Road Labels (CARTO Vector)
-      map.current.addSource('carto-vector', {
-        type: 'vector',
-        url: 'https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json',
-        attribution: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      });
-
-      map.current.addLayer({
-        id: 'osm-road-labels',
-        type: 'symbol',
-        source: 'carto-vector',
-        'source-layer': 'transportation_name',
-        minzoom: 12,
-        maxzoom: 15,  // Handoff to assets-label at zoom 15
-        layout: {
-          'text-field': ['coalesce', ['get', 'name'], ['get', 'name:ja'], ['get', 'ref'], ''],
-          'text-font': ['Noto Sans Regular'],  // CJK support
-          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 15, 14],
-          'symbol-placement': 'line',
-          'text-max-angle': 30,
-          'text-allow-overlap': false,
-        },
-        paint: {
-          'text-color': '#2b2b2b',
-          'text-halo-color': 'rgba(255,255,255,0.9)',
-          'text-halo-width': 2,
-        },
-      }, 'assets-line');  // Insert before assets-line
 
       // Create popup
       popup.current = new maplibregl.Popup({
@@ -1597,6 +1658,32 @@ export function MapView() {
     map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
   }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom, hasActiveAssetFilters]);
 
+  // Update rivers layer (API data for zoom >= 12)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('rivers') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    // Clear rivers when showRivers is off or no data
+    if (!showRivers || currentZoom < 12) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      map.current.setLayoutProperty('rivers-fill', 'visibility', 'none');
+      map.current.setLayoutProperty('rivers-line', 'visibility', 'none');
+      map.current.setLayoutProperty('rivers-label', 'visibility', 'none');
+      return;
+    }
+
+    // Get rivers features from API response (already in GeoJSON format)
+    const features = riversData?.features ?? [];
+
+    source.setData({ type: 'FeatureCollection', features });
+    // Hide polygon rivers (water bodies) by default, only show line rivers
+    map.current.setLayoutProperty('rivers-fill', 'visibility', 'none');
+    map.current.setLayoutProperty('rivers-line', 'visibility', 'visible');
+    map.current.setLayoutProperty('rivers-label', 'visibility', 'visible');
+  }, [riversData, showRivers, mapLoaded, currentZoom]);
+
   // Highlight selected assets while editing an event
   // Uses separate source so it shows at all zoom levels
   useEffect(() => {
@@ -1680,20 +1767,6 @@ export function MapView() {
       // Layers may not exist if PMTiles file is not available
     }
   }, [currentZoom, showAssets, mapLoaded, hasActiveAssetFilters]);
-
-  // Update OSM road labels visibility
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    // Guard: check layer exists before setting property
-    if (!map.current.getLayer('osm-road-labels')) return;
-
-    map.current.setLayoutProperty(
-      'osm-road-labels',
-      'visibility',
-      showOsmLabels ? 'visible' : 'none'
-    );
-  }, [showOsmLabels, mapLoaded]);
 
   // Update events layer
   useEffect(() => {
@@ -2521,9 +2594,9 @@ export function MapView() {
             size="sm"
           />
           <Switch
-            label="OSM Road Labels"
-            checked={showOsmLabels}
-            onChange={toggleOsmLabels}
+            label="Rivers"
+            checked={showRivers}
+            onChange={toggleRivers}
             size="sm"
           />
         </Stack>
@@ -2572,6 +2645,18 @@ export function MapView() {
             <Text size="xs">Local</Text>
           </Group>
         </Stack>
+
+        {showRivers && (
+          <>
+            <Text size="sm" fw={600} mt="sm" mb="xs">Rivers</Text>
+            <Stack gap={4}>
+              <Group gap="xs">
+                <Box style={{ width: 12, height: 3, backgroundColor: '#3B82F6' }} />
+                <Text size="xs">River/Stream</Text>
+              </Group>
+            </Stack>
+          </>
+        )}
 
         {isEventFormOpen && (
           <>

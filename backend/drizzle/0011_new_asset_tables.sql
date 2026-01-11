@@ -50,12 +50,15 @@ CREATE INDEX IF NOT EXISTS idx_rivers_geometry_type ON river_assets(geometry_typ
 CREATE INDEX IF NOT EXISTS idx_rivers_data_source ON river_assets(data_source);
 CREATE INDEX IF NOT EXISTS idx_rivers_ward ON river_assets(ward);
 CREATE INDEX IF NOT EXISTS idx_rivers_geometry_gist ON river_assets USING GIST (geometry);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_rivers_osm_unique ON river_assets(osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL;
 
--- CHECK constraint for geometry_type consistency
+-- Unique constraint for OSM upsert (required for ON CONFLICT)
+ALTER TABLE river_assets ADD CONSTRAINT river_assets_osm_unique UNIQUE (osm_type, osm_id);
+
+-- CHECK constraint for geometry_type consistency (supports Multi* for OSM relations)
 ALTER TABLE river_assets ADD CONSTRAINT chk_river_geometry_type CHECK (
   (geometry_type = 'line' AND ST_GeometryType(geometry) IN ('ST_LineString', 'ST_MultiLineString')) OR
-  (geometry_type = 'polygon' AND ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon'))
+  (geometry_type = 'polygon' AND ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon')) OR
+  (geometry_type = 'collection' AND ST_GeometryType(geometry) = 'ST_GeometryCollection')
 );
 
 -- Comments
@@ -114,7 +117,9 @@ CREATE INDEX IF NOT EXISTS idx_greenspaces_type ON greenspace_assets(green_space
 CREATE INDEX IF NOT EXISTS idx_greenspaces_data_source ON greenspace_assets(data_source);
 CREATE INDEX IF NOT EXISTS idx_greenspaces_ward ON greenspace_assets(ward);
 CREATE INDEX IF NOT EXISTS idx_greenspaces_geometry_gist ON greenspace_assets USING GIST (geometry);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_greenspaces_osm_unique ON greenspace_assets(osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL;
+
+-- Unique constraint for OSM upsert (required for ON CONFLICT)
+ALTER TABLE greenspace_assets ADD CONSTRAINT greenspace_assets_osm_unique UNIQUE (osm_type, osm_id);
 
 -- Comments
 COMMENT ON TABLE greenspace_assets IS 'Parks, plazas, and green space assets';
@@ -171,7 +176,9 @@ CREATE INDEX IF NOT EXISTS idx_streetlights_lamp_type ON streetlight_assets(lamp
 CREATE INDEX IF NOT EXISTS idx_streetlights_data_source ON streetlight_assets(data_source);
 CREATE INDEX IF NOT EXISTS idx_streetlights_ward ON streetlight_assets(ward);
 CREATE INDEX IF NOT EXISTS idx_streetlights_geometry_gist ON streetlight_assets USING GIST (geometry);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_streetlights_osm_unique ON streetlight_assets(osm_type, osm_id) WHERE osm_type IS NOT NULL AND osm_id IS NOT NULL;
+
+-- Unique constraint for OSM upsert (required for ON CONFLICT)
+ALTER TABLE streetlight_assets ADD CONSTRAINT streetlight_assets_osm_unique UNIQUE (osm_type, osm_id);
 
 -- Comments
 COMMENT ON TABLE streetlight_assets IS 'Street lighting infrastructure assets';

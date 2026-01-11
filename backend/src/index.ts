@@ -6,6 +6,10 @@ import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
 import { importExportRoutes } from './routes/import-export.js';
 import { osmSyncRoutes } from './routes/osm-sync.js';
+import { sseRoutes } from './routes/sse.js';
+import { riversRoutes } from './routes/rivers.js';
+import { greenspacesRoutes } from './routes/greenspaces.js';
+import { streetlightsRoutes } from './routes/streetlights.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 
@@ -57,6 +61,12 @@ async function main() {
   await fastify.register(importExportRoutes, { prefix: '/import' });
   await fastify.register(importExportRoutes, { prefix: '/export' });
   await fastify.register(osmSyncRoutes, { prefix: '/osm-sync' });
+  await fastify.register(sseRoutes, { prefix: '/sse' });
+
+  // New asset type routes
+  await fastify.register(riversRoutes, { prefix: '/rivers' });
+  await fastify.register(greenspacesRoutes, { prefix: '/greenspaces' });
+  await fastify.register(streetlightsRoutes, { prefix: '/streetlights' });
 
   // Initialize background job scheduler
   initScheduler();
