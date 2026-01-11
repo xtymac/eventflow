@@ -16,6 +16,15 @@ function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: numb
   return { minLng, minLat, maxLng, maxLat };
 }
 
+// Get simplification tolerance based on zoom level
+// Higher zoom = smaller tolerance = more detail
+function getSimplifyTolerance(zoom: number): number {
+  if (zoom >= 16) return 0; // No simplification at high zoom
+  if (zoom >= 14) return 0.00005; // ~5m
+  if (zoom >= 12) return 0.0002; // ~20m
+  return 0.001; // ~100m for lower zoom
+}
+
 // TypeBox schemas
 const GeometrySchema = Type.Object({
   type: Type.String(),
@@ -50,6 +59,7 @@ export async function riversRoutes(fastify: FastifyInstance) {
     schema: {
       querystring: Type.Object({
         bbox: Type.String(), // REQUIRED: "minLng,minLat,maxLng,maxLat"
+        zoom: Type.Optional(Type.Integer({ minimum: 1, maximum: 22 })), // Map zoom level for simplification
         status: Type.Optional(Type.String()),
         waterwayType: Type.Optional(Type.String()),
         geometryType: Type.Optional(Type.String()),
@@ -78,7 +88,7 @@ export async function riversRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const { bbox, status, waterwayType, geometryType, ward, dataSource, q } = request.query;
+    const { bbox, zoom, status, waterwayType, geometryType, ward, dataSource, q } = request.query;
     const limit = Math.min(request.query.limit ?? 200, 1000);
     const offset = request.query.offset ?? 0;
     const includeTotal = request.query.includeTotal !== false;
@@ -90,6 +100,9 @@ export async function riversRoutes(fastify: FastifyInstance) {
     }
 
     const { minLng, minLat, maxLng, maxLat } = bboxParsed;
+
+    // Calculate simplification tolerance based on zoom
+    const simplifyTolerance = getSimplifyTolerance(zoom ?? 14);
 
     // Build WHERE conditions
     const conditions: ReturnType<typeof sql>[] = [
@@ -138,11 +151,15 @@ export async function riversRoutes(fastify: FastifyInstance) {
       total = countResult.rows[0]?.total ?? 0;
     }
 
-    // Get paginated results
+    // Get paginated results with optional geometry simplification
+    const geometryExpr = simplifyTolerance > 0
+      ? sql`ST_AsGeoJSON(ST_Simplify(geometry, ${simplifyTolerance}))::json`
+      : sql`ST_AsGeoJSON(geometry)::json`;
+
     const result = await db.execute(sql`
       SELECT
         id, name, name_ja as "nameJa", display_name as "displayName",
-        ST_AsGeoJSON(geometry)::json as geometry,
+        ${geometryExpr} as geometry,
         geometry_type as "geometryType",
         waterway_type as "waterwayType", water_type as "waterType",
         width, management_level as "managementLevel", maintainer,

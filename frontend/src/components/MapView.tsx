@@ -277,25 +277,25 @@ export function MapView() {
   );
   const { data: inspectionsData } = useInspections();
 
-  // Rivers data - load when visible and zoom >= 12
+  // Rivers data - load when visible and zoom >= 13 (with geometry simplification)
   const { data: riversData } = useRiversInBbox(
     mapBbox ?? null,
-    undefined, // no filters for now
-    { enabled: showRivers && !!mapBbox && currentZoom >= 12 }
+    undefined,
+    { enabled: showRivers && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
   );
 
-  // Green spaces data - load when visible and zoom >= 12
+  // Green spaces data - load when visible and zoom >= 13 (with geometry simplification)
   const { data: greenSpacesData } = useGreenSpacesInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: showGreenSpaces && !!mapBbox && currentZoom >= 12 }
+    { enabled: showGreenSpaces && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
   );
 
-  // Street lights data - load when visible and zoom >= 14 (higher zoom due to quantity)
+  // Street lights data - load when visible and zoom >= 15 (higher zoom due to quantity)
   const { data: streetLightsData } = useStreetLightsInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: showStreetLights && !!mapBbox && currentZoom >= 14 }
+    { enabled: showStreetLights && !!mapBbox && currentZoom >= 15 }
   );
 
   // Drawing mode: enable when any editor has active drawing context
@@ -884,7 +884,7 @@ export function MapView() {
           'fill-color': '#22C55E',
           'fill-opacity': 0.4,
         },
-      });
+      }, 'roads-preview-line'); // Insert below roads
 
       // Green spaces outline layer
       map.current.addLayer({
@@ -899,7 +899,7 @@ export function MapView() {
           'line-width': 2,
           'line-opacity': 0.8,
         },
-      });
+      }, 'roads-preview-line'); // Insert below roads
 
       // Green spaces label layer
       map.current.addLayer({

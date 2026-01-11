@@ -469,10 +469,11 @@ export function useRoadEditSSE(options?: { onEdit?: (edit: { id: string; roadAss
 export function useRiversInBbox(
   bbox: string | null,
   filters?: Omit<RiverFilters, 'bbox'>,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; zoom?: number }
 ) {
   const params = new URLSearchParams();
   if (bbox) params.append('bbox', bbox);
+  if (options?.zoom) params.append('zoom', String(Math.floor(options.zoom)));
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -483,7 +484,7 @@ export function useRiversInBbox(
   const queryString = params.toString() ? `?${params.toString()}` : '';
 
   return useQuery({
-    queryKey: ['rivers', bbox, filters?.waterwayType, filters?.geometryType, filters?.ward, filters?.dataSource],
+    queryKey: ['rivers', bbox, options?.zoom, filters?.waterwayType, filters?.geometryType, filters?.ward, filters?.dataSource],
     queryFn: () =>
       fetchApi<FeatureCollection<Geometry, RiverAsset>>(`/rivers${queryString}`),
     enabled: (options?.enabled ?? true) && !!bbox,
@@ -515,10 +516,11 @@ export function useRiverWards() {
 export function useGreenSpacesInBbox(
   bbox: string | null,
   filters?: Omit<GreenSpaceFilters, 'bbox'>,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; zoom?: number }
 ) {
   const params = new URLSearchParams();
   if (bbox) params.append('bbox', bbox);
+  if (options?.zoom) params.append('zoom', String(Math.floor(options.zoom)));
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -529,7 +531,7 @@ export function useGreenSpacesInBbox(
   const queryString = params.toString() ? `?${params.toString()}` : '';
 
   return useQuery({
-    queryKey: ['greenspaces', bbox, filters?.greenSpaceType, filters?.ward, filters?.dataSource, filters?.minArea],
+    queryKey: ['greenspaces', bbox, options?.zoom, filters?.greenSpaceType, filters?.ward, filters?.dataSource, filters?.minArea],
     queryFn: () =>
       fetchApi<FeatureCollection<Geometry, GreenSpaceAsset>>(`/greenspaces${queryString}`),
     enabled: (options?.enabled ?? true) && !!bbox,

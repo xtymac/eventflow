@@ -93,7 +93,7 @@ export const roadAssets = pgTable('road_assets', {
 
   // OSM sync tracking fields
   osmType: varchar('osm_type', { length: 10 }),  // 'node' | 'way' | 'relation'
-  osmId: bigint('osm_id', { mode: 'string' }),  // OpenStreetMap ID (string to avoid JS 2^53 overflow)
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
   segmentIndex: integer('segment_index').default(0),  // Segment index within same OSM way
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),  // OSM last modified
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),  // Last sync from Overpass
@@ -241,7 +241,7 @@ export const riverAssets = pgTable('river_assets', {
 
   // OSM tracking (osmType + osmId composite unique)
   osmType: varchar('osm_type', { length: 10 }),
-  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
@@ -289,7 +289,7 @@ export const greenSpaceAssets = pgTable('greenspace_assets', {
 
   // OSM tracking
   osmType: varchar('osm_type', { length: 10 }),
-  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
@@ -335,7 +335,7 @@ export const streetLightAssets = pgTable('streetlight_assets', {
 
   // OSM tracking
   osmType: varchar('osm_type', { length: 10 }),  // Always 'node' for streetlights
-  osmId: bigint('osm_id', { mode: 'string' }),  // String to avoid JS 2^53 overflow
+  osmId: bigint('osm_id', { mode: 'number' }),  // OpenStreetMap ID
   osmTimestamp: timestamp('osm_timestamp', { withTimezone: true }),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   isManuallyEdited: boolean('is_manually_edited').default(false),
