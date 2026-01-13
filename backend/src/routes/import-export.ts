@@ -89,12 +89,21 @@ export async function importExportRoutes(fastify: FastifyInstance) {
           await db.execute(sql`
             INSERT INTO road_assets (
               id, name, geometry, road_type, lanes, direction,
-              status, valid_from, valid_to, owner_department, ward, landmark, updated_at
+              status, valid_from, valid_to, owner_department, ward, landmark,
+              cross_section, managing_dept, intersection, pavement_state,
+              data_source, source_version, source_date, last_verified_at,
+              updated_at
             ) VALUES (
               ${id}, ${props.name || 'Imported Asset'}, ${toGeomSql(feature.geometry)},
               ${props.roadType || 'local'}, ${props.lanes || 2}, ${props.direction || 'both'},
               ${props.status || 'active'}, ${validFrom}, ${validTo},
-              ${props.ownerDepartment ?? null}, ${props.ward ?? null}, ${props.landmark ?? null}, ${now}
+              ${props.ownerDepartment ?? null}, ${props.ward ?? null}, ${props.landmark ?? null},
+              ${props.crossSection ?? null}, ${props.managingDept ?? null},
+              ${props.intersection ?? null}, ${props.pavementState ?? null},
+              ${props.dataSource || 'manual'}, ${props.sourceVersion ?? null},
+              ${props.sourceDate ? new Date(props.sourceDate) : null},
+              ${props.lastVerifiedAt ? new Date(props.lastVerifiedAt) : null},
+              ${now}
             )
             ON CONFLICT DO NOTHING
           `);
@@ -173,7 +182,7 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       const assetSelect = {
         id: roadAssets.id,
         name: roadAssets.name,
-        geometry: fromGeomSql(roadAssets.geometry),
+        geometry: fromGeomSql(roadAssets.geometryPolygon),
         roadType: roadAssets.roadType,
         lanes: roadAssets.lanes,
         direction: roadAssets.direction,
@@ -184,6 +193,14 @@ export async function importExportRoutes(fastify: FastifyInstance) {
         ownerDepartment: roadAssets.ownerDepartment,
         ward: roadAssets.ward,
         landmark: roadAssets.landmark,
+        crossSection: roadAssets.crossSection,
+        managingDept: roadAssets.managingDept,
+        intersection: roadAssets.intersection,
+        pavementState: roadAssets.pavementState,
+        dataSource: roadAssets.dataSource,
+        sourceVersion: roadAssets.sourceVersion,
+        sourceDate: roadAssets.sourceDate,
+        lastVerifiedAt: roadAssets.lastVerifiedAt,
         updatedAt: roadAssets.updatedAt,
       };
 
@@ -205,6 +222,14 @@ export async function importExportRoutes(fastify: FastifyInstance) {
           ownerDepartment: asset.ownerDepartment,
           ward: asset.ward,
           landmark: asset.landmark,
+          crossSection: asset.crossSection,
+          managingDept: asset.managingDept,
+          intersection: asset.intersection,
+          pavementState: asset.pavementState,
+          dataSource: asset.dataSource,
+          sourceVersion: asset.sourceVersion,
+          sourceDate: asset.sourceDate?.toISOString(),
+          lastVerifiedAt: asset.lastVerifiedAt?.toISOString(),
           updatedAt: asset.updatedAt.toISOString(),
         },
       }));

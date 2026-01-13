@@ -107,6 +107,16 @@ const AssetSchema = Type.Object({
   ward: Type.Union([Type.String(), Type.Null()]),
   landmark: Type.Union([Type.String(), Type.Null()]),
   sublocality: Type.Union([Type.String(), Type.Null()]),    // 町名/丁目 from Google Maps
+  // Road polygon-specific fields
+  crossSection: Type.Union([Type.String(), Type.Null()]),
+  managingDept: Type.Union([Type.String(), Type.Null()]),
+  intersection: Type.Union([Type.String(), Type.Null()]),
+  pavementState: Type.Union([Type.String(), Type.Null()]),
+  // Data source tracking fields
+  dataSource: Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual')]),
+  sourceVersion: Type.Union([Type.String(), Type.Null()]),
+  sourceDate: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  lastVerifiedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   updatedAt: Type.String({ format: 'date-time' }),
 });
 
@@ -122,6 +132,16 @@ const CreateAssetSchema = Type.Object({
   ownerDepartment: Type.Optional(Type.String()),
   ward: Type.Optional(Type.String()),
   landmark: Type.Optional(Type.String()),
+  // Road polygon-specific fields (all optional)
+  crossSection: Type.Optional(Type.String()),
+  managingDept: Type.Optional(Type.String()),
+  intersection: Type.Optional(Type.String()),
+  pavementState: Type.Optional(Type.String()),
+  // Data source tracking fields
+  dataSource: Type.Optional(Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual')])),
+  sourceVersion: Type.Optional(Type.String()),
+  sourceDate: Type.Optional(Type.String({ format: 'date-time' })),
+  lastVerifiedAt: Type.Optional(Type.String({ format: 'date-time' })),
   eventId: Type.Optional(Type.String()),
 });
 
@@ -390,11 +410,20 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         display_name as "displayName",
         name_source as "nameSource",
         name_confidence as "nameConfidence",
-        CASE WHEN geometry IS NULL THEN NULL ELSE ST_AsGeoJSON(geometry)::json END as geometry,
+        CASE WHEN geometry_polygon IS NULL THEN NULL ELSE ST_AsGeoJSON(geometry_polygon)::json END as geometry,
         road_type as "roadType", lanes, direction, status,
         valid_from as "validFrom", valid_to as "validTo",
         replaced_by as "replacedBy", owner_department as "ownerDepartment",
-        ward, landmark, sublocality, updated_at as "updatedAt"
+        ward, landmark, sublocality,
+        cross_section as "crossSection",
+        managing_dept as "managingDept",
+        intersection,
+        pavement_state as "pavementState",
+        data_source as "dataSource",
+        source_version as "sourceVersion",
+        source_date as "sourceDate",
+        last_verified_at as "lastVerifiedAt",
+        updated_at as "updatedAt"
       FROM road_assets
       ${whereClause}
       ORDER BY id
@@ -424,6 +453,14 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ward: string | null;
       landmark: string | null;
       sublocality: string | null;
+      crossSection: string | null;
+      managingDept: string | null;
+      intersection: string | null;
+      pavementState: string | null;
+      dataSource: 'osm_test' | 'official_ledger' | 'manual';
+      sourceVersion: string | null;
+      sourceDate: Date | string | null;
+      lastVerifiedAt: Date | string | null;
       updatedAt: Date | string;
     };
 
@@ -431,6 +468,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ...a,
       validFrom: a.validFrom instanceof Date ? a.validFrom.toISOString() : String(a.validFrom),
       validTo: a.validTo instanceof Date ? a.validTo.toISOString() : a.validTo ? String(a.validTo) : null,
+      sourceDate: a.sourceDate instanceof Date ? a.sourceDate.toISOString() : a.sourceDate ? String(a.sourceDate) : null,
+      lastVerifiedAt: a.lastVerifiedAt instanceof Date ? a.lastVerifiedAt.toISOString() : a.lastVerifiedAt ? String(a.lastVerifiedAt) : null,
       updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : String(a.updatedAt),
     }));
 
@@ -463,7 +502,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -475,6 +514,14 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ward: roadAssets.ward,
       landmark: roadAssets.landmark,
       sublocality: roadAssets.sublocality,
+      crossSection: roadAssets.crossSection,
+      managingDept: roadAssets.managingDept,
+      intersection: roadAssets.intersection,
+      pavementState: roadAssets.pavementState,
+      dataSource: roadAssets.dataSource,
+      sourceVersion: roadAssets.sourceVersion,
+      sourceDate: roadAssets.sourceDate,
+      lastVerifiedAt: roadAssets.lastVerifiedAt,
       updatedAt: roadAssets.updatedAt,
     };
 
@@ -563,14 +610,21 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     await db.execute(sql`
       INSERT INTO road_assets (
         id, name, geometry, road_type, lanes, direction,
-        status, valid_from, owner_department, ward, landmark, updated_at,
-        sync_source, is_manually_edited
+        status, valid_from, owner_department, ward, landmark,
+        cross_section, managing_dept, intersection, pavement_state,
+        data_source, source_version, source_date, last_verified_at,
+        updated_at, sync_source, is_manually_edited
       ) VALUES (
-        ${id}, ${body.name}, ${toGeomSql(body.geometry)}, ${body.roadType},
+        ${id}, ${body.name ?? null}, ${toGeomSql(body.geometry)}, ${body.roadType},
         ${body.lanes}, ${body.direction}, 'active', ${now},
         ${body.ownerDepartment ?? null}, ${body.ward ?? null},
-        ${body.landmark ?? null}, ${now},
-        'manual', true
+        ${body.landmark ?? null},
+        ${body.crossSection ?? null}, ${body.managingDept ?? null},
+        ${body.intersection ?? null}, ${body.pavementState ?? null},
+        ${body.dataSource ?? 'manual'}, ${body.sourceVersion ?? null},
+        ${body.sourceDate ? new Date(body.sourceDate) : null},
+        ${body.lastVerifiedAt ? new Date(body.lastVerifiedAt) : null},
+        ${now}, 'manual', true
       )
     `);
 
@@ -596,18 +650,33 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     return reply.status(201).send({
       data: {
         id,
-        name: body.name,
+        name: body.name ?? null,
+        nameJa: null,
+        ref: null,
+        localRef: null,
+        displayName: body.name ?? null,
+        nameSource: null,
+        nameConfidence: null,
         geometry: body.geometry,
         roadType: body.roadType,
         lanes: body.lanes,
         direction: body.direction,
         status: 'active' as const,
         validFrom: now.toISOString(),
-        validTo: undefined,
-        replacedBy: undefined,
-        ownerDepartment: body.ownerDepartment,
-        ward: body.ward,
-        landmark: body.landmark,
+        validTo: null,
+        replacedBy: null,
+        ownerDepartment: body.ownerDepartment ?? null,
+        ward: body.ward ?? null,
+        landmark: body.landmark ?? null,
+        sublocality: null,
+        crossSection: body.crossSection ?? null,
+        managingDept: body.managingDept ?? null,
+        intersection: body.intersection ?? null,
+        pavementState: body.pavementState ?? null,
+        dataSource: body.dataSource ?? 'manual',
+        sourceVersion: body.sourceVersion ?? null,
+        sourceDate: body.sourceDate ?? null,
+        lastVerifiedAt: body.lastVerifiedAt ?? null,
         updatedAt: now.toISOString(),
       },
     });
@@ -652,13 +721,25 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     // Handle non-geometry updates with Drizzle
     // Set isManuallyEdited=true for any manual update
     const updates: Record<string, unknown> = { updatedAt: now, isManuallyEdited: true, syncSource: 'manual' };
-    if (body.name) updates.name = body.name;
+    if (body.name !== undefined) updates.name = body.name;
     if (body.roadType) updates.roadType = body.roadType;
     if (body.lanes !== undefined) updates.lanes = body.lanes;
     if (body.direction) updates.direction = body.direction;
-    if (body.ownerDepartment) updates.ownerDepartment = body.ownerDepartment;
-    if (body.ward) updates.ward = body.ward;
-    if (body.landmark) updates.landmark = body.landmark;
+    if (body.ownerDepartment !== undefined) updates.ownerDepartment = body.ownerDepartment;
+    if (body.ward !== undefined) updates.ward = body.ward;
+    if (body.landmark !== undefined) updates.landmark = body.landmark;
+
+    // Road polygon-specific fields
+    if (body.crossSection !== undefined) updates.crossSection = body.crossSection;
+    if (body.managingDept !== undefined) updates.managingDept = body.managingDept;
+    if (body.intersection !== undefined) updates.intersection = body.intersection;
+    if (body.pavementState !== undefined) updates.pavementState = body.pavementState;
+
+    // Data source tracking fields
+    if (body.dataSource !== undefined) updates.dataSource = body.dataSource;
+    if (body.sourceVersion !== undefined) updates.sourceVersion = body.sourceVersion;
+    if (body.sourceDate !== undefined) updates.sourceDate = body.sourceDate ? new Date(body.sourceDate) : null;
+    if (body.lastVerifiedAt !== undefined) updates.lastVerifiedAt = body.lastVerifiedAt ? new Date(body.lastVerifiedAt) : null;
 
     // Only run non-geometry update if there are non-geometry fields
     const hasNonGeomUpdates = Object.keys(updates).length > 1;
@@ -708,7 +789,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -719,6 +800,14 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ownerDepartment: roadAssets.ownerDepartment,
       ward: roadAssets.ward,
       landmark: roadAssets.landmark,
+      crossSection: roadAssets.crossSection,
+      managingDept: roadAssets.managingDept,
+      intersection: roadAssets.intersection,
+      pavementState: roadAssets.pavementState,
+      dataSource: roadAssets.dataSource,
+      sourceVersion: roadAssets.sourceVersion,
+      sourceDate: roadAssets.sourceDate,
+      lastVerifiedAt: roadAssets.lastVerifiedAt,
       updatedAt: roadAssets.updatedAt,
     };
 
@@ -801,7 +890,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       displayName: roadAssets.displayName,
       nameSource: roadAssets.nameSource,
       nameConfidence: roadAssets.nameConfidence,
-      geometry: fromGeomSql(roadAssets.geometry),
+      geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
@@ -812,6 +901,14 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       ownerDepartment: roadAssets.ownerDepartment,
       ward: roadAssets.ward,
       landmark: roadAssets.landmark,
+      crossSection: roadAssets.crossSection,
+      managingDept: roadAssets.managingDept,
+      intersection: roadAssets.intersection,
+      pavementState: roadAssets.pavementState,
+      dataSource: roadAssets.dataSource,
+      sourceVersion: roadAssets.sourceVersion,
+      sourceDate: roadAssets.sourceDate,
+      lastVerifiedAt: roadAssets.lastVerifiedAt,
       updatedAt: roadAssets.updatedAt,
     };
 
@@ -886,7 +983,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         displayName: roadAssets.displayName,
         nameSource: roadAssets.nameSource,
         nameConfidence: roadAssets.nameConfidence,
-        geometry: fromGeomSql(roadAssets.geometry),
+        geometry: fromGeomSql(roadAssets.geometryPolygon),
         roadType: roadAssets.roadType,
         lanes: roadAssets.lanes,
         direction: roadAssets.direction,
@@ -1052,7 +1149,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           displayName: roadAssets.displayName,
           nameSource: roadAssets.nameSource,
           nameConfidence: roadAssets.nameConfidence,
-          geometry: fromGeomSql(roadAssets.geometry),
+          geometry: fromGeomSql(roadAssets.geometryPolygon),
           roadType: roadAssets.roadType,
           lanes: roadAssets.lanes,
           direction: roadAssets.direction,

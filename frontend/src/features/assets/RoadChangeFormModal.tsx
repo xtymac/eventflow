@@ -3,6 +3,7 @@ import {
   Modal,
   Stack,
   TextInput,
+  Textarea,
   Select,
   NumberInput,
   Button,
@@ -15,6 +16,7 @@ import {
   Center,
   Divider,
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconMapPin, IconCheck, IconTrashX } from '@tabler/icons-react';
 import { useForm, Controller } from 'react-hook-form';
@@ -54,6 +56,16 @@ interface AssetFormData {
   ward: string;
   ownerDepartment: string;
   replacedBy: string; // For retire action only
+  // Road Details Group
+  crossSection: string;
+  intersection: string;
+  pavementState: string;
+  managingDept: string;
+  // Data Source Tracking Group
+  dataSource: 'osm_test' | 'official_ledger' | 'manual';  // REQUIRED
+  sourceVersion: string;
+  sourceDate: Date | null;
+  lastVerifiedAt: Date | null;
 }
 
 const roadTypeOptions = [
@@ -65,6 +77,12 @@ const roadTypeOptions = [
 const directionOptions = [
   { value: 'two-way', label: 'Two Way (両方向)' },
   { value: 'one-way', label: 'One Way (一方通行)' },
+];
+
+const dataSourceOptions = [
+  { value: 'manual', label: 'Manual Entry (手動入力)' },
+  { value: 'osm_test', label: 'OSM Test Data (OSMテストデータ)' },
+  { value: 'official_ledger', label: 'Official Ledger (公式台帳)' },
 ];
 
 export function RoadChangeFormModal({
@@ -116,6 +134,16 @@ export function RoadChangeFormModal({
       ward: '',
       ownerDepartment: '',
       replacedBy: '',
+      // Road Details - all optional, start empty
+      crossSection: '',
+      intersection: '',
+      pavementState: '',
+      managingDept: '',
+      // Data Source Tracking
+      dataSource: 'manual',  // REQUIRED default
+      sourceVersion: '',
+      sourceDate: null,
+      lastVerifiedAt: null,
     },
     mode: 'onChange',
   });
@@ -134,6 +162,16 @@ export function RoadChangeFormModal({
         ward: existingAsset.ward || '',
         ownerDepartment: existingAsset.ownerDepartment || '',
         replacedBy: '',
+        // Road Details
+        crossSection: existingAsset.crossSection || '',
+        intersection: existingAsset.intersection || '',
+        pavementState: existingAsset.pavementState || '',
+        managingDept: existingAsset.managingDept || '',
+        // Data Source Tracking
+        dataSource: existingAsset.dataSource || 'manual',
+        sourceVersion: existingAsset.sourceVersion || '',
+        sourceDate: existingAsset.sourceDate ? new Date(existingAsset.sourceDate) : null,
+        lastVerifiedAt: existingAsset.lastVerifiedAt ? new Date(existingAsset.lastVerifiedAt) : null,
       });
     }
   }, [existingAsset, action, reset]);
@@ -207,6 +245,16 @@ export function RoadChangeFormModal({
             direction: data.direction,
             ward: data.ward || undefined,
             ownerDepartment: data.ownerDepartment || undefined,
+            // Road Details
+            crossSection: data.crossSection || undefined,
+            intersection: data.intersection || undefined,
+            pavementState: data.pavementState || undefined,
+            managingDept: data.managingDept || undefined,
+            // Data Source Tracking
+            dataSource: data.dataSource,
+            sourceVersion: data.sourceVersion || undefined,
+            sourceDate: data.sourceDate ? data.sourceDate.toISOString() : undefined,
+            lastVerifiedAt: data.lastVerifiedAt ? data.lastVerifiedAt.toISOString() : undefined,
           },
         });
 
@@ -232,6 +280,16 @@ export function RoadChangeFormModal({
             direction: data.direction,
             ward: data.ward || undefined,
             ownerDepartment: data.ownerDepartment || undefined,
+            // Road Details
+            crossSection: data.crossSection || undefined,
+            intersection: data.intersection || undefined,
+            pavementState: data.pavementState || undefined,
+            managingDept: data.managingDept || undefined,
+            // Data Source Tracking
+            dataSource: data.dataSource,
+            sourceVersion: data.sourceVersion || undefined,
+            sourceDate: data.sourceDate ? data.sourceDate.toISOString() : undefined,
+            lastVerifiedAt: data.lastVerifiedAt ? data.lastVerifiedAt.toISOString() : undefined,
           },
         });
 
@@ -282,6 +340,16 @@ export function RoadChangeFormModal({
           direction: data.direction,
           ward: data.ward || undefined,
           ownerDepartment: data.ownerDepartment || undefined,
+          // Road Details
+          crossSection: data.crossSection || undefined,
+          intersection: data.intersection || undefined,
+          pavementState: data.pavementState || undefined,
+          managingDept: data.managingDept || undefined,
+          // Data Source Tracking
+          dataSource: data.dataSource,
+          sourceVersion: data.sourceVersion || undefined,
+          sourceDate: data.sourceDate ? data.sourceDate.toISOString() : undefined,
+          lastVerifiedAt: data.lastVerifiedAt ? data.lastVerifiedAt.toISOString() : undefined,
           eventId,
         },
         {
@@ -317,6 +385,16 @@ export function RoadChangeFormModal({
             direction: data.direction,
             ward: data.ward || undefined,
             ownerDepartment: data.ownerDepartment || undefined,
+            // Road Details
+            crossSection: data.crossSection || undefined,
+            intersection: data.intersection || undefined,
+            pavementState: data.pavementState || undefined,
+            managingDept: data.managingDept || undefined,
+            // Data Source Tracking
+            dataSource: data.dataSource,
+            sourceVersion: data.sourceVersion || undefined,
+            sourceDate: data.sourceDate ? data.sourceDate.toISOString() : undefined,
+            lastVerifiedAt: data.lastVerifiedAt ? data.lastVerifiedAt.toISOString() : undefined,
             eventId,
           },
         },
@@ -660,6 +738,132 @@ export function RoadChangeFormModal({
                   )}
                 />
               </Group>
+
+              {/* Road Details Group */}
+              <Divider label="Road Details" labelPosition="center" mt="md" />
+
+              <Group grow>
+                <Controller
+                  name="crossSection"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="Cross Section"
+                      placeholder="e.g., 幅員12m"
+                      description="Road cross-section type"
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="managingDept"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="Managing Department"
+                      placeholder="e.g., 道路管理課"
+                      description="Department managing this road"
+                      {...field}
+                    />
+                  )}
+                />
+              </Group>
+
+              <Controller
+                name="intersection"
+                control={control}
+                rules={{ maxLength: { value: 255, message: 'Max 255 characters' } }}
+                render={({ field, fieldState }) => (
+                  <Textarea
+                    label="Intersection"
+                    placeholder="Intersection description or nearby intersections"
+                    description="Notable intersections or junctions (max 255 chars)"
+                    error={fieldState.error?.message}
+                    minRows={2}
+                    maxRows={4}
+                    {...field}
+                  />
+                )}
+              />
+
+              <Controller
+                name="pavementState"
+                control={control}
+                render={({ field }) => (
+                  <TextInput
+                    label="Pavement State"
+                    placeholder="e.g., Good, Fair, Poor"
+                    description="Current pavement condition"
+                    {...field}
+                  />
+                )}
+              />
+
+              {/* Data Source Tracking Group */}
+              <Divider label="Data Source Tracking" labelPosition="center" mt="md" />
+
+              <Controller
+                name="dataSource"
+                control={control}
+                rules={{ required: 'Data source is required' }}
+                render={({ field }) => (
+                  <Select
+                    label="Data Source"
+                    description="Origin of this asset data"
+                    data={dataSourceOptions}
+                    required
+                    value={field.value}
+                    onChange={(val) => field.onChange(val || 'manual')}
+                    comboboxProps={{ zIndex: 500 }}
+                  />
+                )}
+              />
+
+              <Group grow>
+                <Controller
+                  name="sourceVersion"
+                  control={control}
+                  render={({ field }) => (
+                    <TextInput
+                      label="Source Version"
+                      placeholder="e.g., v2024.1, OSM-2024-01"
+                      description="Version identifier of the data source"
+                      {...field}
+                    />
+                  )}
+                />
+                <Controller
+                  name="sourceDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerInput
+                      label="Source Date"
+                      placeholder="Select date"
+                      description="Publication date of the source data"
+                      clearable
+                      value={field.value}
+                      onChange={field.onChange}
+                      popoverProps={{ zIndex: 500 }}
+                    />
+                  )}
+                />
+              </Group>
+
+              <Controller
+                name="lastVerifiedAt"
+                control={control}
+                render={({ field }) => (
+                  <DatePickerInput
+                    label="Last Verified At"
+                    placeholder="Select date"
+                    description="When this data was last verified as accurate"
+                    clearable
+                    value={field.value}
+                    onChange={field.onChange}
+                    popoverProps={{ zIndex: 500 }}
+                  />
+                )}
+              />
             </>
           )}
 

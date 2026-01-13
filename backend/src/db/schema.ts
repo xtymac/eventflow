@@ -66,7 +66,8 @@ export const roadAssets = pgTable('road_assets', {
   displayName: varchar('display_name', { length: 255 }),  // Computed fallback for display
   nameSource: varchar('name_source', { length: 20 }),  // 'osm' | 'municipal' | 'manual'
   nameConfidence: varchar('name_confidence', { length: 10 }),  // 'high' | 'medium' | 'low'
-  geometry: geometryColumn('geometry').notNull(),  // LineString (legacy) or Polygon (new)
+  geometry: geometryColumn('geometry').notNull(),  // LineString centerline (internal storage)
+  geometryPolygon: polygonColumn('geometry_polygon'),  // Auto-computed buffered polygon (for rendering)
   roadType: varchar('road_type', { length: 50 }).notNull(),
   lanes: integer('lanes').notNull().default(2),
   direction: varchar('direction', { length: 50 }).notNull(),

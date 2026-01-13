@@ -445,7 +445,7 @@ out geom meta;
         INSERT INTO road_assets (
           id, osm_id, segment_index, name, name_ja, ref, local_ref,
           display_name, name_source, geometry, road_type, lanes, direction,
-          status, valid_from, ward, sync_source, is_manually_edited,
+          status, valid_from, ward, data_source, sync_source, is_manually_edited,
           last_synced_at, osm_timestamp, updated_at
         ) VALUES (
           ${id},
@@ -464,6 +464,7 @@ out geom meta;
           'active',
           ${now},
           ${wardName},
+          'osm_test',
           'osm-sync',
           false,
           ${now},
