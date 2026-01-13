@@ -230,6 +230,7 @@ out geom meta;
         local_ref: tags.local_ref || null,
         roadType: ROAD_TYPE_MAP[tags.highway] || 'local',
         lanes: parseInt(tags.lanes, 10) || 2,
+        width: tags.width ? parseFloat(tags.width) : null,  // OSM width tag (meters)
         direction: tags.oneway === 'yes' || tags.oneway === '1' ? 'one-way' : 'two-way',
         ward: wardName,
         osmHighway: tags.highway,
@@ -444,7 +445,7 @@ out geom meta;
       await db.execute(sql`
         INSERT INTO road_assets (
           id, osm_id, segment_index, name, name_ja, ref, local_ref,
-          display_name, name_source, geometry, road_type, lanes, direction,
+          display_name, name_source, geometry, road_type, lanes, width, direction,
           status, valid_from, ward, data_source, sync_source, is_manually_edited,
           last_synced_at, osm_timestamp, updated_at
         ) VALUES (
@@ -460,6 +461,7 @@ out geom meta;
           ${toGeomSql(segment.geometry)},
           ${props.roadType || 'local'},
           ${props.lanes || 2},
+          ${props.width || null},
           ${props.direction || 'two-way'},
           'active',
           ${now},

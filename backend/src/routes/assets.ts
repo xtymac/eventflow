@@ -98,6 +98,8 @@ const AssetSchema = Type.Object({
   geometry: GeometrySchema,
   roadType: Type.String(),
   lanes: Type.Number(),
+  width: Type.Union([Type.String(), Type.Null()]),  // OSM width in meters
+  widthSource: Type.Union([Type.Literal('osm_width'), Type.Literal('osm_lanes'), Type.Literal('default'), Type.Null()]),
   direction: Type.String(),
   status: Type.Union([Type.Literal('active'), Type.Literal('inactive')]),
   validFrom: Type.String({ format: 'date-time' }),
@@ -410,8 +412,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         display_name as "displayName",
         name_source as "nameSource",
         name_confidence as "nameConfidence",
-        CASE WHEN geometry_polygon IS NULL THEN NULL ELSE ST_AsGeoJSON(geometry_polygon)::json END as geometry,
-        road_type as "roadType", lanes, direction, status,
+        CASE WHEN geometry_polygon IS NULL THEN ST_AsGeoJSON(geometry)::json ELSE ST_AsGeoJSON(geometry_polygon)::json END as geometry,
+        road_type as "roadType", lanes, width, width_source as "widthSource", direction, status,
         valid_from as "validFrom", valid_to as "validTo",
         replaced_by as "replacedBy", owner_department as "ownerDepartment",
         ward, landmark, sublocality,
@@ -444,6 +446,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       geometry: { type: string; coordinates: unknown };
       roadType: string;
       lanes: number;
+      width: string | null;
+      widthSource: 'osm_width' | 'osm_lanes' | 'default' | null;
       direction: string;
       status: 'active' | 'inactive';
       validFrom: Date | string;
@@ -505,6 +509,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
+      width: roadAssets.width,
+      widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
       validFrom: roadAssets.validFrom,
@@ -536,7 +542,9 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       data: {
         ...asset,
         validFrom: asset.validFrom.toISOString(),
-        validTo: asset.validTo?.toISOString(),
+        validTo: asset.validTo?.toISOString() ?? null,
+        sourceDate: asset.sourceDate?.toISOString() ?? null,
+        lastVerifiedAt: asset.lastVerifiedAt?.toISOString() ?? null,
         updatedAt: asset.updatedAt.toISOString(),
       },
     };
@@ -792,6 +800,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
+      width: roadAssets.width,
+      widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
       validFrom: roadAssets.validFrom,
@@ -893,6 +903,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       geometry: fromGeomSql(roadAssets.geometryPolygon),
       roadType: roadAssets.roadType,
       lanes: roadAssets.lanes,
+      width: roadAssets.width,
+      widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
       validFrom: roadAssets.validFrom,

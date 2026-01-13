@@ -517,13 +517,25 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
+      // Road assets fill layer (renders polygons with width)
+      map.current.addLayer({
+        id: 'assets-fill',
+        type: 'fill',
+        source: 'assets',
+        paint: {
+          'fill-color': ['get', 'color'],
+          'fill-opacity': 0.6,
+        },
+      });
+
+      // Road assets outline layer (border around polygons)
       map.current.addLayer({
         id: 'assets-line',
         type: 'line',
         source: 'assets',
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': 4,
+          'line-width': 1,
           'line-opacity': 0.8,
         },
       });
@@ -534,41 +546,38 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Editing selection glow (outer glow for breathing effect)
+      // Editing selection fill (highlight selected polygons)
       map.current.addLayer({
-        id: 'editing-assets-glow',
-        type: 'line',
+        id: 'editing-assets-fill',
+        type: 'fill',
         source: 'editing-assets',
         paint: {
-          'line-color': '#2563eb',
-          'line-width': 24, // Wider glow
-          'line-blur': 8,   // More blur
-          'line-opacity': 0.6, // Will be animated
+          'fill-color': '#2563eb',
+          'fill-opacity': 0.4,
         },
       });
 
-      // Editing selection highlight (for event editor map picking)
+      // Editing selection outline (border for selected polygons)
       map.current.addLayer({
         id: 'editing-assets-line',
         type: 'line',
         source: 'editing-assets',
         paint: {
           'line-color': '#2563eb',
-          'line-width': 6,
+          'line-width': 3,
           'line-opacity': 1,
         },
       });
 
-      // Invisible hit area layer for easier clicking (wider than visible line)
+      // Invisible hit area layer for easier clicking (polygon fill is clickable)
       // Note: opacity must be > 0 for MapLibre to render and make it clickable
       map.current.addLayer({
         id: 'assets-hit-area',
-        type: 'line',
+        type: 'fill',
         source: 'assets',
         paint: {
-          'line-color': '#000000',
-          'line-width': 20,
-          'line-opacity': 0.001,
+          'fill-color': '#000000',
+          'fill-opacity': 0.001,
         },
       });
 
@@ -1928,14 +1937,14 @@ export function MapView() {
 
       source.setData({ type: 'FeatureCollection', features });
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'visible');
-      if (map.current.getLayer('editing-assets-glow')) {
-        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'visible');
+      if (map.current.getLayer('editing-assets-fill')) {
+        map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'visible');
       }
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
-      if (map.current.getLayer('editing-assets-glow')) {
-        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
+      if (map.current.getLayer('editing-assets-fill')) {
+        map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'none');
       }
     }
   }, [selectedRoadAssetIdsForForm, isEventFormOpen, isRoadUpdateModeActive, roadUpdateSelectedAssetIds, mapLoaded, selectedAssetDetailsCache, assetsData]);
@@ -2374,16 +2383,16 @@ export function MapView() {
       let time = 0;
 
       const animate = () => {
-        if (!map.current || !map.current.getLayer('editing-assets-glow')) {
+        if (!map.current || !map.current.getLayer('editing-assets-fill')) {
           return;
         }
 
-        // Breathing glow effect (opacity 0.3 to 0.9)
+        // Breathing glow effect (opacity 0.2 to 0.6)
         time += 0.04; // Medium speed
-        const glowOpacity = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(time));
+        const fillOpacity = 0.2 + 0.4 * (0.5 + 0.5 * Math.sin(time));
 
         try {
-          map.current.setPaintProperty('editing-assets-glow', 'line-opacity', glowOpacity);
+          map.current.setPaintProperty('editing-assets-fill', 'fill-opacity', fillOpacity);
         } catch {
           // Layer might not exist
         }

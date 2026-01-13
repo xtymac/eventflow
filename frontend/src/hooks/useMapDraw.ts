@@ -92,6 +92,9 @@ export function useMapDraw(
       onFeatureCreatedRef.current?.(newFeature);
     }
 
+    // Also notify about full features list change to trigger auto-intersection
+    onFeaturesChangeRef.current?.(allFeatures);
+
     // Switch to direct_select mode for the new feature to allow vertex editing
     if (newFeature && newFeature.id) {
       const featureId = newFeature.id as string;

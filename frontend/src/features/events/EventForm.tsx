@@ -543,6 +543,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         processedGeometryRef.current = geomHash;
 
         console.log('[EventForm] Running auto-intersection with', assetsData.data.length, 'assets');
+        console.log('[EventForm] Drawn features:', drawnFeatures.map(f => ({ type: f.geometry?.type, bbox: f.bbox, coords: f.geometry?.type === 'Polygon' ? (f.geometry as import('geojson').Polygon).coordinates[0]?.slice(0, 3) : null })));
+        console.log('[EventForm] Sample assets:', assetsData.data.slice(0, 3).map(a => ({ id: a.id, type: a.geometry?.type, geom: a.geometry })));
 
         try {
           const intersectingIds: string[] = [];

@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp, integer, bigint, boolean, index, primaryKey, customType, unique } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, integer, bigint, boolean, index, primaryKey, customType, unique, numeric } from 'drizzle-orm/pg-core';
 import type { Geometry, Point, Polygon, LineString } from 'geojson';
 
 // PostGIS geometry column types
@@ -70,6 +70,8 @@ export const roadAssets = pgTable('road_assets', {
   geometryPolygon: polygonColumn('geometry_polygon'),  // Auto-computed buffered polygon (for rendering)
   roadType: varchar('road_type', { length: 50 }).notNull(),
   lanes: integer('lanes').notNull().default(2),
+  width: numeric('width', { precision: 5, scale: 2 }),  // OSM width tag (meters)
+  widthSource: varchar('width_source', { length: 20 }).default('default'),  // 'osm_width' | 'osm_lanes' | 'default'
   direction: varchar('direction', { length: 50 }).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('active'),
   validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
