@@ -11,6 +11,7 @@
     "rootDir": "./src",
     "declaration": true,
     "resolveJsonModule": true,
+    "noEmitOnError": false,
     "paths": {
       "@nagoya/shared": ["../shared/types/index.ts"]
     }

@@ -541,8 +541,9 @@ export function AssetList() {
                         variant="light"
                         size="xs"
                         color={asset.nameSource === 'osm' ? 'blue' : asset.nameSource === 'google' ? 'red' : 'teal'}
+                        title="Name source"
                       >
-                        {asset.nameSource === 'osm' ? 'OSM' : asset.nameSource === 'google' ? 'Google' : '手動'}
+                        {asset.nameSource === 'osm' ? 'OSM名' : asset.nameSource === 'google' ? 'Google名' : '手動名'}
                       </Badge>
                     )}
                   </Group>

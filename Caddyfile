@@ -28,7 +28,9 @@ eventflow.uixai.org {
     }
 
     # Frontend (Vite dev server in Docker)
-    handle {
+    # Note: .well-known is handled automatically by Caddy for ACME challenges
+    @notWellKnown not path /.well-known/*
+    handle @notWellKnown {
         reverse_proxy web:5173
     }
 

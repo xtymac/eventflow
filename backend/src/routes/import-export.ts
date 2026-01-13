@@ -182,7 +182,7 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       const assetSelect = {
         id: roadAssets.id,
         name: roadAssets.name,
-        geometry: fromGeomSql(roadAssets.geometryPolygon),
+        geometry: fromGeomSql(roadAssets.geometry),
         roadType: roadAssets.roadType,
         lanes: roadAssets.lanes,
         direction: roadAssets.direction,

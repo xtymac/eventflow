@@ -511,31 +511,40 @@ export function MapView() {
     map.current.on('load', () => {
       if (!map.current) return;
 
+      // Add direction arrow image for one-way roads
+      // Arrow points RIGHT (east) - MapLibre rotates from this base direction to follow line geometry
+      const arrowSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 12 L12 6 L12 10 L20 10 L20 14 L12 14 L12 18 Z" fill="#ffffff" stroke="#333333" stroke-width="1"/>
+        </svg>
+      `;
+      const img = new Image(24, 24);
+      img.onload = () => {
+        if (map.current && !map.current.hasImage('direction-arrow')) {
+          map.current.addImage('direction-arrow', img);
+        }
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(arrowSvg);
+
       // Road assets source and layers
       map.current.addSource('assets', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Road assets fill layer (renders polygons with width)
-      map.current.addLayer({
-        id: 'assets-fill',
-        type: 'fill',
-        source: 'assets',
-        paint: {
-          'fill-color': ['get', 'color'],
-          'fill-opacity': 0.6,
-        },
-      });
-
-      // Road assets outline layer (border around polygons)
+      // Road assets line layer (renders LineString centerlines with zoom-based width)
       map.current.addLayer({
         id: 'assets-line',
         type: 'line',
         source: 'assets',
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': 1,
+          'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            14, 4,
+            16, 6,
+            18, 8
+          ],
           'line-opacity': 0.8,
         },
       });
@@ -546,18 +555,20 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Editing selection fill (highlight selected polygons)
+      // Editing selection - breathing glow effect (animated)
       map.current.addLayer({
-        id: 'editing-assets-fill',
-        type: 'fill',
+        id: 'editing-assets-glow',
+        type: 'line',
         source: 'editing-assets',
         paint: {
-          'fill-color': '#2563eb',
-          'fill-opacity': 0.4,
+          'line-color': '#60a5fa',
+          'line-width': 20,
+          'line-blur': 10,
+          'line-opacity': 0.3,
         },
       });
 
-      // Editing selection outline (border for selected polygons)
+      // Editing selection - semi-transparent outline
       map.current.addLayer({
         id: 'editing-assets-line',
         type: 'line',
@@ -565,19 +576,7 @@ export function MapView() {
         paint: {
           'line-color': '#2563eb',
           'line-width': 3,
-          'line-opacity': 1,
-        },
-      });
-
-      // Invisible hit area layer for easier clicking (polygon fill is clickable)
-      // Note: opacity must be > 0 for MapLibre to render and make it clickable
-      map.current.addLayer({
-        id: 'assets-hit-area',
-        type: 'fill',
-        source: 'assets',
-        paint: {
-          'fill-color': '#000000',
-          'fill-opacity': 0.001,
+          'line-opacity': 0.7,
         },
       });
 
@@ -602,6 +601,36 @@ export function MapView() {
           'text-color': '#1a1a1a',
           'text-halo-color': 'rgba(255,255,255,0.9)',
           'text-halo-width': 2,
+        },
+      });
+
+      // Direction arrows for one-way roads
+      map.current.addLayer({
+        id: 'road-direction-arrows',
+        type: 'symbol',
+        source: 'assets',
+        minzoom: 15,  // Only visible at high zoom
+        filter: ['==', ['get', 'direction'], 'one-way'],
+        layout: {
+          'icon-image': 'direction-arrow',
+          'symbol-placement': 'line',
+          'icon-rotation-alignment': 'map',
+          'icon-allow-overlap': false,
+          'symbol-spacing': 100,  // Pixels between arrows
+          'icon-size': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0.5,
+            17, 0.7,
+            18, 0.9
+          ],
+        },
+        paint: {
+          'icon-opacity': [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            15, 0.6,
+            16, 0.8
+          ],
         },
       });
 
@@ -1018,51 +1047,41 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Glow layer (outer) for selected asset
+      // Glow layer (outer) for selected asset - animated breathing effect
       map.current.addLayer({
         id: 'selected-asset-glow',
         type: 'line',
         source: 'selected-asset',
         paint: {
-          'line-color': '#EF4444',
-          'line-width': 20,
+          'line-color': '#f87171',
+          'line-width': 16,
           'line-blur': 8,
-          'line-opacity': 0.6,
+          'line-opacity': 0.4,
         },
       });
 
-      // Main line for selected asset
-      map.current.addLayer({
-        id: 'selected-asset-line',
-        type: 'line',
-        source: 'selected-asset',
-        paint: {
-          'line-color': '#EF4444',
-          'line-width': 10,
-        },
-      });
-
-      // Fill layer for polygon geometries (selected asset)
+      // Fill layer for polygon geometries (selected asset) - more transparent
       map.current.addLayer({
         id: 'selected-asset-fill',
         type: 'fill',
         source: 'selected-asset',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'fill-color': '#EF4444',
-          'fill-opacity': 0.3,
+          'fill-color': '#ef4444',
+          'fill-opacity': 0.15,
         },
       });
 
-      // Outline for polygon geometries (selected asset)
+      // Outline for polygon geometries (selected asset) - semi-transparent
       map.current.addLayer({
         id: 'selected-asset-outline',
         type: 'line',
         source: 'selected-asset',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'line-color': '#EF4444',
-          'line-width': 4,
+          'line-color': '#dc2626',
+          'line-width': 2.5,
+          'line-opacity': 0.8,
         },
       });
 
@@ -1180,7 +1199,7 @@ export function MapView() {
             'events-planned-fill', 'events-planned-line',
             'events-active-fill', 'events-active-line',
             'events-hit-area-fill', 'events-hit-area-line',
-            'assets-hit-area', 'inspections-point'
+            'assets-line', 'inspections-point'
           ]
         });
 
@@ -1312,7 +1331,7 @@ export function MapView() {
         map.current.on('click', layerId, handleEventClick);
       }
 
-      map.current.on('click', 'assets-hit-area', (e) => {
+      map.current.on('click', 'assets-line', (e) => {
         if (e.features && e.features[0]) {
           const feature = e.features[0];
           const props = feature.properties;
@@ -1470,12 +1489,12 @@ export function MapView() {
           if (map.current) map.current.getCanvas().style.cursor = '';
         });
       }
-      map.current.on('mouseenter', 'assets-hit-area', () => {
+      map.current.on('mouseenter', 'assets-line', () => {
         if (map.current && shouldAllowRoadHover()) {
           map.current.getCanvas().style.cursor = 'pointer';
         }
       });
-      map.current.on('mouseleave', 'assets-hit-area', () => {
+      map.current.on('mouseleave', 'assets-line', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
 
@@ -1555,7 +1574,7 @@ export function MapView() {
       }
 
       // Hover popup for assets
-      map.current.on('mousemove', 'assets-hit-area', (e) => {
+      map.current.on('mousemove', 'assets-line', (e) => {
         // Skip hover while actively drawing to avoid interaction interruption
         // Use getState() to get fresh value and avoid closure staleness
         if (useUIStore.getState().isDrawingActive) {
@@ -1593,7 +1612,7 @@ export function MapView() {
           popup.current.setLngLat(e.lngLat).setHTML(html).addTo(map.current);
         }
       });
-      map.current.on('mouseleave', 'assets-hit-area', () => {
+      map.current.on('mouseleave', 'assets-line', () => {
         if (popup.current) popup.current.remove();
       });
 
@@ -1757,8 +1776,8 @@ export function MapView() {
         lastAssetIdsHashRef.current = '';
       }
       map.current.setLayoutProperty('assets-line', 'visibility', 'none');
-      map.current.setLayoutProperty('assets-hit-area', 'visibility', 'none');
       map.current.setLayoutProperty('assets-label', 'visibility', 'none');
+      map.current.setLayoutProperty('road-direction-arrows', 'visibility', 'none');
       return;
     }
 
@@ -1817,8 +1836,8 @@ export function MapView() {
 
     source.setData({ type: 'FeatureCollection', features });
     map.current.setLayoutProperty('assets-line', 'visibility', 'visible');
-    map.current.setLayoutProperty('assets-hit-area', 'visibility', 'visible');
     map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
+    map.current.setLayoutProperty('road-direction-arrows', 'visibility', 'visible');
   }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom, hasActiveAssetFilters]);
 
   // Update rivers layer (API data for zoom >= 12)
@@ -1940,11 +1959,17 @@ export function MapView() {
       if (map.current.getLayer('editing-assets-fill')) {
         map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'visible');
       }
+      if (map.current.getLayer('editing-assets-glow')) {
+        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'visible');
+      }
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
       map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
       if (map.current.getLayer('editing-assets-fill')) {
         map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'none');
+      }
+      if (map.current.getLayer('editing-assets-glow')) {
+        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
       }
     }
   }, [selectedRoadAssetIdsForForm, isEventFormOpen, isRoadUpdateModeActive, roadUpdateSelectedAssetIds, mapLoaded, selectedAssetDetailsCache, assetsData]);
@@ -2383,16 +2408,19 @@ export function MapView() {
       let time = 0;
 
       const animate = () => {
-        if (!map.current || !map.current.getLayer('editing-assets-fill')) {
+        if (!map.current || !map.current.getLayer('editing-assets-glow')) {
           return;
         }
 
-        // Breathing glow effect (opacity 0.2 to 0.6)
-        time += 0.04; // Medium speed
-        const fillOpacity = 0.2 + 0.4 * (0.5 + 0.5 * Math.sin(time));
+        // Breathing/flashing glow effect - more noticeable
+        time += 0.06; // Faster for flashing effect
+        const pulse = 0.5 + 0.5 * Math.sin(time);
+        const glowOpacity = 0.15 + 0.5 * pulse;  // 0.15 to 0.65
+        const glowWidth = 12 + 16 * pulse;       // 12 to 28
 
         try {
-          map.current.setPaintProperty('editing-assets-fill', 'fill-opacity', fillOpacity);
+          map.current.setPaintProperty('editing-assets-glow', 'line-opacity', glowOpacity);
+          map.current.setPaintProperty('editing-assets-glow', 'line-width', glowWidth);
         } catch {
           // Layer might not exist
         }
@@ -2480,6 +2508,44 @@ export function MapView() {
       lastFlownAssetIdRef.current = null; // Reset when asset is deselected
     }
   }, [selectedAssetId, selectedAssetGeometry, assetsData, mapLoaded]);
+
+  // Breathing animation for selected asset glow
+  const selectedAssetAnimRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Start animation when asset is selected
+    if (selectedAssetId) {
+      const animate = () => {
+        if (!map.current || !map.current.getLayer('selected-asset-glow')) {
+          return;
+        }
+
+        // Selection highlight disabled
+        const glowOpacity = 0;
+        const glowWidth = 0;
+
+        try {
+          map.current.setPaintProperty('selected-asset-glow', 'line-opacity', glowOpacity);
+          map.current.setPaintProperty('selected-asset-glow', 'line-width', glowWidth);
+        } catch {
+          // Layer might not exist
+        }
+
+        selectedAssetAnimRef.current = requestAnimationFrame(animate);
+      };
+
+      selectedAssetAnimRef.current = requestAnimationFrame(animate);
+    }
+
+    // Cleanup animation
+    return () => {
+      if (selectedAssetAnimRef.current) {
+        cancelAnimationFrame(selectedAssetAnimRef.current);
+        selectedAssetAnimRef.current = null;
+      }
+    };
+  }, [selectedAssetId, mapLoaded]);
 
   // Update preview geometry layer (for EventForm corridor preview)
   useEffect(() => {
