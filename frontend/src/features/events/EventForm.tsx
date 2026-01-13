@@ -535,12 +535,17 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         return;
       }
 
-      // Generate a simple hash to detect if geometry changed
+      // Generate a combined hash to detect if geometry OR assets changed
+      // Include geometry, bbox, AND assets count/IDs to ensure we re-run when:
+      // 1. Geometry changes (user draws/edits)
+      // 2. New assets arrive for the current bbox (query completes)
       const geomHash = JSON.stringify(drawnFeatures);
+      const assetsHash = assetsData?.data ? `${assetsData.data.length}:${assetsData.data[0]?.id}` : '';
+      const combinedHash = `${geomHash}:${drawnBbox}:${assetsHash}`;
 
-      // Find intersecting road assets (only if geometry changed)
-      if (assetsData?.data && geomHash !== processedGeometryRef.current) {
-        processedGeometryRef.current = geomHash;
+      // Find intersecting road assets (if geometry OR assets changed)
+      if (assetsData?.data && combinedHash !== processedGeometryRef.current) {
+        processedGeometryRef.current = combinedHash;
 
         console.log('[EventForm] Running auto-intersection with', assetsData.data.length, 'assets');
         console.log('[EventForm] Drawn features:', drawnFeatures.map(f => ({ type: f.geometry?.type, bbox: f.bbox, coords: f.geometry?.type === 'Polygon' ? (f.geometry as import('geojson').Polygon).coordinates[0]?.slice(0, 3) : null })));
