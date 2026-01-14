@@ -129,6 +129,8 @@ export function MapView() {
     toggleGreenSpaces,
     toggleStreetLights,
     roadTileVersion,
+    importAreaHighlight,
+    setImportAreaHighlight,
   } = useMapStore();
   const {
     selectedEventId,
@@ -1097,7 +1099,7 @@ export function MapView() {
           'line-blur': 6,
           'line-opacity': 0.7,
         },
-      }, 'selected-asset-line'); // Insert below selected layer
+      }, 'selected-asset-glow'); // Insert below selected layer
 
       // Hover highlight layer (main line)
       map.current.addLayer({
@@ -1110,7 +1112,7 @@ export function MapView() {
           'line-width': 8,
           'line-opacity': 1,
         },
-      }, 'selected-asset-line'); // Insert below selected layer
+      }, 'selected-asset-glow'); // Insert below selected layer
 
       // Greenspace hover highlight layers
       map.current.addLayer({
@@ -1698,6 +1700,24 @@ export function MapView() {
       map.current = null;
     };
   }, []);
+
+  // Handle container resize (e.g., when sidebar width changes)
+  useEffect(() => {
+    if (!mapContainer.current || !map.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce resize to avoid excessive calls during drag
+      requestAnimationFrame(() => {
+        map.current?.resize();
+      });
+    });
+
+    resizeObserver.observe(mapContainer.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [mapLoaded]);
 
   // Handle theme changes
   useEffect(() => {
@@ -2810,6 +2830,133 @@ export function MapView() {
 
     return () => clearTimeout(timeout);
   }, [searchCenter, mapLoaded, clearSearch]);
+
+  // Import area highlight layer - show bbox outline when viewing import area
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const sourceId = 'import-area-highlight';
+    const fillLayerId = 'import-area-fill';
+    const lineLayerId = 'import-area-line';
+    const labelLayerId = 'import-area-label';
+
+    // If no highlight, remove existing layers
+    if (!importAreaHighlight) {
+      if (map.current.getLayer(labelLayerId)) {
+        map.current.removeLayer(labelLayerId);
+      }
+      if (map.current.getLayer(lineLayerId)) {
+        map.current.removeLayer(lineLayerId);
+      }
+      if (map.current.getLayer(fillLayerId)) {
+        map.current.removeLayer(fillLayerId);
+      }
+      if (map.current.getSource(sourceId + '-label')) {
+        map.current.removeSource(sourceId + '-label');
+      }
+      if (map.current.getSource(sourceId)) {
+        map.current.removeSource(sourceId);
+      }
+      return;
+    }
+
+    const geojsonData: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: importAreaHighlight.geometry,
+        properties: {
+          label: importAreaHighlight.label || 'Import Area',
+        },
+      }],
+    };
+
+    // Calculate center for label
+    const coords = importAreaHighlight.geometry.coordinates[0];
+    const centerLng = (coords[0][0] + coords[2][0]) / 2;
+    const centerLat = (coords[0][1] + coords[2][1]) / 2;
+
+    const labelData: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [centerLng, centerLat],
+        },
+        properties: {
+          label: importAreaHighlight.label || 'Import Area',
+        },
+      }],
+    };
+
+    // Create or update source
+    const existingSource = map.current.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+    const existingLabelSource = map.current.getSource(sourceId + '-label') as maplibregl.GeoJSONSource | undefined;
+
+    if (existingSource) {
+      existingSource.setData(geojsonData);
+      existingLabelSource?.setData(labelData);
+    } else {
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: geojsonData,
+      });
+
+      map.current.addSource(sourceId + '-label', {
+        type: 'geojson',
+        data: labelData,
+      });
+
+      // Semi-transparent fill
+      map.current.addLayer({
+        id: fillLayerId,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': '#3B82F6',
+          'fill-opacity': 0.1,
+        },
+      });
+
+      // Dashed border outline
+      map.current.addLayer({
+        id: lineLayerId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#3B82F6',
+          'line-width': 3,
+          'line-dasharray': [3, 2],
+        },
+      });
+
+      // Label at center
+      map.current.addLayer({
+        id: labelLayerId,
+        type: 'symbol',
+        source: sourceId + '-label',
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-size': 14,
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-anchor': 'center',
+        },
+        paint: {
+          'text-color': '#3B82F6',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2,
+        },
+      });
+    }
+
+    // Auto-clear highlight after 15 seconds
+    const timeout = setTimeout(() => {
+      setImportAreaHighlight(null);
+    }, 15000);
+
+    return () => clearTimeout(timeout);
+  }, [importAreaHighlight, mapLoaded, setImportAreaHighlight]);
 
   // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {

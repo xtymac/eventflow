@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text, Indicator } from '@mantine/core';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text, Indicator, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconX } from '@tabler/icons-react';
 import { useShallow } from 'zustand/shallow';
@@ -18,6 +18,7 @@ import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
+import { ImportWizard } from './features/import/ImportWizard';
 import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
@@ -28,7 +29,66 @@ const VIEW_OPTIONS = [
   { label: 'Inspections', value: 'inspections' },
 ];
 
+const SIDEBAR_WIDTH_KEY = 'eventflow-sidebar-width';
+const SIDEBAR_HINT_SHOWN_KEY = 'eventflow-sidebar-hint-shown';
+const DEFAULT_SIDEBAR_WIDTH = 400;
+const MIN_SIDEBAR_WIDTH = 280;
+const MAX_SIDEBAR_WIDTH = 600;
+
 function App() {
+  // Sidebar resize state
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH) : DEFAULT_SIDEBAR_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const [showResizeHint, setShowResizeHint] = useState(false);
+  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  // Show hint animation on first visit
+  useEffect(() => {
+    const hintShown = localStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
+    if (!hintShown) {
+      // Delay the hint to let the page and list load first
+      const timer = setTimeout(() => {
+        setShowResizeHint(true);
+        localStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
+        // Remove hint class after animation completes (2 cycles * 0.5s = 1s)
+        setTimeout(() => setShowResizeHint(false), 1200);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeRef.current = { startX: e.clientX, startWidth: sidebarWidth };
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return;
+      const delta = e.clientX - resizeRef.current.startX;
+      const newWidth = Math.min(Math.max(resizeRef.current.startWidth + delta, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, sidebarWidth]);
   // Sync UI state with URL parameters (filters, tabs, selections)
   useUrlState();
 
@@ -89,6 +149,24 @@ function App() {
     prevDetailModalEventId.current = detailModalEventId;
   }, [detailModalEventId, openDesktop, openMobile]);
 
+  // Show hint once per session when switching to Assets tab if sidebar can be expanded
+  const assetsHintShownThisSession = useRef(false);
+  const prevViewRef = useRef(currentView);
+  useEffect(() => {
+    const isSwitch = prevViewRef.current !== 'assets' && currentView === 'assets';
+    prevViewRef.current = currentView;
+
+    if (isSwitch && !assetsHintShownThisSession.current && sidebarWidth < MAX_SIDEBAR_WIDTH) {
+      assetsHintShownThisSession.current = true;
+      // Small delay to let tab switch animation complete
+      const timer = setTimeout(() => {
+        setShowResizeHint(true);
+        setTimeout(() => setShowResizeHint(false), 1200);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentView, sidebarWidth]);
+
   const renderSidebarContent = () => {
     switch (currentView) {
       case 'events':
@@ -106,7 +184,7 @@ function App() {
       <AppShell
         header={{ height: 60 }}
         navbar={{
-          width: 400,
+          width: sidebarWidth,
           breakpoint: 'sm',
           collapsed: { mobile: isEditing || !mobileOpened, desktop: isEditing || !desktopOpened },
         }}
@@ -166,6 +244,26 @@ function App() {
         </AppShell.Section>
       </AppShell.Navbar>
 
+      {/* Resize Handle - positioned fixed, only visible when sidebar is open on desktop */}
+      {!isEditing && desktopOpened && (
+        <Box
+          className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
+          onMouseDown={handleResizeStart}
+          visibleFrom="sm"
+          style={{
+            position: 'fixed',
+            top: 60,
+            left: sidebarWidth - 3,
+            width: 6,
+            height: 'calc(100vh - 60px)',
+            cursor: 'col-resize',
+            background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
+            transition: isResizing ? 'none' : 'background 0.2s, left 0.1s',
+            zIndex: 100,
+          }}
+        />
+      )}
+
       <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
         <MapView />
 
@@ -219,6 +317,9 @@ function App() {
           onClose={() => selectInspection(null)}
         />
       )}
+
+      {/* Import Wizard Modal */}
+      <ImportWizard />
 
       {/* Notification Sidebar - slides from right */}
       <NotificationSidebar />

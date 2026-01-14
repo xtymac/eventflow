@@ -69,3 +69,28 @@ body {
 .mapboxgl-map.mouse-add .mapboxgl-canvas-container {
   cursor: crosshair;
 }
+
+/* Sidebar resize handle */
+.sidebar-resize-handle:hover {
+  background: var(--mantine-color-blue-3) !important;
+}
+
+.sidebar-resize-handle.active {
+  background: var(--mantine-color-blue-5) !important;
+}
+
+/* First-time hint animation - nudge motion */
+@keyframes resize-handle-nudge {
+  0%, 100% {
+    transform: translateX(0);
+    background: var(--mantine-color-blue-4);
+  }
+  50% {
+    transform: translateX(10px);
+    background: var(--mantine-color-blue-5);
+  }
+}
+
+.sidebar-resize-handle.hint {
+  animation: resize-handle-nudge 0.5s ease-in-out 2;
+}
