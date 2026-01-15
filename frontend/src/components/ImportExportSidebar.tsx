@@ -1,85 +1,119 @@
-import { useState } from 'react';
-import { Drawer, Stack, Divider, Group, Text, Card, Select, Button } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { IconFileImport, IconDownload } from '@tabler/icons-react';
+/**
+ * Import/Export Sidebar Component
+ *
+ * Right sidebar with tabbed interface for Import and Export functionality.
+ * Supports resizable width with localStorage persistence.
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Drawer, Stack, Title, Group, ActionIcon, Tabs, ScrollArea, Box } from '@mantine/core';
+import { IconX, IconUpload, IconDownload } from '@tabler/icons-react';
 import { useUIStore } from '../stores/uiStore';
-import { ImportVersionList } from '../features/import/ImportVersionList';
-import { useExportAssets, type ExportFormat } from '../hooks/useApi';
+import { ExportSection } from '../features/import/components/ExportSection';
+import { ImportSection } from '../features/import/components/ImportSection';
 
-// Export section component for downloading road assets
-function ExportSection() {
-  const [format, setFormat] = useState<ExportFormat>('gpkg');
-  const exportMutation = useExportAssets();
-
-  const handleExport = () => {
-    exportMutation.mutate(format, {
-      onSuccess: ({ filename, size }) => {
-        notifications.show({
-          title: 'Export successful',
-          message: `Downloaded ${filename} (${(size / 1024).toFixed(1)} KB)`,
-          color: 'green',
-        });
-      },
-      onError: (error) => {
-        notifications.show({
-          title: 'Export failed',
-          message: error instanceof Error ? error.message : 'Unknown error',
-          color: 'red',
-        });
-      },
-    });
-  };
-
-  return (
-    <Card withBorder p="md">
-      <Stack gap="sm">
-        <Text fw={600}>Export Road Assets</Text>
-
-        <Select
-          label="Format"
-          data={[
-            { value: 'gpkg', label: 'GeoPackage (.gpkg)' },
-            { value: 'geojson', label: 'GeoJSON (.geojson)' },
-          ]}
-          value={format}
-          onChange={(v) => setFormat((v as ExportFormat) || 'gpkg')}
-          description={format === 'gpkg'
-            ? 'Best for ArcGIS and large files'
-            : 'For small datasets or debugging'}
-        />
-
-        <Button
-          leftSection={<IconDownload size={16} />}
-          onClick={handleExport}
-          loading={exportMutation.isPending}
-        >
-          Export Road Assets
-        </Button>
-      </Stack>
-    </Card>
-  );
-}
+const IMPORT_EXPORT_WIDTH_KEY = 'eventflow-import-export-width';
+const DEFAULT_WIDTH = 400;
+const MIN_WIDTH = 320;
+const MAX_WIDTH = 700;
 
 export function ImportExportSidebar() {
-  const { isImportExportSidebarOpen, closeImportExportSidebar } = useUIStore();
+  const isOpen = useUIStore((s) => s.isImportExportSidebarOpen);
+  const close = useUIStore((s) => s.closeImportExportSidebar);
+
+  // Resize state
+  const [width, setWidth] = useState(() => {
+    const saved = localStorage.getItem(IMPORT_EXPORT_WIDTH_KEY);
+    return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_WIDTH), MAX_WIDTH) : DEFAULT_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeRef.current = { startX: e.clientX, startWidth: width };
+  }, [width]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return;
+      // For right sidebar, drag left increases width
+      const delta = resizeRef.current.startX - e.clientX;
+      const newWidth = Math.min(Math.max(resizeRef.current.startWidth + delta, MIN_WIDTH), MAX_WIDTH);
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      localStorage.setItem(IMPORT_EXPORT_WIDTH_KEY, String(width));
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, width]);
 
   return (
     <Drawer
-      opened={isImportExportSidebarOpen}
-      onClose={closeImportExportSidebar}
+      opened={isOpen}
+      onClose={close}
       position="right"
-      title={
-        <Group gap="xs">
-          <IconFileImport size={20} />
-          <Text fw={600}>Import / Export</Text>
-        </Group>
-      }
-      size="md"
+      size={width}
+      withCloseButton={false}
+      padding="md"
+      overlayProps={{ backgroundOpacity: 0.3 }}
     >
-      <Stack gap="md">
-        <ExportSection />
-        <Divider />
-        <ImportVersionList />
+      {/* Resize Handle - left edge */}
+      <Box
+        className={`sidebar-resize-handle ${isResizing ? 'active' : ''}`}
+        onMouseDown={handleResizeStart}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: 6,
+          height: '100%',
+          cursor: 'col-resize',
+          background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
+          transition: isResizing ? 'none' : 'background 0.2s',
+          zIndex: 10,
+        }}
+      />
+      <Stack gap="md" h="100%">
+        <Group justify="space-between">
+          <Title order={4}>Import / Export</Title>
+          <ActionIcon variant="subtle" color="gray" onClick={close}>
+            <IconX size={18} />
+          </ActionIcon>
+        </Group>
+
+        <Tabs defaultValue="export" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Tabs.List>
+            <Tabs.Tab value="export" leftSection={<IconDownload size={16} />}>
+              Export
+            </Tabs.Tab>
+            <Tabs.Tab value="import" leftSection={<IconUpload size={16} />}>
+              Import
+            </Tabs.Tab>
+          </Tabs.List>
+
+          <ScrollArea style={{ flex: 1 }} type="hover" offsetScrollbars>
+            <Tabs.Panel value="export" pt="md">
+              <ExportSection />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="import" pt="md">
+              <ImportSection />
+            </Tabs.Panel>
+          </ScrollArea>
+        </Tabs>
       </Stack>
     </Drawer>
   );
