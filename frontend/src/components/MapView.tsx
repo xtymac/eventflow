@@ -1705,16 +1705,20 @@ export function MapView() {
   useEffect(() => {
     if (!mapContainer.current || !map.current) return;
 
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const resizeObserver = new ResizeObserver(() => {
-      // Debounce resize to avoid excessive calls during drag
-      requestAnimationFrame(() => {
+      // Debounce resize - only trigger after drag stops (150ms delay)
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
         map.current?.resize();
-      });
+      }, 150);
     });
 
     resizeObserver.observe(mapContainer.current);
 
     return () => {
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
     };
   }, [mapLoaded]);
