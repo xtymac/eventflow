@@ -351,12 +351,12 @@ export function AssetList() {
 
   return (
     <Tabs defaultValue="list">
-      <Tabs.List mb="md">
+      <Tabs.List mb="md" grow>
         <Tabs.Tab value="list" leftSection={<IconRoad size={14} />}>
           Roads ({data?.meta?.total ?? loadedAssets.length})
         </Tabs.Tab>
         <Tabs.Tab value="greenspaces" leftSection={<IconTree size={14} />}>
-          Green Spaces ({sortedGreenspaces.length})
+          Green ({sortedGreenspaces.length})
         </Tabs.Tab>
         <Tabs.Tab value="streetlights" leftSection={<IconBulb size={14} />}>
           Lights ({sortedStreetlights.length})
