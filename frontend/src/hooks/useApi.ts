@@ -288,6 +288,47 @@ export function useRetireAsset() {
   });
 }
 
+// Export types
+export type ExportFormat = 'gpkg' | 'geojson';
+
+export interface ExportResult {
+  filename: string;
+  size: number;
+}
+
+// Export road assets as GeoPackage or GeoJSON
+export function useExportAssets() {
+  return useMutation({
+    mutationFn: async (format: ExportFormat = 'gpkg'): Promise<ExportResult> => {
+      const endpoint = format === 'gpkg' ? '/export/geopackage' : '/export/geojson';
+      const response = await fetch(`${API_BASE}${endpoint}?type=assets`);
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorBody.error || `Export failed: HTTP ${response.status}`);
+      }
+
+      // Get filename from Content-Disposition header
+      const disposition = response.headers.get('Content-Disposition');
+      const filenameMatch = disposition?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] || `road-assets.${format}`;
+
+      // Trigger download
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      return { filename, size: blob.size };
+    },
+  });
+}
+
 // Inspections hooks
 export function useInspections(eventId?: string, roadAssetId?: string) {
   const params = new URLSearchParams();
@@ -388,6 +429,7 @@ export function useRoadEditSSE(options?: { onEdit?: (edit: { id: string; roadAss
   const queryClient = useQueryClient();
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Use ref for callback to avoid infinite loop (options object changes every render)
   const onEditRef = useRef(options?.onEdit);
   onEditRef.current = options?.onEdit;
@@ -416,13 +458,20 @@ export function useRoadEditSSE(options?: { onEdit?: (edit: { id: string; roadAss
             return;
           }
 
-          // Road edit received - invalidate query to refresh data
-          queryClient.invalidateQueries({ queryKey: ['recent-edits'] });
+          // Debounce invalidation to prevent flood during bulk operations (e.g., import publish)
+          // Only invalidate once after 500ms of no new messages
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
+          debounceTimeoutRef.current = setTimeout(() => {
+            // Road edit received - invalidate query to refresh data
+            queryClient.invalidateQueries({ queryKey: ['recent-edits'] });
+            // Also invalidate assets query since a road was edited
+            queryClient.invalidateQueries({ queryKey: ['assets'] });
+            debounceTimeoutRef.current = null;
+          }, 500);
 
-          // Also invalidate assets query since a road was edited
-          queryClient.invalidateQueries({ queryKey: ['assets'] });
-
-          // Call optional callback via ref
+          // Call optional callback via ref (not debounced)
           if (onEditRef.current && data.id) {
             onEditRef.current(data);
           }
@@ -453,6 +502,10 @@ export function useRoadEditSSE(options?: { onEdit?: (edit: { id: string; roadAss
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
+      }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
       }
     };
   }, [queryClient]); // Only depend on queryClient, not options

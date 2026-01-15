@@ -14,16 +14,19 @@ import {
   UnstyledButton,
   ActionIcon,
   Tabs,
+  Select,
+  Divider,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb, IconUpload, IconDownload } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAssets, useAsset, useWards, useGreenSpacesInBbox, useStreetLightsInBbox } from '../../hooks/useApi';
+import { useAssets, useAsset, useWards, useGreenSpacesInBbox, useStreetLightsInBbox, useExportAssets, type ExportFormat } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
 import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
 import type { RoadAsset, RoadType, AssetStatus, GreenSpaceAsset, StreetLightAsset } from '@nagoya/shared';
+import { ImportVersionList } from '../import/ImportVersionList';
 
 const LIMIT = 200;
 
@@ -360,6 +363,9 @@ export function AssetList() {
         </Tabs.Tab>
         <Tabs.Tab value="streetlights" leftSection={<IconBulb size={14} />}>
           Lights ({sortedStreetlights.length})
+        </Tabs.Tab>
+        <Tabs.Tab value="import" leftSection={<IconUpload size={14} />}>
+          Import
         </Tabs.Tab>
       </Tabs.List>
 
@@ -792,6 +798,68 @@ export function AssetList() {
           )}
         </Stack>
       </Tabs.Panel>
+
+      <Tabs.Panel value="import">
+        <Stack gap="md">
+          <ExportSection />
+          <Divider />
+          <ImportVersionList />
+        </Stack>
+      </Tabs.Panel>
     </Tabs>
+  );
+}
+
+// Export section component for downloading road assets
+function ExportSection() {
+  const [format, setFormat] = useState<ExportFormat>('gpkg');
+  const exportMutation = useExportAssets();
+
+  const handleExport = () => {
+    exportMutation.mutate(format, {
+      onSuccess: ({ filename, size }) => {
+        notifications.show({
+          title: 'Export successful',
+          message: `Downloaded ${filename} (${(size / 1024).toFixed(1)} KB)`,
+          color: 'green',
+        });
+      },
+      onError: (error) => {
+        notifications.show({
+          title: 'Export failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          color: 'red',
+        });
+      },
+    });
+  };
+
+  return (
+    <Card withBorder p="md">
+      <Stack gap="sm">
+        <Text fw={600}>Export Road Assets</Text>
+
+        <Select
+          label="Format"
+          data={[
+            { value: 'gpkg', label: 'GeoPackage (.gpkg)' },
+            { value: 'geojson', label: 'GeoJSON (.geojson)' },
+          ]}
+          value={format}
+          onChange={(v) => setFormat((v as ExportFormat) || 'gpkg')}
+          description={format === 'gpkg'
+            ? 'Best for ArcGIS and large files'
+            : 'For small datasets or debugging'}
+        />
+
+        <Button
+          leftSection={<IconDownload size={16} />}
+          onClick={handleExport}
+          loading={exportMutation.isPending}
+        >
+          Export Road Assets
+        </Button>
+      </Stack>
+    </Card>
   );
 }

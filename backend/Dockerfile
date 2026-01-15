@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Install GDAL for GeoPackage conversion (ogr2ogr, ogrinfo)
+RUN apk add --no-cache gdal gdal-tools
+
 WORKDIR /app
 
 # Install dependencies
