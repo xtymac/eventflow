@@ -112,6 +112,14 @@ interface UIState {
     showArchivedSection: boolean;  // Toggle for archived events section visibility
   };
 
+  // Import wizard state
+  importWizardOpen: boolean;
+  importWizardStep: 'upload' | 'configure' | 'validation' | 'preview' | 'publish';
+  currentImportVersionId: string | null;
+
+  // Import/Export sidebar state
+  isImportExportSidebarOpen: boolean;
+
   // Actions
   selectEvent: (id: string | null) => void;
   selectAsset: (id: string | null, geometry?: Geometry | null) => void;
@@ -189,6 +197,17 @@ interface UIState {
   setHoveredEvent: (id: string | null) => void;
   setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
   setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
+
+  // Import wizard actions
+  openImportWizard: () => void;
+  closeImportWizard: () => void;
+  setImportWizardStep: (step: UIState['importWizardStep']) => void;
+  setCurrentImportVersionId: (id: string | null) => void;
+
+  // Import/Export sidebar actions
+  openImportExportSidebar: () => void;
+  closeImportExportSidebar: () => void;
+  toggleImportExportSidebar: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -279,6 +298,14 @@ export const useUIStore = create<UIState>((set, get) => ({
     dateRange: { from: null, to: null },
     showArchivedSection: false,
   },
+
+  // Import wizard state
+  importWizardOpen: false,
+  importWizardStep: 'upload',
+  currentImportVersionId: null,
+
+  // Import/Export sidebar state
+  isImportExportSidebarOpen: false,
 
   selectEvent: (id) => set({
     selectedEventId: id,
@@ -612,4 +639,23 @@ export const useUIStore = create<UIState>((set, get) => ({
   setHoveredEvent: (id) => set({ hoveredEventId: id }),
   setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
   setFlyToGeometry: (geometry, closeUp = false) => set({ flyToGeometry: geometry, flyToCloseUp: closeUp }),
+
+  // Import wizard actions
+  openImportWizard: () => set({
+    importWizardOpen: true,
+    importWizardStep: 'upload',
+    currentImportVersionId: null,
+  }),
+  closeImportWizard: () => set({
+    importWizardOpen: false,
+    importWizardStep: 'upload',
+    currentImportVersionId: null,
+  }),
+  setImportWizardStep: (step) => set({ importWizardStep: step }),
+  setCurrentImportVersionId: (id) => set({ currentImportVersionId: id }),
+
+  // Import/Export sidebar actions
+  openImportExportSidebar: () => set({ isImportExportSidebarOpen: true }),
+  closeImportExportSidebar: () => set({ isImportExportSidebarOpen: false }),
+  toggleImportExportSidebar: () => set((state) => ({ isImportExportSidebarOpen: !state.isImportExportSidebarOpen })),
 }));

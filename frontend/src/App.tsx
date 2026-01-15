@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text, Indicator, Box } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconBell, IconX } from '@tabler/icons-react';
+import { IconBell, IconX, IconFileImport } from '@tabler/icons-react';
 import { useShallow } from 'zustand/shallow';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
@@ -11,6 +11,7 @@ import { DecisionModal } from './features/events/DecisionModal';
 import { MapView } from './components/MapView';
 import { MapSearch } from './components/MapSearch';
 import { NotificationSidebar } from './components/NotificationSidebar';
+import { ImportExportSidebar } from './components/ImportExportSidebar';
 import { useUIStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useNotifications } from './hooks/useNotifications';
@@ -137,6 +138,7 @@ function App() {
   // Notification state
   const { unreadCount } = useNotifications();
   const toggleSidebar = useNotificationStore((s) => s.toggleSidebar);
+  const toggleImportExportSidebar = useUIStore((s) => s.toggleImportExportSidebar);
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const prevDetailModalEventId = useRef(detailModalEventId);
 
@@ -217,13 +219,21 @@ function App() {
           {/* Map Search - centered in header */}
           <MapSearch />
 
-          <Tooltip label="Notifications">
-            <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
-              <ActionIcon variant="subtle" onClick={toggleSidebar}>
-                <IconBell size={20} />
+          <Group gap="xs">
+            <Tooltip label="Import / Export">
+              <ActionIcon variant="subtle" onClick={toggleImportExportSidebar}>
+                <IconFileImport size={20} />
               </ActionIcon>
-            </Indicator>
-          </Tooltip>
+            </Tooltip>
+
+            <Tooltip label="Notifications">
+              <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
+                <ActionIcon variant="subtle" onClick={toggleSidebar}>
+                  <IconBell size={20} />
+                </ActionIcon>
+              </Indicator>
+            </Tooltip>
+          </Group>
         </Group>
       </AppShell.Header>
 
@@ -323,6 +333,9 @@ function App() {
 
       {/* Notification Sidebar - slides from right */}
       <NotificationSidebar />
+
+      {/* Import/Export Sidebar - slides from right */}
+      <ImportExportSidebar />
     </AppShell>
   );
 }
