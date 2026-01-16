@@ -210,6 +210,64 @@ export const roadAssetEditLogs = pgTable('road_asset_edit_logs', {
 }));
 
 // ============================================
+// Import Versioning Tables
+// ============================================
+
+export const importVersions = pgTable('import_versions', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  versionNumber: integer('version_number').notNull(),
+  status: varchar('status', { length: 20 }).notNull(),
+
+  // File information
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  fileType: varchar('file_type', { length: 20 }).notNull(),
+  filePath: varchar('file_path', { length: 500 }).notNull(),
+  layerName: varchar('layer_name', { length: 100 }),
+  sourceCRS: varchar('source_crs', { length: 20 }),
+
+  // Import configuration
+  importScope: varchar('import_scope', { length: 255 }).notNull(),
+  regionalRefresh: boolean('regional_refresh').default(false).notNull(),
+  defaultDataSource: varchar('default_data_source', { length: 20 }).notNull(),
+
+  // Statistics
+  fileSizeMB: numeric('file_size_mb', { precision: 10, scale: 2 }),
+  featureCount: integer('feature_count').notNull(),
+
+  // Audit trail
+  uploadedBy: varchar('uploaded_by', { length: 100 }),
+  uploadedAt: timestamp('uploaded_at', { withTimezone: true }).notNull(),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  publishedBy: varchar('published_by', { length: 100 }),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+
+  // Rollback support
+  snapshotPath: varchar('snapshot_path', { length: 500 }),
+
+  // Notes
+  notes: text('notes'),
+}, (table) => ({
+  statusIdx: index('idx_import_versions_status').on(table.status),
+  uploadedAtIdx: index('idx_import_versions_uploaded').on(table.uploadedAt),
+}));
+
+export const importJobs = pgTable('import_jobs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  versionId: varchar('version_id', { length: 50 }).notNull()
+    .references(() => importVersions.id, { onDelete: 'cascade' }),
+  jobType: varchar('job_type', { length: 20 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull(),
+  progress: integer('progress').default(0),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  errorMessage: text('error_message'),
+  resultSummary: jsonbColumn('result_summary'),
+}, (table) => ({
+  versionIdx: index('idx_import_jobs_version').on(table.versionId),
+  statusIdx: index('idx_import_jobs_status').on(table.status),
+}));
+
+// ============================================
 // NEW ASSET TYPES
 // ============================================
 
@@ -375,6 +433,12 @@ export type NewOsmSyncLog = typeof osmSyncLogs.$inferInsert;
 
 export type RoadAssetEditLog = typeof roadAssetEditLogs.$inferSelect;
 export type NewRoadAssetEditLog = typeof roadAssetEditLogs.$inferInsert;
+
+export type ImportVersion = typeof importVersions.$inferSelect;
+export type NewImportVersion = typeof importVersions.$inferInsert;
+
+export type ImportJob = typeof importJobs.$inferSelect;
+export type NewImportJob = typeof importJobs.$inferInsert;
 
 export type RiverAsset = typeof riverAssets.$inferSelect;
 export type NewRiverAsset = typeof riverAssets.$inferInsert;

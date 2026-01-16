@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import multipart from '@fastify/multipart';
 import { eventsRoutes } from './routes/events.js';
 import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
@@ -13,6 +14,7 @@ import { streetlightsRoutes } from './routes/streetlights.js';
 import { searchRoutes } from './routes/search.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
+import { importVersionsRoutes } from './routes/import-versions.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -37,6 +39,11 @@ async function main() {
     credentials: true,
   });
   await fastify.register(sensible);
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: 100 * 1024 * 1024, // 100MB
+    },
+  });
 
   // Health check endpoint
   fastify.get('/health', async () => {
@@ -61,6 +68,7 @@ async function main() {
   await fastify.register(inspectionsRoutes, { prefix: '/inspections' });
   await fastify.register(importExportRoutes, { prefix: '/import' });
   await fastify.register(importExportRoutes, { prefix: '/export' });
+  await fastify.register(importVersionsRoutes, { prefix: '/import/versions' });
   await fastify.register(osmSyncRoutes, { prefix: '/osm-sync' });
   await fastify.register(sseRoutes, { prefix: '/sse' });
 

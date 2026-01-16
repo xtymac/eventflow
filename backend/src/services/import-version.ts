@@ -23,7 +23,7 @@ import {
   type ImportJob,
   type RoadAsset,
 } from '../db/schema.js';
-import { eq, sql, and, inArray, not, isNull, desc } from 'drizzle-orm';
+import { eq, sql, and, inArray, not, isNull, desc, gt } from 'drizzle-orm';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,6 +86,7 @@ export interface ValidationResult {
 
 export interface DiffResult {
   scope: string;
+  regionalRefresh: boolean;
   added: Feature[];
   updated: Feature[];
   deactivated: Feature[];
@@ -207,10 +208,11 @@ export class ImportVersionService {
 
       // Parse ogrinfo output to extract layer info
       // Format: "1: layer_name (Geometry Type)" - geometry type can have spaces like "Multi Line String"
-      const layerMatches = stdout.matchAll(/(\d+): ([\w_-]+) \(([^)]+)\)/g);
+      // Use .+? to match any characters (including Japanese/Unicode) in layer names
+      const layerMatches = stdout.matchAll(/(\d+): (.+?) \(([^)]+)\)/g);
       for (const match of layerMatches) {
         layers.push({
-          name: match[2],
+          name: match[2].trim(),  // Trim whitespace from layer name
           geometryType: match[3],
           featureCount: 0, // Could parse from detailed output if needed
         });
@@ -755,12 +757,32 @@ export class ImportVersionService {
   }
 
   /**
+   * Build SQL condition for filtering roads by scope
+   */
+  private buildScopeCondition(scope: string) {
+    if (scope === 'full') {
+      return eq(roadAssets.status, 'active');
+    }
+    if (scope.startsWith('ward:')) {
+      const ward = scope.substring(5);
+      return and(eq(roadAssets.status, 'active'), eq(roadAssets.ward, ward));
+    }
+    if (scope.startsWith('bbox:')) {
+      const [minLng, minLat, maxLng, maxLat] = scope.substring(5).split(',').map(Number);
+      return and(
+        eq(roadAssets.status, 'active'),
+        sql`ST_Intersects(${roadAssets.geometry}, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))`
+      );
+    }
+    // Default fallback
+    return eq(roadAssets.status, 'active');
+  }
+
+  /**
    * Create pre-publish snapshot of roads in scope
    */
   async createSnapshot(versionId: string, scope: string): Promise<string> {
-    const roads = await this.getRoadsInScope(scope);
-
-    // Export roads to GeoJSON with geometry
+    // Export roads to GeoJSON with geometry - using proper scope filtering
     const roadsWithGeom = await db
       .select({
         id: roadAssets.id,
@@ -779,13 +801,7 @@ export class ImportVersionService {
         updatedAt: roadAssets.updatedAt,
       })
       .from(roadAssets)
-      .where(
-        scope === 'full'
-          ? eq(roadAssets.status, 'active')
-          : scope.startsWith('ward:')
-          ? and(eq(roadAssets.status, 'active'), eq(roadAssets.ward, scope.substring(5)))
-          : eq(roadAssets.status, 'active')
-      );
+      .where(this.buildScopeCondition(scope));
 
     const features: Feature[] = roadsWithGeom.map(road => ({
       type: 'Feature',
@@ -821,6 +837,9 @@ export class ImportVersionService {
 
   /**
    * Publish import version (incremental update)
+   * - Requires validation to pass before publishing
+   * - Wrapped in transaction for atomicity
+   * - Uses diff results for accurate counts
    */
   async publishVersion(versionId: string, publishedBy?: string): Promise<PublishResult> {
     const [version] = await db
@@ -836,40 +855,42 @@ export class ImportVersionService {
       throw new Error(`Version ${versionId} is not in draft status`);
     }
 
-    // Create snapshot before publishing
+    // 1. Require validation to pass before publishing
+    const validationResult = await this.validateGeoJSON(versionId);
+    if (!validationResult.valid) {
+      throw new Error(`Cannot publish: ${validationResult.errors.length} validation errors. Fix errors and re-validate.`);
+    }
+
+    // 2. Generate diff to get accurate counts of what will change
+    const diff = await this.generateDiff(versionId);
+
+    // 3. Create snapshot before publishing (outside transaction for file I/O)
     const snapshotPath = await this.createSnapshot(versionId, version.importScope);
 
-    // Read import GeoJSON
+    // 4. Read import GeoJSON
     const geojsonPath = version.filePath.endsWith('.geojson')
       ? version.filePath
       : join(dirname(version.filePath), 'converted.geojson');
-
     const geojson = JSON.parse(readFileSync(geojsonPath, 'utf-8')) as FeatureCollection;
-    const importFeatures = geojson.features || [];
-    const importIds = new Set<string>();
 
-    let added = 0;
-    let updated = 0;
-    let unchanged = 0;
-
-    // Get current roads in scope
-    const currentRoads = await this.getRoadsInScope(version.importScope);
-    const currentRoadMap = new Map(currentRoads.map(r => [r.id, r]));
+    // Build lookup for import features by ID
+    const importFeatureMap = new Map<string, Feature>();
+    for (const feature of geojson.features || []) {
+      const id = feature.properties?.id;
+      if (id) importFeatureMap.set(id, feature);
+    }
 
     const now = new Date();
 
-    // Process each import feature
-    for (const feature of importFeatures) {
-      const id = feature.properties?.id;
-      if (!id) continue;
+    // 5. Execute all DB operations in a transaction
+    await db.transaction(async (tx) => {
+      // Process added features
+      for (const feature of diff.added) {
+        const id = feature.properties?.id;
+        if (!id) continue;
+        const props = feature.properties || {};
 
-      importIds.add(id);
-      const existing = currentRoadMap.get(id);
-      const props = feature.properties || {};
-
-      if (!existing) {
-        // INSERT new road
-        await db.execute(sql`
+        await tx.execute(sql`
           INSERT INTO road_assets (
             id, name, name_ja, display_name, geometry, road_type, lanes, direction,
             status, valid_from, ward, data_source, updated_at
@@ -889,81 +910,65 @@ export class ImportVersionService {
             ${now}
           )
         `);
-        added++;
-      } else {
-        // UPDATE existing road (only provided fields)
-        const updateFields: Record<string, unknown> = {
-          updatedAt: now,
-        };
-
-        // Only update fields that are explicitly provided
-        if (props.name !== undefined) updateFields.name = props.name;
-        if (props.nameJa !== undefined) updateFields.nameJa = props.nameJa;
-        if (props.displayName !== undefined) updateFields.displayName = props.displayName;
-        if (props.roadType !== undefined) updateFields.roadType = props.roadType;
-        if (props.lanes !== undefined) updateFields.lanes = props.lanes;
-        if (props.direction !== undefined) updateFields.direction = props.direction;
-        if (props.ward !== undefined) updateFields.ward = props.ward;
-        if (props.dataSource !== undefined) updateFields.dataSource = props.dataSource;
-
-        // Always update geometry if provided
-        if (feature.geometry) {
-          await db.execute(sql`
-            UPDATE road_assets
-            SET geometry = ${toGeomSql(feature.geometry)},
-                name = COALESCE(${props.name ?? null}, name),
-                road_type = COALESCE(${props.roadType ?? null}, road_type),
-                lanes = COALESCE(${props.lanes ?? null}, lanes),
-                direction = COALESCE(${props.direction ?? null}, direction),
-                ward = COALESCE(${props.ward ?? null}, ward),
-                data_source = COALESCE(${props.dataSource ?? null}, data_source),
-                updated_at = ${now}
-            WHERE id = ${id}
-          `);
-        }
-
-        updated++;
       }
-    }
 
-    // Mark roads in scope but not in import as inactive
-    // Only if regionalRefresh is enabled (default: false = incremental update only)
-    let deactivated = 0;
-    if (version.regionalRefresh) {
-      for (const road of currentRoads) {
-        if (!importIds.has(road.id)) {
-          await db
+      // Process updated features (only those that actually changed)
+      for (const feature of diff.updated) {
+        const id = feature.properties?.id;
+        if (!id) continue;
+        const props = feature.properties || {};
+
+        await tx.execute(sql`
+          UPDATE road_assets
+          SET geometry = ${toGeomSql(feature.geometry)},
+              name = COALESCE(${props.name ?? null}, name),
+              road_type = COALESCE(${props.roadType ?? null}, road_type),
+              lanes = COALESCE(${props.lanes ?? null}, lanes),
+              direction = COALESCE(${props.direction ?? null}, direction),
+              ward = COALESCE(${props.ward ?? null}, ward),
+              data_source = COALESCE(${props.dataSource ?? null}, data_source),
+              updated_at = ${now}
+          WHERE id = ${id}
+        `);
+      }
+
+      // Process deactivated features (only if regionalRefresh is enabled)
+      if (version.regionalRefresh) {
+        for (const feature of diff.deactivated) {
+          const id = feature.properties?.id;
+          if (!id) continue;
+
+          await tx
             .update(roadAssets)
             .set({ status: 'inactive', updatedAt: now })
-            .where(eq(roadAssets.id, road.id));
-          deactivated++;
+            .where(eq(roadAssets.id, id));
         }
       }
-    }
 
-    // Archive previous published version
-    await db
-      .update(importVersions)
-      .set({ status: 'archived', archivedAt: now })
-      .where(and(eq(importVersions.status, 'published'), not(eq(importVersions.id, versionId))));
+      // Archive previous published version
+      await tx
+        .update(importVersions)
+        .set({ status: 'archived', archivedAt: now })
+        .where(and(eq(importVersions.status, 'published'), not(eq(importVersions.id, versionId))));
 
-    // Update version to published
-    await db
-      .update(importVersions)
-      .set({
-        status: 'published',
-        publishedAt: now,
-        publishedBy: publishedBy || null,
-        snapshotPath,
-      })
-      .where(eq(importVersions.id, versionId));
+      // Update version to published
+      await tx
+        .update(importVersions)
+        .set({
+          status: 'published',
+          publishedAt: now,
+          publishedBy: publishedBy || null,
+          snapshotPath,
+        })
+        .where(eq(importVersions.id, versionId));
+    });
 
     return {
       success: true,
-      added,
-      updated,
-      deactivated,
-      unchanged,
+      added: diff.stats.addedCount,
+      updated: diff.stats.updatedCount,
+      deactivated: version.regionalRefresh ? diff.stats.deactivatedCount : 0,
+      unchanged: diff.unchanged,
       snapshotPath,
       publishedAt: now.toISOString(),
       scope: version.importScope,
@@ -1035,7 +1040,16 @@ export class ImportVersionService {
       restored++;
     }
 
-    // Archive current published version
+    // Delete versions with higher version numbers (to reset version counter)
+    // This allows subsequent imports to continue from this version's number
+    console.log('[Rollback] Deleting versions with versionNumber >', version.versionNumber);
+    const deleteResult = await db
+      .delete(importVersions)
+      .where(gt(importVersions.versionNumber, version.versionNumber))
+      .returning({ id: importVersions.id, versionNumber: importVersions.versionNumber });
+    console.log('[Rollback] Deleted versions:', deleteResult);
+
+    // Archive other published versions
     await db
       .update(importVersions)
       .set({ status: 'archived', archivedAt: now })
