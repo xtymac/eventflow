@@ -21,6 +21,7 @@ import { InspectionEditorOverlay } from './features/inspections/InspectionEditor
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
 import { ImportWizard } from './features/import/ImportWizard';
 import { ExportBboxConfirmOverlay } from './features/import/components/ExportBboxConfirmOverlay';
+import { ImportPreviewOverlay } from './features/import/components/ImportPreviewOverlay';
 import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
@@ -280,6 +281,9 @@ function App() {
 
         {/* Export bbox confirmation overlay */}
         <ExportBboxConfirmOverlay />
+
+        {/* Import preview overlay (when viewing a road from review step) */}
+        <ImportPreviewOverlay />
 
         {isEventFormOpen && (
           <EventEditorOverlay

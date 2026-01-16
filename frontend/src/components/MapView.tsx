@@ -2906,11 +2906,35 @@ export function MapView() {
       }],
     };
 
-    // Calculate center for label (geometry is always a Polygon from bbox)
-    const geom = importAreaHighlight.geometry as GeoJSON.Polygon;
-    const coords = geom.coordinates[0];
-    const centerLng = (coords[0][0] + coords[2][0]) / 2;
-    const centerLat = (coords[0][1] + coords[2][1]) / 2;
+    // Calculate center for label based on geometry type
+    let centerLng = 0;
+    let centerLat = 0;
+    const geom = importAreaHighlight.geometry;
+
+    if (geom.type === 'Polygon') {
+      const coords = geom.coordinates[0];
+      centerLng = (coords[0][0] + coords[2][0]) / 2;
+      centerLat = (coords[0][1] + coords[2][1]) / 2;
+    } else if (geom.type === 'LineString') {
+      const coords = geom.coordinates;
+      const midIndex = Math.floor(coords.length / 2);
+      centerLng = coords[midIndex][0];
+      centerLat = coords[midIndex][1];
+    } else if (geom.type === 'MultiLineString') {
+      // Average all coordinates
+      const allCoords = geom.coordinates.flat();
+      centerLng = allCoords.reduce((sum, c) => sum + c[0], 0) / allCoords.length;
+      centerLat = allCoords.reduce((sum, c) => sum + c[1], 0) / allCoords.length;
+    } else if (geom.type === 'Point') {
+      centerLng = geom.coordinates[0];
+      centerLat = geom.coordinates[1];
+    } else if (geom.type === 'MultiPolygon') {
+      const firstPoly = geom.coordinates[0][0];
+      centerLng = (firstPoly[0][0] + firstPoly[2][0]) / 2;
+      centerLat = (firstPoly[0][1] + firstPoly[2][1]) / 2;
+    }
+
+    const isPolygonType = geom.type === 'Polygon' || geom.type === 'MultiPolygon';
 
     const labelData: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
@@ -2944,26 +2968,28 @@ export function MapView() {
         data: labelData,
       });
 
-      // Semi-transparent fill
-      map.current.addLayer({
-        id: fillLayerId,
-        type: 'fill',
-        source: sourceId,
-        paint: {
-          'fill-color': '#3B82F6',
-          'fill-opacity': 0.1,
-        },
-      });
+      // Semi-transparent fill (only for polygon geometries)
+      if (isPolygonType) {
+        map.current.addLayer({
+          id: fillLayerId,
+          type: 'fill',
+          source: sourceId,
+          paint: {
+            'fill-color': '#3B82F6',
+            'fill-opacity': 0.1,
+          },
+        });
+      }
 
-      // Dashed border outline
+      // Line styling (dashed for polygons, solid thick for roads)
       map.current.addLayer({
         id: lineLayerId,
         type: 'line',
         source: sourceId,
         paint: {
           'line-color': '#3B82F6',
-          'line-width': 3,
-          'line-dasharray': [3, 2],
+          'line-width': isPolygonType ? 3 : 6,
+          ...(isPolygonType ? { 'line-dasharray': [3, 2] } : {}),
         },
       });
 

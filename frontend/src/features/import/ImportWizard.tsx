@@ -2,23 +2,21 @@
  * Import Wizard Component
  *
  * Step-by-step wizard for importing GeoPackage/GeoJSON files:
- * Upload → Configure → Validate → Preview → Publish
+ * Upload → Configure → Review → Publish
  */
 
 import { Modal, Stepper, Group, Button, Stack } from '@mantine/core';
-import { IconUpload, IconSettings, IconCheck, IconEye, IconRocket } from '@tabler/icons-react';
+import { IconUpload, IconSettings, IconEye, IconRocket } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { UploadStep } from './steps/UploadStep';
 import { ConfigureStep } from './steps/ConfigureStep';
-import { ValidationStep } from './steps/ValidationStep';
-import { PreviewStep } from './steps/PreviewStep';
+import { ReviewStep } from './steps/ReviewStep';
 import { PublishStep } from './steps/PublishStep';
 
-const STEP_ORDER: Array<'upload' | 'configure' | 'validation' | 'preview' | 'publish'> = [
+const STEP_ORDER: Array<'upload' | 'configure' | 'review' | 'publish'> = [
   'upload',
   'configure',
-  'validation',
-  'preview',
+  'review',
   'publish',
 ];
 
@@ -30,7 +28,6 @@ export function ImportWizard() {
   const {
     importWizardOpen,
     importWizardStep,
-    currentImportVersionId,
     closeImportWizard,
     setImportWizardStep,
   } = useUIStore();
@@ -53,10 +50,8 @@ export function ImportWizard() {
         return <UploadStep />;
       case 'configure':
         return <ConfigureStep />;
-      case 'validation':
-        return <ValidationStep />;
-      case 'preview':
-        return <PreviewStep />;
+      case 'review':
+        return <ReviewStep />;
       case 'publish':
         return <PublishStep />;
       default:
@@ -90,13 +85,8 @@ export function ImportWizard() {
             icon={<IconSettings size={18} />}
           />
           <Stepper.Step
-            label="Validate"
-            description="Check data"
-            icon={<IconCheck size={18} />}
-          />
-          <Stepper.Step
-            label="Preview"
-            description="Review changes"
+            label="Review"
+            description="Check changes"
             icon={<IconEye size={18} />}
           />
           <Stepper.Step

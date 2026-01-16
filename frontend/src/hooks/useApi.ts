@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
+import * as turf from '@turf/turf';
 import type {
   ConstructionEvent,
   RoadAsset,
@@ -35,6 +36,19 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 
   return response.json();
+}
+
+// Maximum bbox area in square meters for streetlights (matches backend limit)
+const STREETLIGHTS_MAX_BBOX_AREA_M2 = 2_000_000;
+
+// Calculate bbox area in square meters from "west,south,east,north" string
+function calculateBboxAreaM2(bbox: string): number | null {
+  const parts = bbox.split(',').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return null;
+
+  const [west, south, east, north] = parts;
+  const polygon = turf.bboxPolygon([west, south, east, north]);
+  return turf.area(polygon);
 }
 
 // Events hooks
@@ -629,11 +643,15 @@ export function useStreetLightsInBbox(
   }
   const queryString = params.toString() ? `?${params.toString()}` : '';
 
+  // Check if bbox area is within limit to avoid 400 errors
+  const bboxArea = bbox ? calculateBboxAreaM2(bbox) : null;
+  const isAreaWithinLimit = bboxArea !== null && bboxArea <= STREETLIGHTS_MAX_BBOX_AREA_M2;
+
   return useQuery({
     queryKey: ['streetlights', bbox, filters?.lampType, filters?.lampStatus, filters?.ward, filters?.dataSource],
     queryFn: () =>
       fetchApi<FeatureCollection<Point, StreetLightAsset>>(`/streetlights${queryString}`),
-    enabled: (options?.enabled ?? true) && !!bbox,
+    enabled: (options?.enabled ?? true) && !!bbox && isAreaWithinLimit,
     staleTime: 60000,
     placeholderData: keepPreviousData,
   });

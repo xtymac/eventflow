@@ -4,6 +4,11 @@ import type { LngLatBoundsLike } from 'maplibre-gl';
 
 export type MapTheme = 'light' | 'dark' | 'voyager' | 'standard';
 
+interface ImportAreaHighlight {
+  geometry: GeoJSON.Geometry;
+  label: string;
+}
+
 interface MapState {
   center: [number, number];
   zoom: number;
@@ -18,6 +23,7 @@ interface MapState {
   highlightedFeatureId: string | null;
   drawnGeometry: GeoJSON.Geometry | null;
   roadTileVersion: number; // Incremented to force road tile refresh
+  importAreaHighlight: ImportAreaHighlight | null; // Highlight for import area preview
 
   // Actions
   setCenter: (center: [number, number]) => void;
@@ -33,6 +39,7 @@ interface MapState {
   setHighlightedFeature: (id: string | null) => void;
   setDrawnGeometry: (geometry: GeoJSON.Geometry | null) => void;
   refreshRoadTiles: () => void;
+  setImportAreaHighlight: (highlight: ImportAreaHighlight | null) => void;
 }
 
 // Nagoya city center coordinates
@@ -55,6 +62,7 @@ export const useMapStore = create<MapState>()(
       highlightedFeatureId: null,
       drawnGeometry: null,
       roadTileVersion: 0,
+      importAreaHighlight: null,
 
       setCenter: (center) => set({ center }),
       setZoom: (zoom) => set({ zoom }),
@@ -69,6 +77,7 @@ export const useMapStore = create<MapState>()(
       setHighlightedFeature: (id) => set({ highlightedFeatureId: id }),
       setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
       refreshRoadTiles: () => set((state) => ({ roadTileVersion: state.roadTileVersion + 1 })),
+      setImportAreaHighlight: (highlight) => set({ importAreaHighlight: highlight }),
     }),
     {
       name: 'map-store',

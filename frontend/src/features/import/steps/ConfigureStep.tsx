@@ -17,6 +17,7 @@ import {
   Alert,
   TextInput,
   Switch,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle, IconArrowRight, IconAlertTriangle } from '@tabler/icons-react';
@@ -142,7 +143,7 @@ export function ConfigureStep() {
       await triggerValidationMutation.mutateAsync(currentImportVersionId);
 
       // Proceed to validation step
-      setImportWizardStep('validation');
+      setImportWizardStep('review');
 
       notifications.show({
         title: 'Configuration saved',
@@ -197,11 +198,12 @@ export function ConfigureStep() {
       {isGeoPackage && (
         <Select
           label="Layer"
+          description="Select the layer containing road data"
           placeholder={isLoadingLayers ? 'Loading layers...' : 'Select a layer'}
           data={
             layersData?.data?.map((l) => ({
               value: l.name,
-              label: `${l.name} (${l.featureCount} features, ${l.geometryType})`,
+              label: l.name,
             })) ?? []
           }
           value={selectedLayer}
@@ -273,7 +275,28 @@ export function ConfigureStep() {
 
       {/* Default Data Source */}
       <Select
-        label="Default Data Source"
+        label={
+          <Group gap={4}>
+            <Text size="sm" fw={500}>Default Data Source</Text>
+            <Tooltip
+              label={
+                <>
+                  <div style={{ marginBottom: 8 }}>
+                    Applied to features missing the dataSource property:
+                  </div>
+                  <div><strong>official_ledger</strong> - Official GIS data from government</div>
+                  <div><strong>manual</strong> - Data manually entered by users</div>
+                  <div><strong>osm_test</strong> - OpenStreetMap test data</div>
+                </>
+              }
+              multiline
+              w={300}
+              withArrow
+            >
+              <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)', cursor: 'help' }} />
+            </Tooltip>
+          </Group>
+        }
         description="Applied to features missing the dataSource property"
         data={DATA_SOURCE_OPTIONS}
         value={defaultDataSource}

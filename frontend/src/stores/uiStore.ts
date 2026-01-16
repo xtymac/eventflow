@@ -114,11 +114,25 @@ interface UIState {
 
   // Import wizard state
   importWizardOpen: boolean;
-  importWizardStep: 'upload' | 'configure' | 'validation' | 'preview' | 'publish';
+  importWizardStep: 'upload' | 'configure' | 'review' | 'publish';
   currentImportVersionId: string | null;
 
   // Import/Export sidebar state
   isImportExportSidebarOpen: boolean;
+
+  // Map bounds for export scope (separate from mapBbox for viewport filtering)
+  mapBounds: { north: number; south: number; east: number; west: number } | null;
+
+  // Export bbox (from current map view)
+  exportBbox: string | null;  // "west,south,east,north" format
+  exportScopeType: 'full' | 'ward' | 'bbox';  // Persisted scope selection
+  isExportBboxConfirming: boolean;  // True when user is confirming map view selection
+
+  // Import preview mode (minimizes wizard to preview feature on map)
+  isImportPreviewMode: boolean;
+  importPreviewFeatures: Feature[];  // All features to browse through
+  importPreviewIndex: number;  // Current feature index
+  importPreviewLabel: string | null;
 
   // Actions
   selectEvent: (id: string | null) => void;
@@ -208,6 +222,22 @@ interface UIState {
   openImportExportSidebar: () => void;
   closeImportExportSidebar: () => void;
   toggleImportExportSidebar: () => void;
+
+  // Map bounds action
+  setMapBounds: (bounds: { north: number; south: number; east: number; west: number } | null) => void;
+
+  // Export bbox selection actions
+  setExportScopeType: (scopeType: 'full' | 'ward' | 'bbox') => void;
+  startExportBboxConfirmation: () => void;  // Enter confirmation mode (close sidebar, show overlay)
+  confirmExportBbox: () => void;  // Confirm and save current map bounds, reopen sidebar
+  cancelExportBboxConfirmation: () => void;  // Cancel without saving
+  clearExportBbox: () => void;
+
+  // Import preview actions
+  startImportPreview: (features: Feature[], startIndex?: number) => void;  // Minimize wizard, start browsing features
+  nextImportPreview: () => void;  // Go to next feature
+  previousImportPreview: () => void;  // Go to previous feature
+  endImportPreview: () => void;  // Restore wizard
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -306,6 +336,20 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // Import/Export sidebar state
   isImportExportSidebarOpen: false,
+
+  // Map bounds for export scope
+  mapBounds: null,
+
+  // Export bbox (from current map view)
+  exportBbox: null,
+  exportScopeType: 'full',
+  isExportBboxConfirming: false,
+
+  // Import preview mode
+  isImportPreviewMode: false,
+  importPreviewFeatures: [],
+  importPreviewIndex: 0,
+  importPreviewLabel: null,
 
   selectEvent: (id) => set({
     selectedEventId: id,
@@ -658,4 +702,89 @@ export const useUIStore = create<UIState>((set, get) => ({
   openImportExportSidebar: () => set({ isImportExportSidebarOpen: true }),
   closeImportExportSidebar: () => set({ isImportExportSidebarOpen: false }),
   toggleImportExportSidebar: () => set((state) => ({ isImportExportSidebarOpen: !state.isImportExportSidebarOpen })),
+
+  // Map bounds action
+  setMapBounds: (bounds) => set({ mapBounds: bounds }),
+
+  // Export bbox selection actions
+  setExportScopeType: (scopeType) => set({ exportScopeType: scopeType }),
+
+  startExportBboxConfirmation: () => set({
+    isExportBboxConfirming: true,
+    isImportExportSidebarOpen: false,  // Close sidebar to let user see and adjust map
+  }),
+
+  confirmExportBbox: () => set((state) => {
+    // Convert current map bounds to bbox string
+    if (!state.mapBounds) return { isExportBboxConfirming: false };
+    const { west, south, east, north } = state.mapBounds;
+    return {
+      exportBbox: `${west},${south},${east},${north}`,
+      isExportBboxConfirming: false,
+      isImportExportSidebarOpen: true,  // Reopen sidebar with the selected bbox
+    };
+  }),
+
+  cancelExportBboxConfirmation: () => set({
+    isExportBboxConfirming: false,
+    isImportExportSidebarOpen: true,  // Reopen sidebar
+  }),
+
+  clearExportBbox: () => set({ exportBbox: null }),
+
+  // Import preview actions
+  startImportPreview: (features, startIndex = 0) => {
+    if (features.length === 0) return;
+    const index = Math.max(0, Math.min(startIndex, features.length - 1));
+    const feature = features[index];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    set({
+      isImportPreviewMode: true,
+      importPreviewFeatures: features,
+      importPreviewIndex: index,
+      importPreviewLabel: label,
+      importWizardOpen: false,  // Hide wizard (minimized)
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    });
+  },
+
+  nextImportPreview: () => set((state) => {
+    if (state.importPreviewFeatures.length === 0) return state;
+    const nextIndex = (state.importPreviewIndex + 1) % state.importPreviewFeatures.length;
+    const feature = state.importPreviewFeatures[nextIndex];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    return {
+      importPreviewIndex: nextIndex,
+      importPreviewLabel: label,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    };
+  }),
+
+  previousImportPreview: () => set((state) => {
+    if (state.importPreviewFeatures.length === 0) return state;
+    const prevIndex = state.importPreviewIndex === 0
+      ? state.importPreviewFeatures.length - 1
+      : state.importPreviewIndex - 1;
+    const feature = state.importPreviewFeatures[prevIndex];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    return {
+      importPreviewIndex: prevIndex,
+      importPreviewLabel: label,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    };
+  }),
+
+  endImportPreview: () => set({
+    isImportPreviewMode: false,
+    importPreviewFeatures: [],
+    importPreviewIndex: 0,
+    importPreviewLabel: null,
+    importWizardOpen: true,  // Restore wizard
+  }),
 }));

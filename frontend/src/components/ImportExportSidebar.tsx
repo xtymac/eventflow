@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Drawer, Stack, Title, Group, ActionIcon, Tabs, ScrollArea, Box } from '@mantine/core';
+import { Drawer, Stack, Title, Group, ActionIcon, Tabs, Box } from '@mantine/core';
 import { IconX, IconUpload, IconDownload } from '@tabler/icons-react';
 import { useUIStore } from '../stores/uiStore';
 import { ExportSection } from '../features/import/components/ExportSection';
@@ -69,6 +69,10 @@ export function ImportExportSidebar() {
       withCloseButton={false}
       padding="md"
       overlayProps={{ backgroundOpacity: 0.3 }}
+      styles={{
+        content: { height: '100%', display: 'flex', flexDirection: 'column' },
+        body: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+      }}
     >
       {/* Resize Handle - left edge */}
       <Box
@@ -104,15 +108,13 @@ export function ImportExportSidebar() {
             </Tabs.Tab>
           </Tabs.List>
 
-          <ScrollArea style={{ flex: 1 }} type="hover" offsetScrollbars>
-            <Tabs.Panel value="export" pt="md">
-              <ExportSection />
-            </Tabs.Panel>
+          <Tabs.Panel value="export" pt="md" style={{ flex: 1, overflow: 'auto' }}>
+            <ExportSection />
+          </Tabs.Panel>
 
-            <Tabs.Panel value="import" pt="md">
-              <ImportSection />
-            </Tabs.Panel>
-          </ScrollArea>
+          <Tabs.Panel value="import" pt="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <ImportSection />
+          </Tabs.Panel>
         </Tabs>
       </Stack>
     </Drawer>

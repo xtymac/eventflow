@@ -14,6 +14,7 @@ import {
   Text,
   ActionIcon,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconDownload, IconMap, IconX } from '@tabler/icons-react';
 import { useWards } from '../../../hooks/useApi';
 import { useUIStore } from '../../../stores/uiStore';
@@ -21,11 +22,12 @@ import { useUIStore } from '../../../stores/uiStore';
 type ExportFormat = 'geojson' | 'geopackage';
 
 export function ExportSection() {
-  const [format, setFormat] = useState<ExportFormat>('geojson');
+  const [format, setFormat] = useState<ExportFormat>('geopackage');
   const [selectedWard, setSelectedWard] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Use API base URL from env
-  const API_BASE = import.meta.env.VITE_API_URL || '';
+  // Use API base URL from env, default to /api for production
+  const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
   const { data: wardsData } = useWards();
 
@@ -42,16 +44,52 @@ export function ExportSection() {
     (scopeType === 'ward' && selectedWard) ||
     (scopeType === 'bbox' && exportBbox);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!canDownload) return;
 
-    let url = `${API_BASE}/export/${format}?type=assets`;
-    if (scopeType === 'ward' && selectedWard) {
-      url += `&ward=${encodeURIComponent(selectedWard)}`;
-    } else if (scopeType === 'bbox' && exportBbox) {
-      url += `&bbox=${encodeURIComponent(exportBbox)}`;
+    setIsDownloading(true);
+    try {
+      const endpoint = format === 'geopackage' ? '/export/geopackage' : '/export/geojson';
+      let url = `${API_BASE}${endpoint}?type=assets`;
+      if (scopeType === 'ward' && selectedWard) {
+        url += `&ward=${encodeURIComponent(selectedWard)}`;
+      } else if (scopeType === 'bbox' && exportBbox) {
+        url += `&bbox=${encodeURIComponent(exportBbox)}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      // Get filename from Content-Disposition header
+      const disposition = response.headers.get('Content-Disposition');
+      const filename = disposition?.match(/filename="([^"]+)"/)?.[1]
+        || `road-assets.${format === 'geopackage' ? 'gpkg' : 'geojson'}`;
+
+      // Trigger download
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(downloadUrl);
+
+      notifications.show({
+        title: 'Export successful',
+        message: `Downloaded ${filename} (${(blob.size / 1024).toFixed(1)} KB)`,
+        color: 'green',
+      });
+    } catch (error) {
+      notifications.show({
+        title: 'Export failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        color: 'red',
+      });
+    } finally {
+      setIsDownloading(false);
     }
-    window.open(url, '_blank');
   };
 
   // Transform ward data for Mantine Select (string[] -> {value, label}[])
@@ -135,6 +173,7 @@ export function ExportSection() {
         onClick={handleDownload}
         leftSection={<IconDownload size={16} />}
         disabled={!canDownload}
+        loading={isDownloading}
       >
         Download Export
       </Button>

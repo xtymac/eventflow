@@ -7,5 +7,9 @@
 import { ImportVersionList } from '../ImportVersionList';
 
 export function ImportSection() {
-  return <ImportVersionList compact />;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <ImportVersionList compact />
+    </div>
+  );
 }

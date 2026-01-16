@@ -28,6 +28,7 @@ import {
   IconInfoCircle,
   IconMap,
 } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useImportVersions,
   useDeleteImportVersion,
@@ -85,17 +86,22 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-export function ImportVersionList() {
-  const { openImportWizard, setFlyToGeometry } = useUIStore();
+interface ImportVersionListProps {
+  compact?: boolean;  // When true, hide header and show inline New Import button
+}
+
+export function ImportVersionList({ compact = false }: ImportVersionListProps) {
+  const { openImportWizard, setFlyToGeometry, closeImportExportSidebar } = useUIStore();
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
+  const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [rollbackVersionId, setRollbackVersionId] = useState<string | null>(null);
   const [rollbackJobId, setRollbackJobId] = useState<string | null>(null);
 
-  // Queries
-  const { data, isLoading, error, refetch } = useImportVersions({
-    limit: PAGE_SIZE,
+  // Queries - fetch more to account for filtered drafts
+  const { data, isLoading, error } = useImportVersions({
+    limit: PAGE_SIZE * 2,  // Fetch extra to ensure we have enough after filtering
     offset: (page - 1) * PAGE_SIZE,
   });
 
@@ -108,7 +114,9 @@ export function ImportVersionList() {
     onComplete: () => {
       setRollbackJobId(null);
       setRollbackVersionId(null);
-      refetch();
+      // Invalidate all relevant caches after rollback
+      queryClient.invalidateQueries({ queryKey: ['import-versions'] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });  // Road data changed
       notifications.show({
         title: 'Rollback successful',
         message: 'Roads have been restored to the previous state',
@@ -127,6 +135,10 @@ export function ImportVersionList() {
   });
 
   const handleNewImport = () => {
+    // Close the sidebar first when in compact mode (inside sidebar)
+    if (compact) {
+      closeImportExportSidebar();
+    }
     openImportWizard();
   };
 
@@ -147,18 +159,18 @@ export function ImportVersionList() {
     }
   };
 
-  const handleViewOnMap = (version: ImportVersion) => {
+  const handleViewOnMap = (version: ImportVersion, displayNumber: number) => {
     const geometry = parseBboxScope(version.importScope);
     if (geometry) {
       setFlyToGeometry(geometry, false);
       // Set highlight with label
       setImportAreaHighlight({
         geometry,
-        label: `Import #${version.versionNumber}`,
+        label: `Import #${displayNumber}`,
       });
       notifications.show({
         title: 'Viewing import area',
-        message: `Version #${version.versionNumber}: ${version.importScope}`,
+        message: `Version #${displayNumber}: ${version.importScope}`,
         color: 'blue',
       });
     } else {
@@ -186,8 +198,9 @@ export function ImportVersionList() {
     }
   };
 
-  // Find current published version
-  const currentPublishedId = data?.data?.find((v) => v.status === 'published')?.id;
+  // Find current published version (may be used for future highlighting)
+  const _currentPublishedId = data?.data?.find((v) => v.status === 'published')?.id;
+  void _currentPublishedId; // Intentionally unused for now
 
   if (isLoading) {
     return (
@@ -205,27 +218,47 @@ export function ImportVersionList() {
     );
   }
 
-  const versions = data?.data ?? [];
+  // Filter out draft versions - only show published and archived
+  const versions = (data?.data ?? []).filter((v) => v.status !== 'draft').slice(0, PAGE_SIZE);
+  // Count non-draft versions for pagination (approximation based on current page data)
+  const nonDraftTotal = (data?.data ?? []).filter((v) => v.status !== 'draft').length;
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  // Adjust total pages based on estimated non-draft count
+  const totalPages = Math.ceil(Math.max(nonDraftTotal, total * 0.9) / PAGE_SIZE);
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Text fw={600}>Import History</Text>
+    <Stack gap="md" style={compact ? { height: '100%', display: 'flex', flexDirection: 'column' } : undefined}>
+      {/* Only show header when not in compact mode */}
+      {!compact && (
+        <Group justify="space-between">
+          <Text fw={600}>Import History</Text>
+          <Button
+            leftSection={<IconUpload size={16} />}
+            onClick={handleNewImport}
+            size="sm"
+          >
+            New Import
+          </Button>
+        </Group>
+      )}
+
+      {/* Show "New Import" as inline button in compact mode */}
+      {compact && (
         <Button
-          leftSection={<IconUpload size={16} />}
           onClick={handleNewImport}
-          size="sm"
+          leftSection={<IconUpload size={16} />}
+          fullWidth
         >
           New Import
         </Button>
-      </Group>
+      )}
 
-      <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-        Import GeoPackage or GeoJSON files to update road data.
-        Published versions can be rolled back if needed.
-      </Alert>
+      {!compact && (
+        <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+          Import GeoPackage or GeoJSON files to update road data.
+          Published versions can be rolled back if needed.
+        </Alert>
+      )}
 
       {rollbackJobId && (
         <Alert color="blue" variant="light">
@@ -236,12 +269,12 @@ export function ImportVersionList() {
         </Alert>
       )}
 
-      <Card withBorder padding={0} style={{ overflowX: 'auto' }}>
+      <Card withBorder padding={0} style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
         <Table striped highlightOnHover style={{ minWidth: 600 }}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th style={{ width: 60 }}>Version</Table.Th>
-              <Table.Th style={{ minWidth: 150 }}>File</Table.Th>
+              <Table.Th style={{ minWidth: 200 }}>File</Table.Th>
               <Table.Th style={{ width: 80 }}>Status</Table.Th>
               <Table.Th style={{ width: 70 }}>Features</Table.Th>
               <Table.Th style={{ width: 80 }}>Uploaded</Table.Th>
@@ -249,13 +282,17 @@ export function ImportVersionList() {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {versions.map((version) => (
+            {versions.map((version, index) => {
+              // Calculate sequential display number (oldest = 1, newest = total)
+              // Versions are sorted newest-first, so we reverse the numbering
+              const displayNumber = nonDraftTotal - ((page - 1) * PAGE_SIZE) - index;
+              return (
               <Table.Tr key={version.id}>
                 <Table.Td>
-                  <Text size="sm" fw={500}>#{version.versionNumber}</Text>
+                  <Text size="sm" fw={500}>#{displayNumber}</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="sm" lineClamp={1} maw={150} title={version.fileName}>
+                  <Text size="sm" title={version.fileName}>
                     {version.fileName}
                   </Text>
                   <Text size="xs" c="dimmed">
@@ -280,7 +317,7 @@ export function ImportVersionList() {
                         variant="subtle"
                         color="blue"
                         size="sm"
-                        onClick={() => handleViewOnMap(version)}
+                        onClick={() => handleViewOnMap(version, displayNumber)}
                         title="View import area on map"
                       >
                         <IconMap size={14} />
@@ -315,7 +352,8 @@ export function ImportVersionList() {
                   </Group>
                 </Table.Td>
               </Table.Tr>
-            ))}
+              );
+            })}
 
             {versions.length === 0 && (
               <Table.Tr>
@@ -350,11 +388,8 @@ export function ImportVersionList() {
       >
         <Stack gap="md">
           <Text size="sm">
-            Are you sure you want to rollback to this version?
-            This will restore the road data to the state before this version was published.
-          </Text>
-          <Text size="sm" c="orange" fw={500}>
-            Note: Roads created after this version was published will remain unchanged.
+            Are you sure you want to rollback? This will restore the road data to the state
+            when this version was published.
           </Text>
           <Group justify="flex-end" gap="sm">
             <Button variant="subtle" onClick={() => setRollbackVersionId(null)}>
