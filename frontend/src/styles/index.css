@@ -94,3 +94,11 @@ body {
 .sidebar-resize-handle.hint {
   animation: resize-handle-nudge 0.5s ease-in-out 2;
 }
+
+/* Hide scrollbar for tabs container */
+.tabs-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+.tabs-scroll-container {
+  -ms-overflow-style: none; /* IE/Edge */
+}

@@ -14,6 +14,7 @@ import {
   UnstyledButton,
   ActionIcon,
   Tabs,
+  Box,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
@@ -58,6 +59,7 @@ const GREENSPACE_TYPE_LABELS: Record<string, string> = {
 export function AssetList() {
   // Local UI state
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [offset, setOffset] = useState(0);
   const [loadedAssets, setLoadedAssets] = useState<RoadAsset[]>([]);
 
@@ -349,19 +351,52 @@ export function AssetList() {
     );
   }
 
+  // Tab auto-scroll handler
+  const handleTabClick = (tabValue: string) => {
+    const tabElement = tabRefs.current[tabValue];
+    if (tabElement) {
+      tabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  };
+
   return (
     <Tabs defaultValue="list">
-      <Tabs.List mb="md" grow>
-        <Tabs.Tab value="list" leftSection={<IconRoad size={14} />}>
-          Roads ({data?.meta?.total ?? loadedAssets.length})
-        </Tabs.Tab>
-        <Tabs.Tab value="greenspaces" leftSection={<IconTree size={14} />}>
-          Green ({sortedGreenspaces.length})
-        </Tabs.Tab>
-        <Tabs.Tab value="streetlights" leftSection={<IconBulb size={14} />}>
-          Lights ({sortedStreetlights.length})
-        </Tabs.Tab>
-      </Tabs.List>
+      <Box
+        mb="md"
+        className="tabs-scroll-container"
+        style={{
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollbarWidth: 'none', // Firefox
+        }}
+      >
+        <Tabs.List style={{ flexWrap: 'nowrap', minWidth: 'max-content' }}>
+          <Tabs.Tab
+            value="list"
+            leftSection={<IconRoad size={14} />}
+            ref={(el) => { tabRefs.current['list'] = el; }}
+            onClick={() => handleTabClick('list')}
+          >
+            Roads ({data?.meta?.total ?? loadedAssets.length})
+          </Tabs.Tab>
+          <Tabs.Tab
+            value="greenspaces"
+            leftSection={<IconTree size={14} />}
+            ref={(el) => { tabRefs.current['greenspaces'] = el; }}
+            onClick={() => handleTabClick('greenspaces')}
+          >
+            Green ({sortedGreenspaces.length})
+          </Tabs.Tab>
+          <Tabs.Tab
+            value="streetlights"
+            leftSection={<IconBulb size={14} />}
+            ref={(el) => { tabRefs.current['streetlights'] = el; }}
+            onClick={() => handleTabClick('streetlights')}
+          >
+            Lights ({sortedStreetlights.length})
+          </Tabs.Tab>
+        </Tabs.List>
+      </Box>
 
       <Tabs.Panel value="list">
         <Stack gap="sm">
