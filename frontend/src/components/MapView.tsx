@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader } from '@mantine/core';
+import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
 import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox } from '../hooks/useApi';
@@ -105,6 +105,7 @@ export function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [isMapIdle, setIsMapIdle] = useState(true);
 
   // Viewport-based asset loading state
   const [mapBbox, setMapBbox] = useState<string | null>(null);
@@ -264,7 +265,7 @@ export function MapView() {
   // Dynamic limit based on zoom: lower zoom = larger area = need higher limit
   // Zoom 14: ~9000 roads in viewport, zoom 16+: ~500 roads
   const assetLimit = currentZoom >= 17 ? 2000 : currentZoom >= 16 ? 5000 : 10000;
-  const { data: assetsData } = useAssets(
+  const { data: assetsData, isLoading: isAssetsLoading, isFetching: isAssetsFetching } = useAssets(
     {
       roadType: assetFilters.roadType as RoadType | undefined,
       status: assetFilters.status as AssetStatus | undefined,
@@ -1640,6 +1641,17 @@ export function MapView() {
           // Persist to mapStore for localStorage persistence
           useMapStore.getState().setZoom(zoom);
 
+          // Always update mapBounds for export scope (independent of zoom level)
+          const currentBounds = map.current?.getBounds();
+          if (currentBounds) {
+            useUIStore.getState().setMapBounds({
+              north: currentBounds.getNorth(),
+              south: currentBounds.getSouth(),
+              east: currentBounds.getEast(),
+              west: currentBounds.getWest(),
+            });
+          }
+
           if (zoom >= 12) {
             const bounds = map.current!.getBounds();
             // Shrink bbox at lower zoom levels to ensure API returns centered data
@@ -1770,6 +1782,22 @@ export function MapView() {
     }
   }, [mapTheme, mapLoaded]);
 
+  // Track map idle state for loading progress indicator
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const handleMoveStart = () => setIsMapIdle(false);
+    const handleIdle = () => setIsMapIdle(true);
+
+    map.current.on('movestart', handleMoveStart);
+    map.current.on('idle', handleIdle);
+
+    return () => {
+      map.current?.off('movestart', handleMoveStart);
+      map.current?.off('idle', handleIdle);
+    };
+  }, [mapLoaded]);
+
   // Road tile refresh when roadTileVersion changes (triggered by SSE road edit events)
   // Note: Preview layer uses PMTiles (static files) for performance, so real-time refresh
   // only affects the API-loaded road data at zoom >= 14, not the preview layer.
@@ -1881,7 +1909,8 @@ export function MapView() {
     }
 
     // Get rivers features from API response (already in GeoJSON format)
-    const features = riversData?.features ?? [];
+    // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
+    const features = Array.isArray(riversData?.features) ? riversData.features : [];
 
     source.setData({ type: 'FeatureCollection', features });
     // Hide polygon rivers (water bodies) by default, only show line rivers
@@ -1899,8 +1928,9 @@ export function MapView() {
     if (!source) return;
 
     // Load data if zoom is high enough (for hover support even when layer is hidden)
+    // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
     if (currentZoom >= 12) {
-      const features = greenSpacesData?.features ?? [];
+      const features = Array.isArray(greenSpacesData?.features) ? greenSpacesData.features : [];
       source.setData({ type: 'FeatureCollection', features });
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
@@ -1922,8 +1952,9 @@ export function MapView() {
     if (!source) return;
 
     // Load data if zoom is high enough (for hover support even when layer is hidden)
+    // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
     if (currentZoom >= 14) {
-      const features = streetLightsData?.features ?? [];
+      const features = Array.isArray(streetLightsData?.features) ? streetLightsData.features : [];
       source.setData({ type: 'FeatureCollection', features });
     } else {
       source.setData({ type: 'FeatureCollection', features: [] });
@@ -2875,8 +2906,9 @@ export function MapView() {
       }],
     };
 
-    // Calculate center for label
-    const coords = importAreaHighlight.geometry.coordinates[0];
+    // Calculate center for label (geometry is always a Polygon from bbox)
+    const geom = importAreaHighlight.geometry as GeoJSON.Polygon;
+    const coords = geom.coordinates[0];
     const centerLng = (coords[0][0] + coords[2][0]) / 2;
     const centerLat = (coords[0][1] + coords[2][1]) / 2;
 
@@ -2991,6 +3023,29 @@ export function MapView() {
             <Loader size="lg" />
             <Text size="sm" c="dimmed">Loading map...</Text>
           </Stack>
+        </Box>
+      )}
+
+      {/* Assets loading progress bar */}
+      {mapLoaded && showAssets && (isAssetsFetching || isAssetsLoading || !isMapIdle) && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 20,
+            height: 6,
+          }}
+        >
+          <Progress
+            value={100}
+            animated
+            striped
+            color="cyan"
+            size="sm"
+            style={{ height: '100%', borderRadius: 0 }}
+          />
         </Box>
       )}
 
