@@ -35,5 +35,8 @@
     "@types/proj4": "^2.5.6",
     "proj4": "^2.20.2",
     "shapefile": "^0.6.6"
+  },
+  "overrides": {
+    "esbuild": "0.27.2"
   }
 }
