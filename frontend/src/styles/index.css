@@ -95,6 +95,22 @@ body {
   animation: resize-handle-nudge 0.5s ease-in-out 2;
 }
 
+/* Left nudge for right sidebar (drag left to expand) */
+@keyframes resize-handle-nudge-left {
+  0%, 100% {
+    transform: translateX(0);
+    background: var(--mantine-color-blue-4);
+  }
+  50% {
+    transform: translateX(-10px);
+    background: var(--mantine-color-blue-5);
+  }
+}
+
+.sidebar-resize-handle.hint-left {
+  animation: resize-handle-nudge-left 0.5s ease-in-out 2;
+}
+
 /* Hide scrollbar for tabs container */
 .tabs-scroll-container::-webkit-scrollbar {
   display: none;

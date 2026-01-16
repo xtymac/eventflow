@@ -27,7 +27,22 @@ export function ImportExportSidebar() {
     return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_WIDTH), MAX_WIDTH) : DEFAULT_WIDTH;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [showResizeHint, setShowResizeHint] = useState(false);
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const hintShownThisSession = useRef(false);
+
+  // Show hint animation once per session when sidebar opens
+  useEffect(() => {
+    if (isOpen && !hintShownThisSession.current) {
+      hintShownThisSession.current = true;
+      // Delay to let the drawer animation complete
+      const timer = setTimeout(() => {
+        setShowResizeHint(true);
+        setTimeout(() => setShowResizeHint(false), 1200);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,7 +91,7 @@ export function ImportExportSidebar() {
     >
       {/* Resize Handle - left edge */}
       <Box
-        className={`sidebar-resize-handle ${isResizing ? 'active' : ''}`}
+        className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint-left' : ''}`}
         onMouseDown={handleResizeStart}
         style={{
           position: 'absolute',
