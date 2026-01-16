@@ -20,6 +20,7 @@ import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
 import { ImportWizard } from './features/import/ImportWizard';
+import { ExportBboxConfirmOverlay } from './features/import/components/ExportBboxConfirmOverlay';
 import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
@@ -276,6 +277,9 @@ function App() {
 
       <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
         <MapView />
+
+        {/* Export bbox confirmation overlay */}
+        <ExportBboxConfirmOverlay />
 
         {isEventFormOpen && (
           <EventEditorOverlay
