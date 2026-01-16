@@ -27,9 +27,9 @@ User-facing features and frontend implementation details.
 
 | Document | Description |
 |----------|-------------|
+| [import-export.md](import-export.md) | Import/Export feature with versioning and rollback |
 | [realtime-map-sync.md](realtime-map-sync.md) | Real-time map tile synchronization with Martin Tile Server |
 | [recent-road-edits.md](recent-road-edits.md) | Road edit notification system using SSE |
-| [export-feature.md](export-feature.md) | GeoPackage and GeoJSON export functionality |
 | [map-implementation.md](map-implementation.md) | MapLibre GL JS frontend map implementation |
 
 ## Directory Structure
@@ -37,11 +37,11 @@ User-facing features and frontend implementation details.
 ```
 docs/
 ├── INDEX.md                    # This file
+├── import-export.md            # Import/Export feature
 ├── ngsi-ld.md                  # NGSI-LD integration
 ├── qgis-setup-guide.md         # QGIS setup guide
 ├── realtime-map-sync.md        # Real-time sync
 ├── recent-road-edits.md        # Road edit notifications
-├── export-feature.md           # Export feature
 ├── map-implementation.md       # Map implementation
 └── planning/
     ├── project-plan.md         # Project plan
