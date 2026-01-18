@@ -49,7 +49,9 @@ export interface ImportVersion {
   publishedBy: string | null;
   archivedAt: string | null;
   snapshotPath: string | null;
+  diffPath: string | null;
   notes: string | null;
+  sourceExportId: string | null;  // Links to export_records for precise comparison
 }
 
 export interface ImportJob {
@@ -105,6 +107,8 @@ export interface DiffStats {
 export interface DiffResult {
   scope: string;
   regionalRefresh: boolean;  // Whether regional refresh mode is enabled
+  comparisonMode: 'precise' | 'bbox';  // 'precise' when using export record, 'bbox' otherwise
+  sourceExportId?: string;  // Export record ID when using precise comparison
   added: Feature[];
   updated: Feature[];
   deactivated: Feature[];
@@ -115,7 +119,7 @@ export interface DiffResult {
 export interface ConfigureRequest {
   layerName?: string;
   sourceCRS?: string;
-  importScope: string;
+  // importScope is auto-calculated from file bounding box by backend
   defaultDataSource: 'osm_test' | 'official_ledger' | 'manual';
   regionalRefresh?: boolean;  // If true, deactivate roads in scope not in import
 }
@@ -188,6 +192,20 @@ export function useDiffPreview(versionId: string | null, options?: { enabled?: b
     queryKey: ['import-preview', versionId],
     queryFn: () => fetchApi<{ data: DiffResult }>(`/import/versions/${versionId}/preview`),
     enabled: (options?.enabled ?? true) && !!versionId,
+  });
+}
+
+/**
+ * Get historical diff for a published version
+ * Returns the changes that were made when this version was published.
+ */
+export function useHistoricalDiff(versionId: string | null) {
+  return useQuery({
+    queryKey: ['import-history', versionId],
+    queryFn: () => fetchApi<{ data: DiffResult }>(`/import/versions/${versionId}/history`),
+    enabled: !!versionId,
+    staleTime: Infinity, // Diff is immutable, no need to refetch
+    retry: false, // Don't retry on 404 (old versions without history)
   });
 }
 
@@ -282,7 +300,8 @@ export function useUploadImport() {
 }
 
 /**
- * Configure an import version (layer, CRS, scope, dataSource)
+ * Configure an import version (layer, CRS, dataSource)
+ * Import scope is auto-calculated from file bounding box.
  */
 export function useConfigureImport() {
   const queryClient = useQueryClient();

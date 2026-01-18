@@ -35,6 +35,7 @@ const ImportVersionSchema = Type.Object({
   publishedBy: Type.Union([Type.String(), Type.Null()]),
   archivedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   snapshotPath: Type.Union([Type.String(), Type.Null()]),
+  diffPath: Type.Union([Type.String(), Type.Null()]),
   notes: Type.Union([Type.String(), Type.Null()]),
 });
 
@@ -128,7 +129,7 @@ const RollbackResultSchema = Type.Object({
 const ConfigureRequestSchema = Type.Object({
   layerName: Type.Optional(Type.String()),
   sourceCRS: Type.Optional(Type.String()),
-  importScope: Type.String(),
+  // importScope is auto-calculated from file bounding box - no longer needed from client
   defaultDataSource: Type.Union([
     Type.Literal('osm_test'),
     Type.Literal('official_ledger'),
@@ -519,6 +520,42 @@ export async function importVersionsRoutes(fastify: FastifyInstance) {
     });
 
     return { data: formatJob(job) };
+  });
+
+  // GET /:id/history - Get historical diff (changes made during this import)
+  app.get('/:id/history', {
+    schema: {
+      params: Type.Object({ id: Type.String() }),
+      response: {
+        200: Type.Object({ data: DiffResultSchema }),
+        404: Type.Object({ error: Type.String() }),
+        500: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    try {
+      const version = await importVersionService.getVersion(id);
+      if (!version) {
+        return reply.status(404).send({ error: `Version ${id} not found` });
+      }
+
+      if (!version.diffPath) {
+        return reply.status(404).send({ error: 'No history available for this version' });
+      }
+
+      const diff = await importVersionService.getHistoricalDiff(id);
+      if (!diff) {
+        return reply.status(500).send({ error: 'Failed to load history' });
+      }
+
+      return { data: diff };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[Import] History fetch failed:', error);
+      return reply.status(500).send({ error: message });
+    }
   });
 
   // GET /jobs/:jobId - Get job status

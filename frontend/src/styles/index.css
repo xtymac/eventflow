@@ -102,7 +102,7 @@ body {
     background: var(--mantine-color-blue-4);
   }
   50% {
-    transform: translateX(-10px);
+    transform: translateX(-15px);
     background: var(--mantine-color-blue-5);
   }
 }

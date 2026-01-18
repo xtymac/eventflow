@@ -399,25 +399,32 @@ export interface ApiError {
 // Search Types (Map Navigation Search)
 // ============================================
 
-// Search result type (places only for map navigation)
-export type SearchResultType = 'place';
+// Search result types (map navigation + local assets)
+export type SearchResultType =
+  | 'place'
+  | 'coordinate'
+  | 'event'
+  | 'road'
+  | 'greenspace'
+  | 'streetlight'
+  | 'river';
 
-// Search result format (Google Places)
+// Unified search result format
 export interface SearchResult {
-  id: string;
+  id: string; // Unique result ID (may include type prefix)
   type: SearchResultType;
   name: string;
-  address?: string;
-  coordinates: [number, number]; // [lng, lat]
-  metadata?: {
-    placeId?: string; // Google Place ID
-  };
+  subtitle?: string;
+  coordinates?: [number, number]; // [lng, lat] for point results
+  geometry?: SupportedGeometry; // Optional geometry for fly-to
+  sourceId?: string; // Raw entity ID (event/asset/etc.)
+  metadata?: Record<string, unknown>;
 }
 
-// Search API response (simplified - places only)
+// Search API response (unified)
 export interface SearchResponse {
   data: {
-    places: SearchResult[];
+    results: SearchResult[];
     searchCenter?: [number, number]; // [lng, lat] for coordinate search
     isCoordinateSearch: boolean;
   };

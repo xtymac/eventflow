@@ -15,10 +15,14 @@ export function ImportPreviewOverlay() {
   const importPreviewLabel = useUIStore((s) => s.importPreviewLabel);
   const importPreviewFeatures = useUIStore((s) => s.importPreviewFeatures);
   const importPreviewIndex = useUIStore((s) => s.importPreviewIndex);
+  const currentImportVersionId = useUIStore((s) => s.currentImportVersionId);
   const endImportPreview = useUIStore((s) => s.endImportPreview);
   const nextImportPreview = useUIStore((s) => s.nextImportPreview);
   const previousImportPreview = useUIStore((s) => s.previousImportPreview);
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
+
+  // Determine if we're in import wizard mode or historical view mode
+  const isImportWizardMode = !!currentImportVersionId;
 
   if (!isImportPreviewMode || importPreviewFeatures.length === 0) return null;
 
@@ -99,7 +103,9 @@ export function ImportPreviewOverlay() {
         <Text size="xs" c="dimmed">
           {hasMultiple
             ? 'Use arrows to browse through all modified roads.'
-            : 'This road will be modified when you publish the import.'}
+            : isImportWizardMode
+              ? 'This road will be modified when you publish the import.'
+              : 'This road was modified in this import.'}
         </Text>
 
         <Group justify="space-between" gap="sm">
@@ -129,10 +135,10 @@ export function ImportPreviewOverlay() {
             leftSection={<IconArrowBack size={16} />}
             onClick={() => {
               setImportAreaHighlight(null);  // Clear highlight
-              endImportPreview();            // Restore wizard
+              endImportPreview();            // Restore wizard (if in import mode)
             }}
           >
-            Back to Review
+            {isImportWizardMode ? 'Back to Review' : 'Close Preview'}
           </Button>
         </Group>
       </Stack>

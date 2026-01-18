@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
-import { constructionEvents, roadAssets, eventRoadAssets } from '../db/schema.js';
+import { constructionEvents, roadAssets, eventRoadAssets, exportRecords } from '../db/schema.js';
 import { sql } from 'drizzle-orm';
 import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import { fromGeomSql } from '../db/geometry.js';
@@ -11,6 +11,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { nanoid } from 'nanoid';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -172,11 +173,28 @@ export async function importExportRoutes(fastify: FastifyInstance) {
         updatedAt: Date;
       }>;
 
+      // Generate export ID for tracking
+      const exportId = `exp_${nanoid(12)}`;
+      const roadIds = assets.map(a => a.id);
+
+      // Save export record for precise import comparison
+      await db.insert(exportRecords).values({
+        id: exportId,
+        exportScope: ward ? `ward:${ward}` : bbox ? `bbox:${bbox}` : 'full',
+        format: 'geojson',
+        roadIds: roadIds,
+        featureCount: assets.length,
+        exportedBy: null, // TODO: get from auth context
+        exportedAt: new Date(),
+      });
+
+      // Add _exportId to each feature for tracking
       features = assets.map(asset => ({
         type: 'Feature' as const,
         geometry: asset.geometry as Geometry,
         properties: {
           id: asset.id,
+          _exportId: exportId, // Track which export this came from
           name: asset.name,
           roadType: asset.roadType,
           lanes: asset.lanes,
@@ -268,6 +286,10 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       ${whereClause}
     `);
 
+    // Generate export ID for tracking
+    const exportId = `exp_${nanoid(12)}`;
+    const roadIds: string[] = [];
+
     // Validate geometry types and build features
     const features: Feature<Geometry>[] = [];
     let nonLineStringCount = 0;
@@ -283,6 +305,9 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       osmId: number | null;
       osmType: string | null;
     }>) {
+      // Collect road IDs for export record
+      roadIds.push(row.id);
+
       // Check geometry type
       if (row.geometry && row.geometry.type !== 'LineString' && row.geometry.type !== 'MultiLineString') {
         nonLineStringCount++;
@@ -294,6 +319,7 @@ export async function importExportRoutes(fastify: FastifyInstance) {
         geometry: row.geometry,
         properties: {
           id: row.id,
+          _exportId: exportId, // Track which export this came from
           status: row.status,
           dataSource: row.dataSource,
           roadType: row.roadType,
@@ -308,6 +334,17 @@ export async function importExportRoutes(fastify: FastifyInstance) {
     if (nonLineStringCount > 0) {
       console.warn(`Export: ${nonLineStringCount} features have non-LineString geometry`);
     }
+
+    // Save export record for precise import comparison
+    await db.insert(exportRecords).values({
+      id: exportId,
+      exportScope: ward ? `ward:${ward}` : bbox ? `bbox:${bbox}` : 'full',
+      format: 'geopackage',
+      roadIds: roadIds,
+      featureCount: features.length,
+      exportedBy: null, // TODO: get from auth context
+      exportedAt: new Date(),
+    });
 
     const geojson: FeatureCollection = {
       type: 'FeatureCollection',

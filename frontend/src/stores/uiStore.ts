@@ -134,6 +134,9 @@ interface UIState {
   importPreviewIndex: number;  // Current feature index
   importPreviewLabel: string | null;
 
+  // Historical view context (to restore modal after preview)
+  historicalViewContext: { versionId: string; displayNumber: number } | null;
+
   // Actions
   selectEvent: (id: string | null) => void;
   selectAsset: (id: string | null, geometry?: Geometry | null) => void;
@@ -238,6 +241,7 @@ interface UIState {
   nextImportPreview: () => void;  // Go to next feature
   previousImportPreview: () => void;  // Go to previous feature
   endImportPreview: () => void;  // Restore wizard
+  setHistoricalViewContext: (context: { versionId: string; displayNumber: number } | null) => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -350,6 +354,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   importPreviewFeatures: [],
   importPreviewIndex: 0,
   importPreviewLabel: null,
+  historicalViewContext: null,
 
   selectEvent: (id) => set({
     selectedEventId: id,
@@ -780,11 +785,16 @@ export const useUIStore = create<UIState>((set, get) => ({
     };
   }),
 
-  endImportPreview: () => set({
+  endImportPreview: () => set((state) => ({
     isImportPreviewMode: false,
     importPreviewFeatures: [],
     importPreviewIndex: 0,
     importPreviewLabel: null,
-    importWizardOpen: true,  // Restore wizard
-  }),
+    // Only restore wizard if we were in import wizard mode (has currentImportVersionId)
+    importWizardOpen: !!state.currentImportVersionId,
+    // Open sidebar if we came from historical view (so the modal can be restored)
+    isImportExportSidebarOpen: state.historicalViewContext ? true : state.isImportExportSidebarOpen,
+  })),
+
+  setHistoricalViewContext: (context) => set({ historicalViewContext: context }),
 }));

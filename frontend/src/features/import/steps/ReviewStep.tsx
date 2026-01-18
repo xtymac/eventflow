@@ -486,12 +486,23 @@ export function ReviewStep() {
                   label="Updated"
                   color="blue"
                 />
-                <ChangeCountBadge
-                  icon={<IconArchive size={16} color="var(--mantine-color-orange-6)" />}
-                  count={diff.stats.deactivatedCount}
-                  label="Removed"
-                  color="orange"
-                />
+                <Tooltip
+                  label={diff.regionalRefresh
+                    ? "These roads will be deactivated when published"
+                    : "Preview only - these roads will NOT be removed (Regional Refresh is OFF)"}
+                  multiline
+                  w={250}
+                  withArrow
+                >
+                  <div>
+                    <ChangeCountBadge
+                      icon={<IconArchive size={16} color={diff.regionalRefresh ? "var(--mantine-color-orange-6)" : "var(--mantine-color-gray-5)"} />}
+                      count={diff.stats.deactivatedCount}
+                      label={diff.regionalRefresh ? "Removed" : "Removed (preview)"}
+                      color={diff.regionalRefresh ? "orange" : "gray"}
+                    />
+                  </div>
+                </Tooltip>
               </Group>
 
               <Group justify="center" mt="md">
@@ -512,13 +523,23 @@ export function ReviewStep() {
                 </Text>
               </Group>
 
-              {/* Scope info - only show when not 'full' or when regional refresh is on */}
-              {(diff.scope !== 'full' || diff.regionalRefresh) && (
+              {/* Comparison mode indicator */}
+              {diff.comparisonMode === 'precise' && (
+                <Alert color="green" variant="light" icon={<IconCheck size={16} />} mt="sm" p="xs">
+                  <Text size="xs">
+                    <Text span fw={500}>Precise comparison:</Text> Comparing against original export
+                    {diff.sourceExportId && <Text span c="dimmed"> ({diff.sourceExportId})</Text>}
+                  </Text>
+                </Alert>
+              )}
+
+              {/* Scope info - only show when bbox mode or when regional refresh is on */}
+              {(diff.comparisonMode === 'bbox' || diff.regionalRefresh) && (
                 <Text size="xs" c="dimmed" ta="center" mt="sm">
-                  {diff.scope !== 'full' && `Scope: ${diff.scope}`}
+                  {diff.comparisonMode === 'bbox' && diff.scope !== 'full' && `Scope: ${diff.scope}`}
                   {diff.regionalRefresh && (
                     <Text span c="orange" fw={500}>
-                      {diff.scope !== 'full' ? ' · ' : ''}Regional Refresh ON
+                      {diff.comparisonMode === 'bbox' && diff.scope !== 'full' ? ' · ' : ''}Regional Refresh ON
                     </Text>
                   )}
                 </Text>
@@ -556,10 +577,15 @@ export function ReviewStep() {
               value="deactivated"
               leftSection={<IconArchive size={14} />}
               rightSection={
-                <Badge size="xs" color="orange">{diff.deactivated.length}</Badge>
+                <Badge size="xs" color={diff.regionalRefresh ? 'orange' : 'gray'}>
+                  {diff.deactivated.length}
+                </Badge>
               }
             >
               Removed
+              {!diff.regionalRefresh && diff.deactivated.length > 0 && (
+                <Text span size="xs" c="dimmed" ml={4}>(preview)</Text>
+              )}
             </Tabs.Tab>
           </Tabs.List>
 
@@ -580,12 +606,45 @@ export function ReviewStep() {
           </Tabs.Panel>
 
           <Tabs.Panel value="deactivated" pt="xs">
+            {/* Warning when removed count seems unusually high */}
+            {diff.deactivated.length > diff.stats.importCount * 5 && (
+              <Alert
+                color={diff.regionalRefresh ? 'red' : 'yellow'}
+                variant="light"
+                icon={<IconAlertTriangle size={16} />}
+                mb="sm"
+              >
+                <Text size="sm" fw={500}>
+                  {diff.regionalRefresh
+                    ? `Warning: ${diff.deactivated.length.toLocaleString()} roads will be REMOVED when published!`
+                    : `Note: ${diff.deactivated.length.toLocaleString()} roads in database are not in your import file.`
+                  }
+                </Text>
+                <Text size="sm" mt={4}>
+                  This may indicate that your import file doesn't cover the full area you intended,
+                  or there are roads in the database outside your import area.
+                </Text>
+              </Alert>
+            )}
+            {!diff.regionalRefresh && diff.deactivated.length > 0 && diff.deactivated.length <= diff.stats.importCount * 5 && (
+              <Alert
+                color="blue"
+                variant="light"
+                icon={<IconInfoCircle size={16} />}
+                mb="sm"
+              >
+                <Text size="sm">
+                  These {diff.deactivated.length.toLocaleString()} roads exist in database but not in import file.
+                  They will <Text span fw={600}>NOT</Text> be removed because Regional Refresh is OFF.
+                </Text>
+              </Alert>
+            )}
             <FeatureTable
               features={diff.deactivated}
               emptyMessage={
                 diff.regionalRefresh
                   ? "No roads will be deactivated"
-                  : "Regional Refresh is OFF - no roads will be deactivated"
+                  : "No roads in database are missing from import file"
               }
               onFeatureClick={handleFeatureClick}
             />

@@ -17,11 +17,13 @@ import {
   importVersions,
   importJobs,
   roadAssets,
+  exportRecords,
   type NewImportVersion,
   type NewImportJob,
   type ImportVersion,
   type ImportJob,
   type RoadAsset,
+  type ExportRecord,
 } from '../db/schema.js';
 import { eq, sql, and, inArray, not, isNull, desc, gt } from 'drizzle-orm';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
@@ -35,9 +37,10 @@ const execAsync = promisify(exec);
 const UPLOADS_DIR = process.env.UPLOADS_DIR || join(__dirname, '../../uploads');
 const IMPORTS_DIR = join(UPLOADS_DIR, 'imports');
 const SNAPSHOTS_DIR = join(UPLOADS_DIR, 'snapshots');
+const DIFFS_DIR = join(UPLOADS_DIR, 'import-diffs');
 
 // Ensure directories exist
-[UPLOADS_DIR, IMPORTS_DIR, SNAPSHOTS_DIR].forEach(dir => {
+[UPLOADS_DIR, IMPORTS_DIR, SNAPSHOTS_DIR, DIFFS_DIR].forEach(dir => {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
@@ -87,6 +90,8 @@ export interface ValidationResult {
 export interface DiffResult {
   scope: string;
   regionalRefresh: boolean;
+  comparisonMode: 'precise' | 'bbox';  // 'precise' when using export record, 'bbox' otherwise
+  sourceExportId?: string;  // Export record ID when using precise comparison
   added: Feature[];
   updated: Feature[];
   deactivated: Feature[];
@@ -233,7 +238,7 @@ export class ImportVersionService {
     config: {
       layerName?: string;
       sourceCRS?: string;
-      importScope: string;
+      // importScope is now auto-calculated from the file's bounding box
       defaultDataSource: string;
       regionalRefresh?: boolean;
     }
@@ -260,21 +265,57 @@ export class ImportVersionService {
       geojsonPath = await this.transformGeoJSONCRS(version.filePath, config.sourceCRS);
     }
 
-    // Count features
+    // Read GeoJSON and count features
     const geojson = JSON.parse(readFileSync(geojsonPath, 'utf-8')) as FeatureCollection;
-    const featureCount = geojson.features?.length || 0;
+    const features = geojson.features || [];
+    const featureCount = features.length;
 
-    // Update version record
+    // Detect _exportId from features (for precise comparison)
+    // Check first feature for _exportId - all features from same export share this ID
+    let sourceExportId: string | null = null;
+    if (features.length > 0 && features[0].properties?._exportId) {
+      const detectedExportId = features[0].properties._exportId;
+      // Verify the export record exists
+      const [exportRecord] = await db
+        .select()
+        .from(exportRecords)
+        .where(eq(exportRecords.id, detectedExportId));
+
+      if (exportRecord) {
+        sourceExportId = detectedExportId;
+        console.log('[Import] Detected source export:', sourceExportId, '- will use precise comparison');
+      } else {
+        console.log('[Import] Export ID', detectedExportId, 'not found in export_records - using bbox comparison');
+      }
+    }
+
+    // Auto-calculate bounding box from import file
+    const bbox = this.calculateBoundingBox(features);
+
+    // Determine importScope: use calculated bbox or fail if empty
+    let importScope: string;
+    if (bbox) {
+      const [minLng, minLat, maxLng, maxLat] = bbox;
+      importScope = `bbox:${minLng},${minLat},${maxLng},${maxLat}`;
+      console.log('[Import] Auto-calculated bbox:', importScope);
+    } else if (featureCount === 0) {
+      throw new Error('Import file contains no features');
+    } else {
+      throw new Error('Import file contains no valid geometries');
+    }
+
+    // Update version record with auto-detected scope and source export
     await db
       .update(importVersions)
       .set({
         layerName: config.layerName || null,
         sourceCRS: config.sourceCRS || null,
-        importScope: config.importScope,
+        importScope,  // Auto-calculated bbox
         defaultDataSource: config.defaultDataSource,
         regionalRefresh: config.regionalRefresh ?? false,
         featureCount,
         filePath: geojsonPath,
+        sourceExportId,  // For precise comparison
       })
       .where(eq(importVersions.id, versionId));
 
@@ -284,6 +325,66 @@ export class ImportVersionService {
       .where(eq(importVersions.id, versionId));
 
     return updated;
+  }
+
+  /**
+   * Check if CRS is WGS 84 (handles various naming conventions)
+   */
+  private isWGS84(crs: string | undefined | null): boolean {
+    if (!crs) return false;
+    const normalized = crs.toUpperCase().replace(/\s+/g, '');
+    return (
+      normalized === 'EPSG:4326' ||
+      normalized === 'WGS84' ||
+      normalized === 'WGS_84' ||
+      normalized.includes('WGS84') ||
+      normalized.includes('WGS_1984') ||
+      normalized.includes('GEOGCS["WGS84"') ||
+      normalized.includes('GEOGCS["WGS_84"')
+    );
+  }
+
+  /**
+   * Calculate bounding box from GeoJSON features
+   * Returns [minLng, minLat, maxLng, maxLat] or null if no valid coordinates
+   */
+  private calculateBoundingBox(features: Feature[]): [number, number, number, number] | null {
+    let minLng = Infinity, minLat = Infinity;
+    let maxLng = -Infinity, maxLat = -Infinity;
+
+    const processCoords = (coords: unknown): void => {
+      if (Array.isArray(coords)) {
+        if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+          // Single coordinate: [lng, lat]
+          const [lng, lat] = coords as [number, number];
+          // Skip non-finite values (NaN, Infinity)
+          if (Number.isFinite(lng) && Number.isFinite(lat)) {
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+          }
+        } else {
+          // Array of coordinates - recurse
+          for (const c of coords) {
+            processCoords(c);
+          }
+        }
+      }
+    };
+
+    for (const feature of features) {
+      if (feature.geometry?.coordinates) {
+        processCoords(feature.geometry.coordinates);
+      }
+    }
+
+    // Return null if no valid coordinates found
+    if (!Number.isFinite(minLng) || !Number.isFinite(maxLng) ||
+        !Number.isFinite(minLat) || !Number.isFinite(maxLat)) {
+      return null;
+    }
+    return [minLng, minLat, maxLng, maxLat];
   }
 
   /**
@@ -297,10 +398,21 @@ export class ImportVersionService {
     const dir = dirname(gpkgPath);
     const outputPath = join(dir, 'converted.geojson');
 
-    let cmd = `ogr2ogr -f GeoJSON -t_srs EPSG:4326`;
+    // Build ogr2ogr command with robust options
+    let cmd = `ogr2ogr -f GeoJSON`;
 
-    if (sourceCRS && sourceCRS !== 'EPSG:4326') {
-      cmd += ` -s_srs ${sourceCRS}`;
+    // Add -makevalid to fix geometry issues (common with ArcGIS exports)
+    cmd += ` -makevalid`;
+
+    // Handle CRS transformation carefully
+    // ArcGIS sometimes defines WGS 84 in non-standard ways that GDAL doesn't recognize
+    if (sourceCRS && !this.isWGS84(sourceCRS)) {
+      // Source is not WGS 84, need to transform
+      cmd += ` -t_srs EPSG:4326 -s_srs ${sourceCRS}`;
+    } else {
+      // Source is WGS 84 or undefined - just assign the output CRS without transforming
+      // This avoids reprojection failures when the source CRS definition is non-standard
+      cmd += ` -a_srs EPSG:4326`;
     }
 
     cmd += ` "${outputPath}" "${gpkgPath}"`;
@@ -328,7 +440,8 @@ export class ImportVersionService {
     const dir = dirname(geojsonPath);
     const outputPath = join(dir, 'transformed.geojson');
 
-    const cmd = `ogr2ogr -f GeoJSON -t_srs EPSG:4326 -s_srs ${sourceCRS} "${outputPath}" "${geojsonPath}"`;
+    // Add -makevalid to fix any geometry issues
+    const cmd = `ogr2ogr -f GeoJSON -makevalid -t_srs EPSG:4326 -s_srs ${sourceCRS} "${outputPath}" "${geojsonPath}"`;
 
     try {
       await execAsync(cmd);
@@ -571,7 +684,39 @@ export class ImportVersionService {
   }
 
   /**
+   * Get roads by IDs with geometry for precise comparison
+   * Used when sourceExportId is available - compares against exact roads from export
+   */
+  async getRoadsByIds(roadIds: string[]): Promise<{ id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; geometryJson: Geometry | null }[]> {
+    if (roadIds.length === 0) return [];
+
+    const baseSelect = {
+      id: roadAssets.id,
+      name: roadAssets.name,
+      roadType: roadAssets.roadType,
+      ward: roadAssets.ward,
+      lanes: roadAssets.lanes,
+      direction: roadAssets.direction,
+      geometryJson: sql<Geometry | null>`ST_AsGeoJSON(${roadAssets.geometry})::json`.as('geometryJson'),
+    };
+
+    // Query roads by IDs - include all statuses to detect if road was deleted in DB
+    // (for "deactivated" detection, we need to know which roads from export still exist)
+    return db
+      .select(baseSelect)
+      .from(roadAssets)
+      .where(
+        and(
+          eq(roadAssets.status, 'active'),
+          inArray(roadAssets.id, roadIds)
+        )
+      );
+  }
+
+  /**
    * Generate diff between import file and current database
+   * If sourceExportId exists, uses precise comparison against exported road IDs
+   * Otherwise, falls back to bbox-based comparison
    */
   async generateDiff(versionId: string): Promise<DiffResult> {
     console.log('[Import] generateDiff starting for version:', versionId);
@@ -593,10 +738,40 @@ export class ImportVersionService {
     const importFeatures = geojson.features || [];
     const importIds = new Set(importFeatures.map(f => f.properties?.id).filter(Boolean));
 
-    // Get current roads in scope with geometry for comparison
-    console.log('[Import] Getting roads in scope:', version.importScope);
-    const currentRoads = await this.getRoadsInScopeWithGeometry(version.importScope);
-    console.log('[Import] Found', currentRoads.length, 'roads in scope');
+    // Determine comparison scope: precise (export record) or bbox
+    let currentRoads: { id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; geometryJson: Geometry | null }[];
+    let comparisonMode: 'precise' | 'bbox';
+
+    if (version.sourceExportId) {
+      // Precise comparison using export record
+      const [exportRecord] = await db
+        .select()
+        .from(exportRecords)
+        .where(eq(exportRecords.id, version.sourceExportId));
+
+      if (exportRecord && Array.isArray(exportRecord.roadIds)) {
+        const exportedRoadIds = exportRecord.roadIds as string[];
+        console.log('[Import] Using precise comparison against export record:', version.sourceExportId);
+        console.log('[Import] Export contained', exportedRoadIds.length, 'roads');
+
+        // Get roads by IDs from export record
+        currentRoads = await this.getRoadsByIds(exportedRoadIds);
+        comparisonMode = 'precise';
+        console.log('[Import] Found', currentRoads.length, 'roads from export (some may have been deleted)');
+      } else {
+        // Export record not found or invalid, fall back to bbox
+        console.log('[Import] Export record not found, falling back to bbox comparison');
+        currentRoads = await this.getRoadsInScopeWithGeometry(version.importScope);
+        comparisonMode = 'bbox';
+      }
+    } else {
+      // No source export, use bbox comparison
+      console.log('[Import] Getting roads in scope:', version.importScope);
+      currentRoads = await this.getRoadsInScopeWithGeometry(version.importScope);
+      comparisonMode = 'bbox';
+    }
+
+    console.log('[Import] Comparison mode:', comparisonMode, '- found', currentRoads.length, 'roads to compare');
     const currentRoadMap = new Map(currentRoads.map(r => [r.id, r]));
 
     const added: Feature[] = [];
@@ -629,28 +804,29 @@ export class ImportVersionService {
       }
     }
 
-    // Roads in scope but not in import = will be deactivated (only if regionalRefresh is enabled)
+    // Roads in scope but not in import = will be deactivated
+    // Always compute this for preview, but only actually deactivate if regionalRefresh is enabled
     const deactivated: Feature[] = [];
-    if (version.regionalRefresh) {
-      for (const road of currentRoads) {
-        if (!importIds.has(road.id)) {
-          deactivated.push({
-            type: 'Feature',
-            geometry: null as unknown as Geometry, // Geometry would need to be fetched
-            properties: {
-              id: road.id,
-              name: road.name,
-              roadType: road.roadType,
-              ward: road.ward,
-            },
-          });
-        }
+    for (const road of currentRoads) {
+      if (!importIds.has(road.id)) {
+        deactivated.push({
+          type: 'Feature',
+          geometry: null as unknown as Geometry, // Geometry would need to be fetched
+          properties: {
+            id: road.id,
+            name: road.name,
+            roadType: road.roadType,
+            ward: road.ward,
+          },
+        });
       }
     }
 
     return {
       scope: version.importScope,
       regionalRefresh: version.regionalRefresh,
+      comparisonMode,
+      ...(comparisonMode === 'precise' && version.sourceExportId ? { sourceExportId: version.sourceExportId } : {}),
       added,
       updated,
       deactivated,
@@ -864,6 +1040,20 @@ export class ImportVersionService {
     // 2. Generate diff to get accurate counts of what will change
     const diff = await this.generateDiff(versionId);
 
+    // 2.5. Save diff for historical viewing
+    let diffPath: string | null = null;
+    try {
+      const diffFileName = `${versionId}.json`;
+      const diffFullPath = join(DIFFS_DIR, diffFileName);
+      writeFileSync(diffFullPath, JSON.stringify(diff, null, 2));
+      // Store relative path for portability
+      diffPath = `uploads/import-diffs/${diffFileName}`;
+      console.log('[Import] Saved diff for historical viewing:', diffPath);
+    } catch (err) {
+      // Log warning but don't block publish - historical view is optional
+      console.warn(`[Import] Failed to save diff for version ${versionId}:`, err);
+    }
+
     // 3. Create snapshot before publishing (outside transaction for file I/O)
     const snapshotPath = await this.createSnapshot(versionId, version.importScope);
 
@@ -959,6 +1149,7 @@ export class ImportVersionService {
           publishedAt: now,
           publishedBy: publishedBy || null,
           snapshotPath,
+          diffPath,
         })
         .where(eq(importVersions.id, versionId));
     });
@@ -1171,6 +1362,36 @@ export class ImportVersionService {
       .from(importVersions)
       .where(eq(importVersions.id, versionId));
     return version || null;
+  }
+
+  /**
+   * Get historical diff for a published version
+   */
+  async getHistoricalDiff(versionId: string): Promise<DiffResult | null> {
+    const [version] = await db
+      .select()
+      .from(importVersions)
+      .where(eq(importVersions.id, versionId));
+
+    if (!version || !version.diffPath) {
+      return null;
+    }
+
+    // Resolve relative path to absolute
+    const fullPath = join(process.cwd(), version.diffPath);
+
+    if (!existsSync(fullPath)) {
+      console.warn(`[Import] Diff file not found: ${fullPath}`);
+      return null;
+    }
+
+    try {
+      const diffContent = readFileSync(fullPath, 'utf-8');
+      return JSON.parse(diffContent) as DiffResult;
+    } catch (err) {
+      console.error(`[Import] Failed to read diff file ${fullPath}:`, err);
+      return null;
+    }
   }
 
   /**

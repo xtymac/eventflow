@@ -16,12 +16,17 @@ import { useHotkeys, useClickOutside } from '@mantine/hooks';
 import {
   IconX,
   IconMapPin,
+  IconCalendar,
+  IconRoad,
+  IconTree,
+  IconBulb,
   IconAlertTriangle,
   IconMap2,
 } from '@tabler/icons-react';
 import { useMapSearch } from '../hooks/useMapSearch';
 import { useSearchStore } from '../stores/searchStore';
 import { useUIStore } from '../stores/uiStore';
+import { useMapStore } from '../stores/mapStore';
 import type { SearchResult } from '@nagoya/shared';
 
 export function MapSearch() {
@@ -39,10 +44,40 @@ export function MapSearch() {
     clearSearch,
   } = useSearchStore();
 
-  const { setFlyToGeometry } = useUIStore();
+  const {
+    setFlyToGeometry,
+    selectEvent,
+    openEventDetailModal,
+    selectAsset,
+    setCurrentView,
+    mapBbox,
+    mapCenter,
+    mapZoom,
+    currentView,
+  } = useUIStore();
+
+  const {
+    showEvents,
+    showAssets,
+    showGreenSpaces,
+    showStreetLights,
+    showRivers,
+    toggleEvents,
+    toggleAssets,
+    toggleGreenSpaces,
+    toggleStreetLights,
+    toggleRivers,
+  } = useMapStore();
 
   const { data, isLoading, isFetching, error } = useMapSearch(query, {
     enabled: isOpen && query.length >= 2,
+    context: {
+      bbox: mapBbox ?? undefined,
+      mapCenter: mapCenter ?? undefined,
+      mapZoom,
+      view: currentView,
+      locale: navigator.language,
+    },
   });
 
   // Show loading when:
@@ -89,15 +124,40 @@ export function MapSearch() {
   const handleSelect = (result: SearchResult) => {
     selectResult(result.id);
 
-    // Set search center to show pin marker on map
-    setSearchCenter(result.coordinates);
+    const geometry = result.geometry
+      ?? (result.coordinates
+        ? { type: 'Point' as const, coordinates: result.coordinates }
+        : null);
+    const sourceId = result.sourceId ?? result.id;
 
-    // Fly to result location
-    const geometry = {
-      type: 'Point' as const,
-      coordinates: result.coordinates,
-    };
-    setFlyToGeometry(geometry, true);
+    if (result.type === 'place' || result.type === 'coordinate') {
+      if (result.coordinates) {
+        setSearchCenter(result.coordinates);
+        setFlyToGeometry({ type: 'Point', coordinates: result.coordinates }, true);
+      }
+    } else if (result.type === 'event') {
+      if (!showEvents) toggleEvents();
+      selectEvent(sourceId);
+      openEventDetailModal(sourceId);
+      setCurrentView('events');
+      if (geometry) setFlyToGeometry(geometry, false);
+    } else if (result.type === 'road') {
+      if (!showAssets) toggleAssets();
+      selectAsset(sourceId, geometry ?? null);
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'greenspace') {
+      if (!showGreenSpaces) toggleGreenSpaces();
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'streetlight') {
+      if (!showStreetLights) toggleStreetLights();
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'river') {
+      if (!showRivers) toggleRivers();
+      if (geometry) setFlyToGeometry(geometry, true);
+    }
 
     // Close dropdown
     setIsOpen(false);
@@ -109,10 +169,37 @@ export function MapSearch() {
     inputRef.current?.focus();
   };
 
-  const places = data?.data?.places || [];
+  const results = data?.data?.results || [];
   const hasError = data?.meta?.error;
   const isOutOfBounds = hasError === 'OUTSIDE_BOUNDS';
   const isCoordinateSearch = data?.data?.isCoordinateSearch;
+  const typeLabels: Record<SearchResult['type'], string> = {
+    place: '場所',
+    coordinate: '座標',
+    event: 'イベント',
+    road: '道路',
+    greenspace: '緑地',
+    streetlight: '街灯',
+    river: '河川',
+  };
+  const getTypeIcon = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'event':
+        return <IconCalendar size={16} />;
+      case 'road':
+        return <IconRoad size={16} />;
+      case 'greenspace':
+        return <IconTree size={16} />;
+      case 'streetlight':
+        return <IconBulb size={16} />;
+      case 'river':
+        return <IconMap2 size={16} />;
+      case 'coordinate':
+      case 'place':
+      default:
+        return <IconMapPin size={16} />;
+    }
+  };
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: 360 }}>
@@ -187,14 +274,14 @@ export function MapSearch() {
                 {data?.meta?.errorMessage || '指定された座標は名古屋市の範囲外です'}
               </Text>
             </Alert>
-          ) : places.length === 0 ? (
+          ) : results.length === 0 ? (
             <Text size="sm" c="dimmed" ta="center" py="md">
               「{query}」の検索結果がありません
             </Text>
           ) : (
             <ScrollArea.Autosize mah={300}>
               <Stack gap="xs">
-                {places.map((result) => (
+                {results.map((result) => (
                   <Paper
                     key={result.id}
                     p="xs"
@@ -207,14 +294,16 @@ export function MapSearch() {
                     onClick={() => handleSelect(result)}
                   >
                     <Group gap="xs" wrap="nowrap">
-                      <IconMapPin size={16} style={{ flexShrink: 0, color: 'var(--mantine-color-blue-6)' }} />
+                      <div style={{ flexShrink: 0, color: 'var(--mantine-color-blue-6)' }}>
+                        {getTypeIcon(result.type)}
+                      </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <Text size="sm" fw={500} lineClamp={1}>
                           {result.name}
                         </Text>
-                        {result.address && (
+                        {(result.subtitle || typeLabels[result.type]) && (
                           <Text size="xs" c="dimmed" lineClamp={1}>
-                            {result.address}
+                            {result.subtitle || typeLabels[result.type]}
                           </Text>
                         )}
                       </div>

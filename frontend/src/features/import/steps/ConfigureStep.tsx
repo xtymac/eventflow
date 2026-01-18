@@ -1,7 +1,8 @@
 /**
  * Configure Step Component
  *
- * Configure import options: layer selection, CRS, scope, and default dataSource.
+ * Configure import options: layer selection, CRS, and default dataSource.
+ * Import scope is auto-calculated from the file's bounding box.
  */
 
 import { useState, useEffect } from 'react';
@@ -9,13 +10,11 @@ import {
   Stack,
   Text,
   Select,
-  Radio,
   Group,
   Button,
   Card,
   Loader,
   Alert,
-  TextInput,
   Switch,
   Tooltip,
 } from '@mantine/core';
@@ -27,7 +26,6 @@ import {
   useConfigureImport,
   useTriggerValidation,
 } from '../../../hooks/useImportVersions';
-import { useWards } from '../../../hooks/useApi';
 import { useUIStore } from '../../../stores/uiStore';
 
 const CRS_OPTIONS = [
@@ -49,17 +47,12 @@ const DATA_SOURCE_OPTIONS = [
   { value: 'osm_test', label: 'OSM Test Data' },
 ];
 
-type ScopeType = 'full' | 'ward' | 'bbox';
-
 export function ConfigureStep() {
   const { currentImportVersionId, setImportWizardStep } = useUIStore();
 
   // Form state
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const [sourceCRS, setSourceCRS] = useState<string>('EPSG:4326');
-  const [scopeType, setScopeType] = useState<ScopeType>('full');
-  const [selectedWard, setSelectedWard] = useState<string | null>(null);
-  const [bboxInput, setBboxInput] = useState<string>('');
   const [defaultDataSource, setDefaultDataSource] = useState<string>('official_ledger');
   const [regionalRefresh, setRegionalRefresh] = useState<boolean>(false);
 
@@ -68,7 +61,6 @@ export function ConfigureStep() {
   const { data: layersData, isLoading: isLoadingLayers } = useImportVersionLayers(
     versionData?.data?.fileType === 'geopackage' ? currentImportVersionId : null
   );
-  const { data: wardsData } = useWards();
 
   // Mutations
   const configureMutation = useConfigureImport();
@@ -80,20 +72,6 @@ export function ConfigureStep() {
       setSelectedLayer(layersData.data[0].name);
     }
   }, [layersData]);
-
-  // Compute import scope string
-  const getImportScope = (): string => {
-    switch (scopeType) {
-      case 'full':
-        return 'full';
-      case 'ward':
-        return selectedWard ? `ward:${selectedWard}` : 'full';
-      case 'bbox':
-        return bboxInput.trim() ? `bbox:${bboxInput.trim()}` : 'full';
-      default:
-        return 'full';
-    }
-  };
 
   const handleConfigure = async () => {
     if (!currentImportVersionId) return;
@@ -108,32 +86,13 @@ export function ConfigureStep() {
       return;
     }
 
-    if (scopeType === 'ward' && !selectedWard) {
-      notifications.show({
-        title: 'Ward required',
-        message: 'Please select a ward for the import scope',
-        color: 'red',
-      });
-      return;
-    }
-
-    if (scopeType === 'bbox' && !bboxInput.trim()) {
-      notifications.show({
-        title: 'Bounding box required',
-        message: 'Please enter a bounding box for the import scope',
-        color: 'red',
-      });
-      return;
-    }
-
     try {
-      // Configure version
+      // Configure version (importScope is auto-calculated from file bounding box by backend)
       await configureMutation.mutateAsync({
         id: currentImportVersionId,
         config: {
           layerName: selectedLayer || undefined,
           sourceCRS,
-          importScope: getImportScope(),
           defaultDataSource: defaultDataSource as 'osm_test' | 'official_ledger' | 'manual',
           regionalRefresh,
         },
@@ -222,57 +181,6 @@ export function ConfigureStep() {
         onChange={(v) => setSourceCRS(v || 'EPSG:4326')}
       />
 
-      {/* Import Scope */}
-      <div>
-        <Text size="sm" fw={500} mb="xs">
-          Import Scope
-        </Text>
-        <Text size="xs" c="dimmed" mb="sm">
-          Defines the geographic area for this import. If Regional Refresh is enabled,
-          only roads within this scope will be affected.
-        </Text>
-        <Radio.Group value={scopeType} onChange={(v) => setScopeType(v as ScopeType)}>
-          <Stack gap="xs">
-            <Radio
-              value="full"
-              label="Full City"
-              description="Apply to all roads city-wide"
-            />
-            <Radio
-              value="ward"
-              label="By Ward"
-              description="Apply only to roads in a specific ward"
-            />
-            <Radio
-              value="bbox"
-              label="By Bounding Box"
-              description="Apply only to roads in a geographic area"
-            />
-          </Stack>
-        </Radio.Group>
-
-        {scopeType === 'ward' && (
-          <Select
-            mt="sm"
-            placeholder="Select ward..."
-            data={wardsData?.data?.map((w) => ({ value: w, label: w })) ?? []}
-            value={selectedWard}
-            onChange={setSelectedWard}
-            clearable
-            searchable
-          />
-        )}
-
-        {scopeType === 'bbox' && (
-          <TextInput
-            mt="sm"
-            placeholder="minLng,minLat,maxLng,maxLat (e.g., 136.9,35.1,137.0,35.2)"
-            value={bboxInput}
-            onChange={(e) => setBboxInput(e.target.value)}
-          />
-        )}
-      </div>
-
       {/* Default Data Source */}
       <Select
         label={
@@ -309,8 +217,8 @@ export function ConfigureStep() {
           <div style={{ flex: 1 }}>
             <Text size="sm" fw={500}>Regional Refresh Mode</Text>
             <Text size="xs" c="dimmed" mt={4}>
-              When enabled, roads within the import scope that are NOT in the import file
-              will be marked as inactive. Use only for complete regional data updates.
+              Enable this only when your import file represents the complete source of truth
+              for the geographic area it covers.
             </Text>
           </div>
           <Switch
@@ -320,16 +228,31 @@ export function ConfigureStep() {
           />
         </Group>
 
-        {regionalRefresh && (
+        {regionalRefresh ? (
           <Alert
             icon={<IconAlertTriangle size={16} />}
-            color="orange"
+            color="red"
+            variant="light"
+            mt="sm"
+          >
+            <Text size="xs" fw={500}>
+              Warning: Roads deleted from your import file will be REMOVED from database!
+            </Text>
+            <Text size="xs" mt={4}>
+              Any roads within the file's geographic area that are NOT in your import file will be
+              marked as inactive. Make sure your import file contains ALL roads you want to keep.
+            </Text>
+          </Alert>
+        ) : (
+          <Alert
+            icon={<IconInfoCircle size={16} />}
+            color="gray"
             variant="light"
             mt="sm"
           >
             <Text size="xs">
-              Roads in scope but not in the import file will be deactivated.
-              Make sure your import file contains ALL active roads for the selected scope.
+              <Text span fw={500}>OFF:</Text> Only add new roads and update existing ones.
+              Roads deleted from your import file will remain in database.
             </Text>
           </Alert>
         )}

@@ -4,7 +4,7 @@
  * Displays list of all import versions with status and actions.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Stack,
   Text,
@@ -27,6 +27,7 @@ import {
   IconArrowBack,
   IconInfoCircle,
   IconMap,
+  IconEye,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -39,6 +40,7 @@ import {
 } from '../../hooks/useImportVersions';
 import { useUIStore } from '../../stores/uiStore';
 import { useMapStore } from '../../stores/mapStore';
+import { HistoricalChangesModal } from './components/HistoricalChangesModal';
 
 const PAGE_SIZE = 10;
 
@@ -91,13 +93,35 @@ interface ImportVersionListProps {
 }
 
 export function ImportVersionList({ compact = false }: ImportVersionListProps) {
-  const { openImportWizard, setFlyToGeometry, closeImportExportSidebar } = useUIStore();
+  const {
+    openImportWizard,
+    setFlyToGeometry,
+    closeImportExportSidebar,
+    historicalViewContext,
+    isImportPreviewMode,
+    setHistoricalViewContext,
+  } = useUIStore();
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [rollbackVersionId, setRollbackVersionId] = useState<string | null>(null);
   const [rollbackJobId, setRollbackJobId] = useState<string | null>(null);
+
+  // State for viewing historical changes
+  const [viewingHistoryId, setViewingHistoryId] = useState<string | null>(null);
+  const [viewingHistoryNumber, setViewingHistoryNumber] = useState<number>(0);
+
+  // Restore historical changes modal when preview ends
+  useEffect(() => {
+    if (!isImportPreviewMode && historicalViewContext) {
+      // Preview ended, restore the modal
+      setViewingHistoryId(historicalViewContext.versionId);
+      setViewingHistoryNumber(historicalViewContext.displayNumber);
+      // Clear the context
+      setHistoricalViewContext(null);
+    }
+  }, [isImportPreviewMode, historicalViewContext, setHistoricalViewContext]);
 
   // Queries - fetch more to account for filtered drafts
   const { data, isLoading, error } = useImportVersions({
@@ -219,12 +243,12 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   }
 
   // Filter out draft versions - only show published and archived
-  const versions = (data?.data ?? []).filter((v) => v.status !== 'draft').slice(0, PAGE_SIZE);
-  // Count non-draft versions for pagination (approximation based on current page data)
-  const nonDraftTotal = (data?.data ?? []).filter((v) => v.status !== 'draft').length;
-  const total = data?.total ?? 0;
-  // Adjust total pages based on estimated non-draft count
-  const totalPages = Math.ceil(Math.max(nonDraftTotal, total * 0.9) / PAGE_SIZE);
+  const allNonDraft = (data?.data ?? []).filter((v) => v.status !== 'draft');
+  const versions = allNonDraft.slice(0, PAGE_SIZE);
+  // Use actual non-draft count for pagination (we fetch extra to ensure accuracy)
+  const nonDraftTotal = allNonDraft.length;
+  // Only show pagination if we have more than one page worth of data
+  const totalPages = nonDraftTotal > PAGE_SIZE ? Math.ceil(nonDraftTotal / PAGE_SIZE) : 1;
 
   return (
     <Stack gap="md" style={compact ? { height: '100%', display: 'flex', flexDirection: 'column' } : undefined}>
@@ -292,7 +316,21 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                   <Text size="sm" fw={500}>#{displayNumber}</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="sm" title={version.fileName}>
+                  <Text
+                    size="sm"
+                    title={(version.status === 'published' || version.status === 'archived')
+                      ? `${version.fileName} - Click to view changes`
+                      : version.fileName}
+                    style={(version.status === 'published' || version.status === 'archived')
+                      ? { cursor: 'pointer' }
+                      : undefined}
+                    onClick={(version.status === 'published' || version.status === 'archived')
+                      ? () => {
+                          setViewingHistoryId(version.id);
+                          setViewingHistoryNumber(displayNumber);
+                        }
+                      : undefined}
+                  >
                     {version.fileName}
                   </Text>
                   <Text size="xs" c="dimmed">
@@ -334,6 +372,21 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                         title="Delete draft"
                       >
                         <IconTrash size={14} />
+                      </ActionIcon>
+                    )}
+
+                    {(version.status === 'published' || version.status === 'archived') && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        size="sm"
+                        onClick={() => {
+                          setViewingHistoryId(version.id);
+                          setViewingHistoryNumber(displayNumber);
+                        }}
+                        title="View changes from this import"
+                      >
+                        <IconEye size={14} />
                       </ActionIcon>
                     )}
 
@@ -405,6 +458,13 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
           </Group>
         </Stack>
       </Modal>
+
+      {/* Historical changes modal */}
+      <HistoricalChangesModal
+        versionId={viewingHistoryId}
+        displayNumber={viewingHistoryNumber}
+        onClose={() => setViewingHistoryId(null)}
+      />
     </Stack>
   );
 }

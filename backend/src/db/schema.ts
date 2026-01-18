@@ -230,6 +230,9 @@ export const importVersions = pgTable('import_versions', {
   regionalRefresh: boolean('regional_refresh').default(false).notNull(),
   defaultDataSource: varchar('default_data_source', { length: 20 }).notNull(),
 
+  // Link to source export for precise comparison (if file contains _exportId)
+  sourceExportId: varchar('source_export_id', { length: 50 }),
+
   // Statistics
   fileSizeMB: numeric('file_size_mb', { precision: 10, scale: 2 }),
   featureCount: integer('feature_count').notNull(),
@@ -243,6 +246,9 @@ export const importVersions = pgTable('import_versions', {
 
   // Rollback support
   snapshotPath: varchar('snapshot_path', { length: 500 }),
+
+  // Historical diff (saved at publish time for viewing changes later)
+  diffPath: varchar('diff_path', { length: 500 }),
 
   // Notes
   notes: text('notes'),
@@ -265,6 +271,25 @@ export const importJobs = pgTable('import_jobs', {
 }, (table) => ({
   versionIdx: index('idx_import_jobs_version').on(table.versionId),
   statusIdx: index('idx_import_jobs_status').on(table.status),
+}));
+
+// Export Records - tracks exported road IDs for precise import comparison
+export const exportRecords = pgTable('export_records', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Export configuration
+  exportScope: varchar('export_scope', { length: 255 }).notNull(),  // 'full', 'ward:xxx', 'bbox:...'
+  format: varchar('format', { length: 20 }).notNull(),  // 'geojson' | 'geopackage'
+
+  // Exported road IDs (stored as JSONB array for efficient querying)
+  roadIds: jsonbColumn('road_ids').notNull(),  // string[]
+  featureCount: integer('feature_count').notNull(),
+
+  // Audit trail
+  exportedBy: varchar('exported_by', { length: 100 }),
+  exportedAt: timestamp('exported_at', { withTimezone: true }).notNull(),
+}, (table) => ({
+  exportedAtIdx: index('idx_export_records_exported_at').on(table.exportedAt),
 }));
 
 // ============================================
@@ -439,6 +464,9 @@ export type NewImportVersion = typeof importVersions.$inferInsert;
 
 export type ImportJob = typeof importJobs.$inferSelect;
 export type NewImportJob = typeof importJobs.$inferInsert;
+
+export type ExportRecord = typeof exportRecords.$inferSelect;
+export type NewExportRecord = typeof exportRecords.$inferInsert;
 
 export type RiverAsset = typeof riverAssets.$inferSelect;
 export type NewRiverAsset = typeof riverAssets.$inferInsert;
