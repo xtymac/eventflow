@@ -48,14 +48,14 @@ function App() {
   const [showResizeHint, setShowResizeHint] = useState(false);
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  // Show hint animation on first visit
+  // Show hint animation once per page refresh
   useEffect(() => {
-    const hintShown = localStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
+    const hintShown = sessionStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
     if (!hintShown) {
       // Delay the hint to let the page and list load first
       const timer = setTimeout(() => {
         setShowResizeHint(true);
-        localStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
+        sessionStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
         // Remove hint class after animation completes (2 cycles * 0.5s = 1s)
         setTimeout(() => setShowResizeHint(false), 1200);
       }, 2000);
@@ -152,24 +152,6 @@ function App() {
     }
     prevDetailModalEventId.current = detailModalEventId;
   }, [detailModalEventId, openDesktop, openMobile]);
-
-  // Show hint once per session when switching to Assets tab if sidebar can be expanded
-  const assetsHintShownThisSession = useRef(false);
-  const prevViewRef = useRef(currentView);
-  useEffect(() => {
-    const isSwitch = prevViewRef.current !== 'assets' && currentView === 'assets';
-    prevViewRef.current = currentView;
-
-    if (isSwitch && !assetsHintShownThisSession.current && sidebarWidth < MAX_SIDEBAR_WIDTH) {
-      assetsHintShownThisSession.current = true;
-      // Small delay to let tab switch animation complete
-      const timer = setTimeout(() => {
-        setShowResizeHint(true);
-        setTimeout(() => setShowResizeHint(false), 1200);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentView, sidebarWidth]);
 
   const renderSidebarContent = () => {
     switch (currentView) {
@@ -269,9 +251,12 @@ function App() {
             width: 6,
             height: 'calc(100vh - 60px)',
             cursor: 'col-resize',
-            background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
-            transition: isResizing ? 'none' : 'background 0.2s, left 0.1s',
             zIndex: 100,
+            // Don't set inline background/transition when hint animation is playing
+            ...(showResizeHint ? {} : {
+              background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
+              transition: isResizing ? 'none' : 'background 0.2s, left 0.1s',
+            }),
           }}
         />
       )}
