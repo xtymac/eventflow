@@ -94,8 +94,8 @@ export async function importExportRoutes(fastify: FastifyInstance) {
         },
       }));
     } else {
-      // Build WHERE conditions for optional filters
-      const conditions: ReturnType<typeof sql>[] = [];
+      // Build WHERE conditions - always filter out null geometries to avoid ST_AsGeoJSON errors
+      const conditions: ReturnType<typeof sql>[] = [sql`geometry IS NOT NULL`];
 
       if (ward) {
         conditions.push(sql`ward = ${ward}`);
@@ -111,9 +111,7 @@ export async function importExportRoutes(fastify: FastifyInstance) {
         }
       }
 
-      const whereClause = conditions.length > 0
-        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-        : sql``;
+      const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
 
       // Use raw SQL to support optional filters and apply defaults
       const result = await db.execute(sql`
@@ -249,8 +247,8 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'GeoPackage export only supports assets type' });
     }
 
-    // Build WHERE conditions
-    const conditions: ReturnType<typeof sql>[] = [];
+    // Build WHERE conditions - always filter out null geometries to avoid ST_AsGeoJSON errors
+    const conditions: ReturnType<typeof sql>[] = [sql`geometry IS NOT NULL`];
 
     if (ward) {
       conditions.push(sql`ward = ${ward}`);
@@ -266,9 +264,7 @@ export async function importExportRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const whereClause = conditions.length > 0
-      ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
-      : sql``;
+    const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
 
     // Query all road assets (active + inactive) with required fields for ArcGIS export
     const result = await db.execute(sql`

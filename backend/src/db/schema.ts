@@ -29,9 +29,18 @@ const lineStringColumn = customType<{ data: LineString; driverData: unknown }>({
 });
 
 // JSONB column type for complex data
-const jsonbColumn = customType<{ data: unknown; driverData: unknown }>({
+const jsonbColumn = customType<{ data: unknown; driverData: string }>({
   dataType() {
     return 'jsonb';
+  },
+  toDriver(value: unknown): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: unknown): unknown {
+    if (typeof value === 'string') {
+      return JSON.parse(value);
+    }
+    return value;
   },
 });
 export const constructionEvents = pgTable('construction_events', {
