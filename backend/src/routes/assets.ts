@@ -1161,7 +1161,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           })
           .where(eq(roadAssets.id, id));
 
-        // Fetch updated asset
+        // Fetch updated asset with all required fields
         const assetSelect = {
           id: roadAssets.id,
           name: roadAssets.name,
@@ -1174,6 +1174,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           geometry: fromGeomSql(roadAssets.geometry),
           roadType: roadAssets.roadType,
           lanes: roadAssets.lanes,
+          width: roadAssets.width,
+          widthSource: roadAssets.widthSource,
           direction: roadAssets.direction,
           status: roadAssets.status,
           validFrom: roadAssets.validFrom,
@@ -1182,6 +1184,15 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           ownerDepartment: roadAssets.ownerDepartment,
           ward: roadAssets.ward,
           landmark: roadAssets.landmark,
+          sublocality: roadAssets.sublocality,
+          crossSection: roadAssets.crossSection,
+          managingDept: roadAssets.managingDept,
+          intersection: roadAssets.intersection,
+          pavementState: roadAssets.pavementState,
+          dataSource: roadAssets.dataSource,
+          sourceVersion: roadAssets.sourceVersion,
+          sourceDate: roadAssets.sourceDate,
+          lastVerifiedAt: roadAssets.lastVerifiedAt,
           updatedAt: roadAssets.updatedAt,
         };
 
@@ -1191,8 +1202,12 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         return {
           data: {
             ...updatedAsset,
+            status: updatedAsset.status as 'active' | 'inactive',
+            dataSource: updatedAsset.dataSource as 'osm_test' | 'official_ledger' | 'manual',
             validFrom: updatedAsset.validFrom.toISOString(),
-            validTo: updatedAsset.validTo?.toISOString(),
+            validTo: updatedAsset.validTo?.toISOString() ?? null,
+            sourceDate: updatedAsset.sourceDate?.toISOString() ?? null,
+            lastVerifiedAt: updatedAsset.lastVerifiedAt?.toISOString() ?? null,
             updatedAt: updatedAsset.updatedAt.toISOString(),
           },
         };
