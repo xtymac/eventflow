@@ -5,7 +5,7 @@
  * Upload → Configure → Review → Publish
  */
 
-import { Modal, Stepper, Group, Button, Stack } from '@mantine/core';
+import { Modal, Stepper, Stack } from '@mantine/core';
 import { IconUpload, IconSettings, IconEye, IconRocket } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { UploadStep } from './steps/UploadStep';
@@ -34,14 +34,15 @@ export function ImportWizard() {
 
   const currentStepIndex = getStepIndex(importWizardStep);
 
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      setImportWizardStep(STEP_ORDER[currentStepIndex - 1]);
-    }
-  };
-
   const handleClose = () => {
     closeImportWizard();
+  };
+
+  // Handle step click - only allow navigating to previous/completed steps
+  const handleStepClick = (stepIndex: number) => {
+    if (stepIndex < currentStepIndex) {
+      setImportWizardStep(STEP_ORDER[stepIndex]);
+    }
   };
 
   const renderStepContent = () => {
@@ -72,6 +73,7 @@ export function ImportWizard() {
         <Stepper
           active={currentStepIndex}
           size="sm"
+          onStepClick={handleStepClick}
           allowNextStepsSelect={false}
         >
           <Stepper.Step
@@ -99,19 +101,6 @@ export function ImportWizard() {
         <div style={{ minHeight: 300 }}>
           {renderStepContent()}
         </div>
-
-        <Group justify="space-between">
-          <Button
-            variant="subtle"
-            onClick={handleBack}
-            disabled={currentStepIndex === 0}
-          >
-            Back
-          </Button>
-          <Button variant="subtle" color="gray" onClick={handleClose}>
-            Cancel
-          </Button>
-        </Group>
       </Stack>
     </Modal>
   );

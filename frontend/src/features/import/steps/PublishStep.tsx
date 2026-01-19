@@ -16,15 +16,17 @@ import {
   Alert,
   Loader,
   ThemeIcon,
+  Anchor,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   IconRocket,
   IconCheck,
-  IconAlertTriangle,
   IconX,
   IconInfoCircle,
+  IconMap,
 } from '@tabler/icons-react';
 import {
   useImportVersion,
@@ -34,9 +36,61 @@ import {
   type ImportJob,
 } from '../../../hooks/useImportVersions';
 import { useUIStore } from '../../../stores/uiStore';
+import { useMapStore } from '../../../stores/mapStore';
+
+/**
+ * Format scope string for user-friendly display
+ * - "full" → "Full City"
+ * - "ward:Nishi" → "Nishi Ward"
+ * - "bbox:..." → "Import file area" with tooltip showing coords
+ */
+function formatScopeDisplay(scope: string): { label: string; tooltip?: string } {
+  if (scope === 'full') {
+    return { label: 'Full City' };
+  }
+  if (scope.startsWith('ward:')) {
+    const ward = scope.substring(5);
+    return { label: `${ward} Ward` };
+  }
+  if (scope.startsWith('bbox:')) {
+    const coords = scope.substring(5).split(',');
+    if (coords.length === 4) {
+      // Format as multi-line with labels for readability
+      const [minLng, minLat, maxLng, maxLat] = coords;
+      return {
+        label: 'Import file area',
+        tooltip: `Min: ${Number(minLng).toFixed(6)}, ${Number(minLat).toFixed(6)}\nMax: ${Number(maxLng).toFixed(6)}, ${Number(maxLat).toFixed(6)}`,
+      };
+    }
+    return {
+      label: 'Import file area',
+      tooltip: `Bounding box: ${coords.join(', ')}`,
+    };
+  }
+  return { label: scope };
+}
+
+/**
+ * Create a Polygon geometry from bbox string for map fly-to
+ */
+function bboxToPolygon(scope: string): GeoJSON.Polygon | null {
+  if (!scope.startsWith('bbox:')) return null;
+  const [minLng, minLat, maxLng, maxLat] = scope.substring(5).split(',').map(Number);
+  if (isNaN(minLng) || isNaN(minLat) || isNaN(maxLng) || isNaN(maxLat)) return null;
+  return {
+    type: 'Polygon',
+    coordinates: [[
+      [minLng, minLat],
+      [maxLng, minLat],
+      [maxLng, maxLat],
+      [minLng, maxLat],
+      [minLng, minLat],
+    ]],
+  };
+}
 
 export function PublishStep() {
-  const { currentImportVersionId, closeImportWizard } = useUIStore();
+  const { currentImportVersionId, closeImportWizard, startImportPreview } = useUIStore();
   const queryClient = useQueryClient();
 
   const [confirmed, setConfirmed] = useState(false);
@@ -96,8 +150,35 @@ export function PublishStep() {
     closeImportWizard();
   };
 
+  // Get map store action for highlighting
+  const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
+
+  // Fly to bbox area on map and temporarily hide wizard
+  const handleViewOnMap = (scope: string) => {
+    const polygon = bboxToPolygon(scope);
+    if (polygon) {
+      // Create a dummy feature for the preview system
+      const bboxFeature = {
+        type: 'Feature' as const,
+        geometry: polygon,
+        properties: {
+          id: 'scope-area',
+          name: 'Import Scope Area',
+        },
+      };
+      // Set highlight to show bbox rectangle on map
+      setImportAreaHighlight({
+        geometry: polygon,
+        label: 'Import Scope Area',
+      });
+      // Use existing preview mode to temporarily hide wizard and show return button
+      startImportPreview([bboxFeature], 0);
+    }
+  };
+
   const version = versionData?.data;
   const diff = diffData?.data;
+  const scopeDisplay = diff?.scope ? formatScopeDisplay(diff.scope) : null;
   const job = jobData?.data;
 
   // Show success state
@@ -128,7 +209,9 @@ export function PublishStep() {
             </Group>
             <Group justify="space-between">
               <Text size="sm">Scope:</Text>
-              <Text size="sm" fw={500}>{result.scope || diff?.scope}</Text>
+              <Text size="sm" fw={500}>
+                {formatScopeDisplay(result.scope || diff?.scope || 'full').label}
+              </Text>
             </Group>
             <Group justify="space-between">
               <Text size="sm" c="green">Roads added:</Text>
@@ -209,11 +292,6 @@ export function PublishStep() {
   // Show confirmation state
   return (
     <Stack gap="md">
-      <Alert icon={<IconAlertTriangle size={16} />} color="orange" variant="light">
-        You are about to publish this import. This will update the road database.
-        A snapshot will be created for rollback support.
-      </Alert>
-
       {/* Summary card */}
       <Card withBorder padding="md">
         <Text fw={500} mb="sm">Publish Summary</Text>
@@ -228,7 +306,27 @@ export function PublishStep() {
           </Group>
           <Group justify="space-between">
             <Text size="sm">Scope:</Text>
-            <Text size="sm" fw={500}>{diff?.scope}</Text>
+            <Group gap="xs">
+              {scopeDisplay?.tooltip ? (
+                <Tooltip label={scopeDisplay.tooltip} multiline w={300}>
+                  <Text size="sm" fw={500} style={{ cursor: 'help', textDecoration: 'underline dotted' }}>
+                    {scopeDisplay.label}
+                  </Text>
+                </Tooltip>
+              ) : (
+                <Text size="sm" fw={500}>{scopeDisplay?.label}</Text>
+              )}
+              {diff?.scope?.startsWith('bbox:') && (
+                <Anchor
+                  size="xs"
+                  onClick={() => handleViewOnMap(diff.scope)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
+                >
+                  <IconMap size={12} />
+                  View
+                </Anchor>
+              )}
+            </Group>
           </Group>
           <Group justify="space-between">
             <Text size="sm">Features:</Text>
@@ -261,14 +359,14 @@ export function PublishStep() {
       {/* Deactivation warning */}
       {diff && diff.stats.deactivatedCount > 0 && (
         <Alert icon={<IconInfoCircle size={16} />} color="orange" variant="light">
-          <strong>{diff.stats.deactivatedCount} roads</strong> in scope "{diff.scope}"
+          <strong>{diff.stats.deactivatedCount} roads</strong> in the import file area
           will be marked as inactive because they are not in the import file.
         </Alert>
       )}
 
       {/* Confirmation checkbox */}
       <Checkbox
-        label={`I understand that this will update roads in scope "${diff?.scope || 'full'}"`}
+        label={`I understand that this will update roads in the ${scopeDisplay?.label || 'selected area'}`}
         checked={confirmed}
         onChange={(e) => setConfirmed(e.currentTarget.checked)}
       />

@@ -255,8 +255,14 @@ export class ImportVersionService {
     // Convert GeoPackage to GeoJSON if needed
     let geojsonPath = version.filePath;
     if (version.fileType === 'geopackage') {
+      // Always use the original GeoPackage file path (not converted.geojson from previous attempts)
+      // The original file is saved as "original.gpkg" in the version directory
+      const versionDir = dirname(version.filePath);
+      const originalGpkgPath = join(versionDir, 'original.gpkg');
+      const sourcePath = existsSync(originalGpkgPath) ? originalGpkgPath : version.filePath;
+
       geojsonPath = await this.convertGeoPackageToGeoJSON(
-        version.filePath,
+        sourcePath,
         config.layerName,
         config.sourceCRS
       );
@@ -272,20 +278,25 @@ export class ImportVersionService {
 
     // Detect _exportId from features (for precise comparison)
     // Check first feature for _exportId - all features from same export share this ID
+    // Note: ogr2ogr may rename _exportId to F_exportId when converting GeoPackage, so check both
     let sourceExportId: string | null = null;
-    if (features.length > 0 && features[0].properties?._exportId) {
-      const detectedExportId = features[0].properties._exportId;
-      // Verify the export record exists
-      const [exportRecord] = await db
-        .select()
-        .from(exportRecords)
-        .where(eq(exportRecords.id, detectedExportId));
+    if (features.length > 0) {
+      const props = features[0].properties;
+      const detectedExportId = props?._exportId || props?.F_exportId;
 
-      if (exportRecord) {
-        sourceExportId = detectedExportId;
-        console.log('[Import] Detected source export:', sourceExportId, '- will use precise comparison');
-      } else {
-        console.log('[Import] Export ID', detectedExportId, 'not found in export_records - using bbox comparison');
+      if (detectedExportId) {
+        // Verify the export record exists
+        const [exportRecord] = await db
+          .select()
+          .from(exportRecords)
+          .where(eq(exportRecords.id, detectedExportId));
+
+        if (exportRecord) {
+          sourceExportId = detectedExportId;
+          console.log('[Import] Detected source export:', sourceExportId, '- will use precise comparison');
+        } else {
+          console.log('[Import] Export ID', detectedExportId, 'not found in export_records - using bbox comparison');
+        }
       }
     }
 
@@ -686,8 +697,11 @@ export class ImportVersionService {
   /**
    * Get roads by IDs with geometry for precise comparison
    * Used when sourceExportId is available - compares against exact roads from export
+   * Returns ALL roads matching IDs regardless of status (active/inactive)
+   * This is important because exports include all roads, and we need to compare
+   * against all exported roads to correctly detect adds/updates/deactivations
    */
-  async getRoadsByIds(roadIds: string[]): Promise<{ id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; geometryJson: Geometry | null }[]> {
+  async getRoadsByIds(roadIds: string[]): Promise<{ id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; status: string | null; geometryJson: Geometry | null }[]> {
     if (roadIds.length === 0) return [];
 
     const baseSelect = {
@@ -697,20 +711,16 @@ export class ImportVersionService {
       ward: roadAssets.ward,
       lanes: roadAssets.lanes,
       direction: roadAssets.direction,
+      status: roadAssets.status,
       geometryJson: sql<Geometry | null>`ST_AsGeoJSON(${roadAssets.geometry})::json`.as('geometryJson'),
     };
 
-    // Query roads by IDs - include all statuses to detect if road was deleted in DB
-    // (for "deactivated" detection, we need to know which roads from export still exist)
+    // Query roads by IDs - include ALL statuses (active AND inactive)
+    // Export includes all roads, so comparison must also include all roads
     return db
       .select(baseSelect)
       .from(roadAssets)
-      .where(
-        and(
-          eq(roadAssets.status, 'active'),
-          inArray(roadAssets.id, roadIds)
-        )
-      );
+      .where(inArray(roadAssets.id, roadIds));
   }
 
   /**
@@ -736,10 +746,16 @@ export class ImportVersionService {
 
     const geojson = JSON.parse(readFileSync(geojsonPath, 'utf-8')) as FeatureCollection;
     const importFeatures = geojson.features || [];
-    const importIds = new Set(importFeatures.map(f => f.properties?.id).filter(Boolean));
+    // Ensure IDs are always strings for consistent comparison
+    const importIds = new Set(
+      importFeatures
+        .map(f => f.properties?.id)
+        .filter(Boolean)
+        .map(id => String(id))
+    );
 
     // Determine comparison scope: precise (export record) or bbox
-    let currentRoads: { id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; geometryJson: Geometry | null }[];
+    let currentRoads: { id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; status?: string | null; geometryJson: Geometry | null }[];
     let comparisonMode: 'precise' | 'bbox';
 
     if (version.sourceExportId) {
@@ -755,7 +771,24 @@ export class ImportVersionService {
         console.log('[Import] Export contained', exportedRoadIds.length, 'roads');
 
         // Get roads by IDs from export record
-        currentRoads = await this.getRoadsByIds(exportedRoadIds);
+        const exportRoads = await this.getRoadsByIds(exportedRoadIds);
+
+        // IMPORTANT: Also check if any import file roads already exist in DB
+        // This handles the case where a road was added in a previous import but
+        // wasn't in the original export. Without this, it would always show as "added".
+        const importIdArray = Array.from(importIds);
+        const newIdsInImport = importIdArray.filter(id => !exportedRoadIds.includes(id));
+
+        if (newIdsInImport.length > 0) {
+          console.log('[Import] Checking', newIdsInImport.length, 'roads from import file that were not in original export');
+          const existingNewRoads = await this.getRoadsByIds(newIdsInImport);
+          console.log('[Import] Found', existingNewRoads.length, 'of them already in database');
+          // Merge: export roads + any import roads that already exist in DB
+          currentRoads = [...exportRoads, ...existingNewRoads];
+        } else {
+          currentRoads = exportRoads;
+        }
+
         comparisonMode = 'precise';
         console.log('[Import] Found', currentRoads.length, 'roads from export (some may have been deleted)');
       } else {
@@ -778,14 +811,29 @@ export class ImportVersionService {
     const updated: Feature[] = [];
     let unchanged = 0;
 
+    // Debug: log first few IDs from both sets with types and status
+    const importIdsList = importFeatures.slice(0, 5).map(f => ({ id: f.properties?.id, type: typeof f.properties?.id }));
+    const dbIdsList = currentRoads.slice(0, 5).map(r => ({ id: r.id, type: typeof r.id, status: r.status }));
+    console.log('[Import] Sample import IDs (with types):', importIdsList);
+    console.log('[Import] Sample DB roads (with types & status):', dbIdsList);
+    console.log('[Import] Import ID set size:', importIds.size, '- DB road map size:', currentRoadMap.size);
+
+    // Log any inactive roads in the comparison set
+    const inactiveRoads = currentRoads.filter(r => r.status === 'inactive');
+    if (inactiveRoads.length > 0) {
+      console.log('[Import] Found', inactiveRoads.length, 'inactive roads in comparison set:', inactiveRoads.map(r => r.id));
+    }
+
     // Check each import feature
     for (const feature of importFeatures) {
-      const id = feature.properties?.id;
-      if (!id) continue;
+      const rawId = feature.properties?.id;
+      if (!rawId) continue;
+      const id = String(rawId);  // Ensure string for consistent comparison
 
       const existing = currentRoadMap.get(id);
       if (!existing) {
-        // New road
+        // New road - log it for debugging
+        console.log('[Import] Road marked as ADDED (not in DB):', id);
         added.push(feature);
       } else {
         // Check if changed (properties or geometry)
@@ -806,9 +854,20 @@ export class ImportVersionService {
 
     // Roads in scope but not in import = will be deactivated
     // Always compute this for preview, but only actually deactivate if regionalRefresh is enabled
+    // IMPORTANT: Only show roads that are STILL ACTIVE as "deactivated"
+    // If a road was already deactivated in a previous import, don't show it again
     const deactivated: Feature[] = [];
     for (const road of currentRoads) {
-      if (!importIds.has(road.id)) {
+      const roadIdStr = String(road.id);  // Ensure string for consistent comparison
+      if (!importIds.has(roadIdStr)) {
+        // Only show as deactivated if the road is still active
+        // This prevents showing already-inactive roads as "removed" on repeated imports
+        if (road.status === 'inactive') {
+          console.log('[Import] Road', roadIdStr, 'already inactive, skipping from deactivated list');
+          continue;
+        }
+        // Debug: log deactivated road
+        console.log('[Import] Road marked as DEACTIVATED (not in import file):', roadIdStr);
         deactivated.push({
           type: 'Feature',
           geometry: null as unknown as Geometry, // Geometry would need to be fetched
@@ -1074,7 +1133,8 @@ export class ImportVersionService {
 
     // 5. Execute all DB operations in a transaction
     await db.transaction(async (tx) => {
-      // Process added features
+      // Process added features - use UPSERT to handle case where road already exists
+      // (e.g., added in a previous import but then re-imported with same file)
       for (const feature of diff.added) {
         const id = feature.properties?.id;
         if (!id) continue;
@@ -1099,10 +1159,23 @@ export class ImportVersionService {
             ${props.dataSource || version.defaultDataSource},
             ${now}
           )
+          ON CONFLICT (id) DO UPDATE SET
+            geometry = EXCLUDED.geometry,
+            name = COALESCE(EXCLUDED.name, road_assets.name),
+            name_ja = COALESCE(EXCLUDED.name_ja, road_assets.name_ja),
+            display_name = COALESCE(EXCLUDED.display_name, road_assets.display_name),
+            road_type = COALESCE(EXCLUDED.road_type, road_assets.road_type),
+            lanes = COALESCE(EXCLUDED.lanes, road_assets.lanes),
+            direction = COALESCE(EXCLUDED.direction, road_assets.direction),
+            status = 'active',
+            ward = COALESCE(EXCLUDED.ward, road_assets.ward),
+            data_source = COALESCE(EXCLUDED.data_source, road_assets.data_source),
+            updated_at = EXCLUDED.updated_at
         `);
       }
 
       // Process updated features (only those that actually changed)
+      // Also reactivate any inactive roads that are in the import file
       for (const feature of diff.updated) {
         const id = feature.properties?.id;
         if (!id) continue;
@@ -1117,13 +1190,19 @@ export class ImportVersionService {
               direction = COALESCE(${props.direction ?? null}, direction),
               ward = COALESCE(${props.ward ?? null}, ward),
               data_source = COALESCE(${props.dataSource ?? null}, data_source),
+              status = 'active',
               updated_at = ${now}
           WHERE id = ${id}
         `);
       }
 
-      // Process deactivated features (only if regionalRefresh is enabled)
-      if (version.regionalRefresh) {
+      // Process deactivated features
+      // - In PRECISE mode: always deactivate (we know exactly what was in the original export,
+      //   so missing roads were intentionally removed by the user)
+      // - In BBOX mode: only deactivate if regionalRefresh is enabled (safety feature)
+      const shouldDeactivate = diff.comparisonMode === 'precise' || version.regionalRefresh;
+      if (shouldDeactivate && diff.deactivated.length > 0) {
+        console.log(`[Import] Deactivating ${diff.deactivated.length} roads (mode: ${diff.comparisonMode}, regionalRefresh: ${version.regionalRefresh})`);
         for (const feature of diff.deactivated) {
           const id = feature.properties?.id;
           if (!id) continue;

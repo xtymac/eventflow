@@ -19,6 +19,7 @@ import {
   Pagination,
   Alert,
   Modal,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -65,6 +66,19 @@ function parseBboxScope(scope: string): GeoJSON.Polygon | null {
   };
 }
 
+/**
+ * Format scope string for compact display
+ * - "full" → "Full City"
+ * - "ward:Nishi" → "Nishi Ward"
+ * - "bbox:..." → "File bbox"
+ */
+function formatScopeDisplay(scope: string): string {
+  if (scope === 'full') return 'Full City';
+  if (scope.startsWith('ward:')) return `${scope.substring(5)} Ward`;
+  if (scope.startsWith('bbox:')) return 'File bbox';
+  return scope;
+}
+
 function getStatusColor(status: ImportVersion['status']): string {
   switch (status) {
     case 'draft':
@@ -100,6 +114,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     historicalViewContext,
     isImportPreviewMode,
     setHistoricalViewContext,
+    startImportPreview,
   } = useUIStore();
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
   const queryClient = useQueryClient();
@@ -186,17 +201,30 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   const handleViewOnMap = (version: ImportVersion, displayNumber: number) => {
     const geometry = parseBboxScope(version.importScope);
     if (geometry) {
-      setFlyToGeometry(geometry, false);
+      // Close sidebar to focus on map
+      closeImportExportSidebar();
+
+      // Create a feature for the scope area
+      const scopeFeature: GeoJSON.Feature = {
+        type: 'Feature',
+        geometry,
+        properties: {
+          id: 'scope-area',
+          name: `Import #${displayNumber}`,
+        },
+      };
+
       // Set highlight with label
       setImportAreaHighlight({
         geometry,
         label: `Import #${displayNumber}`,
       });
-      notifications.show({
-        title: 'Viewing import area',
-        message: `Version #${displayNumber}: ${version.importScope}`,
-        color: 'blue',
-      });
+
+      // Fly to the area
+      setFlyToGeometry(geometry, false);
+
+      // Start preview mode so the overlay shows
+      startImportPreview([scopeFeature], 0);
     } else {
       notifications.show({
         title: 'Cannot view on map',
@@ -334,7 +362,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                     {version.fileName}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {version.fileType.toUpperCase()} · {version.importScope}
+                    {version.fileType.toUpperCase()} · {formatScopeDisplay(version.importScope)}
                   </Text>
                 </Table.Td>
                 <Table.Td>
@@ -351,56 +379,60 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                 <Table.Td>
                   <Group gap="xs">
                     {version.importScope.startsWith('bbox:') && (
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        size="sm"
-                        onClick={() => handleViewOnMap(version, displayNumber)}
-                        title="View import area on map"
-                      >
-                        <IconMap size={14} />
-                      </ActionIcon>
+                      <Tooltip label="View import area on map" withArrow>
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="sm"
+                          onClick={() => handleViewOnMap(version, displayNumber)}
+                        >
+                          <IconMap size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     )}
 
                     {version.status === 'draft' && (
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        size="sm"
-                        onClick={() => handleDelete(version.id)}
-                        loading={deleteMutation.isPending}
-                        title="Delete draft"
-                      >
-                        <IconTrash size={14} />
-                      </ActionIcon>
+                      <Tooltip label="Delete draft" withArrow>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          onClick={() => handleDelete(version.id)}
+                          loading={deleteMutation.isPending}
+                        >
+                          <IconTrash size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     )}
 
                     {(version.status === 'published' || version.status === 'archived') && (
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        size="sm"
-                        onClick={() => {
-                          setViewingHistoryId(version.id);
-                          setViewingHistoryNumber(displayNumber);
-                        }}
-                        title="View changes from this import"
-                      >
-                        <IconEye size={14} />
-                      </ActionIcon>
+                      <Tooltip label="View changes from this import" withArrow>
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="sm"
+                          onClick={() => {
+                            setViewingHistoryId(version.id);
+                            setViewingHistoryNumber(displayNumber);
+                          }}
+                        >
+                          <IconEye size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     )}
 
                     {(version.status === 'published' || version.status === 'archived') && version.snapshotPath && (
-                      <ActionIcon
-                        variant="subtle"
-                        color="orange"
-                        size="sm"
-                        onClick={() => setRollbackVersionId(version.id)}
-                        disabled={!!rollbackJobId}
-                        title="Rollback to pre-publish state"
-                      >
-                        <IconArrowBack size={14} />
-                      </ActionIcon>
+                      <Tooltip label="Rollback to pre-publish state" withArrow>
+                        <ActionIcon
+                          variant="subtle"
+                          color="orange"
+                          size="sm"
+                          onClick={() => setRollbackVersionId(version.id)}
+                          disabled={!!rollbackJobId}
+                        >
+                          <IconArrowBack size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     )}
                   </Group>
                 </Table.Td>

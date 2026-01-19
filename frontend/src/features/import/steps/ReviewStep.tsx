@@ -60,6 +60,16 @@ interface FeatureProperties {
   [key: string]: unknown;
 }
 
+/**
+ * Format scope string for user-friendly display
+ */
+function formatScopeLabel(scope: string): string {
+  if (scope === 'full') return 'Full City';
+  if (scope.startsWith('ward:')) return `${scope.substring(5)} Ward`;
+  if (scope.startsWith('bbox:')) return 'Import file area';
+  return scope;
+}
+
 interface FeatureTableProps {
   features: Feature[];
   emptyMessage: string;
@@ -129,20 +139,27 @@ interface ChangeCountBadgeProps {
   count: number;
   label: string;
   color: string;
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
-function ChangeCountBadge({ icon, count, label, color }: ChangeCountBadgeProps) {
+function ChangeCountBadge({ icon, count, label, color, onClick, disabled }: ChangeCountBadgeProps) {
+  const isClickable = onClick && count > 0 && !disabled;
   return (
     <Stack align="center" gap={4}>
       <Paper
         withBorder
         p="sm"
         radius="md"
+        onClick={isClickable ? onClick : undefined}
         style={{
           borderColor: `var(--mantine-color-${color}-5)`,
           minWidth: 72,
           textAlign: 'center',
+          cursor: isClickable ? 'pointer' : 'default',
+          transition: 'transform 0.1s, box-shadow 0.1s',
         }}
+        className={isClickable ? 'change-count-badge-clickable' : undefined}
       >
         <Group justify="center" gap={4}>
           {icon}
@@ -222,20 +239,76 @@ export function ReviewStep() {
   };
 
   // Collect all modified features with geometry for preview
+  // Add _changeType property to indicate the type of change
   const getAllModifiedFeatures = (): Feature[] => {
     if (!diff) return [];
     const allFeatures: Feature[] = [];
     // Add in order: updated, added, deactivated
     for (const f of diff.updated) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'updated' },
+        });
+      }
     }
     for (const f of diff.added) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'added' },
+        });
+      }
     }
     for (const f of diff.deactivated) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'removed' },
+        });
+      }
     }
     return allFeatures;
+  };
+
+  // Get features by change type for preview
+  const getFeaturesByChangeType = (changeType: 'added' | 'updated' | 'removed'): Feature[] => {
+    if (!diff) return [];
+    const sourceArray = changeType === 'added' ? diff.added :
+                        changeType === 'updated' ? diff.updated :
+                        diff.deactivated;
+    return sourceArray
+      .filter((f) => f.geometry)
+      .map((f) => ({
+        ...f,
+        properties: { ...f.properties, _changeType: changeType },
+      }));
+  };
+
+  // Handle clicking on a change count badge
+  const handleChangeTypePreview = (changeType: 'added' | 'updated' | 'removed') => {
+    const features = getFeaturesByChangeType(changeType);
+    if (features.length === 0) {
+      notifications.show({
+        title: 'No features to preview',
+        message: `No ${changeType} roads with geometry`,
+        color: 'yellow',
+      });
+      return;
+    }
+    const firstFeature = features[0];
+    const props = firstFeature.properties as FeatureProperties | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    setImportAreaHighlight({
+      geometry: firstFeature.geometry!,
+      label,
+    });
+    // Use getAllModifiedFeatures but start at the first feature of this type
+    const allFeatures = getAllModifiedFeatures();
+    const startIndex = allFeatures.findIndex(
+      (f) => f.properties?._changeType === changeType
+    );
+    startImportPreview(allFeatures, startIndex >= 0 ? startIndex : 0);
   };
 
   const handleFeatureClick = (feature: Feature) => {
@@ -479,12 +552,14 @@ export function ReviewStep() {
                   count={diff.stats.addedCount}
                   label="Added"
                   color="green"
+                  onClick={() => handleChangeTypePreview('added')}
                 />
                 <ChangeCountBadge
                   icon={<IconPencil size={16} color="var(--mantine-color-blue-6)" />}
                   count={diff.stats.updatedCount}
                   label="Updated"
                   color="blue"
+                  onClick={() => handleChangeTypePreview('updated')}
                 />
                 <Tooltip
                   label={diff.regionalRefresh
@@ -500,6 +575,7 @@ export function ReviewStep() {
                       count={diff.stats.deactivatedCount}
                       label={diff.regionalRefresh ? "Removed" : "Removed (preview)"}
                       color={diff.regionalRefresh ? "orange" : "gray"}
+                      onClick={() => handleChangeTypePreview('removed')}
                     />
                   </div>
                 </Tooltip>
@@ -536,7 +612,7 @@ export function ReviewStep() {
               {/* Scope info - only show when bbox mode or when regional refresh is on */}
               {(diff.comparisonMode === 'bbox' || diff.regionalRefresh) && (
                 <Text size="xs" c="dimmed" ta="center" mt="sm">
-                  {diff.comparisonMode === 'bbox' && diff.scope !== 'full' && `Scope: ${diff.scope}`}
+                  {diff.comparisonMode === 'bbox' && diff.scope !== 'full' && `Scope: ${formatScopeLabel(diff.scope)}`}
                   {diff.regionalRefresh && (
                     <Text span c="orange" fw={500}>
                       {diff.comparisonMode === 'bbox' && diff.scope !== 'full' ? ' · ' : ''}Regional Refresh ON

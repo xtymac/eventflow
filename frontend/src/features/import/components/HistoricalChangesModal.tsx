@@ -160,18 +160,34 @@ export function HistoricalChangesModal({
   const diff = diffData?.data;
 
   // Collect all modified features with geometry for preview navigation
+  // Add _changeType property to indicate the type of change
   const getAllModifiedFeatures = (): Feature[] => {
     if (!diff) return [];
     const allFeatures: Feature[] = [];
     // Add in order: updated, added, deactivated
     for (const f of diff.updated) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'updated' },
+        });
+      }
     }
     for (const f of diff.added) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'added' },
+        });
+      }
     }
     for (const f of diff.deactivated) {
-      if (f.geometry) allFeatures.push(f);
+      if (f.geometry) {
+        allFeatures.push({
+          ...f,
+          properties: { ...f.properties, _changeType: 'removed' },
+        });
+      }
     }
     return allFeatures;
   };

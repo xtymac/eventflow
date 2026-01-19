@@ -180,6 +180,10 @@ export function MapView() {
     // Filter state
     eventFilters,
     assetFilters,
+    // Import preview mode
+    isImportPreviewMode,
+    importPreviewFeatures,
+    importPreviewIndex,
   } = useUIStore();
 
   // Search store for map search marker
@@ -1085,6 +1089,19 @@ export function MapView() {
           'line-color': '#dc2626',
           'line-width': 2.5,
           'line-opacity': 0.8,
+        },
+      });
+
+      // Selected asset line layer (for LineString geometries - roads)
+      map.current.addLayer({
+        id: 'selected-asset-line',
+        type: 'line',
+        source: 'selected-asset',
+        filter: ['==', '$type', 'LineString'],
+        paint: {
+          'line-color': '#3b82f6', // Blue highlight
+          'line-width': 6,
+          'line-opacity': 0.9,
         },
       });
 
@@ -3019,6 +3036,125 @@ export function MapView() {
 
     return () => clearTimeout(timeout);
   }, [importAreaHighlight, mapLoaded, setImportAreaHighlight]);
+
+  // Import preview ghost layer - shows all changed features as semi-transparent overlay
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const sourceId = 'import-preview-ghost';
+    const addedLayerId = 'import-preview-ghost-added';
+    const updatedLayerId = 'import-preview-ghost-updated';
+    const removedLayerId = 'import-preview-ghost-removed';
+    const currentHighlightLayerId = 'import-preview-current-highlight';
+
+    // Helper to clean up layers
+    const cleanupLayers = () => {
+      [currentHighlightLayerId, addedLayerId, updatedLayerId, removedLayerId].forEach(layerId => {
+        if (map.current?.getLayer(layerId)) {
+          map.current.removeLayer(layerId);
+        }
+      });
+      if (map.current?.getSource(sourceId)) {
+        map.current.removeSource(sourceId);
+      }
+    };
+
+    // If not in preview mode or no features, clean up
+    if (!isImportPreviewMode || importPreviewFeatures.length === 0) {
+      cleanupLayers();
+      return;
+    }
+
+    // Build GeoJSON with all features, tagging by change type
+    const geojsonData: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: importPreviewFeatures.map((feature, idx) => ({
+        type: 'Feature' as const,
+        geometry: feature.geometry,
+        properties: {
+          ...feature.properties,
+          _isCurrentPreview: idx === importPreviewIndex,
+        },
+      })),
+    };
+
+    // Create or update source
+    const existingSource = map.current.getSource(sourceId) as maplibregl.GeoJSONSource | undefined;
+
+    if (existingSource) {
+      existingSource.setData(geojsonData);
+    } else {
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: geojsonData,
+      });
+
+      // Ghost layer for ADDED features (green)
+      map.current.addLayer({
+        id: addedLayerId,
+        type: 'line',
+        source: sourceId,
+        filter: ['all',
+          ['==', ['get', '_changeType'], 'added'],
+          ['!=', ['get', '_isCurrentPreview'], true],
+        ],
+        paint: {
+          'line-color': '#22c55e',
+          'line-width': 4,
+          'line-opacity': 0.4,
+        },
+      });
+
+      // Ghost layer for UPDATED features (blue)
+      map.current.addLayer({
+        id: updatedLayerId,
+        type: 'line',
+        source: sourceId,
+        filter: ['all',
+          ['==', ['get', '_changeType'], 'updated'],
+          ['!=', ['get', '_isCurrentPreview'], true],
+        ],
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 4,
+          'line-opacity': 0.4,
+        },
+      });
+
+      // Ghost layer for REMOVED features (orange)
+      map.current.addLayer({
+        id: removedLayerId,
+        type: 'line',
+        source: sourceId,
+        filter: ['all',
+          ['==', ['get', '_changeType'], 'removed'],
+          ['!=', ['get', '_isCurrentPreview'], true],
+        ],
+        paint: {
+          'line-color': '#f97316',
+          'line-width': 4,
+          'line-opacity': 0.4,
+        },
+      });
+
+      // Current preview highlight (brighter, wider) - always blue
+      map.current.addLayer({
+        id: currentHighlightLayerId,
+        type: 'line',
+        source: sourceId,
+        filter: ['==', ['get', '_isCurrentPreview'], true],
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 8,
+          'line-opacity': 0.9,
+        },
+      });
+    }
+
+    return () => {
+      // Don't clean up on every re-render, only when preview mode ends
+    };
+  }, [isImportPreviewMode, importPreviewFeatures, importPreviewIndex, mapLoaded]);
 
   // Sync bbox to uiStore when mapBbox changes
   useEffect(() => {
