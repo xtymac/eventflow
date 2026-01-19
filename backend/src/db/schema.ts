@@ -252,12 +252,18 @@ export const importVersions = pgTable('import_versions', {
   publishedAt: timestamp('published_at', { withTimezone: true }),
   publishedBy: varchar('published_by', { length: 100 }),
   archivedAt: timestamp('archived_at', { withTimezone: true }),
+  rolledBackAt: timestamp('rolled_back_at', { withTimezone: true }),
 
   // Rollback support
   snapshotPath: varchar('snapshot_path', { length: 500 }),
 
   // Historical diff (saved at publish time for viewing changes later)
   diffPath: varchar('diff_path', { length: 500 }),
+
+  // Publish stats (for timeline display)
+  addedCount: integer('added_count'),
+  updatedCount: integer('updated_count'),
+  deactivatedCount: integer('deactivated_count'),
 
   // Notes
   notes: text('notes'),

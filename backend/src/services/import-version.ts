@@ -1220,7 +1220,7 @@ export class ImportVersionService {
         .set({ status: 'archived', archivedAt: now })
         .where(and(eq(importVersions.status, 'published'), not(eq(importVersions.id, versionId))));
 
-      // Update version to published
+      // Update version to published with stats for timeline display
       await tx
         .update(importVersions)
         .set({
@@ -1229,6 +1229,10 @@ export class ImportVersionService {
           publishedBy: publishedBy || null,
           snapshotPath,
           diffPath,
+          // Save stats for timeline display
+          addedCount: diff.stats.addedCount,
+          updatedCount: diff.stats.updatedCount,
+          deactivatedCount: diff.stats.deactivatedCount,
         })
         .where(eq(importVersions.id, versionId));
     });
@@ -1310,22 +1314,36 @@ export class ImportVersionService {
       restored++;
     }
 
-    // Delete versions with higher version numbers (to reset version counter)
-    // This allows subsequent imports to continue from this version's number
-    console.log('[Rollback] Deleting versions with versionNumber >', version.versionNumber);
-    const deleteResult = await db
-      .delete(importVersions)
-      .where(gt(importVersions.versionNumber, version.versionNumber))
+    // Soft delete: Mark versions with higher version numbers as 'rolled_back'
+    // This keeps them visible in the timeline for historical reference
+    console.log('[Rollback] Marking versions as rolled_back with versionNumber >', version.versionNumber);
+    const rolledBackResult = await db
+      .update(importVersions)
+      .set({
+        status: 'rolled_back',
+        rolledBackAt: now,
+      })
+      .where(
+        and(
+          gt(importVersions.versionNumber, version.versionNumber),
+          not(eq(importVersions.status, 'rolled_back')) // Don't re-mark already rolled back versions
+        )
+      )
       .returning({ id: importVersions.id, versionNumber: importVersions.versionNumber });
-    console.log('[Rollback] Deleted versions:', deleteResult);
+    console.log('[Rollback] Marked as rolled_back:', rolledBackResult);
 
-    // Archive other published versions
+    // Archive other published versions (those not being rolled back)
     await db
       .update(importVersions)
       .set({ status: 'archived', archivedAt: now })
-      .where(and(eq(importVersions.status, 'published'), not(eq(importVersions.id, versionId))));
+      .where(
+        and(
+          eq(importVersions.status, 'published'),
+          not(eq(importVersions.id, versionId))
+        )
+      );
 
-    // Set target version as published
+    // Set target version as published (restore it)
     await db
       .update(importVersions)
       .set({ status: 'published', publishedAt: now })

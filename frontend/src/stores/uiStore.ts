@@ -137,6 +137,13 @@ interface UIState {
   // Historical view context (to restore modal after preview)
   historicalViewContext: { versionId: string; displayNumber: number } | null;
 
+  // Last rollback info (temporary notification for timeline)
+  lastRollbackInfo: {
+    fromVersionNumber: number;
+    toVersionNumber: number;
+    timestamp: Date;
+  } | null;
+
   // Actions
   selectEvent: (id: string | null) => void;
   selectAsset: (id: string | null, geometry?: Geometry | null) => void;
@@ -242,6 +249,10 @@ interface UIState {
   previousImportPreview: () => void;  // Go to previous feature
   endImportPreview: () => void;  // Restore wizard
   setHistoricalViewContext: (context: { versionId: string; displayNumber: number } | null) => void;
+
+  // Rollback notification actions
+  setLastRollbackInfo: (info: { fromVersionNumber: number; toVersionNumber: number; timestamp: Date } | null) => void;
+  clearRollbackInfo: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -355,6 +366,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   importPreviewIndex: 0,
   importPreviewLabel: null,
   historicalViewContext: null,
+
+  // Last rollback info (temporary notification)
+  lastRollbackInfo: null,
 
   selectEvent: (id) => set({
     selectedEventId: id,
@@ -797,4 +811,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   })),
 
   setHistoricalViewContext: (context) => set({ historicalViewContext: context }),
+
+  // Rollback notification actions
+  setLastRollbackInfo: (info) => set({ lastRollbackInfo: info }),
+  clearRollbackInfo: () => set({ lastRollbackInfo: null }),
 }));

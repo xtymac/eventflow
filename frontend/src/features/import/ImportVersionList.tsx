@@ -4,7 +4,7 @@
  * Displays list of all import versions with status and actions.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Stack,
   Text,
@@ -20,6 +20,7 @@ import {
   Alert,
   Modal,
   Tooltip,
+  SegmentedControl,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -29,6 +30,8 @@ import {
   IconInfoCircle,
   IconMap,
   IconEye,
+  IconList,
+  IconTimeline,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -42,6 +45,7 @@ import {
 import { useUIStore } from '../../stores/uiStore';
 import { useMapStore } from '../../stores/mapStore';
 import { HistoricalChangesModal } from './components/HistoricalChangesModal';
+import { ImportVersionTimeline } from './components/ImportVersionTimeline';
 
 const PAGE_SIZE = 10;
 
@@ -87,6 +91,8 @@ function getStatusColor(status: ImportVersion['status']): string {
       return 'green';
     case 'archived':
       return 'orange';
+    case 'rolled_back':
+      return 'gray';
     default:
       return 'gray';
   }
@@ -115,6 +121,9 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     isImportPreviewMode,
     setHistoricalViewContext,
     startImportPreview,
+    lastRollbackInfo,
+    setLastRollbackInfo,
+    clearRollbackInfo,
   } = useUIStore();
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
   const queryClient = useQueryClient();
@@ -122,6 +131,10 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   const [page, setPage] = useState(1);
   const [rollbackVersionId, setRollbackVersionId] = useState<string | null>(null);
   const [rollbackJobId, setRollbackJobId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline'); // Timeline is default
+
+  // Track pending rollback info to set after rollback completes
+  const pendingRollbackInfoRef = useRef<{ fromVersionNumber: number; toVersionNumber: number } | null>(null);
 
   // State for viewing historical changes
   const [viewingHistoryId, setViewingHistoryId] = useState<string | null>(null);
@@ -156,6 +169,17 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
       // Invalidate all relevant caches after rollback
       queryClient.invalidateQueries({ queryKey: ['import-versions'] });
       queryClient.invalidateQueries({ queryKey: ['assets'] });  // Road data changed
+
+      // Set rollback notification for timeline
+      if (pendingRollbackInfoRef.current) {
+        setLastRollbackInfo({
+          fromVersionNumber: pendingRollbackInfoRef.current.fromVersionNumber,
+          toVersionNumber: pendingRollbackInfoRef.current.toVersionNumber,
+          timestamp: new Date(),
+        });
+        pendingRollbackInfoRef.current = null;
+      }
+
       notifications.show({
         title: 'Rollback successful',
         message: 'Roads have been restored to the previous state',
@@ -165,6 +189,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     onError: (job: ImportJob) => {
       setRollbackJobId(null);
       setRollbackVersionId(null);
+      pendingRollbackInfoRef.current = null;
       notifications.show({
         title: 'Rollback failed',
         message: job.errorMessage || 'Unknown error',
@@ -237,11 +262,32 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   const handleRollback = async () => {
     if (!rollbackVersionId) return;
 
+    // Find current published version number and target version number
+    const currentPublished = data?.data?.find((v) => v.status === 'published');
+    const targetVersion = data?.data?.find((v) => v.id === rollbackVersionId);
+
+    if (currentPublished && targetVersion) {
+      // Calculate display numbers (versions are sorted newest-first)
+      const allNonDraft = (data?.data ?? []).filter((v) => v.status !== 'draft');
+      const currentIndex = allNonDraft.findIndex((v) => v.id === currentPublished.id);
+      const targetIndex = allNonDraft.findIndex((v) => v.id === targetVersion.id);
+      const nonDraftTotal = allNonDraft.length;
+
+      const currentDisplayNumber = nonDraftTotal - currentIndex;
+      const targetDisplayNumber = nonDraftTotal - targetIndex;
+
+      pendingRollbackInfoRef.current = {
+        fromVersionNumber: currentDisplayNumber,
+        toVersionNumber: targetDisplayNumber,
+      };
+    }
+
     try {
       const job = await rollbackMutation.mutateAsync(rollbackVersionId);
       setRollbackJobId(job.id);
     } catch (error) {
       setRollbackVersionId(null);
+      pendingRollbackInfoRef.current = null;
       notifications.show({
         title: 'Rollback failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -284,25 +330,47 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
       {!compact && (
         <Group justify="space-between">
           <Text fw={600}>Import History</Text>
-          <Button
-            leftSection={<IconUpload size={16} />}
-            onClick={handleNewImport}
-            size="sm"
-          >
-            New Import
-          </Button>
+          <Group gap="sm">
+            <SegmentedControl
+              size="xs"
+              value={viewMode}
+              onChange={(v) => setViewMode(v as 'timeline' | 'table')}
+              data={[
+                { value: 'timeline', label: <IconTimeline size={14} /> },
+                { value: 'table', label: <IconList size={14} /> },
+              ]}
+            />
+            <Button
+              leftSection={<IconUpload size={16} />}
+              onClick={handleNewImport}
+              size="sm"
+            >
+              New Import
+            </Button>
+          </Group>
         </Group>
       )}
 
       {/* Show "New Import" as inline button in compact mode */}
       {compact && (
-        <Button
-          onClick={handleNewImport}
-          leftSection={<IconUpload size={16} />}
-          fullWidth
-        >
-          New Import
-        </Button>
+        <Group gap="xs" mb="xs">
+          <Button
+            onClick={handleNewImport}
+            leftSection={<IconUpload size={16} />}
+            style={{ flex: 1 }}
+          >
+            New Import
+          </Button>
+          <SegmentedControl
+            size="xs"
+            value={viewMode}
+            onChange={(v) => setViewMode(v as 'timeline' | 'table')}
+            data={[
+              { value: 'timeline', label: <IconTimeline size={14} /> },
+              { value: 'table', label: <IconList size={14} /> },
+            ]}
+          />
+        </Group>
       )}
 
       {!compact && (
@@ -312,16 +380,38 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
         </Alert>
       )}
 
-      {rollbackJobId && (
-        <Alert color="blue" variant="light">
-          <Group gap="sm">
-            <Loader size="sm" />
-            <Text size="sm">Rolling back to previous version...</Text>
-          </Group>
-        </Alert>
+      {/* Timeline View */}
+      {viewMode === 'timeline' && (
+        <Card withBorder padding="md" style={compact ? { flex: 1, overflow: 'auto' } : undefined}>
+          <ImportVersionTimeline
+            versions={versions}
+            onViewChanges={(version, displayNumber) => {
+              setViewingHistoryId(version.id);
+              setViewingHistoryNumber(displayNumber);
+            }}
+            onViewOnMap={handleViewOnMap}
+            onRollback={(versionId) => setRollbackVersionId(versionId)}
+            rollbackJobId={rollbackJobId}
+            rollbackInfo={lastRollbackInfo}
+            onClearRollbackInfo={clearRollbackInfo}
+            totalNonDraft={nonDraftTotal}
+            page={page}
+            pageSize={PAGE_SIZE}
+          />
+        </Card>
       )}
 
+      {/* Table View */}
+      {viewMode === 'table' && (
       <Card withBorder padding={0} style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
+        {rollbackJobId && (
+          <Alert color="blue" variant="light" m="sm">
+            <Group gap="sm">
+              <Loader size="sm" />
+              <Text size="sm">Rolling back to previous version...</Text>
+            </Group>
+          </Alert>
+        )}
         <Table striped highlightOnHover style={{ minWidth: 600 }}>
           <Table.Thead>
             <Table.Tr>
@@ -405,7 +495,8 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                       </Tooltip>
                     )}
 
-                    {(version.status === 'published' || version.status === 'archived') && (
+                    {/* View changes - for published, archived, and rolled_back */}
+                    {(version.status === 'published' || version.status === 'archived' || version.status === 'rolled_back') && (
                       <Tooltip label="View changes from this import" withArrow>
                         <ActionIcon
                           variant="subtle"
@@ -421,8 +512,9 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                       </Tooltip>
                     )}
 
-                    {(version.status === 'published' || version.status === 'archived') && version.snapshotPath && (
-                      <Tooltip label="Rollback to pre-publish state" withArrow>
+                    {/* Rollback - only for archived versions (not rolled_back or published) */}
+                    {version.status === 'archived' && version.snapshotPath && (
+                      <Tooltip label="Rollback to this version" withArrow>
                         <ActionIcon
                           variant="subtle"
                           color="orange"
@@ -452,6 +544,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
           </Table.Tbody>
         </Table>
       </Card>
+      )}
 
       {totalPages > 1 && (
         <Group justify="center">

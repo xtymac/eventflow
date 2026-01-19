@@ -30,7 +30,7 @@ import {
   IconInfoCircle,
   IconMap,
 } from '@tabler/icons-react';
-import { useHistoricalDiff, type DiffResult } from '../../../hooks/useImportVersions';
+import { useHistoricalDiff } from '../../../hooks/useImportVersions';
 import { useUIStore } from '../../../stores/uiStore';
 import { useMapStore } from '../../../stores/mapStore';
 import type { Feature } from 'geojson';

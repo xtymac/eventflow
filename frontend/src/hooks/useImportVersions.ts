@@ -32,7 +32,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export interface ImportVersion {
   id: string;
   versionNumber: number;
-  status: 'draft' | 'published' | 'archived';
+  status: 'draft' | 'published' | 'archived' | 'rolled_back';
   fileName: string;
   fileType: 'geojson' | 'geopackage';
   filePath: string;
@@ -48,10 +48,15 @@ export interface ImportVersion {
   publishedAt: string | null;
   publishedBy: string | null;
   archivedAt: string | null;
+  rolledBackAt: string | null;  // When this version was rolled back (soft deleted)
   snapshotPath: string | null;
   diffPath: string | null;
   notes: string | null;
   sourceExportId: string | null;  // Links to export_records for precise comparison
+  // Stats for timeline display (populated at publish time)
+  addedCount: number | null;
+  updatedCount: number | null;
+  deactivatedCount: number | null;
 }
 
 export interface ImportJob {
