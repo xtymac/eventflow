@@ -118,3 +118,19 @@ body {
 .tabs-scroll-container {
   -ms-overflow-style: none; /* IE/Edge */
 }
+
+/* Timeline card hover effect */
+.timeline-card-clickable:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline action links */
+.timeline-action-link:hover {
+  color: var(--mantine-color-blue-6) !important;
+}
+
+/* Change count badge hover effect */
+.change-count-badge-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
