@@ -26,6 +26,7 @@ function getSidebarWidth(): number {
 
 export function ImportPreviewOverlay() {
   const isImportPreviewMode = useUIStore((s) => s.isImportPreviewMode);
+  const isHistoricalPreviewMode = useUIStore((s) => s.isHistoricalPreviewMode);
   const importPreviewLabel = useUIStore((s) => s.importPreviewLabel);
   const importPreviewFeatures = useUIStore((s) => s.importPreviewFeatures);
   const importPreviewIndex = useUIStore((s) => s.importPreviewIndex);
@@ -41,6 +42,8 @@ export function ImportPreviewOverlay() {
   // Determine if we're in import wizard mode or historical view mode
   const isImportWizardMode = !!currentImportVersionId;
 
+  // Don't show overlay in historical preview mode (sidebar handles navigation)
+  if (isHistoricalPreviewMode) return null;
   if (!isImportPreviewMode || importPreviewFeatures.length === 0) return null;
 
   const currentFeature = importPreviewFeatures[importPreviewIndex];

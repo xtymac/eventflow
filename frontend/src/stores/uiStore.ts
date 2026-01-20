@@ -119,6 +119,7 @@ interface UIState {
 
   // Import/Export sidebar state
   isImportExportSidebarOpen: boolean;
+  importExportActiveTab: 'import' | 'export';
 
   // Map bounds for export scope (separate from mapBbox for viewport filtering)
   mapBounds: { north: number; south: number; east: number; west: number } | null;
@@ -136,6 +137,11 @@ interface UIState {
 
   // Historical view context (to restore modal after preview)
   historicalViewContext: { versionId: string; displayNumber: number } | null;
+
+  // Historical preview mode (persistent full-screen map with right sidebar showing changes)
+  isHistoricalPreviewMode: boolean;
+  historicalPreviewVersionId: string | null;
+  historicalPreviewDisplayNumber: number;
 
   // Last rollback info (temporary notification for timeline)
   lastRollbackInfo: {
@@ -232,6 +238,7 @@ interface UIState {
   openImportExportSidebar: () => void;
   closeImportExportSidebar: () => void;
   toggleImportExportSidebar: () => void;
+  setImportExportActiveTab: (tab: 'import' | 'export') => void;
 
   // Map bounds action
   setMapBounds: (bounds: { north: number; south: number; east: number; west: number } | null) => void;
@@ -253,6 +260,10 @@ interface UIState {
   // Rollback notification actions
   setLastRollbackInfo: (info: { fromVersionNumber: number; toVersionNumber: number; timestamp: Date } | null) => void;
   clearRollbackInfo: () => void;
+
+  // Historical preview mode actions (persistent full-screen map with sidebar)
+  enterHistoricalPreview: (versionId: string, displayNumber: number, features: Feature[]) => void;
+  exitHistoricalPreview: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -351,6 +362,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // Import/Export sidebar state
   isImportExportSidebarOpen: false,
+  importExportActiveTab: 'export',  // Default to export tab
 
   // Map bounds for export scope
   mapBounds: null,
@@ -366,6 +378,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   importPreviewIndex: 0,
   importPreviewLabel: null,
   historicalViewContext: null,
+
+  // Historical preview mode (persistent full-screen map with right sidebar)
+  isHistoricalPreviewMode: false,
+  historicalPreviewVersionId: null,
+  historicalPreviewDisplayNumber: 0,
 
   // Last rollback info (temporary notification)
   lastRollbackInfo: null,
@@ -721,6 +738,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   openImportExportSidebar: () => set({ isImportExportSidebarOpen: true }),
   closeImportExportSidebar: () => set({ isImportExportSidebarOpen: false }),
   toggleImportExportSidebar: () => set((state) => ({ isImportExportSidebarOpen: !state.isImportExportSidebarOpen })),
+  setImportExportActiveTab: (tab) => set({ importExportActiveTab: tab }),
 
   // Map bounds action
   setMapBounds: (bounds) => set({ mapBounds: bounds }),
@@ -815,4 +833,40 @@ export const useUIStore = create<UIState>((set, get) => ({
   // Rollback notification actions
   setLastRollbackInfo: (info) => set({ lastRollbackInfo: info }),
   clearRollbackInfo: () => set({ lastRollbackInfo: null }),
+
+  // Historical preview mode actions (persistent full-screen map with sidebar)
+  enterHistoricalPreview: (versionId, displayNumber, features) => {
+    if (features.length === 0) return;
+    const feature = features[0];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    set({
+      isHistoricalPreviewMode: true,
+      historicalPreviewVersionId: versionId,
+      historicalPreviewDisplayNumber: displayNumber,
+      isImportPreviewMode: true,
+      importPreviewFeatures: features,
+      importPreviewIndex: 0,
+      importPreviewLabel: label,
+      isImportExportSidebarOpen: false,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    });
+  },
+
+  exitHistoricalPreview: () => set((state) => ({
+    isHistoricalPreviewMode: false,
+    isImportPreviewMode: false,
+    importPreviewFeatures: [],
+    importPreviewIndex: 0,
+    importPreviewLabel: null,
+    isImportExportSidebarOpen: true,
+    // Preserve context so the modal can be restored
+    historicalViewContext: state.historicalPreviewVersionId ? {
+      versionId: state.historicalPreviewVersionId,
+      displayNumber: state.historicalPreviewDisplayNumber,
+    } : null,
+    historicalPreviewVersionId: null,
+    historicalPreviewDisplayNumber: 0,
+  })),
 }));

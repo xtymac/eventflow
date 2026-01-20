@@ -20,6 +20,8 @@ const MAX_WIDTH = 700;
 export function ImportExportSidebar() {
   const isOpen = useUIStore((s) => s.isImportExportSidebarOpen);
   const close = useUIStore((s) => s.closeImportExportSidebar);
+  const activeTab = useUIStore((s) => s.importExportActiveTab);
+  const setActiveTab = useUIStore((s) => s.setImportExportActiveTab);
 
   // Resize state
   const [width, setWidth] = useState(() => {
@@ -98,7 +100,11 @@ export function ImportExportSidebar() {
           </ActionIcon>
         </Group>
 
-        <Tabs defaultValue="export" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(value) => setActiveTab(value as 'import' | 'export')}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+        >
           <Tabs.List>
             <Tabs.Tab value="export" leftSection={<IconDownload size={16} />}>
               Export

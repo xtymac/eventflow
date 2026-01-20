@@ -2,9 +2,10 @@
  * Import Version List Component
  *
  * Displays list of all import versions with status and actions.
+ * Clicking a version triggers one-click preview mode on the map.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Stack,
   Text,
@@ -39,13 +40,14 @@ import {
   useDeleteImportVersion,
   useRollbackVersion,
   useImportJobPolling,
+  useHistoricalDiff,
   type ImportVersion,
   type ImportJob,
 } from '../../hooks/useImportVersions';
 import { useUIStore } from '../../stores/uiStore';
 import { useMapStore } from '../../stores/mapStore';
-import { HistoricalChangesModal } from './components/HistoricalChangesModal';
 import { ImportVersionTimeline } from './components/ImportVersionTimeline';
+import type { Feature } from 'geojson';
 
 const PAGE_SIZE = 10;
 
@@ -117,13 +119,11 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     openImportWizard,
     setFlyToGeometry,
     closeImportExportSidebar,
-    historicalViewContext,
-    isImportPreviewMode,
-    setHistoricalViewContext,
     startImportPreview,
     lastRollbackInfo,
     setLastRollbackInfo,
     clearRollbackInfo,
+    enterHistoricalPreview,
   } = useUIStore();
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
   const queryClient = useQueryClient();
@@ -133,23 +133,74 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   const [rollbackJobId, setRollbackJobId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline'); // Timeline is default
 
+  // Pending preview state - when user clicks to preview, we fetch diff first
+  const [pendingPreviewVersionId, setPendingPreviewVersionId] = useState<string | null>(null);
+  const [pendingPreviewDisplayNumber, setPendingPreviewDisplayNumber] = useState<number>(0);
+
   // Track pending rollback info to set after rollback completes
   const pendingRollbackInfoRef = useRef<{ fromVersionNumber: number; toVersionNumber: number } | null>(null);
 
-  // State for viewing historical changes
-  const [viewingHistoryId, setViewingHistoryId] = useState<string | null>(null);
-  const [viewingHistoryNumber, setViewingHistoryNumber] = useState<number>(0);
+  // Fetch diff for pending preview
+  const { data: diffData, isLoading: isDiffLoading } = useHistoricalDiff(pendingPreviewVersionId);
 
-  // Restore historical changes modal when preview ends
+  // Enter preview mode when diff is loaded
   useEffect(() => {
-    if (!isImportPreviewMode && historicalViewContext) {
-      // Preview ended, restore the modal
-      setViewingHistoryId(historicalViewContext.versionId);
-      setViewingHistoryNumber(historicalViewContext.displayNumber);
-      // Clear the context
-      setHistoricalViewContext(null);
+    if (pendingPreviewVersionId && diffData?.data && !isDiffLoading) {
+      const diff = diffData.data;
+      // Build features array from diff
+      const allFeatures: Feature[] = [];
+      for (const f of diff.updated) {
+        if (f.geometry) {
+          allFeatures.push({
+            ...f,
+            properties: { ...f.properties, _changeType: 'updated' },
+          });
+        }
+      }
+      for (const f of diff.added) {
+        if (f.geometry) {
+          allFeatures.push({
+            ...f,
+            properties: { ...f.properties, _changeType: 'added' },
+          });
+        }
+      }
+      for (const f of diff.deactivated) {
+        if (f.geometry) {
+          allFeatures.push({
+            ...f,
+            properties: { ...f.properties, _changeType: 'removed' },
+          });
+        }
+      }
+
+      if (allFeatures.length === 0) {
+        notifications.show({
+          title: 'No changes to preview',
+          message: 'No roads were modified in this import',
+          color: 'yellow',
+        });
+        setPendingPreviewVersionId(null);
+        return;
+      }
+
+      // Set highlight for first feature
+      const firstFeature = allFeatures[0];
+      const props = firstFeature.properties as { name?: string; id?: string } | null;
+      const label = props?.name || props?.id || 'Unnamed Road';
+      setImportAreaHighlight({
+        geometry: firstFeature.geometry!,
+        label,
+      });
+
+      // Enter historical preview mode
+      enterHistoricalPreview(pendingPreviewVersionId, pendingPreviewDisplayNumber, allFeatures);
+      closeImportExportSidebar();
+
+      // Clear pending state
+      setPendingPreviewVersionId(null);
     }
-  }, [isImportPreviewMode, historicalViewContext, setHistoricalViewContext]);
+  }, [pendingPreviewVersionId, diffData, isDiffLoading, pendingPreviewDisplayNumber, enterHistoricalPreview, closeImportExportSidebar, setImportAreaHighlight]);
 
   // Queries - fetch more to account for filtered drafts
   const { data, isLoading, error } = useImportVersions({
@@ -296,6 +347,12 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     }
   };
 
+  const handleViewDetails = (version: ImportVersion, displayNumber: number) => {
+    // Directly trigger preview mode by fetching diff
+    setPendingPreviewVersionId(version.id);
+    setPendingPreviewDisplayNumber(displayNumber);
+  };
+
   // Find current published version (may be used for future highlighting)
   const _currentPublishedId = data?.data?.find((v) => v.status === 'published')?.id;
   void _currentPublishedId; // Intentionally unused for now
@@ -324,6 +381,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   // Only show pagination if we have more than one page worth of data
   const totalPages = nonDraftTotal > PAGE_SIZE ? Math.ceil(nonDraftTotal / PAGE_SIZE) : 1;
 
+  // --- Render List View ---
   return (
     <Stack gap="md" style={compact ? { height: '100%', display: 'flex', flexDirection: 'column' } : undefined}>
       {/* Only show header when not in compact mode */}
@@ -380,16 +438,22 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
         </Alert>
       )}
 
+      {/* Loading overlay when fetching diff for preview */}
+      {isDiffLoading && pendingPreviewVersionId && (
+        <Alert color="blue" variant="light">
+          <Group gap="sm">
+            <Loader size="sm" />
+            <Text size="sm">Loading preview...</Text>
+          </Group>
+        </Alert>
+      )}
+
       {/* Timeline View */}
       {viewMode === 'timeline' && (
-        <Card withBorder padding="md" style={compact ? { flex: 1, overflow: 'auto' } : undefined}>
+        <Card withBorder padding="md" style={compact ? { flex: 1, overflowY: 'auto', overflowX: 'hidden' } : undefined}>
           <ImportVersionTimeline
             versions={versions}
-            onViewChanges={(version, displayNumber) => {
-              setViewingHistoryId(version.id);
-              setViewingHistoryNumber(displayNumber);
-            }}
-            onViewOnMap={handleViewOnMap}
+            onViewChanges={handleViewDetails}
             onRollback={(versionId) => setRollbackVersionId(versionId)}
             rollbackJobId={rollbackJobId}
             rollbackInfo={lastRollbackInfo}
@@ -403,147 +467,141 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
 
       {/* Table View */}
       {viewMode === 'table' && (
-      <Card withBorder padding={0} style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
-        {rollbackJobId && (
-          <Alert color="blue" variant="light" m="sm">
-            <Group gap="sm">
-              <Loader size="sm" />
-              <Text size="sm">Rolling back to previous version...</Text>
-            </Group>
-          </Alert>
-        )}
-        <Table striped highlightOnHover style={{ minWidth: 600 }}>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th style={{ width: 60 }}>Version</Table.Th>
-              <Table.Th style={{ minWidth: 200 }}>File</Table.Th>
-              <Table.Th style={{ width: 80 }}>Status</Table.Th>
-              <Table.Th style={{ width: 70 }}>Features</Table.Th>
-              <Table.Th style={{ width: 80 }}>Uploaded</Table.Th>
-              <Table.Th style={{ width: 80 }}>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {versions.map((version, index) => {
-              // Calculate sequential display number (oldest = 1, newest = total)
-              // Versions are sorted newest-first, so we reverse the numbering
-              const displayNumber = nonDraftTotal - ((page - 1) * PAGE_SIZE) - index;
-              return (
-              <Table.Tr key={version.id}>
-                <Table.Td>
-                  <Text size="sm" fw={500}>#{displayNumber}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text
-                    size="sm"
-                    title={(version.status === 'published' || version.status === 'archived')
-                      ? `${version.fileName} - Click to view changes`
-                      : version.fileName}
-                    style={(version.status === 'published' || version.status === 'archived')
-                      ? { cursor: 'pointer' }
-                      : undefined}
-                    onClick={(version.status === 'published' || version.status === 'archived')
-                      ? () => {
-                          setViewingHistoryId(version.id);
-                          setViewingHistoryNumber(displayNumber);
-                        }
-                      : undefined}
-                  >
-                    {version.fileName}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    {version.fileType.toUpperCase()} · {formatScopeDisplay(version.importScope)}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Badge color={getStatusColor(version.status)} size="sm" style={{ minWidth: 70 }}>
-                    {version.status}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">{version.featureCount.toLocaleString()}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">{formatDate(version.uploadedAt)}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Group gap="xs">
-                    {version.importScope.startsWith('bbox:') && (
-                      <Tooltip label="View import area on map" withArrow>
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
-                          size="sm"
-                          onClick={() => handleViewOnMap(version, displayNumber)}
-                        >
-                          <IconMap size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-
-                    {version.status === 'draft' && (
-                      <Tooltip label="Delete draft" withArrow>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          size="sm"
-                          onClick={() => handleDelete(version.id)}
-                          loading={deleteMutation.isPending}
-                        >
-                          <IconTrash size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-
-                    {/* View changes - for published, archived, and rolled_back */}
-                    {(version.status === 'published' || version.status === 'archived' || version.status === 'rolled_back') && (
-                      <Tooltip label="View changes from this import" withArrow>
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
-                          size="sm"
-                          onClick={() => {
-                            setViewingHistoryId(version.id);
-                            setViewingHistoryNumber(displayNumber);
-                          }}
-                        >
-                          <IconEye size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-
-                    {/* Rollback - only for archived versions (not rolled_back or published) */}
-                    {version.status === 'archived' && version.snapshotPath && (
-                      <Tooltip label="Rollback to this version" withArrow>
-                        <ActionIcon
-                          variant="subtle"
-                          color="orange"
-                          size="sm"
-                          onClick={() => setRollbackVersionId(version.id)}
-                          disabled={!!rollbackJobId}
-                        >
-                          <IconArrowBack size={14} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              );
-            })}
-
-            {versions.length === 0 && (
+        <Card withBorder padding={0} style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
+          {rollbackJobId && (
+            <Alert color="blue" variant="light" m="sm">
+              <Group gap="sm">
+                <Loader size="sm" />
+                <Text size="sm">Rolling back to previous version...</Text>
+              </Group>
+            </Alert>
+          )}
+          <Table striped highlightOnHover style={{ minWidth: 600 }}>
+            <Table.Thead>
               <Table.Tr>
-                <Table.Td colSpan={6}>
-                  <Text c="dimmed" ta="center" py="lg">
-                    No import versions yet. Click "New Import" to get started.
-                  </Text>
-                </Table.Td>
+                <Table.Th style={{ width: 60 }}>Version</Table.Th>
+                <Table.Th style={{ minWidth: 200 }}>File</Table.Th>
+                <Table.Th style={{ width: 80 }}>Status</Table.Th>
+                <Table.Th style={{ width: 70 }}>Features</Table.Th>
+                <Table.Th style={{ width: 80 }}>Uploaded</Table.Th>
+                <Table.Th style={{ width: 80 }}>Actions</Table.Th>
               </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      </Card>
+            </Table.Thead>
+            <Table.Tbody>
+              {versions.map((version, index) => {
+                // Calculate sequential display number (oldest = 1, newest = total)
+                // Versions are sorted newest-first, so we reverse the numbering
+                const displayNumber = nonDraftTotal - ((page - 1) * PAGE_SIZE) - index;
+                return (
+                  <Table.Tr key={version.id}>
+                    <Table.Td>
+                      <Text size="sm" fw={500}>#{displayNumber}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text
+                        size="sm"
+                        title={(version.status === 'published' || version.status === 'archived')
+                          ? `${version.fileName} - Click to view changes`
+                          : version.fileName}
+                        style={(version.status === 'published' || version.status === 'archived')
+                          ? { cursor: 'pointer', fontWeight: 500 }
+                          : undefined}
+                        onClick={(version.status === 'published' || version.status === 'archived')
+                          ? () => handleViewDetails(version, displayNumber)
+                          : undefined}
+                      >
+                        {version.fileName}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {version.fileType.toUpperCase()} · {formatScopeDisplay(version.importScope)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge color={getStatusColor(version.status)} size="sm" style={{ minWidth: 70 }}>
+                        {version.status}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{version.featureCount.toLocaleString()}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{formatDate(version.uploadedAt)}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs">
+                        {version.importScope.startsWith('bbox:') && (
+                          <Tooltip label="View import area on map" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              size="sm"
+                              onClick={() => handleViewOnMap(version, displayNumber)}
+                            >
+                              <IconMap size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+
+                        {version.status === 'draft' && (
+                          <Tooltip label="Delete draft" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              size="sm"
+                              onClick={() => handleDelete(version.id)}
+                              loading={deleteMutation.isPending}
+                            >
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+
+                        {/* View changes - for published, archived, and rolled_back */}
+                        {(version.status === 'published' || version.status === 'archived' || version.status === 'rolled_back') && (
+                          <Tooltip label="View changes from this import" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              size="sm"
+                              onClick={() => handleViewDetails(version, displayNumber)}
+                            >
+                              <IconEye size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+
+                        {/* Rollback - only for archived versions (not rolled_back or published) */}
+                        {version.status === 'archived' && version.snapshotPath && (
+                          <Tooltip label="Rollback to this version" withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              color="orange"
+                              size="sm"
+                              onClick={() => setRollbackVersionId(version.id)}
+                              disabled={!!rollbackJobId}
+                            >
+                              <IconArrowBack size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                );
+              })}
+
+              {versions.length === 0 && (
+                <Table.Tr>
+                  <Table.Td colSpan={6}>
+                    <Text c="dimmed" ta="center" py="lg">
+                      No import versions yet. Click "New Import" to get started.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </Table>
+        </Card>
       )}
 
       {totalPages > 1 && (
@@ -583,13 +641,6 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
           </Group>
         </Stack>
       </Modal>
-
-      {/* Historical changes modal */}
-      <HistoricalChangesModal
-        versionId={viewingHistoryId}
-        displayNumber={viewingHistoryNumber}
-        onClose={() => setViewingHistoryId(null)}
-      />
     </Stack>
   );
 }

@@ -22,6 +22,7 @@ import { InspectionDetailModal } from './features/inspections/InspectionDetailMo
 import { ImportWizard } from './features/import/ImportWizard';
 import { ExportBboxConfirmOverlay } from './features/import/components/ExportBboxConfirmOverlay';
 import { ImportPreviewOverlay } from './features/import/components/ImportPreviewOverlay';
+import { HistoricalPreviewSidebar } from './features/import/components/HistoricalPreviewSidebar';
 import { useUrlState } from './hooks/useUrlState';
 
 type View = 'events' | 'assets' | 'inspections';
@@ -116,6 +117,7 @@ function App() {
     closeInspectionForm,
     selectedInspectionId,
     selectInspection,
+    isHistoricalPreviewMode,
   } = useUIStore(useShallow((state) => ({
     currentView: state.currentView,
     setCurrentView: state.setCurrentView,
@@ -135,6 +137,7 @@ function App() {
     closeInspectionForm: state.closeInspectionForm,
     selectedInspectionId: state.selectedInspectionId,
     selectInspection: state.selectInspection,
+    isHistoricalPreviewMode: state.isHistoricalPreviewMode,
   })));
 
   // Notification state
@@ -142,6 +145,7 @@ function App() {
   const toggleSidebar = useNotificationStore((s) => s.toggleSidebar);
   const toggleImportExportSidebar = useUIStore((s) => s.toggleImportExportSidebar);
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
+  const isFullScreenMap = isEditing || isHistoricalPreviewMode;
   const prevDetailModalEventId = useRef(detailModalEventId);
 
   // When right sidebar closes, reopen left sidebar
@@ -172,12 +176,12 @@ function App() {
         navbar={{
           width: sidebarWidth,
           breakpoint: 'sm',
-          collapsed: { mobile: isEditing || !mobileOpened, desktop: isEditing || !desktopOpened },
+          collapsed: { mobile: isFullScreenMap || !mobileOpened, desktop: isFullScreenMap || !desktopOpened },
         }}
         aside={{
           width: 400,
           breakpoint: 'sm',
-          collapsed: { mobile: !detailModalEventId, desktop: !detailModalEventId },
+          collapsed: { mobile: !detailModalEventId && !isHistoricalPreviewMode, desktop: !detailModalEventId && !isHistoricalPreviewMode },
         }}
         padding={0}
       >
@@ -185,13 +189,13 @@ function App() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger
-              opened={!isEditing && mobileOpened}
+              opened={!isFullScreenMap && mobileOpened}
               onClick={toggleMobile}
               hiddenFrom="sm"
               size="sm"
             />
             <Burger
-              opened={!isEditing && desktopOpened}
+              opened={!isFullScreenMap && desktopOpened}
               onClick={toggleDesktop}
               visibleFrom="sm"
               size="sm"
@@ -239,7 +243,7 @@ function App() {
       </AppShell.Navbar>
 
       {/* Resize Handle - positioned fixed, only visible when sidebar is open on desktop */}
-      {!isEditing && desktopOpened && (
+      {!isFullScreenMap && desktopOpened && (
         <Box
           className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
           onMouseDown={handleResizeStart}
@@ -295,21 +299,27 @@ function App() {
         )}
       </AppShell.Main>
 
-      {/* Event Detail Aside (right sidebar) */}
-      <AppShell.Aside p="md">
-        <AppShell.Section>
-          <Group justify="space-between" mb="md">
-            <Text fw={600}>Event Details</Text>
-            <ActionIcon variant="subtle" color="gray" onClick={closeEventDetailModal}>
-              <IconX size={18} />
-            </ActionIcon>
-          </Group>
-        </AppShell.Section>
-        <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
-          {detailModalEventId && (
-            <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
-          )}
-        </AppShell.Section>
+      {/* Right sidebar - Event Details or Historical Preview */}
+      <AppShell.Aside p={isHistoricalPreviewMode ? 0 : 'md'}>
+        {isHistoricalPreviewMode ? (
+          <HistoricalPreviewSidebar />
+        ) : (
+          <>
+            <AppShell.Section>
+              <Group justify="space-between" mb="md">
+                <Text fw={600}>Event Details</Text>
+                <ActionIcon variant="subtle" color="gray" onClick={closeEventDetailModal}>
+                  <IconX size={18} />
+                </ActionIcon>
+              </Group>
+            </AppShell.Section>
+            <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
+              {detailModalEventId && (
+                <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
+              )}
+            </AppShell.Section>
+          </>
+        )}
       </AppShell.Aside>
 
       <DecisionModal />

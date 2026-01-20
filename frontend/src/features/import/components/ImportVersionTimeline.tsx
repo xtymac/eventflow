@@ -8,14 +8,15 @@
 import {
   Stack,
   Text,
-  Box,
   Card,
   Badge,
   Group,
-  ActionIcon,
   Alert,
   Tooltip,
   Loader,
+  Timeline,
+  ThemeIcon,
+  Button,
 } from '@mantine/core';
 import {
   IconCheck,
@@ -24,14 +25,14 @@ import {
   IconTrendingDown,
   IconCalendar,
   IconRoad,
-  IconFileDescription,
+  IconClick,
 } from '@tabler/icons-react';
 import type { ImportVersion } from '../../../hooks/useImportVersions';
 
 interface ImportVersionTimelineProps {
   versions: ImportVersion[];
   onViewChanges: (version: ImportVersion, displayNumber: number) => void;
-  onViewOnMap: (version: ImportVersion, displayNumber: number) => void;
+  // onViewOnMap is now handled in details view
   onRollback: (versionId: string) => void;
   rollbackJobId: string | null;
   rollbackInfo: {
@@ -48,25 +49,10 @@ interface ImportVersionTimelineProps {
   pageSize: number;
 }
 
-function getStatusColor(status: ImportVersion['status']): string {
-  switch (status) {
-    case 'draft':
-      return 'gray';
-    case 'published':
-      return 'green';
-    case 'archived':
-      return 'orange';
-    case 'rolled_back':
-      return 'gray';
-    default:
-      return 'gray';
-  }
-}
-
 function getStatusLabel(status: ImportVersion['status']): string {
   switch (status) {
     case 'published':
-      return 'Current';
+      return 'Published'; // Changed from 'Current' to be more descriptive in history
     case 'archived':
       return 'Archived';
     case 'rolled_back':
@@ -88,274 +74,9 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-interface TimelineNodeProps {
-  status: ImportVersion['status'];
-  isFirst: boolean;
-  isLast: boolean;
-}
-
-function TimelineNode({ status, isFirst, isLast }: TimelineNodeProps) {
-  const isPublished = status === 'published';
-  const isRolledBack = status === 'rolled_back';
-  const isDraft = status === 'draft';
-
-  // Node styles based on status - matching reference design with larger circles
-  const nodeStyle = {
-    width: 32,
-    height: 32,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: isPublished
-      ? 'var(--mantine-color-green-6)'
-      : 'var(--mantine-color-white)',
-    border: isPublished
-      ? '3px solid var(--mantine-color-green-6)'
-      : isRolledBack || isDraft
-        ? '2px dashed var(--mantine-color-gray-4)'
-        : '2px solid var(--mantine-color-gray-4)',
-    boxShadow: isPublished ? '0 0 0 4px var(--mantine-color-green-1)' : undefined,
-  };
-
-  // Line connecting to next node
-  const lineStyle = {
-    width: 2,
-    flex: 1,
-    minHeight: 60,
-    backgroundColor: 'var(--mantine-color-gray-3)',
-    marginTop: 4,
-    marginBottom: 4,
-  };
-
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 40, paddingTop: 4 }}>
-      {/* Connecting line from top (if not first) */}
-      {!isFirst && (
-        <Box
-          style={{
-            width: 2,
-            height: 12,
-            backgroundColor: 'var(--mantine-color-gray-3)',
-          }}
-        />
-      )}
-
-      {/* Node */}
-      <Box style={nodeStyle}>
-        {isPublished && <IconCheck size={18} color="white" strokeWidth={3} />}
-      </Box>
-
-      {/* Connecting line to bottom (if not last) */}
-      {!isLast && <Box style={lineStyle} />}
-    </Box>
-  );
-}
-
-interface TimelineItemProps {
-  version: ImportVersion;
-  displayNumber: number;
-  isFirst: boolean;
-  isLast: boolean;
-  onViewChanges: () => void;
-  onViewOnMap: () => void;
-  onRollback: () => void;
-  isRollbackInProgress: boolean;
-  /** Previous version's feature count for trend comparison */
-  previousFeatureCount?: number | null;
-}
-
-function TimelineItem({
-  version,
-  displayNumber,
-  isFirst,
-  isLast,
-  onViewChanges,
-  onViewOnMap,
-  onRollback,
-  isRollbackInProgress,
-  previousFeatureCount,
-}: TimelineItemProps) {
-  const isPublished = version.status === 'published';
-  const isRolledBack = version.status === 'rolled_back';
-  const isDraft = version.status === 'draft';
-  const isArchived = version.status === 'archived';
-  const canViewOnMap = version.importScope.startsWith('bbox:');
-  const canRollback = version.snapshotPath && !isPublished && !isRolledBack && !isDraft;
-
-  // Calculate trend compared to previous version
-  const featureCountDiff = previousFeatureCount != null && version.featureCount != null
-    ? version.featureCount - previousFeatureCount
-    : null;
-  const showTrend = featureCountDiff !== null && featureCountDiff !== 0 && !isRolledBack;
-
-  // Card styles based on status - matching reference design
-  const cardStyle = {
-    flex: 1,
-    borderColor: isPublished
-      ? 'var(--mantine-color-green-5)'
-      : 'var(--mantine-color-gray-3)',
-    borderWidth: isPublished ? 2 : 1,
-    borderStyle: isRolledBack ? 'dashed' : 'solid',
-    opacity: isRolledBack ? 0.6 : 1,
-    cursor: canViewOnMap ? 'pointer' : 'default',
-    transition: 'box-shadow 0.15s',
-  };
-
-  // Handle card click for map preview
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger if clicking action links
-    if ((e.target as HTMLElement).closest('a, button')) return;
-    if (canViewOnMap && !isRolledBack) {
-      onViewOnMap();
-    }
-  };
-
-  // Format date for display
-  const displayDate = isRolledBack && version.rolledBackAt
-    ? formatDate(version.rolledBackAt)
-    : version.publishedAt
-      ? formatDate(version.publishedAt)
-      : formatDate(version.uploadedAt);
-
-  return (
-    <Box style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-      <TimelineNode status={version.status} isFirst={isFirst} isLast={isLast} />
-
-      <Card
-        withBorder
-        padding="md"
-        style={cardStyle}
-        onClick={handleCardClick}
-        className={canViewOnMap && !isRolledBack ? 'timeline-card-clickable' : undefined}
-      >
-        {/* Header row - Badge and version number */}
-        <Group gap="sm" mb="xs">
-          <Badge
-            color={isPublished ? 'green' : isRolledBack ? 'gray' : 'orange'}
-            size="sm"
-            variant={isPublished ? 'filled' : 'outline'}
-            tt="uppercase"
-            fw={600}
-          >
-            {getStatusLabel(version.status)}
-          </Badge>
-          <Text size="sm" c="dimmed">#{displayNumber}</Text>
-        </Group>
-
-        {/* File name row */}
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
-            <IconFileDescription size={18} color="var(--mantine-color-gray-5)" style={{ flexShrink: 0 }} />
-            <Tooltip label={version.fileName} withArrow position="top" disabled={version.fileName.length < 30}>
-              <Text fw={600} size="md" lineClamp={1}>
-                {version.fileName}
-              </Text>
-            </Tooltip>
-          </Group>
-
-          {/* Action links - right side */}
-          <Group gap="md" style={{ flexShrink: 0 }}>
-            {(version.status !== 'draft') && (
-              <Text
-                component="a"
-                href="#"
-                size="sm"
-                c="dimmed"
-                style={{ display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}
-                onClick={(e) => { e.preventDefault(); onViewChanges(); }}
-                className="timeline-action-link"
-              >
-                <Box component="span" style={{ display: 'flex', alignItems: 'center' }}>◎</Box>
-                View
-              </Text>
-            )}
-
-            {canRollback && (
-              <Text
-                component="a"
-                href="#"
-                size="sm"
-                c="dimmed"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  textDecoration: 'none',
-                  opacity: isRollbackInProgress ? 0.5 : 1,
-                  pointerEvents: isRollbackInProgress ? 'none' : 'auto',
-                }}
-                onClick={(e) => { e.preventDefault(); if (!isRollbackInProgress) onRollback(); }}
-                className="timeline-action-link"
-              >
-                <Box component="span" style={{ display: 'flex', alignItems: 'center' }}>↺</Box>
-                Restore
-              </Text>
-            )}
-          </Group>
-        </Group>
-
-        {/* Metadata row - Date and item count */}
-        <Group gap="md" mt="xs">
-          <Group gap={6} c="dimmed">
-            <IconCalendar size={14} />
-            <Text size="xs">{displayDate}</Text>
-          </Group>
-
-          {version.featureCount != null && (
-            <Group gap={6} align="center">
-              <IconRoad size={14} color="var(--mantine-color-dimmed)" />
-              <Text size="xs" c={showTrend ? (featureCountDiff! > 0 ? 'green' : 'orange') : 'dimmed'}>
-                {version.featureCount.toLocaleString()} items
-              </Text>
-              {showTrend && (
-                <Tooltip
-                  label={`${featureCountDiff! > 0 ? '+' : ''}${featureCountDiff!.toLocaleString()} from previous`}
-                  withArrow
-                >
-                  <Box style={{ display: 'flex', alignItems: 'center' }}>
-                    {featureCountDiff! > 0 ? (
-                      <IconTrendingUp size={12} color="var(--mantine-color-green-6)" />
-                    ) : (
-                      <IconTrendingDown size={12} color="var(--mantine-color-orange-6)" />
-                    )}
-                  </Box>
-                </Tooltip>
-              )}
-            </Group>
-          )}
-        </Group>
-
-        {/* Change stats (if available) - show on separate line for non-rolled-back versions */}
-        {(version.addedCount !== null || version.updatedCount !== null || version.deactivatedCount !== null) && !isRolledBack && (
-          <Group gap="sm" mt="xs">
-            {version.addedCount !== null && version.addedCount > 0 && (
-              <Text size="xs" c="green">+{version.addedCount.toLocaleString()} added</Text>
-            )}
-            {version.updatedCount !== null && version.updatedCount > 0 && (
-              <Text size="xs" c="blue">{version.updatedCount.toLocaleString()} updated</Text>
-            )}
-            {version.deactivatedCount !== null && version.deactivatedCount > 0 && (
-              <Text size="xs" c="orange">{version.deactivatedCount.toLocaleString()} removed</Text>
-            )}
-          </Group>
-        )}
-
-        {/* Rolled back message */}
-        {isRolledBack && (
-          <Text size="xs" c="dimmed" mt="xs" fs="italic">
-            Changes from this version were undone
-          </Text>
-        )}
-      </Card>
-    </Box>
-  );
-}
-
 export function ImportVersionTimeline({
   versions,
   onViewChanges,
-  onViewOnMap,
   onRollback,
   rollbackJobId,
   rollbackInfo,
@@ -364,6 +85,7 @@ export function ImportVersionTimeline({
   page,
   pageSize,
 }: ImportVersionTimelineProps) {
+
   if (versions.length === 0) {
     return (
       <Text c="dimmed" ta="center" py="lg">
@@ -401,32 +123,160 @@ export function ImportVersionTimeline({
         </Alert>
       )}
 
-      {/* Timeline items */}
-      {versions.map((version, index) => {
-        // Calculate sequential display number (oldest = 1, newest = total)
-        // Versions are sorted newest-first, so we reverse the numbering
-        const displayNumber = totalNonDraft - ((page - 1) * pageSize) - index;
+      <Timeline active={-1} bulletSize={24} lineWidth={2}>
+        {versions.map((version, index) => {
+          // Calculate sequential display number (oldest = 1, newest = total)
+          // Versions are sorted newest-first, so we reverse the numbering
+          const displayNumber = totalNonDraft - ((page - 1) * pageSize) - index;
 
-        // Get previous version's feature count for trend comparison
-        // Previous version is the next item in the array (older version)
-        const previousVersion = versions[index + 1];
-        const previousFeatureCount = previousVersion?.featureCount ?? null;
+          // Get previous version's feature count for trend comparison
+          // Previous version is the next item in the array (older version)
+          const previousVersion = versions[index + 1];
+          const previousFeatureCount = previousVersion?.featureCount ?? null;
 
-        return (
-          <TimelineItem
-            key={version.id}
-            version={version}
-            displayNumber={displayNumber}
-            isFirst={index === 0}
-            isLast={index === versions.length - 1}
-            onViewChanges={() => onViewChanges(version, displayNumber)}
-            onViewOnMap={() => onViewOnMap(version, displayNumber)}
-            onRollback={() => onRollback(version.id)}
-            isRollbackInProgress={!!rollbackJobId}
-            previousFeatureCount={previousFeatureCount}
-          />
-        );
-      })}
+          const isPublished = version.status === 'published';
+          const isRolledBack = version.status === 'rolled_back';
+          const isDraft = version.status === 'draft';
+          const isArchived = version.status === 'archived';
+          const canRollback = version.snapshotPath && !isPublished && !isRolledBack && !isDraft;
+
+          // Calculate trend compared to previous version
+          const featureCountDiff = previousFeatureCount != null && version.featureCount != null
+            ? version.featureCount - previousFeatureCount
+            : null;
+          const showTrend = featureCountDiff !== null && featureCountDiff !== 0 && !isRolledBack;
+
+          // Determine interactivity
+          const isInteractive = (isPublished || isArchived) && !isRolledBack;
+
+          return (
+            <Timeline.Item
+              key={version.id}
+              bullet={
+                isPublished ? (
+                  <IconCheck size={14} />
+                ) : isRolledBack ? (
+                  <IconHistory size={14} />
+                ) : (
+                  <Text size="xs" fw={700}>{displayNumber}</Text>
+                )
+              }
+              color={isPublished ? 'green' : isRolledBack ? 'gray' : 'blue'}
+              lineVariant={isRolledBack ? 'dashed' : 'solid'}
+            >
+              <Card
+                padding="xs"
+                radius="md"
+                withBorder
+                onClick={() => isInteractive && onViewChanges(version, displayNumber)}
+                style={{
+                  cursor: isInteractive ? 'pointer' : 'default',
+                  opacity: isRolledBack ? 0.7 : 1,
+                  transition: 'all 0.2s ease',
+                  borderColor: isPublished ? 'var(--mantine-color-green-3)' : undefined,
+                  backgroundColor: isPublished ? 'var(--mantine-color-green-0)' : undefined
+                }}
+                className={isInteractive ? 'timeline-card-interactive' : ''}
+              >
+                <Group justify="space-between" mb={2} align="flex-start" wrap="nowrap">
+                  <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                    <Group gap="xs" wrap="nowrap">
+                      <Text size="sm" fw={600} lineClamp={1} title={version.fileName}>
+                        {version.fileName}
+                      </Text>
+                      <Badge
+                        size="xs"
+                        color={isPublished ? 'green' : isRolledBack ? 'gray' : 'gray'}
+                        variant="light"
+                      >
+                        {getStatusLabel(version.status)}
+                      </Badge>
+                    </Group>
+                    <Group gap={6} c="dimmed">
+                      <IconCalendar size={12} />
+                      <Text size="xs">
+                        {version.publishedAt ? formatDate(version.publishedAt) : formatDate(version.uploadedAt)}
+                      </Text>
+                    </Group>
+                  </Stack>
+                  {isInteractive && (
+                    <ThemeIcon variant="transparent" color="gray" size="sm" mt={2}>
+                      <IconClick size={16} />
+                    </ThemeIcon>
+                  )}
+                </Group>
+
+                {/* Stats Row with inline Restore button */}
+                {(version.featureCount != null) && !isRolledBack && (
+                  <Group gap="md" mt={4} justify="space-between" wrap="nowrap">
+                    <Group gap="md" wrap="nowrap">
+                      <Group gap={4}>
+                        <IconRoad size={14} color="var(--mantine-color-gray-6)" />
+                        <Text size="xs" fw={500}>{version.featureCount.toLocaleString()}</Text>
+                        {showTrend && (
+                          <Tooltip
+                            label={`${featureCountDiff! > 0 ? '+' : ''}${featureCountDiff!.toLocaleString()} from previous`}
+                            withArrow
+                            position="right"
+                          >
+                            <ThemeIcon
+                              size="xs"
+                              variant="transparent"
+                              color={featureCountDiff! > 0 ? 'green' : 'orange'}
+                            >
+                              {featureCountDiff! > 0 ? <IconTrendingUp size={12} /> : <IconTrendingDown size={12} />}
+                            </ThemeIcon>
+                          </Tooltip>
+                        )}
+                      </Group>
+
+                      {(version.addedCount !== null || version.updatedCount !== null || version.deactivatedCount !== null) && (
+                        <Group gap={8}>
+                          {version.addedCount !== null && version.addedCount > 0 && <Text size="xs" c="green.7">+{version.addedCount}</Text>}
+                          {version.updatedCount !== null && version.updatedCount > 0 && <Text size="xs" c="blue.7">~{version.updatedCount}</Text>}
+                          {version.deactivatedCount !== null && version.deactivatedCount > 0 && <Text size="xs" c="orange.7">-{version.deactivatedCount}</Text>}
+                        </Group>
+                      )}
+                    </Group>
+
+                    {/* Inline Restore button */}
+                    {canRollback && (
+                      <Button
+                        variant="subtle"
+                        color="orange"
+                        size="compact-xs"
+                        leftSection={<IconHistory size={12} />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRollback(version.id);
+                        }}
+                        loading={!!rollbackJobId}
+                      >
+                        Restore
+                      </Button>
+                    )}
+                  </Group>
+                )}
+
+                {isRolledBack && (
+                  <Text size="xs" c="dimmed" fs="italic" mt={4}>Rolled back on {formatDate(version.rolledBackAt)}</Text>
+                )}
+
+              </Card>
+            </Timeline.Item>
+          );
+        })}
+      </Timeline>
+
+      {/* CSS for hover effect */}
+      <style>
+        {`
+          .timeline-card-interactive:hover {
+             border-color: var(--mantine-color-blue-4) !important;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          }
+          `}
+      </style>
     </Stack>
   );
 }
