@@ -17,7 +17,7 @@ import {
   Box,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconChevronLeft, IconChevronRight, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useQueryClient } from '@tanstack/react-query';
@@ -60,8 +60,13 @@ export function AssetList() {
   // Local UI state
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
   const [loadedAssets, setLoadedAssets] = useState<RoadAsset[]>([]);
+
+  // Tab scroll state
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Inline edit state for manual naming
   const [editName, setEditName] = useState('');
@@ -351,6 +356,39 @@ export function AssetList() {
     );
   }
 
+  // Tab scroll detection
+  const updateScrollState = () => {
+    const container = tabsScrollRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  };
+
+  // Check scroll state on mount and when data changes
+  useEffect(() => {
+    updateScrollState();
+    // Also check after a short delay to ensure layout is complete
+    const timer = setTimeout(updateScrollState, 100);
+    return () => clearTimeout(timer);
+  }, [data, sortedGreenspaces.length, sortedStreetlights.length]);
+
+  // Tab scroll handlers
+  const handleScrollLeft = () => {
+    const container = tabsScrollRef.current;
+    if (container) {
+      container.scrollBy({ left: -120, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollRight = () => {
+    const container = tabsScrollRef.current;
+    if (container) {
+      container.scrollBy({ left: 120, behavior: 'smooth' });
+    }
+  };
+
   // Tab auto-scroll handler
   const handleTabClick = (tabValue: string) => {
     const tabElement = tabRefs.current[tabValue];
@@ -361,42 +399,68 @@ export function AssetList() {
 
   return (
     <Tabs defaultValue="list">
-      <Box
-        mb="md"
-        className="tabs-scroll-container"
-        style={{
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none', // Firefox
-        }}
-      >
-        <Tabs.List style={{ flexWrap: 'nowrap', minWidth: 'max-content' }}>
-          <Tabs.Tab
-            value="list"
-            leftSection={<IconRoad size={14} />}
-            ref={(el) => { tabRefs.current['list'] = el; }}
-            onClick={() => handleTabClick('list')}
+      <Group gap={4} mb="md" wrap="nowrap" align="center">
+        {canScrollLeft && (
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            onClick={handleScrollLeft}
+            style={{ flexShrink: 0 }}
+            aria-label="Scroll tabs left"
           >
-            Roads ({data?.meta?.total ?? loadedAssets.length})
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="greenspaces"
-            leftSection={<IconTree size={14} />}
-            ref={(el) => { tabRefs.current['greenspaces'] = el; }}
-            onClick={() => handleTabClick('greenspaces')}
+            <IconChevronLeft size={16} />
+          </ActionIcon>
+        )}
+        <Box
+          ref={tabsScrollRef}
+          className="tabs-scroll-container"
+          style={{
+            flex: 1,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            scrollbarWidth: 'none', // Firefox
+          }}
+          onScroll={updateScrollState}
+        >
+          <Tabs.List style={{ flexWrap: 'nowrap', minWidth: 'max-content' }}>
+            <Tabs.Tab
+              value="list"
+              leftSection={<IconRoad size={14} />}
+              ref={(el) => { tabRefs.current['list'] = el; }}
+              onClick={() => handleTabClick('list')}
+            >
+              Roads ({data?.meta?.total ?? loadedAssets.length})
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="greenspaces"
+              leftSection={<IconTree size={14} />}
+              ref={(el) => { tabRefs.current['greenspaces'] = el; }}
+              onClick={() => handleTabClick('greenspaces')}
+            >
+              Green ({sortedGreenspaces.length})
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="streetlights"
+              leftSection={<IconBulb size={14} />}
+              ref={(el) => { tabRefs.current['streetlights'] = el; }}
+              onClick={() => handleTabClick('streetlights')}
+            >
+              Lights ({sortedStreetlights.length})
+            </Tabs.Tab>
+          </Tabs.List>
+        </Box>
+        {canScrollRight && (
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            onClick={handleScrollRight}
+            style={{ flexShrink: 0 }}
+            aria-label="Scroll tabs right"
           >
-            Green ({sortedGreenspaces.length})
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="streetlights"
-            leftSection={<IconBulb size={14} />}
-            ref={(el) => { tabRefs.current['streetlights'] = el; }}
-            onClick={() => handleTabClick('streetlights')}
-          >
-            Lights ({sortedStreetlights.length})
-          </Tabs.Tab>
-        </Tabs.List>
-      </Box>
+            <IconChevronRight size={16} />
+          </ActionIcon>
+        )}
+      </Group>
 
       <Tabs.Panel value="list">
         <Stack gap="sm">

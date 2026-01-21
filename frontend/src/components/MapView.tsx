@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress } from '@mantine/core';
+import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
 import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox } from '../hooks/useApi';
@@ -23,6 +23,38 @@ if (!pmtilesProtocolRegistered) {
   maplibregl.addProtocol('pmtiles', protocol.tile);
   pmtilesProtocolRegistered = true;
 }
+
+// PMTiles configuration
+// Set to true after running: npm run nagoya:sync && npm run pmtiles:generate
+const USE_PMTILES = false;
+const PMTILES_URL = 'pmtiles://' + window.location.origin + '/tiles/nagoya-data.pmtiles';
+
+// Helper to get Nagoya data source config
+function getNagoyaSourceConfig(sourceName: 'shiteidouro' | 'kenchiku'): maplibregl.SourceSpecification {
+  if (USE_PMTILES) {
+    // PMTiles source: zoom 8-16, all layers in one file
+    return {
+      type: 'vector',
+      url: PMTILES_URL,
+    };
+  }
+
+  // Official MVT source: zoom 14-18
+  const tiles = sourceName === 'shiteidouro'
+    ? ['https://www.shiteidourozu.city.nagoya.jp/mvt/data/shiteidouro/{z}/{x}/{y}.pbf']
+    : ['https://www.shiteidourozu.city.nagoya.jp/mvt/data/kenchiku/{z}/{x}/{y}.pbf'];
+
+  return {
+    type: 'vector',
+    tiles,
+    minzoom: 14,
+    maxzoom: 18,
+    bounds: [136.790771, 35.034494, 137.059937, 35.260198],
+  };
+}
+
+// Get minimum zoom for Nagoya layers based on source
+const NAGOYA_MIN_ZOOM = USE_PMTILES ? 8 : 14;
 
 interface HoveredEventData {
   id: string;
@@ -706,15 +738,9 @@ export function MapView() {
 
       // ============================================
       // Nagoya Designated Road (指定道路) layers
-      // Source: https://www.shiteidourozu.city.nagoya.jp/
+      // Source: Official MVT or PMTiles (if generated)
       // ============================================
-      map.current.addSource('nagoya-shiteidouro', {
-        type: 'vector',
-        tiles: ['https://www.shiteidourozu.city.nagoya.jp/mvt/data/shiteidouro/{z}/{x}/{y}.pbf'],
-        minzoom: 14,
-        maxzoom: 18,
-        bounds: [136.790771, 35.034494, 137.059937, 35.260198],
-      });
+      map.current.addSource('nagoya-shiteidouro', getNagoyaSourceConfig('shiteidouro'));
 
       // Nagoya 2号 roads (Type 2 designated roads) - green
       map.current.addLayer({
@@ -784,15 +810,9 @@ export function MapView() {
 
       // ============================================
       // Nagoya Building Zones (建築情報) layers
-      // Source: https://www.shiteidourozu.city.nagoya.jp/
+      // Source: Official MVT or PMTiles (if generated)
       // ============================================
-      map.current.addSource('nagoya-kenchiku', {
-        type: 'vector',
-        tiles: ['https://www.shiteidourozu.city.nagoya.jp/mvt/data/kenchiku/{z}/{x}/{y}.pbf'],
-        minzoom: 14,
-        maxzoom: 18,
-        bounds: [136.790771, 35.034494, 137.059937, 35.260198],
-      });
+      map.current.addSource('nagoya-kenchiku', getNagoyaSourceConfig('kenchiku'));
 
       // 団地認定 (Residential complex certification) - purple
       map.current.addLayer({
@@ -3708,59 +3728,91 @@ export function MapView() {
           top: 10,
           left: 10,
           zIndex: 1,
-          minWidth: 180,
+          minWidth: 200,
         }}
       >
         <Text size="sm" fw={600} mb="xs">Layers</Text>
         <Stack gap="xs">
-          <Switch
-            label="Events"
-            checked={showEvents}
-            onChange={toggleEvents}
-            size="sm"
-          />
-          <Switch
-            label="Road Assets"
-            checked={showAssets}
-            onChange={toggleAssets}
-            size="sm"
-          />
-          <Switch
-            label="Inspections"
-            checked={showInspections}
-            onChange={toggleInspections}
-            size="sm"
-          />
-          <Switch
-            label="Rivers"
-            checked={showRivers}
-            onChange={toggleRivers}
-            size="sm"
-          />
-          <Switch
-            label="Green Spaces"
-            checked={showGreenSpaces}
-            onChange={toggleGreenSpaces}
-            size="sm"
-          />
-          <Switch
-            label="Street Lights"
-            checked={showStreetLights}
-            onChange={toggleStreetLights}
-            size="sm"
-          />
-          <Switch
-            label="指定道路 (Official)"
-            checked={showNagoyaRoads}
-            onChange={toggleNagoyaRoads}
-            size="sm"
-          />
-          <Switch
-            label="建築情報 (Building)"
-            checked={showNagoyaBuildingZones}
-            onChange={toggleNagoyaBuildingZones}
-            size="sm"
-          />
+          
+          {/* Events & Activities */}
+          <Box>
+            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
+              Events & Activities
+            </Text>
+            <Stack gap={6}>
+              <Switch
+                label="Events"
+                checked={showEvents}
+                onChange={toggleEvents}
+                size="sm"
+              />
+              <Switch
+                label="Inspections"
+                checked={showInspections}
+                onChange={toggleInspections}
+                size="sm"
+              />
+            </Stack>
+          </Box>
+
+          <Divider my={4} />
+
+          {/* Map Features */}
+          <Box>
+            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
+              Map Features
+            </Text>
+            <Stack gap={6}>
+              <Switch
+                label="Road Assets"
+                checked={showAssets}
+                onChange={toggleAssets}
+                size="sm"
+              />
+              <Switch
+                label="Street Lights"
+                checked={showStreetLights}
+                onChange={toggleStreetLights}
+                size="sm"
+              />
+              <Switch
+                label="Rivers"
+                checked={showRivers}
+                onChange={toggleRivers}
+                size="sm"
+              />
+              <Switch
+                label="Green Spaces"
+                checked={showGreenSpaces}
+                onChange={toggleGreenSpaces}
+                size="sm"
+              />
+            </Stack>
+          </Box>
+
+          <Divider my={4} />
+
+          {/* Reference Data */}
+          <Box>
+            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
+              Reference Data
+            </Text>
+            <Stack gap={6}>
+              <Switch
+                label="指定道路 (Official)"
+                checked={showNagoyaRoads}
+                onChange={toggleNagoyaRoads}
+                size="sm"
+              />
+              <Switch
+                label="建築情報 (Building)"
+                checked={showNagoyaBuildingZones}
+                onChange={toggleNagoyaBuildingZones}
+                size="sm"
+              />
+            </Stack>
+          </Box>
+
         </Stack>
       </Paper>
 

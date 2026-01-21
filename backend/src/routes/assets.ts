@@ -115,7 +115,7 @@ const AssetSchema = Type.Object({
   intersection: Type.Union([Type.String(), Type.Null()]),
   pavementState: Type.Union([Type.String(), Type.Null()]),
   // Data source tracking fields
-  dataSource: Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual')]),
+  dataSource: Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual'), Type.Literal('osm')]),
   sourceVersion: Type.Union([Type.String(), Type.Null()]),
   sourceDate: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   lastVerifiedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
@@ -140,7 +140,7 @@ const CreateAssetSchema = Type.Object({
   intersection: Type.Optional(Type.String()),
   pavementState: Type.Optional(Type.String()),
   // Data source tracking fields
-  dataSource: Type.Optional(Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual')])),
+  dataSource: Type.Optional(Type.Union([Type.Literal('osm_test'), Type.Literal('official_ledger'), Type.Literal('manual'), Type.Literal('osm')])),
   sourceVersion: Type.Optional(Type.String()),
   sourceDate: Type.Optional(Type.String({ format: 'date-time' })),
   lastVerifiedAt: Type.Optional(Type.String({ format: 'date-time' })),
@@ -461,7 +461,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       managingDept: string | null;
       intersection: string | null;
       pavementState: string | null;
-      dataSource: 'osm_test' | 'official_ledger' | 'manual';
+      dataSource: 'osm_test' | 'official_ledger' | 'manual' | 'osm';
       sourceVersion: string | null;
       sourceDate: Date | string | null;
       lastVerifiedAt: Date | string | null;
@@ -543,7 +543,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         ...asset,
         sublocality: null,
         status: asset.status as 'active' | 'inactive',
-        dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual',
+        dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
         validFrom: asset.validFrom.toISOString(),
         validTo: asset.validTo?.toISOString() ?? null,
         sourceDate: asset.sourceDate?.toISOString() ?? null,
@@ -686,7 +686,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         managingDept: body.managingDept ?? null,
         intersection: body.intersection ?? null,
         pavementState: body.pavementState ?? null,
-        dataSource: (body.dataSource ?? 'manual') as 'osm_test' | 'official_ledger' | 'manual',
+        dataSource: (body.dataSource ?? 'manual') as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
         sourceVersion: body.sourceVersion ?? null,
         sourceDate: body.sourceDate ?? null,
         lastVerifiedAt: body.lastVerifiedAt ?? null,
@@ -834,7 +834,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         ...asset,
         sublocality: null,
         status: asset.status as 'active' | 'inactive',
-        dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual',
+        dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
         validFrom: asset.validFrom.toISOString(),
         validTo: asset.validTo?.toISOString() ?? null,
         sourceDate: asset.sourceDate?.toISOString() ?? null,
@@ -1203,7 +1203,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           data: {
             ...updatedAsset,
             status: updatedAsset.status as 'active' | 'inactive',
-            dataSource: updatedAsset.dataSource as 'osm_test' | 'official_ledger' | 'manual',
+            dataSource: updatedAsset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
             validFrom: updatedAsset.validFrom.toISOString(),
             validTo: updatedAsset.validTo?.toISOString() ?? null,
             sourceDate: updatedAsset.sourceDate?.toISOString() ?? null,

@@ -155,8 +155,9 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
     }
 
     // Get paginated results with optional geometry simplification
+    // Use ST_SimplifyPreserveTopology to avoid collapsing small polygons to empty geometries
     const geometryExpr = simplifyTolerance > 0
-      ? sql`ST_AsGeoJSON(ST_Simplify(geometry, ${simplifyTolerance}))::json`
+      ? sql`ST_AsGeoJSON(ST_SimplifyPreserveTopology(geometry, ${simplifyTolerance}))::json`
       : sql`ST_AsGeoJSON(geometry)::json`;
 
     const result = await db.execute(sql`

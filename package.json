@@ -26,7 +26,12 @@
     "osm:rivers": "npx tsx scripts/osm/fetch-rivers.ts",
     "osm:greenspaces": "npx tsx scripts/osm/fetch-greenspaces.ts",
     "osm:streetlights": "npx tsx scripts/osm/fetch-streetlights.ts",
-    "osm:all": "npm run osm:rivers && npm run osm:greenspaces && npm run osm:streetlights"
+    "osm:all": "npm run osm:rivers && npm run osm:greenspaces && npm run osm:streetlights",
+    "pmtiles:generate": "bash scripts/generate-pmtiles.sh",
+    "nagoya:sync": "echo 'Start Nagoya sync via API' && curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:3000/nagoya-sync/start && curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:3000/nagoya-building-sync/start",
+    "nagoya:import": "npx tsx scripts/import-nagoya-to-assets.ts",
+    "nagoya:status": "curl -s http://localhost:3000/nagoya-sync/status | jq && curl -s http://localhost:3000/nagoya-building-sync/status | jq",
+    "nagoya:export-stats": "curl -s http://localhost:3000/pmtiles-export/stats | jq"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

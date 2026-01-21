@@ -47,9 +47,9 @@ interface MapState {
   setImportAreaHighlight: (highlight: ImportAreaHighlight | null) => void;
 }
 
-// Nagoya city center coordinates
-const NAGOYA_CENTER: [number, number] = [136.9066, 35.1815];
-const DEFAULT_ZOOM = 12;
+// Nagoya city center (covers all imported designated roads)
+const NAGOYA_CENTER: [number, number] = [136.933, 35.140];
+const DEFAULT_ZOOM = 14;
 
 export const useMapStore = create<MapState>()(
   persist(

@@ -269,25 +269,33 @@ async function upsertLineFeatures(
     const sourceLayer = props._sourceLayer as string;
     const dedupKey = generateDedupKey(props);
 
+    // Skip features with invalid geometry
+    if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
+      progress.errors.push(`Skipping line with empty geometry: ${sourceLayer}/${dedupKey}`);
+      continue;
+    }
+
     const record: Omit<NewNagoyaDesignatedRoad, 'id' | 'syncedAt'> = {
       sourceLayer,
       dedupKey,
-      keycode: props.keycode as string | null,
-      daicyoBan: props.daicyo_ban as string | null,
-      gid: props.gid as number | null,
-      encyo: props.encyo as string | null,
-      fukuin: props.fukuin as string | null,
-      kyokaBan: props.kyoka_ban as string | null,
-      kyokaYmd: props.kyoka_ymd as string | null,
-      shiteiBan: props.shitei_ban as string | null,
-      shiteiYmd: props.shitei_ymd as string | null,
-      filename: buildPdfUrl(props.filename as string | undefined),
+      keycode: (props.keycode as string | undefined) ?? null,
+      daicyoBan: (props.daicyo_ban as string | undefined) ?? null,
+      gid: (props.gid as number | undefined) ?? null,
+      encyo: (props.encyo as string | undefined) ?? null,
+      fukuin: (props.fukuin as string | undefined) ?? null,
+      kyokaBan: (props.kyoka_ban as string | undefined) ?? null,
+      kyokaYmd: (props.kyoka_ymd as string | undefined) ?? null,
+      shiteiBan: (props.shitei_ban as string | undefined) ?? null,
+      shiteiYmd: (props.shitei_ymd as string | undefined) ?? null,
+      filename: buildPdfUrl(props.filename as string | undefined) ?? null,
       rawProps: props,
       geometry: feature.geometry as unknown as LineString,
     };
 
     try {
       // Use raw SQL for UPSERT with geometry
+      // Note: geometry is passed as JSON string, converted via ST_GeomFromGeoJSON
+      const geomJson = JSON.stringify(feature.geometry);
       const result = await db.execute(sql`
         INSERT INTO nagoya_designated_roads (
           source_layer, dedup_key, keycode, daicyo_ban, gid,
@@ -306,8 +314,8 @@ async function upsertLineFeatures(
           ${record.shiteiBan},
           ${record.shiteiYmd},
           ${record.filename},
-          ${JSON.stringify(record.rawProps)}::jsonb,
-          ${toGeomSql(feature.geometry)},
+          CAST(${JSON.stringify(record.rawProps)} AS jsonb),
+          ST_SetSRID(ST_GeomFromGeoJSON(${geomJson}), 4326),
           NOW()
         )
         ON CONFLICT (source_layer, dedup_key)
@@ -336,7 +344,12 @@ async function upsertLineFeatures(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      progress.errors.push(`Line upsert failed: ${message}`);
+      // Include context in first few errors for debugging
+      if (progress.errors.length < 5) {
+        progress.errors.push(`Line upsert failed [${sourceLayer}/${dedupKey}, geom:${feature.geometry?.type}/${feature.geometry?.coordinates?.length}]: ${message}`);
+      } else {
+        progress.errors.push(`Line upsert failed: ${message}`);
+      }
     }
   }
 }
@@ -367,16 +380,23 @@ async function upsertPolygonFeatures(
     const sourceLayer = props._sourceLayer as string;
     const dedupKey = generateDedupKey(props);
 
+    // Skip features with invalid geometry
+    if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
+      progress.errors.push(`Skipping polygon with empty geometry: ${sourceLayer}/${dedupKey}`);
+      continue;
+    }
+
     const record: Omit<NewNagoyaDesignatedArea, 'id' | 'syncedAt'> = {
       sourceLayer,
       dedupKey,
-      gid: props.gid as number | null,
-      keycode: props.keycode as string | null,
+      gid: (props.gid as number | undefined) ?? null,
+      keycode: (props.keycode as string | undefined) ?? null,
       rawProps: props,
       geometry: feature.geometry as unknown as Polygon,
     };
 
     try {
+      const geomJson = JSON.stringify(feature.geometry);
       const result = await db.execute(sql`
         INSERT INTO nagoya_designated_areas (
           source_layer, dedup_key, gid, keycode, raw_props, geometry, synced_at
@@ -385,8 +405,8 @@ async function upsertPolygonFeatures(
           ${record.dedupKey},
           ${record.gid},
           ${record.keycode},
-          ${JSON.stringify(record.rawProps)}::jsonb,
-          ${toGeomSql(feature.geometry)},
+          CAST(${JSON.stringify(record.rawProps)} AS jsonb),
+          ST_SetSRID(ST_GeomFromGeoJSON(${geomJson}), 4326),
           NOW()
         )
         ON CONFLICT (source_layer, dedup_key)
@@ -685,7 +705,11 @@ export class NagoyaRoadSyncService {
       totalAreas: areasResult.rows[0]?.count || 0,
       roadsByLayer,
       areasByLayer,
-      lastSyncAt: lastSyncResult.rows[0]?.completed_at?.toISOString() || null,
+      lastSyncAt: lastSyncResult.rows[0]?.completed_at
+        ? (lastSyncResult.rows[0].completed_at instanceof Date
+            ? lastSyncResult.rows[0].completed_at.toISOString()
+            : String(lastSyncResult.rows[0].completed_at))
+        : null,
     };
   }
 

@@ -2,6 +2,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { eventsRoutes } from './routes/events.js';
 import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
@@ -13,12 +16,18 @@ import { greenspacesRoutes } from './routes/greenspaces.js';
 import { streetlightsRoutes } from './routes/streetlights.js';
 import { searchRoutes } from './routes/search.js';
 import nagoyaSyncRoutes from './routes/nagoya-sync.js';
+import { pmtilesExportRoutes } from './routes/pmtiles-export.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 import { importVersionsRoutes } from './routes/import-versions.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
+
+// Get directory paths for static file serving
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const TILES_DIR = join(__dirname, '../../frontend/public/tiles');
 
 async function main() {
   const fastify = Fastify({
@@ -44,6 +53,17 @@ async function main() {
     limits: {
       fileSize: 100 * 1024 * 1024, // 100MB
     },
+  });
+
+  // Static file serving for PMTiles (supports HTTP Range requests)
+  await fastify.register(fastifyStatic, {
+    root: TILES_DIR,
+    prefix: '/tiles/',
+    decorateReply: false,  // Don't conflict with other static servers
+    acceptRanges: true,    // Enable Range requests for PMTiles
+    cacheControl: true,
+    maxAge: '1d',
+    immutable: false,
   });
 
   // Health check endpoint
@@ -83,6 +103,9 @@ async function main() {
 
   // Nagoya designated road sync routes
   await fastify.register(nagoyaSyncRoutes);
+
+  // PMTiles export routes (streaming NDJSON for tippecanoe)
+  await fastify.register(pmtilesExportRoutes);
 
   // Initialize background job scheduler
   initScheduler();

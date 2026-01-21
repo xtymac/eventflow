@@ -247,25 +247,32 @@ async function upsertBuildingZones(
     const dedupKey = generateDedupKey(props);
     const zoneType = LAYER_ZONE_TYPES[sourceLayer] || sourceLayer;
 
+    // Skip features with invalid geometry
+    if (!feature.geometry || !feature.geometry.coordinates || feature.geometry.coordinates.length === 0) {
+      progress.errors.push(`Skipping building zone with empty geometry: ${sourceLayer}/${dedupKey}`);
+      continue;
+    }
+
     const record: Omit<NewNagoyaBuildingZone, 'id' | 'syncedAt'> = {
       sourceLayer,
       dedupKey,
-      gid: props.gid as number | null,
-      keycode: props.keycode as string | null,
+      gid: (props.gid as number | undefined) ?? null,
+      keycode: (props.keycode as string | undefined) ?? null,
       zoneType,
-      name: props.name as string | null,
-      kyoteiName: props.kyotei_name as string | null,
-      kubun: props.kubun as string | null,
-      ninteiYmd: props.nintei_ymd as string | null,
-      ninteiNo: props.nintei_no as string | null,
-      shiteiYmd: props.shitei_ymd as string | null,
-      kokokuYmd: props.kokoku_ymd as string | null,
-      menseki: props.menseki as string | null,
+      name: (props.name as string | undefined) ?? null,
+      kyoteiName: (props.kyotei_name as string | undefined) ?? null,
+      kubun: (props.kubun as string | undefined) ?? null,
+      ninteiYmd: (props.nintei_ymd as string | undefined) ?? null,
+      ninteiNo: (props.nintei_no as string | undefined) ?? null,
+      shiteiYmd: (props.shitei_ymd as string | undefined) ?? null,
+      kokokuYmd: (props.kokoku_ymd as string | undefined) ?? null,
+      menseki: (props.menseki as string | undefined) ?? null,
       rawProps: props,
       geometry: feature.geometry as unknown as Polygon,
     };
 
     try {
+      const geomJson = JSON.stringify(feature.geometry);
       const result = await db.execute(sql`
         INSERT INTO nagoya_building_zones (
           source_layer, dedup_key, gid, keycode, zone_type, name,
@@ -285,8 +292,8 @@ async function upsertBuildingZones(
           ${record.shiteiYmd},
           ${record.kokokuYmd},
           ${record.menseki},
-          ${JSON.stringify(record.rawProps)}::jsonb,
-          ${toGeomSql(feature.geometry)},
+          CAST(${JSON.stringify(record.rawProps)} AS jsonb),
+          ST_SetSRID(ST_GeomFromGeoJSON(${geomJson}), 4326),
           NOW()
         )
         ON CONFLICT (source_layer, dedup_key)
@@ -549,7 +556,11 @@ export class NagoyaBuildingSyncService {
       totalZones: totalResult.rows[0]?.count || 0,
       zonesByLayer,
       zonesByType,
-      lastSyncAt: lastSyncResult.rows[0]?.completed_at?.toISOString() || null,
+      lastSyncAt: lastSyncResult.rows[0]?.completed_at
+        ? (lastSyncResult.rows[0].completed_at instanceof Date
+            ? lastSyncResult.rows[0].completed_at.toISOString()
+            : String(lastSyncResult.rows[0].completed_at))
+        : null,
     };
   }
 }
