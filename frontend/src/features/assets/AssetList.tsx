@@ -340,30 +340,42 @@ export function AssetList() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Center py="xl">
-        <Loader />
-      </Center>
-    );
-  }
-
-  if (error) {
-    return (
-      <Center py="xl">
-        <Text c="red">Failed to load assets</Text>
-      </Center>
-    );
-  }
-
-  // Tab scroll detection
+  // Tab scroll detection (must be before early returns to follow hooks rules)
+  // Show arrows when a tab is hidden or only partially visible (less than threshold)
   const updateScrollState = () => {
     const container = tabsScrollRef.current;
     if (!container) return;
 
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+    const { scrollLeft, clientWidth } = container;
+    const containerRight = scrollLeft + clientWidth;
+    const VISIBLE_THRESHOLD = 40; // Minimum visible pixels to be considered "clickable"
+
+    // Check if any tab is hidden or mostly hidden on either side
+    let hasHiddenLeft = false;
+    let hasHiddenRight = false;
+
+    Object.values(tabRefs.current).forEach((tab) => {
+      if (!tab) return;
+      const tabLeft = tab.offsetLeft;
+      const tabRight = tabLeft + tab.offsetWidth;
+
+      // Calculate visible portion of tab
+      const visibleLeft = Math.max(tabLeft, scrollLeft);
+      const visibleRight = Math.min(tabRight, containerRight);
+      const visibleWidth = Math.max(0, visibleRight - visibleLeft);
+
+      // Tab is on the left and not enough is visible
+      if (tabLeft < scrollLeft && visibleWidth < VISIBLE_THRESHOLD) {
+        hasHiddenLeft = true;
+      }
+      // Tab is on the right and not enough is visible
+      if (tabRight > containerRight && visibleWidth < VISIBLE_THRESHOLD) {
+        hasHiddenRight = true;
+      }
+    });
+
+    setCanScrollLeft(hasHiddenLeft);
+    setCanScrollRight(hasHiddenRight);
   };
 
   // Check scroll state on mount and when data changes
@@ -396,6 +408,22 @@ export function AssetList() {
       tabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   };
+
+  if (isLoading) {
+    return (
+      <Center py="xl">
+        <Loader />
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <Center py="xl">
+        <Text c="red">Failed to load assets</Text>
+      </Center>
+    );
+  }
 
   return (
     <Tabs defaultValue="list">

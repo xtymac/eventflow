@@ -26,7 +26,7 @@ if (!pmtilesProtocolRegistered) {
 
 // PMTiles configuration
 // Set to true after running: npm run nagoya:sync && npm run pmtiles:generate
-const USE_PMTILES = false;
+const USE_PMTILES = true;
 const PMTILES_URL = 'pmtiles://' + window.location.origin + '/tiles/nagoya-data.pmtiles';
 
 // Helper to get Nagoya data source config
@@ -55,6 +55,28 @@ function getNagoyaSourceConfig(sourceName: 'shiteidouro' | 'kenchiku'): maplibre
 
 // Get minimum zoom for Nagoya layers based on source
 const NAGOYA_MIN_ZOOM = USE_PMTILES ? 8 : 14;
+
+// Helper to get source-layer name for Nagoya data
+// PMTiles consolidates into 3 layers: shiteidouro (roads), shiteidouro_area (areas), kenchiku (building zones)
+// Original MVT uses specific layer names for each road/area type
+function getNagoyaSourceLayer(originalLayer: string): string {
+  if (!USE_PMTILES) return originalLayer;
+
+  // Map original layer names to PMTiles consolidated layer names
+  if (originalLayer.includes('_pl_web') || originalLayer.includes('_pl')) {
+    return 'shiteidouro'; // Roads (lines)
+  }
+  if (originalLayer.startsWith('shiteidouro_') && originalLayer.includes('_pg')) {
+    return 'shiteidouro_area'; // Road areas (polygons)
+  }
+  return 'kenchiku'; // Building zones
+}
+
+// Helper to get filter for PMTiles source_layer property
+function getNagoyaFilter(originalLayer: string): maplibregl.FilterSpecification | undefined {
+  if (!USE_PMTILES) return undefined;
+  return ['==', ['get', 'source_layer'], originalLayer];
+}
 
 interface HoveredEventData {
   id: string;
@@ -747,11 +769,12 @@ export function MapView() {
         id: 'nagoya-2gou-roads',
         type: 'line',
         source: 'nagoya-shiteidouro',
-        'source-layer': 'shiteidouro_2gou_pl_web',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('shiteidouro_2gou_pl_web'),
+        filter: getNagoyaFilter('shiteidouro_2gou_pl_web'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'line-color': '#97BF00',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 14, 2, 17, 4],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 14, 2, 17, 4],
           'line-opacity': 0.8,
         },
         layout: {
@@ -764,11 +787,12 @@ export function MapView() {
         id: 'nagoya-5gou-roads',
         type: 'line',
         source: 'nagoya-shiteidouro',
-        'source-layer': 'shiteidouro_5gou_pl_web',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('shiteidouro_5gou_pl_web'),
+        filter: getNagoyaFilter('shiteidouro_5gou_pl_web'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'line-color': '#FCB000',
-          'line-width': ['interpolate', ['linear'], ['zoom'], 14, 2, 17, 4],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 14, 2, 17, 4],
           'line-opacity': 0.8,
         },
         layout: {
@@ -781,8 +805,9 @@ export function MapView() {
         id: 'nagoya-1gou-areas',
         type: 'fill',
         source: 'nagoya-shiteidouro',
-        'source-layer': 'shiteidouro_1gou_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('shiteidouro_1gou_pg'),
+        filter: getNagoyaFilter('shiteidouro_1gou_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#2BA300',
           'fill-opacity': 0.3,
@@ -797,8 +822,9 @@ export function MapView() {
         id: 'nagoya-2gou-areas',
         type: 'fill',
         source: 'nagoya-shiteidouro',
-        'source-layer': 'shiteidouro_2kou_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('shiteidouro_2kou_pg'),
+        filter: getNagoyaFilter('shiteidouro_2kou_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#61DBFF',
           'fill-opacity': 0.3,
@@ -819,8 +845,9 @@ export function MapView() {
         id: 'nagoya-danchinintei',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'danchinintei_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('danchinintei_pg'),
+        filter: getNagoyaFilter('danchinintei_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#9333EA',
           'fill-opacity': 0.3,
@@ -835,8 +862,9 @@ export function MapView() {
         id: 'nagoya-kenchikukyoutei',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'kenchikukyoutei_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('kenchikukyoutei_pg'),
+        filter: getNagoyaFilter('kenchikukyoutei_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#2563EB',
           'fill-opacity': 0.3,
@@ -851,8 +879,9 @@ export function MapView() {
         id: 'nagoya-toshikeikan-keisei',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'toshikeikan_keisei_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('toshikeikan_keisei_pg'),
+        filter: getNagoyaFilter('toshikeikan_keisei_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#14B8A6',
           'fill-opacity': 0.3,
@@ -867,8 +896,9 @@ export function MapView() {
         id: 'nagoya-toshikeikan-kyoutei',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'toshikeikan_kyoutei_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('toshikeikan_kyoutei_pg'),
+        filter: getNagoyaFilter('toshikeikan_kyoutei_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#06B6D4',
           'fill-opacity': 0.3,
@@ -883,8 +913,9 @@ export function MapView() {
         id: 'nagoya-takuchizousei',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'takuchizousei_koujikisei_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('takuchizousei_koujikisei_pg'),
+        filter: getNagoyaFilter('takuchizousei_koujikisei_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#F97316',
           'fill-opacity': 0.3,
@@ -899,8 +930,9 @@ export function MapView() {
         id: 'nagoya-kukakuseiri-koukyou',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'tochikukakuseirijigyo_koukyou_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('tochikukakuseirijigyo_koukyou_pg'),
+        filter: getNagoyaFilter('tochikukakuseirijigyo_koukyou_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#EC4899',
           'fill-opacity': 0.3,
@@ -915,8 +947,9 @@ export function MapView() {
         id: 'nagoya-kukakuseiri-kumiai',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'tochikukakuseirijigyo_kumiai_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('tochikukakuseirijigyo_kumiai_pg'),
+        filter: getNagoyaFilter('tochikukakuseirijigyo_kumiai_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#FB7185',
           'fill-opacity': 0.3,
@@ -931,8 +964,9 @@ export function MapView() {
         id: 'nagoya-rinkai-1',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'rinkaibubousai_dai1_syu_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('rinkaibubousai_dai1_syu_pg'),
+        filter: getNagoyaFilter('rinkaibubousai_dai1_syu_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#EF4444',
           'fill-opacity': 0.3,
@@ -946,8 +980,9 @@ export function MapView() {
         id: 'nagoya-rinkai-2',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'rinkaibubousai_dai2_syu_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('rinkaibubousai_dai2_syu_pg'),
+        filter: getNagoyaFilter('rinkaibubousai_dai2_syu_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#DC2626',
           'fill-opacity': 0.3,
@@ -961,8 +996,9 @@ export function MapView() {
         id: 'nagoya-rinkai-3',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'rinkaibubousai_dai3_syu_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('rinkaibubousai_dai3_syu_pg'),
+        filter: getNagoyaFilter('rinkaibubousai_dai3_syu_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#B91C1C',
           'fill-opacity': 0.3,
@@ -976,8 +1012,9 @@ export function MapView() {
         id: 'nagoya-rinkai-4',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'rinkaibubousai_dai4_syu_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('rinkaibubousai_dai4_syu_pg'),
+        filter: getNagoyaFilter('rinkaibubousai_dai4_syu_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#991B1B',
           'fill-opacity': 0.3,
@@ -992,8 +1029,9 @@ export function MapView() {
         id: 'nagoya-machinamihozon',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'machinamihozon_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('machinamihozon_pg'),
+        filter: getNagoyaFilter('machinamihozon_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#F59E0B',
           'fill-opacity': 0.3,
@@ -1008,8 +1046,9 @@ export function MapView() {
         id: 'nagoya-mokuzo',
         type: 'fill',
         source: 'nagoya-kenchiku',
-        'source-layer': 'kenchiku_mokuzo_pg',
-        minzoom: 14,
+        'source-layer': getNagoyaSourceLayer('kenchiku_mokuzo_pg'),
+        filter: getNagoyaFilter('kenchiku_mokuzo_pg'),
+        minzoom: NAGOYA_MIN_ZOOM,
         paint: {
           'fill-color': '#92400E',
           'fill-opacity': 0.3,
@@ -2305,8 +2344,8 @@ export function MapView() {
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    // Nagoya designated road layers are only available at zoom >= 14
-    const visibility = showNagoyaRoads && currentZoom >= 14 ? 'visible' : 'none';
+    // Nagoya designated road layers: zoom depends on source (PMTiles: 8+, MVT: 14+)
+    const visibility = showNagoyaRoads && currentZoom >= NAGOYA_MIN_ZOOM ? 'visible' : 'none';
 
     try {
       map.current.setLayoutProperty('nagoya-2gou-roads', 'visibility', visibility);
@@ -2322,8 +2361,8 @@ export function MapView() {
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    // Building zone layers are only available at zoom >= 14
-    const visibility = showNagoyaBuildingZones && currentZoom >= 14 ? 'visible' : 'none';
+    // Building zone layers: zoom depends on source (PMTiles: 8+, MVT: 14+)
+    const visibility = showNagoyaBuildingZones && currentZoom >= NAGOYA_MIN_ZOOM ? 'visible' : 'none';
 
     try {
       map.current.setLayoutProperty('nagoya-danchinintei', 'visibility', visibility);
