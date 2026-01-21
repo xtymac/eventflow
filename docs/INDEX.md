@@ -10,6 +10,8 @@ Documents related to project planning, migration strategies, and architectural d
 |----------|-------------|
 | [project-plan.md](planning/project-plan.md) | Project execution plan with phased implementation details |
 | [requirements-alignment.md](planning/requirements-alignment.md) | DX requirements alignment vs current implementation |
+| [ogc-api-scope.md](planning/ogc-api-scope.md) | OGC API Features/Tiles scope for Phase 7 |
+| [ogc-api-implementation-checklist.md](planning/ogc-api-implementation-checklist.md) | OGC API Phase 7 implementation checklist |
 | [postgis-migration-plan.md](planning/postgis-migration-plan.md) | Database migration strategy from JSON to PostGIS geometry |
 | [road-asset-alignment.md](planning/road-asset-alignment.md) | OSRM routing API integration and road matching |
 
@@ -47,6 +49,8 @@ docs/
 └── planning/
     ├── project-plan.md         # Project plan
     ├── requirements-alignment.md  # DX requirements alignment
+    ├── ogc-api-scope.md        # OGC API scope (Phase 7)
+    ├── ogc-api-implementation-checklist.md  # OGC API implementation checklist
     ├── postgis-migration-plan.md  # PostGIS migration
     └── road-asset-alignment.md    # Road alignment
 ```

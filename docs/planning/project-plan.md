@@ -84,17 +84,21 @@ Exit criteria:
 Goal: Provide OGC API Features/Tiles compatibility for external systems.
 
 Planned tasks:
-- Implement OGC API Features endpoints for assets/events/inspections.
-- Add conformance and collections metadata.
-- Provide OGC API Tiles metadata for MVT/PMTiles distribution.
+- Implement OGC API Features endpoints for assets/events/inspections with read/write support.
+- Add CQL2 filter support (bbox + attribute + spatial predicates).
+- Support CRS reprojection (EPSG:4326/3857 + JGD2011 plane coordinate zones).
+- Provide GeoJSON + GPKG output for exchange workflows.
+- Add conformance/collections metadata and OGC API Tiles with TileMatrixSet metadata (MVT primary, PMTiles for static).
+- Validate against QGIS/ArcGIS/MapLibre and field tablet web clients.
 
 Deliverables:
-- OGC API Features/Tiles endpoints documented.
-- Compatibility verified with standard clients.
+- OGC API Features/Tiles endpoints documented with examples (read/write, CQL2, CRS).
+- GeoJSON + GPKG export paths integrated into OGC-compatible flows.
+- Compatibility verified with standard GIS and web clients.
 
 Exit criteria:
-- Features and Tiles endpoints work with bbox/limit queries.
-- Conformance classes reported correctly.
+- Features and Tiles endpoints pass read/write, bbox, CQL2, and CRS tests.
+- TileMatrixSet metadata consumed correctly by third-party clients.
 
 ### Phase 8: Legal CAD/SXF Pipeline and Road Area Polygons
 Goal: Close the legal CAD (SXF) to GIS gap and persist legal road area polygons.
