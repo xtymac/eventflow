@@ -4,9 +4,11 @@
 A GIS + workflow prototype for road construction lifecycle management, targeting local government road management staff in Nagoya.
 
 ## Status Summary
-- Completed: Phase 1 (Foundation), Phase 2 (Core API), Phase 3 (Frontend Core), Phase 5.5 (Event Detail UI)
+- Completed: Phase 1 (Foundation), Phase 2 (Core API), Phase 3 (Frontend Core), Phase 5.5 (Event Detail UI), Import/Export (GeoJSON + GeoPackage)
 - Remaining: Phase 4 (State Management and Data Flow), Phase 5 (NGSI-LD Extended Features), Phase 6 (Polish and Demo)
-- Backlog: Phase 7+ (GIS import/export, auth, offline support)
+- Backlog: Phase 7+ (OGC API Features/Tiles, SXF pipeline, public/external GIS, SSO, spatiotemporal history)
+
+Recalibration reference: `docs/planning/requirements-alignment.md`
 
 ## Key Decisions
 - Scope: Full prototype (all phases)
@@ -77,6 +79,68 @@ Deliverables:
 Exit criteria:
 - End-to-end lifecycle demo runs without manual fixes.
 - Health endpoints and demo scripts pass on a clean environment.
+
+### Phase 7: OGC Standards and Interoperability
+Goal: Provide OGC API Features/Tiles compatibility for external systems.
+
+Planned tasks:
+- Implement OGC API Features endpoints for assets/events/inspections.
+- Add conformance and collections metadata.
+- Provide OGC API Tiles metadata for MVT/PMTiles distribution.
+
+Deliverables:
+- OGC API Features/Tiles endpoints documented.
+- Compatibility verified with standard clients.
+
+Exit criteria:
+- Features and Tiles endpoints work with bbox/limit queries.
+- Conformance classes reported correctly.
+
+### Phase 8: Legal CAD/SXF Pipeline and Road Area Polygons
+Goal: Close the legal CAD (SXF) to GIS gap and persist legal road area polygons.
+
+Planned tasks:
+- SXF v3.0 parse/generate pipeline (GDAL or dedicated library).
+- CAD layer to GIS schema mapping and QA validation.
+- Store authoritative road area polygons and link to road assets.
+
+Deliverables:
+- SXF import/export workflow with validation report.
+- Legal polygons stored in PostGIS with provenance.
+
+Exit criteria:
+- JACIC sample validates end-to-end.
+- Legal polygons drive GIS views without manual fixes.
+
+### Phase 9: Multi-Portal GIS and SSO
+Goal: Split internal, contractor, and public portals with unified identity.
+
+Planned tasks:
+- Role-based access and portal separation.
+- Contractor mobile workflows (GPS capture, field forms).
+- Public read-only disclosure portal.
+- SSO integration (OIDC/SAML).
+
+Deliverables:
+- Three portals with scoped access.
+- SSO-backed role model.
+
+Exit criteria:
+- Contractor field entry works end-to-end.
+- Public portal meets performance and disclosure requirements.
+
+### Phase 10: Spatiotemporal Versioning
+Goal: Enable time-travel queries and boundary change history.
+
+Planned tasks:
+- History tables or bitemporal model for assets/events.
+- Time-based query endpoints and UI.
+
+Deliverables:
+- Historical query API and UI.
+
+Exit criteria:
+- Boundary changes are queryable by timestamp.
 
 ## Phase Summaries (Completed)
 

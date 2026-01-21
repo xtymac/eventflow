@@ -9,6 +9,7 @@ Documents related to project planning, migration strategies, and architectural d
 | Document | Description |
 |----------|-------------|
 | [project-plan.md](planning/project-plan.md) | Project execution plan with phased implementation details |
+| [requirements-alignment.md](planning/requirements-alignment.md) | DX requirements alignment vs current implementation |
 | [postgis-migration-plan.md](planning/postgis-migration-plan.md) | Database migration strategy from JSON to PostGIS geometry |
 | [road-asset-alignment.md](planning/road-asset-alignment.md) | OSRM routing API integration and road matching |
 
@@ -45,6 +46,7 @@ docs/
 ├── map-implementation.md       # Map implementation
 └── planning/
     ├── project-plan.md         # Project plan
+    ├── requirements-alignment.md  # DX requirements alignment
     ├── postgis-migration-plan.md  # PostGIS migration
     └── road-asset-alignment.md    # Road alignment
 ```
