@@ -1,0 +1,45 @@
+# Caddyfile for EventFlow production
+eventflow.uixai.org {
+    # Static PMTiles files - serve from web container (long cache)
+    handle /tiles/*.pmtiles {
+        header Cache-Control "public, max-age=86400"
+        reverse_proxy web:5173
+    }
+
+    # Dynamic vector tiles from Martin (short cache for real-time data)
+    handle /tiles/* {
+        header Cache-Control "public, max-age=300"
+        uri strip_prefix /tiles
+        reverse_proxy martin:3000
+    }
+
+    # API endpoints
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy api:3000
+    }
+
+    # SSE endpoints (no buffering)
+    handle /sse/* {
+        uri strip_prefix /sse
+        reverse_proxy api:3000 {
+            flush_interval -1
+        }
+    }
+
+    # Frontend (Vite dev server in Docker)
+    # Note: .well-known is handled automatically by Caddy for ACME challenges
+    @notWellKnown not path /.well-known/*
+    handle @notWellKnown {
+        reverse_proxy web:5173
+    }
+
+    # Enable compression
+    encode gzip
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}

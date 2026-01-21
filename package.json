@@ -1,0 +1,42 @@
+{
+  "name": "nagoya-construction-lifecycle",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "docker compose up -d && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "tiles:generate": "tippecanoe --output=frontend/public/tiles/roads.pmtiles --minimum-zoom=8 --maximum-zoom=16 --simplification=10 --drop-densest-as-needed --include=id --include=roadType --include=road_type --include=displayName --include=name --include=name_ja --include=ref --include=local_ref --include=ward --layer=roads --force sample-data/road_assets.geojson",
+    "export:road-assets": "npx tsx scripts/export-road-assets.ts",
+    "watch:road-assets": "npx tsx scripts/watch-road-assets.ts",
+    "watch:ec2": "bash scripts/watch-ec2.sh",
+    "tiles:sync": "npm run export:road-assets && npm run tiles:generate",
+    "osm:rivers": "npx tsx scripts/osm/fetch-rivers.ts",
+    "osm:greenspaces": "npx tsx scripts/osm/fetch-greenspaces.ts",
+    "osm:streetlights": "npx tsx scripts/osm/fetch-streetlights.ts",
+    "osm:all": "npm run osm:rivers && npm run osm:greenspaces && npm run osm:streetlights"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "dependencies": {
+    "@types/proj4": "^2.5.6",
+    "proj4": "^2.20.2",
+    "shapefile": "^0.6.6"
+  },
+  "overrides": {
+    "esbuild": "0.27.2"
+  }
+}

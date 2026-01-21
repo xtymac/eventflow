@@ -1,0 +1,872 @@
+import { create } from 'zustand';
+import type { Geometry, Feature, Point } from 'geojson';
+
+type ViewType = 'events' | 'assets' | 'inspections';
+
+// Asset cache entry for selected assets display
+export interface AssetCacheEntry {
+  id: string;
+  label: string;
+  ward?: string;
+  roadType?: string;
+  geometry?: Geometry; // For fly-to when clicking badge
+}
+
+// Unified snapshot for undo/redo - captures both drawing AND asset selection state
+export interface EditingStateSnapshot {
+  drawnFeatures: Feature[] | null;
+  currentDrawType: 'polygon' | 'line' | null;
+  selectedRoadAssetIds: string[];
+  assetDetailsCache: Record<string, AssetCacheEntry>;
+}
+
+interface UIState {
+  selectedEventId: string | null;
+  selectedAssetId: string | null;
+  selectedAssetGeometry: Geometry | null; // For fly-to when asset is outside viewport
+  selectedInspectionId: string | null;
+  isEventFormOpen: boolean;
+  isAssetFormOpen: boolean;
+  isInspectionFormOpen: boolean;
+  isDecisionModalOpen: boolean;
+  decisionEventId: string | null;
+  isStatusChangeModalOpen: boolean;
+  statusChangeTargetStatus: 'active' | 'ended' | null;
+  detailModalEventId: string | null;
+  isRoadUpdateModeActive: boolean;
+  editingEventId: string | null;
+  duplicateEventId: string | null;  // ID of event being duplicated (for prefill)
+  drawMode: 'polygon' | 'line' | 'point' | null;
+  currentView: ViewType;
+
+  // Event form state
+  selectedRoadAssetIdsForForm: string[];
+  previewGeometry: Geometry | null;
+  drawnFeatures: Feature[] | null;        // Features drawn via maplibre-gl-draw (multi-draw support)
+  currentDrawType: 'polygon' | 'line' | null;  // Locked after first shape drawn
+  drawAction: 'finish' | 'undo' | 'cancel' | 'restore' | null; // Touch-friendly draw actions
+  isDrawingActive: boolean;               // True when actively drawing a shape (not in select mode)
+  shouldZoomToDrawing: boolean;           // Flag to trigger zoom after draw completes (one-time)
+
+  // Unified history for undo/redo (captures both drawing AND asset selection)
+  editHistory: EditingStateSnapshot[];    // Stack of previous states (deep copied)
+  editRedoStack: EditingStateSnapshot[];  // Stack for redo
+  _lastSnapshotTime: number;              // For throttling snapshots during drag
+  _isUndoRedoInProgress: boolean;         // Flag to prevent saveEditSnapshot during undo/redo
+
+  // Drawing context - tracks which component owns current drawing session
+  drawingContext: 'event-form' | 'road-update' | 'inspection-form' | null;
+
+  // Road update mode state
+  roadUpdateEventId: string | null;
+  roadUpdateSelectedAssetIds: string[];
+  roadUpdateDrawnFeatures: Feature[] | null;  // Separate state for road update drawing
+
+  // Inspection form state
+  selectedInspectionForEdit: string | null;
+  inspectionFormEventId: string | null;
+  inspectionFormAssetId: string | null;
+  inspectionDrawnPoint: Point | null;         // Separate state for inspection point
+
+  // Asset selector state (for AdvancedRoadAssetSelector)
+  assetSelectorFilters: {
+    ward: string | null;
+    roadType: string | null;
+    search: string;
+    filterByMapView: boolean;
+  };
+  selectedAssetDetailsCache: Record<string, AssetCacheEntry>;
+
+  // Map state for asset filtering
+  mapBbox: string | null;           // Current map viewport bounds
+  mapCenter: [number, number] | null;  // Current map center [lng, lat] for distance sorting
+  mapZoom: number;                  // Current map zoom level
+  hoveredAssetId: string | null;    // Asset being hovered in list (for map highlight)
+  hoveredGreenspaceId: string | null;  // Greenspace being hovered in list (for map highlight)
+  hoveredStreetlightId: string | null; // Streetlight being hovered in list (for map highlight)
+  hoveredEventId: string | null;    // Event being hovered in list (for map highlight)
+  sidebarAssets: Array<{ id: string; name: string | null; geometry: Geometry }>;  // Assets in sidebar with geometry (for map markers)
+  flyToGeometry: Geometry | null;   // Geometry to fly to (set to trigger flyTo, auto-clears after animation)
+  flyToCloseUp: boolean;            // If true, zoom closer when flying to geometry
+
+  // Filter panel state (persisted across tab switches)
+  filtersOpen: boolean;
+
+  // Filter state (persisted across tab switches)
+  assetFilters: {
+    roadType: string | null;
+    status: string | null;
+    ward: string | null;
+    search: string;
+    unnamed: boolean;
+    filterByMapView: boolean;       // Toggle for visible area filter
+  };
+  eventFilters: {
+    status: string | null;
+    search: string;
+    department: string | null;
+    dateRange: {
+      from: Date | null;
+      to: Date | null;
+    };
+    showArchivedSection: boolean;  // Toggle for archived events section visibility
+  };
+
+  // Import wizard state
+  importWizardOpen: boolean;
+  importWizardStep: 'upload' | 'configure' | 'review' | 'publish';
+  currentImportVersionId: string | null;
+
+  // Import/Export sidebar state
+  isImportExportSidebarOpen: boolean;
+  importExportActiveTab: 'import' | 'export';
+
+  // Map bounds for export scope (separate from mapBbox for viewport filtering)
+  mapBounds: { north: number; south: number; east: number; west: number } | null;
+
+  // Export bbox (from current map view)
+  exportBbox: string | null;  // "west,south,east,north" format
+  exportScopeType: 'full' | 'ward' | 'bbox';  // Persisted scope selection
+  isExportBboxConfirming: boolean;  // True when user is confirming map view selection
+
+  // Import preview mode (minimizes wizard to preview feature on map)
+  isImportPreviewMode: boolean;
+  importPreviewFeatures: Feature[];  // All features to browse through
+  importPreviewIndex: number;  // Current feature index
+  importPreviewLabel: string | null;
+
+  // Historical view context (to restore modal after preview)
+  historicalViewContext: { versionId: string; displayNumber: number } | null;
+
+  // Historical preview mode (persistent full-screen map with right sidebar showing changes)
+  isHistoricalPreviewMode: boolean;
+  historicalPreviewVersionId: string | null;
+  historicalPreviewDisplayNumber: number;
+
+  // Last rollback info (temporary notification for timeline)
+  lastRollbackInfo: {
+    fromVersionNumber: number;
+    toVersionNumber: number;
+    timestamp: Date;
+  } | null;
+
+  // Actions
+  selectEvent: (id: string | null) => void;
+  selectAsset: (id: string | null, geometry?: Geometry | null) => void;
+  selectInspection: (id: string | null) => void;
+  openEventForm: (editingId?: string) => void;
+  closeEventForm: () => void;
+  openDuplicateEventForm: (id: string) => void;
+  clearDuplicateEvent: () => void;
+  openAssetForm: () => void;
+  closeAssetForm: () => void;
+  openInspectionForm: (editingId?: string | null, eventId?: string | null, assetId?: string | null) => void;
+  closeInspectionForm: () => void;
+  openDecisionModal: (eventId: string) => void;
+  closeDecisionModal: () => void;
+  openStatusChangeModal: (targetStatus: 'active' | 'ended') => void;
+  closeStatusChangeModal: () => void;
+  openEventDetailModal: (eventId: string) => void;
+  closeEventDetailModal: () => void;
+  enterRoadUpdateMode: (eventId: string) => void;
+  exitRoadUpdateMode: () => void;
+  toggleRoadUpdateAsset: (assetId: string) => void;
+  setRoadUpdateDrawnFeatures: (features: Feature[] | null) => void;
+
+  // Drawing context actions
+  startDrawing: (context: 'event-form' | 'road-update' | 'inspection-form') => void;
+  stopDrawing: () => void;
+
+  // Inspection drawing action
+  setInspectionDrawnPoint: (point: Point | null) => void;
+  setDrawMode: (mode: 'polygon' | 'line' | 'point' | null) => void;
+  setCurrentView: (view: ViewType) => void;
+
+  // Event form actions
+  setSelectedRoadAssetsForForm: (ids: string[]) => void;
+  setPreviewGeometry: (geometry: Geometry | null) => void;
+  setDrawnFeatures: (features: Feature[] | null) => void;
+  addDrawnFeature: (feature: Feature) => void;
+  removeLastFeature: () => void;
+  setCurrentDrawType: (type: 'polygon' | 'line' | null) => void;
+  setIsDrawingActive: (active: boolean) => void;
+  clearDrawing: () => void;  // Clears drawnFeatures, currentDrawType, drawMode, and history
+  clearFormState: () => void;
+  triggerDrawAction: (action: 'finish' | 'undo' | 'cancel' | 'restore') => void;
+  clearDrawAction: () => void;
+  setShouldZoomToDrawing: (should: boolean) => void;
+
+  // Unified editing history actions (for both drawing AND asset selection)
+  saveEditSnapshot: () => void;           // Save current state with throttle
+  undoEdit: () => void;                   // Undo - restores previous state (drawing + assets)
+  redoEdit: () => void;                   // Redo - restores next state (drawing + assets)
+  clearEditHistory: () => void;
+  isUndoRedoInProgress: () => boolean;    // Check if undo/redo is in progress (to skip auto-save)
+
+  // Asset selector actions
+  setAssetSelectorFilter: <K extends keyof UIState['assetSelectorFilters']>(key: K, value: UIState['assetSelectorFilters'][K]) => void;
+  resetAssetSelectorFilters: () => void;
+  cacheAssetDetails: (assets: AssetCacheEntry[]) => void;
+  removeAssetFromCache: (id: string) => void;
+  clearAssetCache: () => void;
+
+  // Filter actions
+  setFiltersOpen: (open: boolean) => void;
+  toggleFilters: () => void;
+  setAssetFilter: <K extends keyof UIState['assetFilters']>(key: K, value: UIState['assetFilters'][K]) => void;
+  resetEventFilters: () => void;
+  setEventFilter: <K extends keyof UIState['eventFilters']>(key: K, value: UIState['eventFilters'][K]) => void;
+
+  // Map actions
+  setMapBbox: (bbox: string | null) => void;
+  setMapCenter: (center: [number, number] | null) => void;
+  setMapZoom: (zoom: number) => void;
+  setHoveredAsset: (id: string | null) => void;
+  setHoveredGreenspace: (id: string | null) => void;
+  setHoveredStreetlight: (id: string | null) => void;
+  setHoveredEvent: (id: string | null) => void;
+  setSidebarAssets: (assets: Array<{ id: string; name: string | null; geometry: Geometry }>) => void;
+  setFlyToGeometry: (geometry: Geometry | null, closeUp?: boolean) => void;
+
+  // Import wizard actions
+  openImportWizard: () => void;
+  closeImportWizard: () => void;
+  setImportWizardStep: (step: UIState['importWizardStep']) => void;
+  setCurrentImportVersionId: (id: string | null) => void;
+
+  // Import/Export sidebar actions
+  openImportExportSidebar: () => void;
+  closeImportExportSidebar: () => void;
+  toggleImportExportSidebar: () => void;
+  setImportExportActiveTab: (tab: 'import' | 'export') => void;
+
+  // Map bounds action
+  setMapBounds: (bounds: { north: number; south: number; east: number; west: number } | null) => void;
+
+  // Export bbox selection actions
+  setExportScopeType: (scopeType: 'full' | 'ward' | 'bbox') => void;
+  startExportBboxConfirmation: () => void;  // Enter confirmation mode (close sidebar, show overlay)
+  confirmExportBbox: () => void;  // Confirm and save current map bounds, reopen sidebar
+  cancelExportBboxConfirmation: () => void;  // Cancel without saving
+  clearExportBbox: () => void;
+
+  // Import preview actions
+  startImportPreview: (features: Feature[], startIndex?: number) => void;  // Minimize wizard, start browsing features
+  nextImportPreview: () => void;  // Go to next feature
+  previousImportPreview: () => void;  // Go to previous feature
+  endImportPreview: () => void;  // Restore wizard
+  setHistoricalViewContext: (context: { versionId: string; displayNumber: number } | null) => void;
+
+  // Rollback notification actions
+  setLastRollbackInfo: (info: { fromVersionNumber: number; toVersionNumber: number; timestamp: Date } | null) => void;
+  clearRollbackInfo: () => void;
+
+  // Historical preview mode actions (persistent full-screen map with sidebar)
+  enterHistoricalPreview: (versionId: string, displayNumber: number, features: Feature[]) => void;
+  exitHistoricalPreview: () => void;
+}
+
+export const useUIStore = create<UIState>((set, get) => ({
+  selectedEventId: null,
+  selectedAssetId: null,
+  selectedAssetGeometry: null,
+  selectedInspectionId: null,
+  isEventFormOpen: false,
+  isAssetFormOpen: false,
+  isInspectionFormOpen: false,
+  isDecisionModalOpen: false,
+  decisionEventId: null,
+  isStatusChangeModalOpen: false,
+  statusChangeTargetStatus: null,
+  detailModalEventId: null,
+  isRoadUpdateModeActive: false,
+  editingEventId: null,
+  duplicateEventId: null,
+  drawMode: null,
+  currentView: 'events',
+
+  // Event form state
+  selectedRoadAssetIdsForForm: [],
+  previewGeometry: null,
+  drawnFeatures: null,
+  currentDrawType: null,
+  drawAction: null,
+  isDrawingActive: false,
+  shouldZoomToDrawing: false,
+
+  // Unified editing history
+  editHistory: [],
+  editRedoStack: [],
+  _lastSnapshotTime: 0,
+  _isUndoRedoInProgress: false,
+
+  // Drawing context
+  drawingContext: null,
+
+  // Road update mode state
+  roadUpdateEventId: null,
+  roadUpdateSelectedAssetIds: [],
+  roadUpdateDrawnFeatures: null,
+
+  // Inspection form state
+  selectedInspectionForEdit: null,
+  inspectionFormEventId: null,
+  inspectionFormAssetId: null,
+  inspectionDrawnPoint: null,
+
+  // Asset selector state
+  assetSelectorFilters: {
+    ward: null,
+    roadType: null,
+    search: '',
+    filterByMapView: false,  // Default OFF to avoid user confusion about missing data
+  },
+  selectedAssetDetailsCache: {},
+
+  // Map state
+  mapBbox: null,
+  mapCenter: null,
+  mapZoom: 0,
+  hoveredAssetId: null,
+  hoveredGreenspaceId: null,
+  hoveredStreetlightId: null,
+  hoveredEventId: null,
+  sidebarAssets: [],
+  flyToGeometry: null,
+  flyToCloseUp: false,
+
+  // Filter panel state
+  filtersOpen: false,
+
+  // Filter state
+  assetFilters: {
+    roadType: null,
+    status: null,
+    ward: null,
+    search: '',
+    unnamed: false,
+    filterByMapView: true,
+  },
+  eventFilters: {
+    status: null,
+    search: '',
+    department: null,
+    dateRange: { from: null, to: null },
+    showArchivedSection: false,
+  },
+
+  // Import wizard state
+  importWizardOpen: false,
+  importWizardStep: 'upload',
+  currentImportVersionId: null,
+
+  // Import/Export sidebar state
+  isImportExportSidebarOpen: false,
+  importExportActiveTab: 'export',  // Default to export tab
+
+  // Map bounds for export scope
+  mapBounds: null,
+
+  // Export bbox (from current map view)
+  exportBbox: null,
+  exportScopeType: 'full',
+  isExportBboxConfirming: false,
+
+  // Import preview mode
+  isImportPreviewMode: false,
+  importPreviewFeatures: [],
+  importPreviewIndex: 0,
+  importPreviewLabel: null,
+  historicalViewContext: null,
+
+  // Historical preview mode (persistent full-screen map with right sidebar)
+  isHistoricalPreviewMode: false,
+  historicalPreviewVersionId: null,
+  historicalPreviewDisplayNumber: 0,
+
+  // Last rollback info (temporary notification)
+  lastRollbackInfo: null,
+
+  selectEvent: (id) => set({
+    selectedEventId: id,
+    selectedAssetId: null,
+    selectedAssetGeometry: null,
+    selectedInspectionId: null,
+    detailModalEventId: id,  // Sync sidebar with selection
+  }),
+  selectAsset: (id, geometry) => set({ selectedAssetId: id, selectedAssetGeometry: geometry ?? null, selectedEventId: null, selectedInspectionId: null }),
+  selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetGeometry: null }),
+
+  openEventForm: (editingId) => set({
+    isEventFormOpen: true,
+    editingEventId: editingId || null,
+    duplicateEventId: null,  // Clear duplicate state
+    detailModalEventId: null,
+    // Always clear selection when opening form to hide red highlight layer
+    selectedEventId: null,
+    // Enable drawing context for event form
+    drawingContext: 'event-form',
+    // Clear drawing state when opening form (will be restored from event data if editing)
+    drawMode: null,
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+  closeEventForm: () => set({
+    isEventFormOpen: false,
+    editingEventId: null,
+    duplicateEventId: null,
+    // Clear drawing context when closing form
+    drawingContext: null,
+    drawMode: null,
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+
+  openDuplicateEventForm: (id) => set({
+    isEventFormOpen: true,
+    editingEventId: null,      // CRITICAL: null = create mode
+    duplicateEventId: id,
+    detailModalEventId: null,
+    selectedEventId: null,
+    // Enable drawing context for event form
+    drawingContext: 'event-form',
+    // Clear drawing state (will be restored from duplicate event data)
+    drawMode: null,
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+
+  clearDuplicateEvent: () => set({ duplicateEventId: null }),
+
+  openAssetForm: () => set({ isAssetFormOpen: true }),
+  closeAssetForm: () => set({ isAssetFormOpen: false, drawMode: null }),
+
+  openInspectionForm: (editingId, eventId, assetId) => set({
+    isInspectionFormOpen: true,
+    selectedInspectionForEdit: editingId || null,
+    inspectionFormEventId: eventId || null,
+    inspectionFormAssetId: assetId || null,
+    inspectionDrawnPoint: null,
+    drawMode: null,
+  }),
+  closeInspectionForm: () => set({
+    isInspectionFormOpen: false,
+    selectedInspectionForEdit: null,
+    inspectionFormEventId: null,
+    inspectionFormAssetId: null,
+    inspectionDrawnPoint: null,
+    drawingContext: null,
+    drawMode: null,
+  }),
+
+  openDecisionModal: (eventId) => set({ isDecisionModalOpen: true, decisionEventId: eventId }),
+  closeDecisionModal: () => set({ isDecisionModalOpen: false, decisionEventId: null }),
+
+  openStatusChangeModal: (targetStatus) => set({ isStatusChangeModalOpen: true, statusChangeTargetStatus: targetStatus }),
+  closeStatusChangeModal: () => set({ isStatusChangeModalOpen: false, statusChangeTargetStatus: null }),
+
+  openEventDetailModal: (eventId) => set({ detailModalEventId: eventId }),
+  closeEventDetailModal: () => set({ detailModalEventId: null }),
+
+  enterRoadUpdateMode: (eventId) => set({
+    isRoadUpdateModeActive: true,
+    roadUpdateEventId: eventId,
+    roadUpdateSelectedAssetIds: [],
+    roadUpdateDrawnFeatures: null,
+  }),
+  exitRoadUpdateMode: () => set({
+    isRoadUpdateModeActive: false,
+    roadUpdateEventId: null,
+    roadUpdateSelectedAssetIds: [],
+    roadUpdateDrawnFeatures: null,
+    drawingContext: null,
+    drawMode: null,
+  }),
+  toggleRoadUpdateAsset: (assetId) => set((state) => {
+    const ids = state.roadUpdateSelectedAssetIds;
+    if (ids.includes(assetId)) {
+      return { roadUpdateSelectedAssetIds: ids.filter((id) => id !== assetId) };
+    } else {
+      return { roadUpdateSelectedAssetIds: [...ids, assetId] };
+    }
+  }),
+  setRoadUpdateDrawnFeatures: (features) => set({ roadUpdateDrawnFeatures: features }),
+
+  // Drawing context actions
+  startDrawing: (context) => set({ drawingContext: context }),
+  stopDrawing: () => set({
+    drawingContext: null,
+    drawMode: null,
+    roadUpdateDrawnFeatures: null,
+    inspectionDrawnPoint: null,
+  }),
+
+  // Inspection drawing action
+  setInspectionDrawnPoint: (point) => set({ inspectionDrawnPoint: point }),
+
+  setDrawMode: (mode) => set({ drawMode: mode }),
+  setCurrentView: (view) => set({ currentView: view }),
+
+  // Event form actions
+  setSelectedRoadAssetsForForm: (ids) => set({ selectedRoadAssetIdsForForm: ids }),
+  setPreviewGeometry: (geometry) => set({ previewGeometry: geometry }),
+  setDrawnFeatures: (features) => set({ drawnFeatures: features }),
+  addDrawnFeature: (feature) => set((state) => ({
+    drawnFeatures: state.drawnFeatures ? [...state.drawnFeatures, feature] : [feature],
+  })),
+  removeLastFeature: () => set((state) => {
+    if (!state.drawnFeatures || state.drawnFeatures.length === 0) return state;
+    const newFeatures = state.drawnFeatures.slice(0, -1);
+    return {
+      drawnFeatures: newFeatures.length > 0 ? newFeatures : null,
+      // Unlock type if no features left
+      currentDrawType: newFeatures.length > 0 ? state.currentDrawType : null,
+    };
+  }),
+  setCurrentDrawType: (type) => set({ currentDrawType: type }),
+  setIsDrawingActive: (active) => set({ isDrawingActive: active }),
+  clearDrawing: () => set({
+    drawnFeatures: null,
+    currentDrawType: null,
+    drawMode: null,
+    isDrawingActive: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+  clearFormState: () => set({
+    selectedRoadAssetIdsForForm: [],
+    previewGeometry: null,
+    drawnFeatures: null,
+    currentDrawType: null,
+    drawMode: null,
+    drawAction: null,
+    isDrawingActive: false,
+    shouldZoomToDrawing: false,
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+  }),
+  triggerDrawAction: (action) => set({ drawAction: action }),
+  clearDrawAction: () => set({ drawAction: null }),
+  setShouldZoomToDrawing: (should) => set({ shouldZoomToDrawing: should }),
+
+  // Unified editing history actions (for both drawing AND asset selection)
+  saveEditSnapshot: () => set((state) => {
+    // Skip if undo/redo just happened (to preserve redo stack)
+    if (state._isUndoRedoInProgress) {
+      return { _isUndoRedoInProgress: false }; // Reset flag but don't save
+    }
+
+    const now = Date.now();
+    const THROTTLE_MS = 300;
+    // Throttle to prevent too many snapshots during drag
+    if (now - state._lastSnapshotTime < THROTTLE_MS) return state;
+
+    // Create snapshot of both drawing AND asset selection state
+    const snapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editHistory: [...state.editHistory, snapshot],
+      editRedoStack: [],  // Clear redo on new action
+      _lastSnapshotTime: now,
+    };
+  }),
+
+  undoEdit: () => set((state) => {
+    if (state.editHistory.length === 0) return state;
+
+    const newHistory = [...state.editHistory];
+    const previousState = newHistory.pop()!;
+
+    // Create snapshot of current state for redo stack
+    const currentSnapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editHistory: newHistory,
+      editRedoStack: [currentSnapshot, ...state.editRedoStack],
+      drawnFeatures: previousState.drawnFeatures,
+      currentDrawType: previousState.currentDrawType,
+      selectedRoadAssetIdsForForm: previousState.selectedRoadAssetIds,
+      selectedAssetDetailsCache: previousState.assetDetailsCache,
+      // Clear drawMode if no shapes left
+      drawMode: previousState.drawnFeatures?.length ? state.drawMode : null,
+      // Set flag to prevent saveEditSnapshot from clearing redo stack
+      _isUndoRedoInProgress: true,
+    };
+  }),
+
+  redoEdit: () => set((state) => {
+    if (state.editRedoStack.length === 0) return state;
+
+    const [nextState, ...remaining] = state.editRedoStack;
+
+    // Create snapshot of current state for history
+    const currentSnapshot: EditingStateSnapshot = {
+      drawnFeatures: state.drawnFeatures
+        ? JSON.parse(JSON.stringify(state.drawnFeatures))
+        : null,
+      currentDrawType: state.currentDrawType,
+      selectedRoadAssetIds: [...state.selectedRoadAssetIdsForForm],
+      assetDetailsCache: JSON.parse(JSON.stringify(state.selectedAssetDetailsCache)),
+    };
+
+    return {
+      editRedoStack: remaining,
+      editHistory: [...state.editHistory, currentSnapshot],
+      drawnFeatures: nextState.drawnFeatures,
+      currentDrawType: nextState.currentDrawType,
+      selectedRoadAssetIdsForForm: nextState.selectedRoadAssetIds,
+      selectedAssetDetailsCache: nextState.assetDetailsCache,
+      // Set flag to prevent saveEditSnapshot from clearing redo stack
+      _isUndoRedoInProgress: true,
+    };
+  }),
+
+  clearEditHistory: () => set({
+    editHistory: [],
+    editRedoStack: [],
+    _lastSnapshotTime: 0,
+    _isUndoRedoInProgress: false,
+  }),
+
+  isUndoRedoInProgress: (): boolean => get()._isUndoRedoInProgress,
+
+  // Asset selector actions
+  setAssetSelectorFilter: (key, value) => set((state) => ({
+    assetSelectorFilters: { ...state.assetSelectorFilters, [key]: value },
+  })),
+  resetAssetSelectorFilters: () => set({
+    assetSelectorFilters: {
+      ward: null,
+      roadType: null,
+      search: '',
+      filterByMapView: false,
+    },
+  }),
+  cacheAssetDetails: (assets) => set((state) => {
+    const newCache = { ...state.selectedAssetDetailsCache };
+    for (const asset of assets) {
+      newCache[asset.id] = asset;
+    }
+    return { selectedAssetDetailsCache: newCache };
+  }),
+  removeAssetFromCache: (id) => set((state) => {
+    const newCache = { ...state.selectedAssetDetailsCache };
+    delete newCache[id];
+    return { selectedAssetDetailsCache: newCache };
+  }),
+  clearAssetCache: () => set({ selectedAssetDetailsCache: {} }),
+
+  // Filter actions
+  setFiltersOpen: (open) => set({ filtersOpen: open }),
+  toggleFilters: () => set((state) => ({ filtersOpen: !state.filtersOpen })),
+  setAssetFilter: (key, value) => set((state) => ({
+    assetFilters: { ...state.assetFilters, [key]: value },
+  })),
+  resetEventFilters: () => set({
+    eventFilters: {
+      status: null,
+      search: '',
+      department: null,
+      dateRange: { from: null, to: null },
+      showArchivedSection: false,
+    },
+  }),
+  setEventFilter: (key, value) => set((state) => ({
+    eventFilters: { ...state.eventFilters, [key]: value },
+  })),
+
+  // Map actions
+  setMapBbox: (bbox) => set({ mapBbox: bbox }),
+  setMapCenter: (center) => set({ mapCenter: center }),
+  setMapZoom: (zoom) => set({ mapZoom: zoom }),
+  setHoveredAsset: (id) => set({ hoveredAssetId: id }),
+  setHoveredGreenspace: (id) => set({ hoveredGreenspaceId: id }),
+  setHoveredStreetlight: (id) => set({ hoveredStreetlightId: id }),
+  setHoveredEvent: (id) => set({ hoveredEventId: id }),
+  setSidebarAssets: (assets) => set({ sidebarAssets: assets }),
+  setFlyToGeometry: (geometry, closeUp = false) => set({ flyToGeometry: geometry, flyToCloseUp: closeUp }),
+
+  // Import wizard actions
+  openImportWizard: () => set({
+    importWizardOpen: true,
+    importWizardStep: 'upload',
+    currentImportVersionId: null,
+  }),
+  closeImportWizard: () => set({
+    importWizardOpen: false,
+    importWizardStep: 'upload',
+    currentImportVersionId: null,
+  }),
+  setImportWizardStep: (step) => set({ importWizardStep: step }),
+  setCurrentImportVersionId: (id) => set({ currentImportVersionId: id }),
+
+  // Import/Export sidebar actions
+  openImportExportSidebar: () => set({ isImportExportSidebarOpen: true }),
+  closeImportExportSidebar: () => set({ isImportExportSidebarOpen: false }),
+  toggleImportExportSidebar: () => set((state) => ({ isImportExportSidebarOpen: !state.isImportExportSidebarOpen })),
+  setImportExportActiveTab: (tab) => set({ importExportActiveTab: tab }),
+
+  // Map bounds action
+  setMapBounds: (bounds) => set({ mapBounds: bounds }),
+
+  // Export bbox selection actions
+  setExportScopeType: (scopeType) => set({ exportScopeType: scopeType }),
+
+  startExportBboxConfirmation: () => set({
+    isExportBboxConfirming: true,
+    isImportExportSidebarOpen: false,  // Close sidebar to let user see and adjust map
+  }),
+
+  confirmExportBbox: () => set((state) => {
+    // Convert current map bounds to bbox string
+    if (!state.mapBounds) return { isExportBboxConfirming: false };
+    const { west, south, east, north } = state.mapBounds;
+    return {
+      exportBbox: `${west},${south},${east},${north}`,
+      isExportBboxConfirming: false,
+      isImportExportSidebarOpen: true,  // Reopen sidebar with the selected bbox
+    };
+  }),
+
+  cancelExportBboxConfirmation: () => set({
+    isExportBboxConfirming: false,
+    isImportExportSidebarOpen: true,  // Reopen sidebar
+  }),
+
+  clearExportBbox: () => set({ exportBbox: null }),
+
+  // Import preview actions
+  startImportPreview: (features, startIndex = 0) => {
+    if (features.length === 0) return;
+    const index = Math.max(0, Math.min(startIndex, features.length - 1));
+    const feature = features[index];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    set({
+      isImportPreviewMode: true,
+      importPreviewFeatures: features,
+      importPreviewIndex: index,
+      importPreviewLabel: label,
+      importWizardOpen: false,  // Hide wizard (minimized)
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    });
+  },
+
+  nextImportPreview: () => set((state) => {
+    if (state.importPreviewFeatures.length === 0) return state;
+    const nextIndex = (state.importPreviewIndex + 1) % state.importPreviewFeatures.length;
+    const feature = state.importPreviewFeatures[nextIndex];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    return {
+      importPreviewIndex: nextIndex,
+      importPreviewLabel: label,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    };
+  }),
+
+  previousImportPreview: () => set((state) => {
+    if (state.importPreviewFeatures.length === 0) return state;
+    const prevIndex = state.importPreviewIndex === 0
+      ? state.importPreviewFeatures.length - 1
+      : state.importPreviewIndex - 1;
+    const feature = state.importPreviewFeatures[prevIndex];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    return {
+      importPreviewIndex: prevIndex,
+      importPreviewLabel: label,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    };
+  }),
+
+  endImportPreview: () => set((state) => ({
+    isImportPreviewMode: false,
+    importPreviewFeatures: [],
+    importPreviewIndex: 0,
+    importPreviewLabel: null,
+    // Only restore wizard if we were in import wizard mode (has currentImportVersionId)
+    importWizardOpen: !!state.currentImportVersionId,
+    // Open sidebar if we came from historical view (so the modal can be restored)
+    isImportExportSidebarOpen: state.historicalViewContext ? true : state.isImportExportSidebarOpen,
+  })),
+
+  setHistoricalViewContext: (context) => set({ historicalViewContext: context }),
+
+  // Rollback notification actions
+  setLastRollbackInfo: (info) => set({ lastRollbackInfo: info }),
+  clearRollbackInfo: () => set({ lastRollbackInfo: null }),
+
+  // Historical preview mode actions (persistent full-screen map with sidebar)
+  enterHistoricalPreview: (versionId, displayNumber, features) => {
+    if (features.length === 0) return;
+    const feature = features[0];
+    const props = feature.properties as { name?: string; id?: string } | null;
+    const label = props?.name || props?.id || 'Unnamed Road';
+    set({
+      isHistoricalPreviewMode: true,
+      historicalPreviewVersionId: versionId,
+      historicalPreviewDisplayNumber: displayNumber,
+      isImportPreviewMode: true,
+      importPreviewFeatures: features,
+      importPreviewIndex: 0,
+      importPreviewLabel: label,
+      isImportExportSidebarOpen: false,
+      flyToGeometry: feature.geometry,
+      flyToCloseUp: true,
+    });
+  },
+
+  exitHistoricalPreview: () => set((state) => ({
+    isHistoricalPreviewMode: false,
+    isImportPreviewMode: false,
+    importPreviewFeatures: [],
+    importPreviewIndex: 0,
+    importPreviewLabel: null,
+    isImportExportSidebarOpen: true,
+    // Preserve context so the modal can be restored
+    historicalViewContext: state.historicalPreviewVersionId ? {
+      versionId: state.historicalPreviewVersionId,
+      displayNumber: state.historicalPreviewDisplayNumber,
+    } : null,
+    historicalPreviewVersionId: null,
+    historicalPreviewDisplayNumber: 0,
+  })),
+}));

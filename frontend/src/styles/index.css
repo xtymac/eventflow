@@ -1,0 +1,136 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* MapLibre overrides */
+.maplibregl-popup-content {
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.maplibregl-popup-close-button {
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Asset card hover effect */
+.asset-card-hover:hover {
+  background-color: var(--mantine-color-gray-0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Event card hover effect */
+.event-card-hover:hover {
+  background-color: var(--mantine-color-gray-0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* MapLibre GL Draw - Cursor styles */
+.maplibregl-map.mouse-pointer .maplibregl-canvas-container,
+.mapboxgl-map.mouse-pointer .mapboxgl-canvas-container {
+  cursor: pointer;
+}
+
+.maplibregl-map.mouse-move .maplibregl-canvas-container,
+.mapboxgl-map.mouse-move .mapboxgl-canvas-container {
+  cursor: move;
+}
+
+.maplibregl-map.mouse-add .maplibregl-canvas-container,
+.mapboxgl-map.mouse-add .mapboxgl-canvas-container {
+  cursor: crosshair;
+}
+
+/* Sidebar resize handle */
+.sidebar-resize-handle:hover {
+  background: var(--mantine-color-blue-3) !important;
+}
+
+.sidebar-resize-handle.active {
+  background: var(--mantine-color-blue-5) !important;
+}
+
+/* First-time hint animation - nudge motion */
+@keyframes resize-handle-nudge {
+  0%, 100% {
+    transform: translateX(0);
+    background: var(--mantine-color-blue-4);
+  }
+  50% {
+    transform: translateX(10px);
+    background: var(--mantine-color-blue-5);
+  }
+}
+
+.sidebar-resize-handle.hint {
+  animation: resize-handle-nudge 0.5s ease-in-out 2;
+}
+
+/* Left nudge for right sidebar (drag left to expand) */
+@keyframes resize-handle-nudge-left {
+  0%, 100% {
+    transform: translateX(0);
+    background: var(--mantine-color-blue-4);
+  }
+  50% {
+    transform: translateX(-15px);
+    background: var(--mantine-color-blue-5);
+  }
+}
+
+.sidebar-resize-handle.hint-left {
+  animation: resize-handle-nudge-left 0.5s ease-in-out 2;
+}
+
+/* Hide scrollbar for tabs container */
+.tabs-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+.tabs-scroll-container {
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Timeline card hover effect */
+.timeline-card-clickable:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline action links */
+.timeline-action-link:hover {
+  color: var(--mantine-color-blue-6) !important;
+}
+
+/* Change count badge hover effect */
+.change-count-badge-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

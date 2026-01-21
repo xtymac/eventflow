@@ -1,0 +1,112 @@
+version: '3.8'
+
+# Local subscriber configuration for EC2 database replication
+# Usage: docker compose -f docker-compose.subscriber.yml up -d
+
+services:
+  # PostgreSQL Subscriber (receives data from EC2 via logical replication)
+  db-subscriber:
+    image: postgis/postgis:16-3.4
+    container_name: nagoya-db-subscriber
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nagoya_construction
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_subscriber_data:/var/lib/postgresql/data
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_logical_replication_workers=10
+      -c max_worker_processes=20
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eventflow-subscriber
+
+  # MongoDB (local storage for Orion-LD data)
+  mongo-subscriber:
+    image: mongo:4.4
+    container_name: nagoya-mongo-subscriber
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_subscriber_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eventflow-subscriber
+
+  # MongoDB Change Stream Sync Service
+  # Listens to EC2 MongoDB changes and replicates to local
+  mongo-sync:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nagoya-mongo-sync
+    restart: unless-stopped
+    depends_on:
+      mongo-subscriber:
+        condition: service_healthy
+    env_file:
+      - .env.sync
+    environment:
+      MONGO_EC2_URI: mongodb://host.docker.internal:27019/orionld
+      MONGO_LOCAL_URI: mongodb://mongo-subscriber:27017/orionld
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: npx tsx src/scripts/mongo-change-sync.ts
+    networks:
+      - eventflow-subscriber
+
+  # Orion-LD (internal service, not exposed directly)
+  orion-ld-local:
+    image: fiware/orion-ld:1.5.1
+    platform: linux/amd64
+    container_name: nagoya-orion-ld-local
+    restart: unless-stopped
+    depends_on:
+      mongo-subscriber:
+        condition: service_healthy
+    environment:
+      ORIONLD_MONGO_HOST: mongo-subscriber
+      ORIONLD_MONGO_DB: orionld
+      ORIONLD_LOG_LEVEL: WARN
+    command: -dbhost mongo-subscriber -logLevel WARN
+    networks:
+      - eventflow-subscriber
+
+  # Orion-LD Read-Only Gateway
+  # Blocks POST/PUT/DELETE requests, only allows GET/OPTIONS/HEAD
+  orion-gateway:
+    image: nginx:alpine
+    container_name: nagoya-orion-gateway
+    restart: unless-stopped
+    ports:
+      - "1027:1027"
+    volumes:
+      - ./nginx/orion-readonly.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - orion-ld-local
+    networks:
+      - eventflow-subscriber
+
+volumes:
+  postgres_subscriber_data:
+  mongo_subscriber_data:
+
+networks:
+  eventflow-subscriber:
+    driver: bridge

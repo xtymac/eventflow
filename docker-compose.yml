@@ -1,0 +1,135 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: nagoya-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nagoya_construction
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:4.4
+    container_name: nagoya-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orion-ld:
+    image: fiware/orion-ld:1.5.1
+    platform: linux/amd64
+    container_name: nagoya-orion-ld
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "1026:1026"
+    environment:
+      ORIONLD_MONGO_HOST: mongo
+      ORIONLD_MONGO_DB: orionld
+      ORIONLD_LOG_LEVEL: DEBUG
+    command: -dbhost mongo -logLevel DEBUG
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:1026/version > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nagoya-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      orion-ld:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      ORION_LD_URL: http://orion-ld:1026
+      PORT: 3000
+      TZ: Asia/Tokyo
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+    volumes:
+      - ./backend/src:/app/src:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nagoya-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:5173"
+    environment:
+      # API_PROXY_TARGET is for Vite server proxy (Docker internal)
+      # VITE_API_URL defaults to /api which uses the proxy
+      API_PROXY_TARGET: http://api:3000
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public/tiles:/app/public/tiles:ro
+
+  martin:
+    image: ghcr.io/maplibre/martin:v0.14.2
+    container_name: nagoya-martin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+    command: --auto-bounds calc
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: nagoya-caddy
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+      - martin
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      ACME_AGREE: "true"
+
+volumes:
+  postgres_data:
+  mongo_data:
+  caddy_data:
+  caddy_config:

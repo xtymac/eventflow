@@ -1,0 +1,53 @@
+# Node / package managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+.pnp.*
+.pnp.js
+.pnp.cjs
+
+# Build outputs
+dist/
+build/
+coverage/
+.vite/
+.cache/
+.turbo/
+.parcel-cache/
+*.tsbuildinfo
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# GIS / generated data
+sample-data/raw-roads/
+sample-data/segmented-roads/
+sample-data/ward-boundaries/
+sample-data/road_assets.geojson
+sample-data/road_assets_backup.geojson
+sample-data/road_assets_matched.geojson
+
+# Generated tiles
+*.pmtiles
+backup_*.sql
+
+# Test/sample files
+backend/uploads/
+backend/tests/
+sample-data/plateau/
+test_*.geojson
+sample_*.geojson
