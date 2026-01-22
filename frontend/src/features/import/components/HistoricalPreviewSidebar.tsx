@@ -131,7 +131,6 @@ export function HistoricalPreviewSidebar() {
   const exitHistoricalPreview = useUIStore((s) => s.exitHistoricalPreview);
   const importPreviewFeatures = useUIStore((s) => s.importPreviewFeatures);
   const importPreviewIndex = useUIStore((s) => s.importPreviewIndex);
-  const importPreviewLabel = useUIStore((s) => s.importPreviewLabel);
   const nextImportPreview = useUIStore((s) => s.nextImportPreview);
   const previousImportPreview = useUIStore((s) => s.previousImportPreview);
   const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
@@ -143,17 +142,9 @@ export function HistoricalPreviewSidebar() {
   if (!isHistoricalPreviewMode) return null;
 
   const diff = diffData?.data;
-  const totalCount = importPreviewFeatures.length;
-  const hasMultiple = totalCount > 1;
   const currentFeature = importPreviewFeatures[importPreviewIndex];
   const props = currentFeature?.properties as FeatureProperties | null;
   const changeType = props?._changeType;
-
-  const changeTypeBadge = changeType ? {
-    added: { label: 'Added', color: 'green' },
-    updated: { label: 'Updated', color: 'blue' },
-    removed: { label: 'Removed', color: 'orange' },
-  }[changeType] : null;
 
   // Track selected item for hover restore
   const selectedGeometry = currentFeature?.geometry || null;

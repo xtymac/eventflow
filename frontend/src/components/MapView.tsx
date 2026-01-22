@@ -352,18 +352,19 @@ export function MapView() {
     { enabled: showRivers && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
   );
 
-  // Green spaces data - load when zoom >= 12 (for map display and sidebar hover support)
+  // Green spaces data - load for map display and sidebar hover support
   const { data: greenSpacesData } = useGreenSpacesInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: !!mapBbox && currentZoom >= 12, zoom: currentZoom }
+    { enabled: !!mapBbox, zoom: currentZoom }
   );
 
-  // Street lights data - load when zoom >= 14 (for map display and sidebar hover support)
+  // Street lights data - load for map display and sidebar hover support
+  // Note: API has 2km² area limit, so data only loads when zoomed in enough
   const { data: streetLightsData } = useStreetLightsInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: !!mapBbox && currentZoom >= 14 }
+    { enabled: !!mapBbox }
   );
 
   // Drawing mode: enable when any editor has active drawing context
@@ -2294,7 +2295,7 @@ export function MapView() {
     map.current.setLayoutProperty('rivers-label', 'visibility', 'visible');
   }, [riversData, showRivers, mapLoaded, currentZoom]);
 
-  // Update green spaces layer (API data for zoom >= 12)
+  // Update green spaces layer
   // Always load data to source for hover support, only toggle layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -2302,23 +2303,19 @@ export function MapView() {
     const source = map.current.getSource('greenspaces') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Load data if zoom is high enough (for hover support even when layer is hidden)
+    // Load data for hover support even when layer is hidden
     // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
-    if (currentZoom >= 12) {
-      const features = Array.isArray(greenSpacesData?.features) ? greenSpacesData.features : [];
-      source.setData({ type: 'FeatureCollection', features });
-    } else {
-      source.setData({ type: 'FeatureCollection', features: [] });
-    }
+    const features = Array.isArray(greenSpacesData?.features) ? greenSpacesData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
 
     // Toggle layer visibility based on showGreenSpaces setting
-    const visibility = showGreenSpaces && currentZoom >= 12 ? 'visible' : 'none';
+    const visibility = showGreenSpaces ? 'visible' : 'none';
     map.current.setLayoutProperty('greenspaces-fill', 'visibility', visibility);
     map.current.setLayoutProperty('greenspaces-line', 'visibility', visibility);
     map.current.setLayoutProperty('greenspaces-label', 'visibility', visibility);
   }, [greenSpacesData, showGreenSpaces, mapLoaded, currentZoom]);
 
-  // Update street lights layer (API data for zoom >= 14)
+  // Update street lights layer
   // Always load data to source for hover support, only toggle layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -2326,17 +2323,14 @@ export function MapView() {
     const source = map.current.getSource('streetlights') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    // Load data if zoom is high enough (for hover support even when layer is hidden)
+    // Load data for hover support even when layer is hidden
     // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
-    if (currentZoom >= 14) {
-      const features = Array.isArray(streetLightsData?.features) ? streetLightsData.features : [];
-      source.setData({ type: 'FeatureCollection', features });
-    } else {
-      source.setData({ type: 'FeatureCollection', features: [] });
-    }
+    // Note: API has 2km² area limit, so data only loads when zoomed in enough
+    const features = Array.isArray(streetLightsData?.features) ? streetLightsData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
 
     // Toggle layer visibility based on showStreetLights setting
-    const visibility = showStreetLights && currentZoom >= 14 ? 'visible' : 'none';
+    const visibility = showStreetLights ? 'visible' : 'none';
     map.current.setLayoutProperty('streetlights-circle', 'visibility', visibility);
   }, [streetLightsData, showStreetLights, mapLoaded, currentZoom]);
 
