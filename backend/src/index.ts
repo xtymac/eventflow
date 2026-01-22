@@ -17,6 +17,7 @@ import { streetlightsRoutes } from './routes/streetlights.js';
 import { searchRoutes } from './routes/search.js';
 import nagoyaSyncRoutes from './routes/nagoya-sync.js';
 import { pmtilesExportRoutes } from './routes/pmtiles-export.js';
+import { ogcRoutes } from './routes/ogc/index.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 import { importVersionsRoutes } from './routes/import-versions.js';
@@ -41,6 +42,8 @@ async function main() {
         },
       },
     },
+    // Trust proxy headers (X-Forwarded-Proto, X-Forwarded-Host) from Caddy
+    trustProxy: true,
   });
 
   // Register plugins
@@ -106,6 +109,9 @@ async function main() {
 
   // PMTiles export routes (streaming NDJSON for tippecanoe)
   await fastify.register(pmtilesExportRoutes);
+
+  // OGC API routes (Features, Tiles)
+  await fastify.register(ogcRoutes, { prefix: '/ogc' });
 
   // Initialize background job scheduler
   initScheduler();
