@@ -111,6 +111,60 @@ nagoya-construction-lifecycle/
 ### Frontend
 - `VITE_API_URL`: Backend API URL
 
+## EC2 Production Deployment
+
+### Server Details
+- **URL**: https://eventflow.uixai.org
+- **Host**: EC2 (ubuntu@18.177.72.233)
+- **SSH**: `ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233`
+
+### Deployment Commands
+
+```bash
+# Sync code to EC2
+rsync -avz --exclude 'node_modules' --exclude '.git' \
+  -e "ssh -i ~/.ssh/eventflow-prod-key.pem" \
+  ./ ubuntu@18.177.72.233:/home/ubuntu/nagoya-construction-lifecycle/
+
+# Rebuild and restart
+ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233 \
+  "cd /home/ubuntu/nagoya-construction-lifecycle && docker compose up -d --build"
+```
+
+### Important Configuration Notes
+
+1. **PostgreSQL Password Fix**: The database volume may have a different password than docker-compose.yml. A `docker-compose.override.yml` is configured to automatically reset the password via healthcheck:
+   ```yaml
+   services:
+     db:
+       healthcheck:
+         test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -c \"ALTER USER postgres WITH PASSWORD 'postgres'\" > /dev/null 2>&1 || true"]
+   ```
+
+2. **Uploads Volume Mount**: The API container requires access to the uploads directory for import diffs and snapshots:
+   ```yaml
+   volumes:
+     - ./backend/uploads:/app/uploads
+   ```
+
+3. **Services**:
+   - `nagoya-api`: Backend API (port 3000)
+   - `nagoya-web`: Frontend (port 5173)
+   - `nagoya-db`: PostgreSQL + PostGIS
+   - `nagoya-martin`: MVT tile server
+   - `nagoya-caddy`: Reverse proxy with HTTPS
+
+### Troubleshooting
+
+```bash
+# Check API logs
+docker logs nagoya-api --tail 50
+
+# Reset DB password manually if needed
+docker exec nagoya-db psql -U postgres -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+docker restart nagoya-api nagoya-martin
+```
+
 ## License
 
 Private - Eukarya Inc.
