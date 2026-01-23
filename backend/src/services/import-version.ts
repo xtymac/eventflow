@@ -90,7 +90,7 @@ export interface ValidationResult {
 export interface DiffResult {
   scope: string;
   regionalRefresh: boolean;
-  comparisonMode: 'precise' | 'bbox';  // 'precise' when using export record, 'bbox' otherwise
+  comparisonMode: 'precise' | 'bbox' | 'geometry';  // 'geometry' when fallback matching by geometry is used
   sourceExportId?: string;  // Export record ID when using precise comparison
   added: Feature[];
   updated: Feature[];
@@ -102,6 +102,7 @@ export interface DiffResult {
     addedCount: number;
     updatedCount: number;
     deactivatedCount: number;
+    geometryMatchCount?: number;  // Number of features matched by geometry (not ID)
   };
 }
 
@@ -756,7 +757,7 @@ export class ImportVersionService {
 
     // Determine comparison scope: precise (export record) or bbox
     let currentRoads: { id: string; name: string | null; roadType: string | null; ward: string | null; lanes: number | null; direction: string | null; status?: string | null; geometryJson: Geometry | null }[];
-    let comparisonMode: 'precise' | 'bbox';
+    let comparisonMode: 'precise' | 'bbox' | 'geometry';
 
     if (version.sourceExportId) {
       // Precise comparison using export record
@@ -852,32 +853,277 @@ export class ImportVersionService {
       }
     }
 
+    // ============================================================
+    // SELF-COMPARISON MODE (Priority 1):
+    // Check if a previous import version has the same feature IDs.
+    // If found, compare the current import against the previous version's file.
+    // This gives 100% accuracy for export→edit→reimport workflows.
+    // ============================================================
+    let geometryMatchCount = 0;
+    const geometryMatchedDbIds = new Set<string>();
+    let baselineFeatures: Feature[] | null = null;
+
+    if (added.length > 0) {
+      const baselineResult = await this.findBaselineVersion(versionId, importFeatures);
+
+      if (baselineResult) {
+        console.log('[Import] Self-comparison: found baseline version', baselineResult.versionId, 'with', baselineResult.features.length, 'features');
+        comparisonMode = 'geometry';  // Using 'geometry' mode label for self-comparison
+        baselineFeatures = baselineResult.features;
+
+        // Build baseline feature map by ID
+        const baselineMap = new Map<string, Feature>();
+        for (const f of baselineResult.features) {
+          const fId = f.properties?.id;
+          if (fId) baselineMap.set(String(fId), f);
+        }
+
+        // Re-evaluate "added" features against baseline
+        const remainingAdded: Feature[] = [];
+        for (const feature of added) {
+          const id = String(feature.properties?.id || '');
+          const baseline = baselineMap.get(id);
+
+          if (!baseline) {
+            // Genuinely new feature (not in baseline)
+            remainingAdded.push(feature);
+          } else {
+            // Feature exists in baseline - check if changed
+            const hasGeomChange = feature.geometry && baseline.geometry
+              ? !this.geometriesEqual(feature.geometry, baseline.geometry)
+              : false;
+            const hasPropChange = this.hasBaselinePropertyChanges(feature, baseline);
+
+            if (hasGeomChange || hasPropChange) {
+              updated.push(feature);
+              geometryMatchCount++;
+            } else {
+              unchanged++;
+              geometryMatchCount++;
+            }
+          }
+        }
+
+        // Features in baseline but not in current import = would be removed
+        // (only relevant if features were deleted from the file)
+        const currentIds = new Set(importFeatures.map(f => String(f.properties?.id || '')).filter(Boolean));
+        let baselineOnlyCount = 0;
+        for (const [baseId] of baselineMap) {
+          if (!currentIds.has(baseId)) {
+            baselineOnlyCount++;
+          }
+        }
+        if (baselineOnlyCount > 0) {
+          console.log('[Import] Self-comparison:', baselineOnlyCount, 'features in baseline but not in current import');
+        }
+
+        added.length = 0;
+        added.push(...remainingAdded);
+        console.log('[Import] Self-comparison result: added=', added.length, 'updated=', updated.length, 'unchanged=', unchanged);
+
+      }
+
+      if (added.length > 0 && currentRoads.length > 0) {
+        // ============================================================
+        // GEOMETRY MATCHING (Priority 2):
+        // Always run for unmatched features (no threshold).
+        // Two passes: exact geometry, then fuzzy (start/end + length + attributes).
+        // ============================================================
+        if (baselineResult) {
+          console.log('[Import] Self-comparison left', added.length, 'unmatched features - running geometry matching against', currentRoads.length, 'DB roads');
+        } else {
+          console.log('[Import] No baseline found. Running geometry matching for', added.length, 'unmatched features against', currentRoads.length, 'DB roads');
+        }
+
+        // --- Pass 1: Exact geometry matching ---
+        const GRID_RESOLUTION = 10000;
+        const spatialIndex = new Map<string, typeof currentRoads>();
+        for (const road of currentRoads) {
+          if (!road.geometryJson) continue;
+          const startCoord = this.getStartCoordinate(road.geometryJson);
+          if (!startCoord) continue;
+          const gx = Math.round(startCoord[0] * GRID_RESOLUTION);
+          const gy = Math.round(startCoord[1] * GRID_RESOLUTION);
+          const key = `${gx},${gy}`;
+          if (!spatialIndex.has(key)) spatialIndex.set(key, []);
+          spatialIndex.get(key)!.push(road);
+        }
+
+        const afterExact: Feature[] = [];
+        let exactCount = 0;
+        for (const feature of added) {
+          if (!feature.geometry) { afterExact.push(feature); continue; }
+          const startCoord = this.getStartCoordinate(feature.geometry);
+          if (!startCoord) { afterExact.push(feature); continue; }
+
+          const gx = Math.round(startCoord[0] * GRID_RESOLUTION);
+          const gy = Math.round(startCoord[1] * GRID_RESOLUTION);
+          let matched = false;
+          for (let dx = -1; dx <= 1 && !matched; dx++) {
+            for (let dy = -1; dy <= 1 && !matched; dy++) {
+              const candidates = spatialIndex.get(`${gx + dx},${gy + dy}`);
+              if (!candidates) continue;
+              for (const candidate of candidates) {
+                if (geometryMatchedDbIds.has(candidate.id) || !candidate.geometryJson) continue;
+                if (this.geometriesEqual(feature.geometry, candidate.geometryJson)) {
+                  geometryMatchedDbIds.add(candidate.id);
+                  exactCount++;
+                  geometryMatchCount++;
+                  const hasChanges = this.hasFeatureChanges(feature, candidate);
+                  if (hasChanges) {
+                    updated.push({ ...feature, properties: { ...feature.properties, _matchedDbId: candidate.id } });
+                  } else {
+                    unchanged++;
+                  }
+                  matched = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (!matched) afterExact.push(feature);
+        }
+        if (exactCount > 0) console.log('[Import] Exact geometry: matched', exactCount);
+
+        // --- Pass 2: Fuzzy geometry + attribute matching ---
+        const FUZZY_TOLERANCE = 0.0005; // ~50m
+        const FUZZY_GRID = 1000;
+        const fuzzyIndex = new Map<string, typeof currentRoads>();
+        for (const road of currentRoads) {
+          if (geometryMatchedDbIds.has(road.id) || !road.geometryJson) continue;
+          const sc = this.getStartCoordinate(road.geometryJson);
+          if (!sc) continue;
+          const key = `${Math.round(sc[0] * FUZZY_GRID)},${Math.round(sc[1] * FUZZY_GRID)}`;
+          if (!fuzzyIndex.has(key)) fuzzyIndex.set(key, []);
+          fuzzyIndex.get(key)!.push(road);
+        }
+
+        const afterFuzzy: Feature[] = [];
+        let fuzzyCount = 0;
+        for (const feature of afterExact) {
+          if (!feature.geometry) { afterFuzzy.push(feature); continue; }
+          const startCoord = this.getStartCoordinate(feature.geometry);
+          const endCoord = this.getEndCoordinate(feature.geometry);
+          const lineLen = this.getGeometryLength(feature.geometry);
+          if (!startCoord || !endCoord || lineLen === 0) { afterFuzzy.push(feature); continue; }
+
+          const gx = Math.round(startCoord[0] * FUZZY_GRID);
+          const gy = Math.round(startCoord[1] * FUZZY_GRID);
+          const props = feature.properties || {};
+
+          let bestCandidate: (typeof currentRoads)[number] | null = null;
+          let bestScore = 0;
+
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              const candidates = fuzzyIndex.get(`${gx + dx},${gy + dy}`);
+              if (!candidates) continue;
+              for (const candidate of candidates) {
+                if (geometryMatchedDbIds.has(candidate.id) || !candidate.geometryJson) continue;
+                const cStart = this.getStartCoordinate(candidate.geometryJson);
+                const cEnd = this.getEndCoordinate(candidate.geometryJson);
+                const cLen = this.getGeometryLength(candidate.geometryJson);
+                if (!cStart || !cEnd || cLen === 0) continue;
+
+                // Start/end proximity check
+                const startDist = Math.max(Math.abs(startCoord[0] - cStart[0]), Math.abs(startCoord[1] - cStart[1]));
+                const endDist = Math.max(Math.abs(endCoord[0] - cEnd[0]), Math.abs(endCoord[1] - cEnd[1]));
+                if (startDist > FUZZY_TOLERANCE || endDist > FUZZY_TOLERANCE) continue;
+
+                // Length similarity
+                const ratio = lineLen / cLen;
+                if (ratio < 0.5 || ratio > 2.0) continue;
+
+                // Score: proximity + length similarity + attribute matches
+                let score = 1.0;
+                score += (1.0 - startDist / FUZZY_TOLERANCE) * 0.3;
+                score += (1.0 - endDist / FUZZY_TOLERANCE) * 0.3;
+                score += (1.0 - Math.abs(1.0 - ratio)) * 0.2;
+
+                // Attribute bonuses
+                if (props.roadType && props.roadType === candidate.roadType) score += 0.5;
+                if (props.name && props.name === candidate.name) score += 0.5;
+                if (props.ward && props.ward === candidate.ward) score += 0.2;
+
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestCandidate = candidate;
+                }
+              }
+            }
+          }
+
+          if (bestCandidate && bestScore >= 1.0) {
+            geometryMatchedDbIds.add(bestCandidate.id);
+            fuzzyCount++;
+            geometryMatchCount++;
+            updated.push({ ...feature, properties: { ...feature.properties, _matchedDbId: bestCandidate.id } });
+          } else {
+            afterFuzzy.push(feature);
+          }
+        }
+        if (fuzzyCount > 0) console.log('[Import] Fuzzy+attribute: matched', fuzzyCount, 'more');
+
+        added.length = 0;
+        added.push(...afterFuzzy);
+
+        if (geometryMatchCount > 0) {
+          console.log('[Import] Total geometry matched:', geometryMatchCount, ', remaining added:', added.length);
+          comparisonMode = 'geometry';
+        }
+      }
+    }
+
     // Roads in scope but not in import = will be deactivated
     // Always compute this for preview, but only actually deactivate if regionalRefresh is enabled
     // IMPORTANT: Only show roads that are STILL ACTIVE as "deactivated"
     // If a road was already deactivated in a previous import, don't show it again
     const deactivated: Feature[] = [];
-    for (const road of currentRoads) {
-      const roadIdStr = String(road.id);  // Ensure string for consistent comparison
-      if (!importIds.has(roadIdStr)) {
-        // Only show as deactivated if the road is still active
-        // This prevents showing already-inactive roads as "removed" on repeated imports
-        if (road.status === 'inactive') {
-          console.log('[Import] Road', roadIdStr, 'already inactive, skipping from deactivated list');
-          continue;
-        }
-        // Debug: log deactivated road
-        console.log('[Import] Road marked as DEACTIVATED (not in import file):', roadIdStr);
+    if (baselineFeatures) {
+      const currentIds = new Set(
+        importFeatures
+          .map(f => f.properties?.id)
+          .filter(Boolean)
+          .map(id => String(id))
+      );
+      for (const feature of baselineFeatures) {
+        const baseId = feature.properties?.id;
+        if (!baseId || !feature.geometry) continue;
+        const baseIdStr = String(baseId);
+        if (currentIds.has(baseIdStr)) continue;
         deactivated.push({
           type: 'Feature',
-          geometry: road.geometryJson as Geometry,  // Use geometry from query result
+          geometry: feature.geometry,
           properties: {
-            id: road.id,
-            name: road.name,
-            roadType: road.roadType,
-            ward: road.ward,
+            id: baseId,
+            name: feature.properties?.name ?? null,
+            roadType: feature.properties?.roadType ?? null,
+            ward: feature.properties?.ward ?? null,
           },
         });
+      }
+    } else {
+      for (const road of currentRoads) {
+        const roadIdStr = String(road.id);  // Ensure string for consistent comparison
+        // Skip roads that were matched by geometry (they're accounted for in updated/unchanged)
+        if (geometryMatchedDbIds.has(roadIdStr)) continue;
+        if (!importIds.has(roadIdStr)) {
+          // Only show as deactivated if the road is still active
+          // This prevents showing already-inactive roads as "removed" on repeated imports
+          if (road.status === 'inactive') {
+            continue;
+          }
+          deactivated.push({
+            type: 'Feature',
+            geometry: road.geometryJson as Geometry,
+            properties: {
+              id: road.id,
+              name: road.name,
+              roadType: road.roadType,
+              ward: road.ward,
+            },
+          });
+        }
       }
     }
 
@@ -896,8 +1142,105 @@ export class ImportVersionService {
         addedCount: added.length,
         updatedCount: updated.length,
         deactivatedCount: deactivated.length,
+        ...(geometryMatchCount > 0 ? { geometryMatchCount } : {}),
       },
     };
+  }
+
+  /**
+   * Find a previous import version to use as a baseline for self-comparison.
+   */
+  private async findBaselineVersion(
+    currentVersionId: string,
+    importFeatures: Feature[]
+  ): Promise<{ versionId: string; features: Feature[] } | null> {
+    const importIds = new Set(
+      importFeatures
+        .map(f => f.properties?.id)
+        .filter(Boolean)
+        .map(id => String(id))
+    );
+
+    if (importIds.size === 0) {
+      return null;
+    }
+
+    const candidates = await db
+      .select({
+        id: importVersions.id,
+        filePath: importVersions.filePath,
+        uploadedAt: importVersions.uploadedAt,
+      })
+      .from(importVersions)
+      .where(and(
+        not(eq(importVersions.id, currentVersionId)),
+        not(eq(importVersions.status, 'rolled_back'))
+      ))
+      .orderBy(desc(importVersions.uploadedAt));
+
+    let bestMatch: { versionId: string; features: Feature[]; matchRate: number; overlap: number } | null = null;
+
+    for (const candidate of candidates) {
+      const geojsonPath = candidate.filePath.endsWith('.geojson')
+        ? candidate.filePath
+        : join(dirname(candidate.filePath), 'converted.geojson');
+
+      if (!existsSync(geojsonPath)) {
+        continue;
+      }
+
+      let geojson: FeatureCollection;
+      try {
+        geojson = JSON.parse(readFileSync(geojsonPath, 'utf-8')) as FeatureCollection;
+      } catch (error) {
+        console.warn('[Import] Failed to read baseline GeoJSON for', candidate.id, error);
+        continue;
+      }
+
+      const features = geojson.features || [];
+      if (features.length === 0) continue;
+
+      const baselineIds = new Set(
+        features
+          .map(f => f.properties?.id)
+          .filter(Boolean)
+          .map(id => String(id))
+      );
+
+      if (baselineIds.size === 0) continue;
+
+      let overlap = 0;
+      for (const id of importIds) {
+        if (baselineIds.has(id)) overlap++;
+      }
+
+      const matchRate = overlap / importIds.size;
+      if (matchRate > 0.5) {
+        if (!bestMatch || matchRate > bestMatch.matchRate || (matchRate === bestMatch.matchRate && overlap > bestMatch.overlap)) {
+          bestMatch = { versionId: candidate.id, features, matchRate, overlap };
+        }
+      }
+    }
+
+    if (!bestMatch) {
+      return null;
+    }
+
+    return { versionId: bestMatch.versionId, features: bestMatch.features };
+  }
+
+  private hasBaselinePropertyChanges(current: Feature, baseline: Feature): boolean {
+    const currentProps = current.properties || {};
+    const baselineProps = baseline.properties || {};
+    const fields = ['roadType', 'lanes', 'direction', 'name', 'ward', 'dataSource', 'status'];
+
+    for (const field of fields) {
+      if (currentProps[field] !== baselineProps[field]) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -989,6 +1332,72 @@ export class ImportVersionService {
 
     // Fallback: JSON string comparison (less precise but works for other types)
     return JSON.stringify(geom1) === JSON.stringify(geom2);
+  }
+
+  /**
+   * Get the start coordinate (first point) of a geometry for spatial indexing
+   */
+  private getStartCoordinate(geom: Geometry): [number, number] | null {
+    if (geom.type === 'LineString') {
+      const coords = (geom as LineString).coordinates;
+      if (coords.length > 0) return [coords[0][0], coords[0][1]];
+    }
+    if (geom.type === 'MultiLineString') {
+      const coords = (geom as MultiLineString).coordinates;
+      if (coords.length > 0 && coords[0].length > 0) return [coords[0][0][0], coords[0][0][1]];
+    }
+    return null;
+  }
+
+  /**
+   * Get the end coordinate (last point) of a geometry for fuzzy matching
+   */
+  private getEndCoordinate(geom: Geometry): [number, number] | null {
+    if (geom.type === 'LineString') {
+      const coords = (geom as LineString).coordinates;
+      if (coords.length > 0) {
+        const last = coords[coords.length - 1];
+        return [last[0], last[1]];
+      }
+    }
+    if (geom.type === 'MultiLineString') {
+      const coords = (geom as MultiLineString).coordinates;
+      if (coords.length > 0) {
+        const lastLine = coords[coords.length - 1];
+        if (lastLine.length > 0) {
+          const last = lastLine[lastLine.length - 1];
+          return [last[0], last[1]];
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get approximate length of a geometry (sum of segment distances)
+   */
+  private getGeometryLength(geom: Geometry): number {
+    const segmentLength = (coords: number[][]): number => {
+      let len = 0;
+      for (let i = 1; i < coords.length; i++) {
+        const dx = coords[i][0] - coords[i - 1][0];
+        const dy = coords[i][1] - coords[i - 1][1];
+        len += Math.sqrt(dx * dx + dy * dy);
+      }
+      return len;
+    };
+
+    if (geom.type === 'LineString') {
+      return segmentLength((geom as LineString).coordinates);
+    }
+    if (geom.type === 'MultiLineString') {
+      let total = 0;
+      for (const line of (geom as MultiLineString).coordinates) {
+        total += segmentLength(line);
+      }
+      return total;
+    }
+    return 0;
   }
 
   /**
@@ -1100,7 +1509,11 @@ export class ImportVersionService {
    * - Wrapped in transaction for atomicity
    * - Uses diff results for accurate counts
    */
-  async publishVersion(versionId: string, publishedBy?: string): Promise<PublishResult> {
+  async publishVersion(
+    versionId: string,
+    publishedBy?: string,
+    onProgress?: (percent: number) => Promise<void>
+  ): Promise<PublishResult> {
     const [version] = await db
       .select()
       .from(importVersions)
@@ -1115,12 +1528,14 @@ export class ImportVersionService {
     }
 
     // 1. Require validation to pass before publishing
+    await onProgress?.(15);
     const validationResult = await this.validateGeoJSON(versionId);
     if (!validationResult.valid) {
       throw new Error(`Cannot publish: ${validationResult.errors.length} validation errors. Fix errors and re-validate.`);
     }
 
     // 2. Generate diff to get accurate counts of what will change
+    await onProgress?.(25);
     const diff = await this.generateDiff(versionId);
 
     // 2.5. Save diff for historical viewing
@@ -1138,6 +1553,7 @@ export class ImportVersionService {
     }
 
     // 3. Create snapshot before publishing (outside transaction for file I/O)
+    await onProgress?.(45);
     const snapshotPath = await this.createSnapshot(versionId, version.importScope);
 
     // 4. Read import GeoJSON
@@ -1156,6 +1572,7 @@ export class ImportVersionService {
     const now = new Date();
 
     // 5. Execute all DB operations in a transaction
+    await onProgress?.(60);
     await db.transaction(async (tx) => {
       // Process added features - use UPSERT to handle case where road already exists
       // (e.g., added in a previous import but then re-imported with same file)
@@ -1205,6 +1622,10 @@ export class ImportVersionService {
         if (!id) continue;
         const props = feature.properties || {};
 
+        // Use _matchedDbId for geometry-matched features (cross-environment imports)
+        // where the import feature ID differs from the existing DB road ID
+        const dbId = props._matchedDbId || id;
+
         await tx.execute(sql`
           UPDATE road_assets
           SET geometry = ${toGeomSql(feature.geometry)},
@@ -1216,7 +1637,7 @@ export class ImportVersionService {
               data_source = COALESCE(${props.dataSource ?? null}, data_source),
               status = 'active',
               updated_at = ${now}
-          WHERE id = ${id}
+          WHERE id = ${dbId}
         `);
       }
 
@@ -1260,6 +1681,8 @@ export class ImportVersionService {
         })
         .where(eq(importVersions.id, versionId));
     });
+
+    await onProgress?.(95);
 
     return {
       success: true,

@@ -250,6 +250,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       userRequestedRecalculationRef.current = false;
       isReadyToTrackRef.current = false; // Will be set after geometry loads
       didMergeIntersectingRef.current = false;
+      initialGeometryHashRef.current = null;
 
       reset({
         name: event.name,
@@ -459,15 +460,29 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
   }, [selectedRoadAssetIdsForForm, selectedRoadAssetIds, setValue]);
 
   // Auto-select polygon mode when form opens in CREATE mode (no existing features)
-  // Skip for Edit/Duplicate modes where we have existing features to select
+  // In EDIT mode: geometry loads in direct_select mode for vertex editing
+  // User can click the Polygon button to start drawing a new polygon
   useEffect(() => {
-    if (!drawMode && !drawnFeatures?.length && !eventId && !duplicateEventId) {
+    const isCreateMode = !eventId && !duplicateEventId && !drawnFeatures?.length;
+
+    console.log('[EventForm] Auto-activation effect:', {
+      drawMode,
+      isCreateMode,
+      eventId,
+      hasDrawnFeatures: !!drawnFeatures?.length,
+    });
+
+    if (!drawMode && isCreateMode) {
+      console.log('[EventForm] Auto-activating polygon mode (create mode)');
       setDrawMode('polygon');
     }
   }, [drawMode, drawnFeatures, eventId, duplicateEventId, setDrawMode]);
 
-  // Track if we've already processed intersecting roads for this geometry
+  // Track if we've already processed intersecting roads for this geometry (combined hash: geom+bbox+assets)
   const processedGeometryRef = useRef<string | null>(null);
+
+  // Track the initial geometry hash for detecting user modifications (geometry-only hash)
+  const initialGeometryHashRef = useRef<string | null>(null);
 
   // Track if we've already processed a duplicate event (prevent re-triggering)
   const processedDuplicateIdRef = useRef<string | null>(null);
@@ -497,16 +512,20 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
         // Track manual modification in EDIT mode
         if (eventId && isReadyToTrackRef.current) {
-          // Generate hash to detect if this is a real change vs. initial restore
+          // Compare geometry-only hash to detect if user made a real change
           const geomHash = JSON.stringify(drawnFeatures);
-          if (geomHash !== processedGeometryRef.current) {
+          if (geomHash !== initialGeometryHashRef.current) {
             hasManuallyModifiedGeometryRef.current = true;
             console.log('[EventForm] Detected manual geometry modification in edit mode');
           }
         } else if (eventId && !isReadyToTrackRef.current) {
-          // First drawnFeatures load in manual edit mode - mark as ready to track future changes
-          if (eventData?.data?.geometrySource === 'manual') {
+          // First drawnFeatures load in manual edit mode - cache initial hash and mark ready
+          // Treat NULL/undefined geometrySource as 'manual' for legacy data
+          const effectiveSource = eventData?.data?.geometrySource ?? 'manual';
+          if (effectiveSource === 'manual') {
+            initialGeometryHashRef.current = JSON.stringify(drawnFeatures);
             isReadyToTrackRef.current = true;
+            console.log('[EventForm] Initial geometry hash cached, ready to track modifications');
           }
         }
       }
@@ -760,7 +779,16 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                 color="cyan"
                 size="xs"
                 leftSection={<IconPolygon size={14} />}
-                onClick={() => setDrawMode('polygon')}
+                onClick={() => {
+                  // Force mode change even if already in polygon mode
+                  // This allows switching from vertex editing (direct_select) to drawing new polygon
+                  if (drawMode === 'polygon') {
+                    setDrawMode(null);
+                    setTimeout(() => setDrawMode('polygon'), 0);
+                  } else {
+                    setDrawMode('polygon');
+                  }
+                }}
                 disabled={isDrawingActive || currentDrawType === 'line'}
               >
                 Polygon
@@ -770,7 +798,16 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                 color="cyan"
                 size="xs"
                 leftSection={<IconLine size={14} />}
-                onClick={() => setDrawMode('line')}
+                onClick={() => {
+                  // Force mode change even if already in line mode
+                  // This allows switching from vertex editing (direct_select) to drawing new line
+                  if (drawMode === 'line') {
+                    setDrawMode(null);
+                    setTimeout(() => setDrawMode('line'), 0);
+                  } else {
+                    setDrawMode('line');
+                  }
+                }}
                 disabled={isDrawingActive || currentDrawType === 'polygon'}
               >
                 Line

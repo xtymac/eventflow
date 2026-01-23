@@ -50,6 +50,7 @@ export const CollectionsSchema = Type.Object({
 export const LandingPageSchema = Type.Object({
   title: Type.String(),
   description: Type.Optional(Type.String()),
+  conformsTo: Type.Optional(Type.Array(Type.String())),
   links: Type.Array(LinkSchema),
 });
 

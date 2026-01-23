@@ -11,6 +11,7 @@ interface UseMapDrawOptions {
   onFeatureCreated?: (feature: Feature) => void;  // Called when a new feature is drawn
   onFeaturesChange?: (features: Feature[]) => void;  // Called when features are updated/deleted
   onDrawComplete?: () => void;
+  onUserEdit?: () => void;  // Called on first user interaction after loading (vertex drag, new shape)
   initialGeometry?: Geometry | null;
   geometrySource?: 'auto' | 'manual';
   currentMode?: DrawModeType;
@@ -29,6 +30,8 @@ interface UseMapDrawReturn {
   isDrawing: boolean;
   // Restore features from store (for undo/redo)
   restoreFeatures: (features: Feature[] | null) => void;
+  // Force draw control to re-render (mode cycle)
+  forceRerender: () => void;
 }
 
 /**
@@ -54,8 +57,12 @@ export function useMapDraw(
   const lastDrawModeRef = useRef<'polygon' | 'line' | null>(null);
   // Track previous features for undo (cached before update)
   const previousFeaturesRef = useRef<Feature[] | null>(null);
+  // Flag to skip saving snapshot after restore (prevents duplicate snapshots)
+  const skipNextSnapshotRef = useRef(false);
   // Store modechange handler ref for cleanup
   const modeChangeHandlerRef = useRef<((e: { mode: string }) => void) | null>(null);
+  // Polling interval for waiting on draw control layer creation
+  const drawInitIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Store callbacks in refs to avoid recreating handlers on every render
   const onFeatureCreatedRef = useRef(options?.onFeatureCreated);
@@ -64,6 +71,10 @@ export function useMapDraw(
   onFeaturesChangeRef.current = options?.onFeaturesChange;
   const onDrawCompleteRef = useRef(options?.onDrawComplete);
   onDrawCompleteRef.current = options?.onDrawComplete;
+  const onUserEditRef = useRef(options?.onUserEdit);
+  onUserEditRef.current = options?.onUserEdit;
+  // Track if we've already notified about user interaction (only notify once per edit session)
+  const hasNotifiedUserEditRef = useRef(false);
 
   // Get all features from draw control
   const getAllFeatures = useCallback((): Feature[] => {
@@ -76,6 +87,13 @@ export function useMapDraw(
   const handleDrawCreate = useCallback(() => {
     console.log('[useMapDraw] draw.create event');
     if (!drawRef.current) return;
+
+    // Notify that user has started editing (first interaction after loading)
+    if (!hasNotifiedUserEditRef.current) {
+      hasNotifiedUserEditRef.current = true;
+      console.log('[useMapDraw] First user edit detected (create), notifying');
+      onUserEditRef.current?.();
+    }
 
     // Save snapshot of current state BEFORE the new feature (for proper undo)
     // Note: saveEditSnapshot captures both drawing AND asset selection state
@@ -126,13 +144,33 @@ export function useMapDraw(
   }, []);
 
   const handleDrawUpdate = useCallback(() => {
-    console.log('[useMapDraw] draw.update event, previousFeaturesRef:', previousFeaturesRef.current ? 'set' : 'null');
+    // Ignore draw.update events during initial geometry loading
+    // MapLibre GL Draw may fire update events when entering direct_select mode
+    if (isLoadingGeometryRef.current) {
+      console.log('[useMapDraw] draw.update event IGNORED (geometry is loading)');
+      return;
+    }
 
-    // Only save history if we have a cached previous state (from modechange or restore)
-    if (previousFeaturesRef.current) {
+    console.log('[useMapDraw] draw.update event, previousFeaturesRef:', previousFeaturesRef.current ? 'set' : 'null', 'skipNextSnapshot:', skipNextSnapshotRef.current);
+
+    // Notify that user has started editing (first interaction after loading)
+    if (!hasNotifiedUserEditRef.current) {
+      hasNotifiedUserEditRef.current = true;
+      console.log('[useMapDraw] First user edit detected, notifying');
+      onUserEditRef.current?.();
+    }
+
+    // Only save history if we have a cached previous state AND we're not skipping (after restore)
+    if (previousFeaturesRef.current && !skipNextSnapshotRef.current) {
       // Use unified saveEditSnapshot which captures both drawing AND asset selection state
       useUIStore.getState().saveEditSnapshot();
       console.log('[useMapDraw] Saved edit snapshot');
+    }
+
+    // Clear the skip flag after first update (whether we saved or not)
+    if (skipNextSnapshotRef.current) {
+      console.log('[useMapDraw] Skipped snapshot save (after restore)');
+      skipNextSnapshotRef.current = false;
     }
 
     // Always update previousFeaturesRef with current state for next update
@@ -191,9 +229,48 @@ export function useMapDraw(
       map.on('draw.modechange', handleModeChange);
 
       initialGeometryLoadedRef.current = false;
-      setIsReady(true);
+      hasNotifiedUserEditRef.current = false;
+
+      // maplibre-gl-draw defers layer creation if map.loaded() is false (during flyTo, etc.).
+      // Its internal code does: map.on("load", setup.connect) + 16ms polling for map.loaded().
+      // If tiles never finish loading, connect() never fires and layers never exist.
+      // Fix: fire 'load' on the map to force the draw library's deferred connect().
+      if (map.getSource('mapbox-gl-draw-hot')) {
+        console.log('[useMapDraw] Draw layers ready immediately');
+        setIsReady(true);
+      } else {
+        // Force the draw library to create its layers by triggering the 'load' event
+        // that its deferred connect() is listening for. This is safe because:
+        // 1. connect() removes the listener and clears its interval (idempotent)
+        // 2. addLayers() checks if sources exist before adding (idempotent)
+        // 3. The map's internal loaded() state is unaffected by firing this event
+        console.log('[useMapDraw] Draw layers deferred, forcing connect via load event');
+        map.fire('load');
+
+        if (map.getSource('mapbox-gl-draw-hot')) {
+          console.log('[useMapDraw] Draw layers created after forced load');
+          setIsReady(true);
+        } else {
+          // Fallback: poll briefly in case fire('load') was async
+          console.log('[useMapDraw] Draw layers still missing, polling...');
+          drawInitIntervalRef.current = setInterval(() => {
+            if (map.getSource('mapbox-gl-draw-hot')) {
+              console.log('[useMapDraw] Draw layers now ready');
+              if (drawInitIntervalRef.current) {
+                clearInterval(drawInitIntervalRef.current);
+                drawInitIntervalRef.current = null;
+              }
+              setIsReady(true);
+            }
+          }, 50);
+        }
+      }
     } else if (!isEnabled && drawRef.current) {
       console.log('[useMapDraw] Cleaning up draw control');
+      if (drawInitIntervalRef.current) {
+        clearInterval(drawInitIntervalRef.current);
+        drawInitIntervalRef.current = null;
+      }
       map.off('draw.create', handleDrawCreate);
       map.off('draw.update', handleDrawUpdate);
       map.off('draw.delete', handleDrawDelete);
@@ -214,6 +291,10 @@ export function useMapDraw(
     }
 
     return () => {
+      if (drawInitIntervalRef.current) {
+        clearInterval(drawInitIntervalRef.current);
+        drawInitIntervalRef.current = null;
+      }
       if (drawRef.current && map) {
         map.off('draw.create', handleDrawCreate);
         map.off('draw.update', handleDrawUpdate);
@@ -241,11 +322,17 @@ export function useMapDraw(
       return;
     }
 
-    // Skip if we just handled draw.create (we already set the mode manually)
+    const mode = options?.currentMode;
+
+    // Skip if we just handled draw.create/restore and mode is still select
     if (skipNextModeEffectRef.current) {
-      console.log('[useMapDraw] Skipping mode effect (handled by draw.create)');
+      if (mode === null || mode === 'select' || mode === undefined) {
+        console.log('[useMapDraw] Skipping mode effect (handled by manual mode change)');
+        skipNextModeEffectRef.current = false;
+        return;
+      }
+      // Explicit draw mode requested - honor it
       skipNextModeEffectRef.current = false;
-      return;
     }
 
     // Skip if geometry is currently being loaded (prevents race conditions)
@@ -253,8 +340,6 @@ export function useMapDraw(
       console.log('[useMapDraw] Skipping mode effect (geometry is loading)');
       return;
     }
-
-    const mode = options?.currentMode;
     const existingFeatures = drawRef.current.getAll();
     console.log('[useMapDraw] Applying mode:', mode, 'existing features:', existingFeatures.features.length);
 
@@ -316,12 +401,15 @@ export function useMapDraw(
     const needsLoad = !initialGeometryLoadedRef.current ||
       (currentGeometryHash !== null && currentGeometryHash !== loadedGeometryHashRef.current);
 
+    const effectiveGeometrySource = options?.geometrySource ?? 'manual';
+
     console.log('[useMapDraw] initialGeometry effect:', {
       hasDrawRef: !!drawRef.current,
       isEnabled,
       isReady,
       hasInitialGeometry: !!options?.initialGeometry,
       geometrySource: options?.geometrySource,
+      effectiveGeometrySource,
       needsLoad,
       initialGeometryLoaded: initialGeometryLoadedRef.current,
       geometryHashChanged: currentGeometryHash !== loadedGeometryHashRef.current,
@@ -332,7 +420,7 @@ export function useMapDraw(
       isEnabled &&
       isReady &&
       options?.initialGeometry &&
-      options?.geometrySource === 'manual' &&
+      effectiveGeometrySource === 'manual' &&
       needsLoad
     ) {
       drawRef.current.deleteAll();
@@ -424,8 +512,16 @@ export function useMapDraw(
           map.triggerRepaint();
         }
 
-        // Clear loading flag after mode is set
-        isLoadingGeometryRef.current = false;
+        // Cache initial state so first edit can be undone
+        // Note: Programmatic changeMode doesn't trigger draw.modechange, so we must set this manually
+        previousFeaturesRef.current = JSON.parse(JSON.stringify(featuresToAdd));
+        console.log('[useMapDraw] Initial load: cached previousFeaturesRef with', featuresToAdd.length, 'features');
+
+        // Clear loading flag after a short delay to cover any async draw.update events
+        // that MapLibre GL Draw may fire when entering direct_select mode
+        setTimeout(() => {
+          isLoadingGeometryRef.current = false;
+        }, 100);
 
         // Notify about loaded features so MapView can update store (including currentDrawType)
         // Do this AFTER entering direct_select so the polygon is already visible
@@ -646,26 +742,121 @@ export function useMapDraw(
           map.triggerRepaint();
         }
 
-        // Cache the current state for undo tracking (DEEP COPY as Feature[])
-        // This ensures handleDrawUpdate has a previous state to compare
-        // NOTE: Programmatic changeMode doesn't trigger draw.modechange event,
-        // so we must manually set previousFeaturesRef here
-        const currentFeatures = drawRef.current.getAll().features as Feature[];
-        previousFeaturesRef.current = JSON.parse(JSON.stringify(currentFeatures));
-        console.log('[useMapDraw] restoreFeatures: set previousFeaturesRef with', currentFeatures.length, 'features');
+        // Cache restored state so the NEXT edit can be undone
+        // Also set skip flag to prevent duplicate snapshot (the restored state was already in history)
+        const restoredFeatures = drawRef.current.getAll().features as Feature[];
+        previousFeaturesRef.current = JSON.parse(JSON.stringify(restoredFeatures));
+        skipNextSnapshotRef.current = true;  // Don't save duplicate snapshot on next update
+        console.log('[useMapDraw] restoreFeatures: cached previousFeaturesRef with', restoredFeatures.length, 'features, skipNextSnapshot=true');
 
-        // Clear loading flag after mode is set
-        isLoadingGeometryRef.current = false;
+        // Delay clearing loading flag to suppress draw.update events
+        // that fire asynchronously after changeMode('direct_select')
+        setTimeout(() => {
+          isLoadingGeometryRef.current = false;
+        }, 100);
       } else {
         // No features - go to simple_select
         drawRef.current.changeMode('simple_select');
         previousFeaturesRef.current = null;
+        skipNextSnapshotRef.current = false;
         isLoadingGeometryRef.current = false;
       }
     } catch (e) {
       console.warn('Failed to restore features:', e);
       isLoadingGeometryRef.current = false;
     }
+  }, [map]);
+
+  // Force the draw control to re-render by:
+  // 1. Deleting and re-adding all features (clean source pipeline)
+  // 2. Moving draw layers to top of layer stack (fix z-ordering)
+  // 3. Entering direct_select mode (feature in HOT source = active)
+  const forceRerender = useCallback(() => {
+    if (!drawRef.current || !map) return;
+
+    const data = drawRef.current.getAll();
+    const features = data.features as Feature[];
+    if (features.length === 0) return;
+
+    console.log('[useMapDraw] forceRerender: delete+re-add+moveLayer, features:', features.length);
+
+    // Suppress mode effect and draw.update events during re-render
+    isLoadingGeometryRef.current = true;
+    skipNextModeEffectRef.current = true;
+
+    // Deep copy features before deleting (remove IDs so draw assigns fresh ones)
+    const featuresCopy: Feature[] = JSON.parse(JSON.stringify(features));
+    for (const f of featuresCopy) {
+      delete (f as { id?: string | number }).id;
+    }
+
+    // Delete all features from draw control
+    drawRef.current.deleteAll();
+
+    // Wait one animation frame for the deletion to be processed by MapLibre's renderer,
+    // then re-add features. This forces a clean source update in the draw pipeline.
+    requestAnimationFrame(() => {
+      if (!drawRef.current) {
+        isLoadingGeometryRef.current = false;
+        return;
+      }
+
+      let lastId: string | undefined;
+      for (const feature of featuresCopy) {
+        const ids = drawRef.current.add(feature);
+        if (ids && ids.length > 0) {
+          lastId = ids[0];
+        }
+      }
+
+      // Enter direct_select so the polygon is visible (active state in HOT source)
+      if (lastId) {
+        try {
+          skipNextModeEffectRef.current = true;
+          drawRef.current.changeMode('direct_select', { featureId: lastId });
+          console.log('[useMapDraw] forceRerender: re-added features, direct_select for:', lastId);
+        } catch (e) {
+          console.warn('[useMapDraw] forceRerender: direct_select failed:', e);
+          try { drawRef.current.changeMode('simple_select'); } catch {}
+        }
+      }
+
+      // Move all draw layers to the top of the layer stack.
+      // maplibre-gl-draw creates layers with .cold and .hot suffixes for each style.
+      // COLD layers first (inactive features), then HOT on top (active features).
+      const baseIds = [
+        'gl-draw-polygon-fill-inactive',
+        'gl-draw-polygon-fill-active',
+        'gl-draw-polygon-stroke-inactive',
+        'gl-draw-polygon-stroke-active',
+        'gl-draw-line-inactive',
+        'gl-draw-line-active',
+        'gl-draw-vertex-active',
+        'gl-draw-vertex-selected',
+        'gl-draw-midpoint',
+        'gl-draw-point-inactive',
+        'gl-draw-point-active',
+      ];
+      // Move cold layers first, then hot layers on top
+      for (const id of baseIds) {
+        try { map.moveLayer(`${id}.cold`); } catch {}
+      }
+      for (const id of baseIds) {
+        try { map.moveLayer(`${id}.hot`); } catch {}
+      }
+
+      // Update previousFeaturesRef with the new feature references (new IDs)
+      const newFeatures = drawRef.current.getAll().features as Feature[];
+      if (newFeatures.length > 0) {
+        previousFeaturesRef.current = JSON.parse(JSON.stringify(newFeatures));
+      }
+
+      // Trigger map repaint and clear loading flag
+      map.triggerRepaint();
+      setTimeout(() => {
+        isLoadingGeometryRef.current = false;
+      }, 50);
+    });
   }, [map]);
 
   return {
@@ -679,5 +870,6 @@ export function useMapDraw(
     startAddAnother,
     isDrawing,
     restoreFeatures,
+    forceRerender,
   };
 }

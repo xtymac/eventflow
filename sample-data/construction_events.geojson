@@ -238,6 +238,243 @@
         "postEndDecision": "pending",
         "affectedRoadAssetIds": ["RA-KITA-0121", "RA-KITA-0122", "RA-KITA-0123"]
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9310, 35.2420],
+          [136.9315, 35.2425],
+          [136.9320, 35.2430]
+        ]
+      },
+      "properties": {
+        "id": "CE-011",
+        "name": "Emergency Sewer Pipe Repair",
+        "status": "active",
+        "startDate": "2026-01-20T00:00:00Z",
+        "endDate": "2026-02-10T00:00:00Z",
+        "restrictionType": "full",
+        "department": "Joge Suido Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0130", "RA-KITA-0131"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9180, 35.2280],
+          [136.9185, 35.2285],
+          [136.9190, 35.2290]
+        ]
+      },
+      "properties": {
+        "id": "CE-012",
+        "name": "Electric Cable Underground Installation",
+        "status": "active",
+        "startDate": "2026-01-12T00:00:00Z",
+        "endDate": "2026-03-20T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0200", "RA-KITA-0201", "RA-KITA-0202"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9260, 35.2310],
+          [136.9265, 35.2315],
+          [136.9270, 35.2320]
+        ]
+      },
+      "properties": {
+        "id": "CE-013",
+        "name": "Road Repaving - Route 41",
+        "status": "active",
+        "startDate": "2026-01-18T00:00:00Z",
+        "endDate": "2026-02-28T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0350", "RA-KITA-0351", "RA-KITA-0352"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [136.9150, 35.2260],
+          [136.9165, 35.2260],
+          [136.9165, 35.2275],
+          [136.9150, 35.2275],
+          [136.9150, 35.2260]
+        ]]
+      },
+      "properties": {
+        "id": "CE-014",
+        "name": "Traffic Signal System Upgrade",
+        "status": "active",
+        "startDate": "2026-01-21T00:00:00Z",
+        "endDate": "2026-02-15T00:00:00Z",
+        "restrictionType": "workzone",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0290", "RA-KITA-0291"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9225, 35.2370],
+          [136.9230, 35.2375],
+          [136.9235, 35.2380]
+        ]
+      },
+      "properties": {
+        "id": "CE-015",
+        "name": "Bicycle Lane Extension",
+        "status": "planned",
+        "startDate": "2026-02-10T00:00:00Z",
+        "endDate": "2026-04-15T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Midori Seibi Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0140", "RA-KITA-0141", "RA-KITA-0142"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9290, 35.2350],
+          [136.9295, 35.2355],
+          [136.9300, 35.2360]
+        ]
+      },
+      "properties": {
+        "id": "CE-016",
+        "name": "Storm Drain Cleaning & Repair",
+        "status": "planned",
+        "startDate": "2026-02-20T00:00:00Z",
+        "endDate": "2026-03-10T00:00:00Z",
+        "restrictionType": "workzone",
+        "department": "Joge Suido Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0160", "RA-KITA-0161"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [136.9200, 35.2180],
+          [136.9220, 35.2180],
+          [136.9220, 35.2200],
+          [136.9200, 35.2200],
+          [136.9200, 35.2180]
+        ]]
+      },
+      "properties": {
+        "id": "CE-017",
+        "name": "Building Demolition Safety Zone",
+        "status": "active",
+        "startDate": "2026-01-15T00:00:00Z",
+        "endDate": "2026-02-28T00:00:00Z",
+        "restrictionType": "full",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0280", "RA-KITA-0281", "RA-KITA-0282"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9170, 35.2340],
+          [136.9175, 35.2345],
+          [136.9180, 35.2350],
+          [136.9185, 35.2355]
+        ]
+      },
+      "properties": {
+        "id": "CE-018",
+        "name": "New Access Road Construction",
+        "status": "planned",
+        "startDate": "2026-03-01T00:00:00Z",
+        "endDate": "2026-08-31T00:00:00Z",
+        "restrictionType": "full",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0310", "RA-KITA-0311", "RA-KITA-0312"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9245, 35.2295],
+          [136.9250, 35.2300],
+          [136.9255, 35.2305]
+        ]
+      },
+      "properties": {
+        "id": "CE-019",
+        "name": "Pedestrian Crossing Widening",
+        "status": "planned",
+        "startDate": "2026-02-25T00:00:00Z",
+        "endDate": "2026-03-25T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Midori Seibi Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0320", "RA-KITA-0321"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [136.9130, 35.2230],
+          [136.9145, 35.2230],
+          [136.9145, 35.2245],
+          [136.9130, 35.2245],
+          [136.9130, 35.2230]
+        ]]
+      },
+      "properties": {
+        "id": "CE-020",
+        "name": "Fiber Optic Network Installation",
+        "status": "active",
+        "startDate": "2026-01-08T00:00:00Z",
+        "endDate": "2026-03-15T00:00:00Z",
+        "restrictionType": "workzone",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0330", "RA-KITA-0331", "RA-KITA-0332"]
+      }
     }
   ]
 }

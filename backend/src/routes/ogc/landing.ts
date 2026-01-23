@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { LandingPageSchema } from './schemas/ogc-common.js';
+import { CONFORMANCE_CLASSES } from './conformance.js';
 
 export async function landingRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -11,6 +12,9 @@ export async function landingRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'OGC API Landing Page',
       tags: ['OGC API'],
+      querystring: Type.Object({
+        f: Type.Optional(Type.String()),
+      }),
       response: {
         200: LandingPageSchema,
       },
@@ -21,6 +25,7 @@ export async function landingRoutes(fastify: FastifyInstance) {
     return {
       title: 'Nagoya Infrastructure DX - OGC API',
       description: 'OGC API Features and Tiles for Nagoya road infrastructure assets, construction events, and inspections',
+      conformsTo: CONFORMANCE_CLASSES,
       links: [
         {
           href: `${baseUrl}/ogc`,

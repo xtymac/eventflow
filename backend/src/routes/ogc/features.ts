@@ -48,6 +48,35 @@ import { nanoid } from 'nanoid';
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 10000;
 
+// Datetime filter parsing
+interface DateTimeFilter {
+  type: 'instant' | 'interval';
+  start?: Date;
+  end?: Date;
+}
+
+function parseDatetime(datetimeStr: string): DateTimeFilter | null {
+  if (datetimeStr.includes('/')) {
+    const [startStr, endStr] = datetimeStr.split('/');
+    const start = startStr === '..' ? undefined : new Date(startStr);
+    const end = endStr === '..' ? undefined : new Date(endStr);
+
+    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) {
+      return null;
+    }
+    if (!start && !end) {
+      return null;
+    }
+    return { type: 'interval', start: start || undefined, end: end || undefined };
+  }
+
+  const instant = new Date(datetimeStr);
+  if (isNaN(instant.getTime())) {
+    return null;
+  }
+  return { type: 'instant', start: instant, end: instant };
+}
+
 export async function featuresRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
@@ -71,6 +100,8 @@ export async function featuresRoutes(fastify: FastifyInstance) {
         // CQL2 filter (will be implemented in Step 4)
         filter: Type.Optional(Type.String()),
         'filter-lang': Type.Optional(Type.String()),
+        // Temporal filter
+        datetime: Type.Optional(Type.String()),
         // Count
         count: Type.Optional(Type.Union([Type.Boolean(), Type.Literal('true'), Type.Literal('false')])),
         // Format
@@ -92,6 +123,7 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       crs: outputCrs,
       filter,
       'filter-lang': filterLang,
+      datetime: datetimeParam,
       count: countParam,
       f: format,
     } = request.query;
@@ -117,15 +149,15 @@ export async function featuresRoutes(fastify: FastifyInstance) {
     const limit = Math.min(limitParam ?? DEFAULT_LIMIT, MAX_LIMIT);
     const offset = offsetParam ?? 0;
 
-    // Parse count flag
-    const includeCount = countParam === true || countParam === 'true';
+    // Parse count flag (default: true for ArcGIS compatibility, opt-out with count=false)
+    const includeCount = countParam !== false && countParam !== 'false';
 
     // Build WHERE conditions
     const conditions: SQL[] = [];
 
     // Parse and validate bbox
     if (bboxParam) {
-      const bbox = parseBbox(bboxParam);
+      const bbox = parseBbox(bboxParam, bboxCrs);
       if (!bbox) {
         sendOgcError(reply, new InvalidBboxError(
           'Invalid bbox format. Expected: minX,minY,maxX,maxY'
@@ -157,6 +189,38 @@ export async function featuresRoutes(fastify: FastifyInstance) {
           `Failed to parse filter: ${error instanceof Error ? error.message : String(error)}`
         ));
         return;
+      }
+    }
+
+    // Datetime filter
+    if (datetimeParam && config.temporalProperty) {
+      const dtFilter = parseDatetime(datetimeParam);
+      if (!dtFilter) {
+        sendOgcError(reply, new OgcError(400, 'Invalid Datetime',
+          'Invalid datetime format. Use ISO 8601 instant or interval (e.g., 2024-01-01/2024-12-31 or ../2024-06-30).'));
+        return;
+      }
+
+      if (config.temporalEndProperty) {
+        // Interval overlap: feature [start, end] overlaps query [start, end]
+        if (dtFilter.start) {
+          conditions.push(sql`${sql.raw(config.temporalEndProperty)}::timestamptz >= ${dtFilter.start.toISOString()}::timestamptz`);
+        }
+        if (dtFilter.end) {
+          conditions.push(sql`${sql.raw(config.temporalProperty)}::timestamptz <= ${dtFilter.end.toISOString()}::timestamptz`);
+        }
+      } else {
+        // Single temporal property: range inclusion
+        if (dtFilter.type === 'instant') {
+          conditions.push(sql`${sql.raw(config.temporalProperty)}::date = ${dtFilter.start!.toISOString().slice(0, 10)}::date`);
+        } else {
+          if (dtFilter.start) {
+            conditions.push(sql`${sql.raw(config.temporalProperty)}::timestamptz >= ${dtFilter.start.toISOString()}::timestamptz`);
+          }
+          if (dtFilter.end) {
+            conditions.push(sql`${sql.raw(config.temporalProperty)}::timestamptz <= ${dtFilter.end.toISOString()}::timestamptz`);
+          }
+        }
       }
     }
 
@@ -261,9 +325,10 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       ...(includeCount && totalCount !== undefined && { numberMatched: totalCount }),
     };
 
-    // Set Content-Crs header
+    // Set Content-Crs and Content-Type headers for GeoJSON response
     const responseCrs = outputCrs || CRS84;
     reply.header('Content-Crs', formatContentCrsHeader(responseCrs));
+    reply.header('Content-Type', 'application/geo+json');
 
     return response;
   });
@@ -364,9 +429,10 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       ],
     };
 
-    // Set Content-Crs header
+    // Set Content-Crs and Content-Type headers
     const responseCrs = outputCrs || CRS84;
     reply.header('Content-Crs', formatContentCrsHeader(responseCrs));
+    reply.header('Content-Type', 'application/geo+json');
 
     return feature;
   });
@@ -516,6 +582,7 @@ export async function featuresRoutes(fastify: FastifyInstance) {
 
     // Set Location header per OGC Part 4 spec
     reply.header('Location', `${baseUrl}/ogc/collections/${collectionId}/items/${newId}`);
+    reply.header('Content-Type', 'application/geo+json');
     reply.status(201);
 
     return createdFeature;
@@ -648,6 +715,7 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       ],
     };
 
+    reply.header('Content-Type', 'application/geo+json');
     return updatedFeature;
   });
 
@@ -822,6 +890,7 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       ],
     };
 
+    reply.header('Content-Type', 'application/geo+json');
     return updatedFeature;
   });
 

@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { ConformanceSchema } from './schemas/ogc-common.js';
 
@@ -14,9 +15,10 @@ export const CONFORMANCE_CLASSES = [
   // OGC API - Features Part 2: CRS by Reference
   'http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs',
 
-  // OGC API - Features Part 3: Filtering
+  // OGC API - Features Part 3: Filtering and Queryables
   'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter',
   'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter',
+  'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables',
 
   // CQL2
   'http://www.opengis.net/spec/cql2/1.0/conf/cql2-text',
@@ -38,6 +40,9 @@ export async function conformanceRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'OGC API Conformance Classes',
       tags: ['OGC API'],
+      querystring: Type.Object({
+        f: Type.Optional(Type.String()),
+      }),
       response: {
         200: ConformanceSchema,
       },

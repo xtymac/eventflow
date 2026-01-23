@@ -98,11 +98,13 @@ const DiffStatsSchema = Type.Object({
   addedCount: Type.Number(),
   updatedCount: Type.Number(),
   deactivatedCount: Type.Number(),
+  geometryMatchCount: Type.Optional(Type.Number()),
 });
 
 const DiffResultSchema = Type.Object({
   scope: Type.String(),
   regionalRefresh: Type.Boolean(),
+  comparisonMode: Type.Optional(Type.String()),
   added: Type.Array(Type.Any()),
   updated: Type.Array(Type.Any()),
   deactivated: Type.Array(Type.Any()),
@@ -457,7 +459,13 @@ export async function importVersionsRoutes(fastify: FastifyInstance) {
       try {
         await importVersionService.updateJobProgress(job.id, 10, 'running');
 
-        const result = await importVersionService.publishVersion(id);
+        const result = await importVersionService.publishVersion(
+          id,
+          undefined,
+          async (percent) => {
+            await importVersionService.updateJobProgress(job.id, percent);
+          }
+        );
 
         await importVersionService.updateJobProgress(
           job.id,

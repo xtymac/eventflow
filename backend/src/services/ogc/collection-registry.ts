@@ -8,7 +8,17 @@ export const EPSG_4326 = 'http://www.opengis.net/def/crs/EPSG/0/4326';
 export const EPSG_3857 = 'http://www.opengis.net/def/crs/EPSG/0/3857';
 export const EPSG_6675 = 'http://www.opengis.net/def/crs/EPSG/0/6675';
 
-export const SUPPORTED_CRS = [CRS84, EPSG_4326, EPSG_3857, EPSG_6675];
+export const SUPPORTED_CRS = [
+  CRS84, EPSG_4326, EPSG_3857,
+  'http://www.opengis.net/def/crs/EPSG/0/6669',
+  'http://www.opengis.net/def/crs/EPSG/0/6670',
+  'http://www.opengis.net/def/crs/EPSG/0/6671',
+  'http://www.opengis.net/def/crs/EPSG/0/6672',
+  'http://www.opengis.net/def/crs/EPSG/0/6673',
+  'http://www.opengis.net/def/crs/EPSG/0/6674',
+  EPSG_6675,
+  'http://www.opengis.net/def/crs/EPSG/0/6676',
+];
 
 // Geometry types
 type GeometryType = 'Point' | 'LineString' | 'Polygon' | 'MultiPoint' | 'MultiLineString' | 'MultiPolygon';
@@ -29,6 +39,19 @@ export interface CollectionConfig {
   queryables: string[];
   /** Property mapping: OGC property name -> DB column name */
   propertyMap: Record<string, string>;
+  /** Primary temporal property for datetime filtering (DB column name) */
+  temporalProperty?: string;
+  /** End temporal property for interval-based temporal filtering (DB column name) */
+  temporalEndProperty?: string;
+  /** Whether this collection has vector tiles available */
+  hasTiles?: boolean;
+  /** Property type metadata for queryables endpoint */
+  propertyTypes?: Record<string, {
+    type: 'string' | 'number' | 'integer' | 'boolean';
+    format?: 'date-time' | 'date';
+    title?: string;
+    enum?: string[];
+  }>;
 }
 
 /**
@@ -43,7 +66,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
     geometryTypes: ['LineString', 'MultiLineString'],
     geometryColumn: 'geometry',
     idColumn: 'id',
-    writeable: false, // Internal only - use /api/assets
+    writeable: false,
     queryables: ['id', 'name', 'roadType', 'lanes', 'direction', 'status', 'ward', 'ownerDepartment', 'dataSource'],
     propertyMap: {
       id: 'id',
@@ -58,6 +81,22 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       validFrom: 'valid_from',
       validTo: 'valid_to',
       updatedAt: 'updated_at',
+    },
+    temporalProperty: 'valid_from',
+    temporalEndProperty: 'valid_to',
+    hasTiles: true,
+    propertyTypes: {
+      id: { type: 'string', title: 'Feature ID' },
+      name: { type: 'string', title: 'Road Name' },
+      roadType: { type: 'string', title: 'Road Type' },
+      lanes: { type: 'integer', title: 'Number of Lanes' },
+      direction: { type: 'string', title: 'Direction' },
+      status: { type: 'string', title: 'Status', enum: ['active', 'retired', 'planned'] },
+      ward: { type: 'string', title: 'Ward' },
+      ownerDepartment: { type: 'string', title: 'Owner Department' },
+      dataSource: { type: 'string', title: 'Data Source' },
+      validFrom: { type: 'string', format: 'date-time', title: 'Valid From' },
+      validTo: { type: 'string', format: 'date-time', title: 'Valid To' },
     },
   },
   'construction-events': {
@@ -82,6 +121,19 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       createdBy: 'created_by',
       updatedAt: 'updated_at',
     },
+    temporalProperty: 'start_date',
+    temporalEndProperty: 'end_date',
+    hasTiles: true,
+    propertyTypes: {
+      id: { type: 'string', title: 'Feature ID' },
+      name: { type: 'string', title: 'Event Name' },
+      status: { type: 'string', title: 'Status', enum: ['planned', 'active', 'completed', 'cancelled'] },
+      restrictionType: { type: 'string', title: 'Restriction Type', enum: ['full', 'partial', 'none'] },
+      department: { type: 'string', title: 'Department' },
+      ward: { type: 'string', title: 'Ward' },
+      startDate: { type: 'string', format: 'date-time', title: 'Start Date' },
+      endDate: { type: 'string', format: 'date-time', title: 'End Date' },
+    },
   },
   'inspections': {
     id: 'inspections',
@@ -102,6 +154,14 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       notes: 'notes',
       createdAt: 'created_at',
     },
+    temporalProperty: 'inspection_date',
+    propertyTypes: {
+      id: { type: 'string', title: 'Feature ID' },
+      eventId: { type: 'string', title: 'Event ID' },
+      roadAssetId: { type: 'string', title: 'Road Asset ID' },
+      inspectionDate: { type: 'string', format: 'date-time', title: 'Inspection Date' },
+      result: { type: 'string', title: 'Result', enum: ['passed', 'failed', 'pending', 'deferred'] },
+    },
   },
 };
 
@@ -120,14 +180,17 @@ export function getCollectionIds(): string[] {
 }
 
 /**
- * Compute spatial extent for a collection from PostGIS
+ * Compute spatial and temporal extent for a collection from PostGIS
  */
 export async function computeExtent(collectionId: string): Promise<Extent | undefined> {
   const config = COLLECTIONS[collectionId];
   if (!config) return undefined;
 
   try {
-    const result = await db.execute<{ bbox: number[] | null }>(sql`
+    const extent: Extent = {};
+
+    // Spatial extent
+    const spatialResult = await db.execute<{ bbox: number[] | null }>(sql`
       SELECT ARRAY[
         ST_XMin(ext), ST_YMin(ext), ST_XMax(ext), ST_YMax(ext)
       ] as bbox
@@ -137,17 +200,43 @@ export async function computeExtent(collectionId: string): Promise<Extent | unde
       ) sub
     `);
 
-    const bbox = result.rows[0]?.bbox;
-    if (!bbox || bbox.some(v => v === null)) {
-      return undefined;
+    const bbox = spatialResult.rows[0]?.bbox;
+    if (bbox && !bbox.some(v => v === null)) {
+      extent.spatial = { bbox: [bbox], crs: CRS84 };
     }
 
-    return {
-      spatial: {
-        bbox: [bbox],
-        crs: CRS84,
-      },
-    };
+    // Temporal extent
+    if (config.temporalProperty) {
+      const endCol = config.temporalEndProperty || config.temporalProperty;
+      const temporalResult = await db.execute<{ min_time: string | null; max_time: string | null }>(sql`
+        SELECT
+          MIN(${sql.raw(config.temporalProperty)})::text as min_time,
+          MAX(${sql.raw(endCol)})::text as max_time
+        FROM ${sql.raw(config.table)}
+      `);
+
+      const minTimeRaw = temporalResult.rows[0]?.min_time;
+      const maxTimeRaw = temporalResult.rows[0]?.max_time;
+
+      // Convert PostgreSQL text format to ISO 8601 (ArcGIS requires this)
+      const toIso = (s: string | null): string | null => {
+        if (!s) return null;
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      };
+
+      const minTime = toIso(minTimeRaw);
+      const maxTime = toIso(maxTimeRaw);
+
+      if (minTime || maxTime) {
+        extent.temporal = {
+          interval: [[minTime, maxTime]],
+          trs: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian',
+        };
+      }
+    }
+
+    return Object.keys(extent).length > 0 ? extent : undefined;
   } catch {
     return undefined;
   }
@@ -157,7 +246,8 @@ export async function computeExtent(collectionId: string): Promise<Extent | unde
  * Build links for a collection
  */
 export function buildCollectionLinks(baseUrl: string, collectionId: string): Link[] {
-  return [
+  const config = COLLECTIONS[collectionId];
+  const links: Link[] = [
     {
       href: `${baseUrl}/ogc/collections/${collectionId}`,
       rel: 'self',
@@ -176,7 +266,25 @@ export function buildCollectionLinks(baseUrl: string, collectionId: string): Lin
       type: 'application/geopackage+sqlite3',
       title: 'Items as GeoPackage',
     },
+    {
+      href: `${baseUrl}/ogc/collections/${collectionId}/queryables`,
+      rel: 'http://www.opengis.net/def/rel/ogc/1.0/queryables',
+      type: 'application/schema+json',
+      title: 'Queryable properties',
+    },
   ];
+
+  // Add tiles link if collection supports tiles
+  if (config?.hasTiles) {
+    links.push({
+      href: `${baseUrl}/ogc/collections/${collectionId}/tiles`,
+      rel: 'http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector',
+      type: 'application/json',
+      title: 'Vector tilesets',
+    });
+  }
+
+  return links;
 }
 
 /**

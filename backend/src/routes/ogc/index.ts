@@ -3,6 +3,7 @@ import { landingRoutes } from './landing.js';
 import { conformanceRoutes } from './conformance.js';
 import { collectionsRoutes } from './collections.js';
 import { featuresRoutes } from './features.js';
+import { queryablesRoutes } from './queryables.js';
 import { tilesRoutes } from './tiles.js';
 import { openapiRoutes } from './openapi.js';
 
@@ -28,6 +29,9 @@ export async function ogcRoutes(fastify: FastifyInstance) {
 
   // Features (items) endpoints: GET/POST/PUT/PATCH/DELETE
   await fastify.register(featuresRoutes);
+
+  // Queryables: GET /ogc/collections/:id/queryables
+  await fastify.register(queryablesRoutes);
 
   // Tiles endpoints: /collections/{id}/tiles
   await fastify.register(tilesRoutes);

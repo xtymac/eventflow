@@ -21,6 +21,9 @@ export async function collectionsRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'List all feature collections',
       tags: ['OGC API'],
+      querystring: Type.Object({
+        f: Type.Optional(Type.String()),
+      }),
       response: {
         200: CollectionsSchema,
       },
@@ -67,6 +70,9 @@ export async function collectionsRoutes(fastify: FastifyInstance) {
       tags: ['OGC API'],
       params: Type.Object({
         collectionId: Type.String(),
+      }),
+      querystring: Type.Object({
+        f: Type.Optional(Type.String()),
       }),
       response: {
         200: CollectionSchema,

@@ -36,6 +36,9 @@ function generateOpenApiSpec(baseUrl: string) {
           tags: ['Capabilities'],
           summary: 'Landing page',
           operationId: 'getLandingPage',
+          parameters: [
+            { name: 'f', in: 'query', schema: { type: 'string', enum: ['json'] }, description: 'Output format' },
+          ],
           responses: {
             '200': {
               description: 'Landing page',
@@ -53,6 +56,9 @@ function generateOpenApiSpec(baseUrl: string) {
           tags: ['Capabilities'],
           summary: 'Conformance declaration',
           operationId: 'getConformance',
+          parameters: [
+            { name: 'f', in: 'query', schema: { type: 'string', enum: ['json'] }, description: 'Output format' },
+          ],
           responses: {
             '200': {
               description: 'Conformance classes',
@@ -70,6 +76,9 @@ function generateOpenApiSpec(baseUrl: string) {
           tags: ['Collections'],
           summary: 'List collections',
           operationId: 'getCollections',
+          parameters: [
+            { name: 'f', in: 'query', schema: { type: 'string', enum: ['json'] }, description: 'Output format' },
+          ],
           responses: {
             '200': {
               description: 'List of collections',
@@ -94,6 +103,7 @@ function generateOpenApiSpec(baseUrl: string) {
               required: true,
               schema: { type: 'string', enum: collections.map(c => c.id) },
             },
+            { name: 'f', in: 'query', schema: { type: 'string', enum: ['json'] }, description: 'Output format' },
           ],
           responses: {
             '200': {
@@ -107,6 +117,33 @@ function generateOpenApiSpec(baseUrl: string) {
             '404': {
               description: 'Collection not found',
             },
+          },
+        },
+      },
+      '/collections/{collectionId}/queryables': {
+        get: {
+          tags: ['Features'],
+          summary: 'Get queryable properties (OGC Features Part 3)',
+          operationId: 'getQueryables',
+          parameters: [
+            {
+              name: 'collectionId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string', enum: collections.map(c => c.id) },
+            },
+            { name: 'f', in: 'query', schema: { type: 'string', enum: ['json'] }, description: 'Output format' },
+          ],
+          responses: {
+            '200': {
+              description: 'Queryable properties as JSON Schema',
+              content: {
+                'application/schema+json': {
+                  schema: { type: 'object' },
+                },
+              },
+            },
+            '404': { description: 'Collection not found' },
           },
         },
       },
@@ -150,6 +187,12 @@ function generateOpenApiSpec(baseUrl: string) {
               description: 'Output CRS',
             },
             {
+              name: 'datetime',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'ISO 8601 instant or interval (e.g., 2024-01-01/2024-12-31 or ../2024-06-30)',
+            },
+            {
               name: 'filter',
               in: 'query',
               schema: { type: 'string' },
@@ -159,6 +202,18 @@ function generateOpenApiSpec(baseUrl: string) {
               name: 'filter-lang',
               in: 'query',
               schema: { type: 'string', enum: ['cql2-text'] },
+            },
+            {
+              name: 'count',
+              in: 'query',
+              schema: { type: 'boolean', default: true },
+              description: 'Include numberMatched in response (default: true, set false for performance)',
+            },
+            {
+              name: 'f',
+              in: 'query',
+              schema: { type: 'string', enum: ['geojson', 'gpkg'] },
+              description: 'Output format',
             },
           ],
           responses: {
@@ -286,6 +341,19 @@ function generateOpenApiSpec(baseUrl: string) {
                   },
                 },
                 crs: { type: 'string' },
+              },
+            },
+            temporal: {
+              type: 'object',
+              properties: {
+                interval: {
+                  type: 'array',
+                  items: {
+                    type: 'array',
+                    items: { type: 'string', nullable: true },
+                  },
+                },
+                trs: { type: 'string' },
               },
             },
           },

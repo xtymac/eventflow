@@ -5,7 +5,15 @@ import { InvalidCrsError } from './ogc-error.js';
 export const CRS84 = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84';
 export const EPSG_4326 = 'http://www.opengis.net/def/crs/EPSG/0/4326';
 export const EPSG_3857 = 'http://www.opengis.net/def/crs/EPSG/0/3857';
+// JGD2011 Plane Rectangular Coordinate Systems (zones I-VIII for Japan)
+export const EPSG_6669 = 'http://www.opengis.net/def/crs/EPSG/0/6669';
+export const EPSG_6670 = 'http://www.opengis.net/def/crs/EPSG/0/6670';
+export const EPSG_6671 = 'http://www.opengis.net/def/crs/EPSG/0/6671';
+export const EPSG_6672 = 'http://www.opengis.net/def/crs/EPSG/0/6672';
+export const EPSG_6673 = 'http://www.opengis.net/def/crs/EPSG/0/6673';
+export const EPSG_6674 = 'http://www.opengis.net/def/crs/EPSG/0/6674';
 export const EPSG_6675 = 'http://www.opengis.net/def/crs/EPSG/0/6675';
+export const EPSG_6676 = 'http://www.opengis.net/def/crs/EPSG/0/6676';
 
 // Internal storage SRID
 export const STORAGE_SRID = 4326;
@@ -23,14 +31,21 @@ const CRS_MAP: Record<string, number> = {
   [CRS84]: 4326,
   [EPSG_4326]: 4326,
   [EPSG_3857]: 3857,
+  [EPSG_6669]: 6669,
+  [EPSG_6670]: 6670,
+  [EPSG_6671]: 6671,
+  [EPSG_6672]: 6672,
+  [EPSG_6673]: 6673,
+  [EPSG_6674]: 6674,
   [EPSG_6675]: 6675,
+  [EPSG_6676]: 6676,
 };
 
 /**
  * EPSG codes that use projected coordinates (meters)
  * Important for S_DWITHIN distance calculations
  */
-const PROJECTED_CRS = new Set([3857, 6675]);
+const PROJECTED_CRS = new Set([3857, 6669, 6670, 6671, 6672, 6673, 6674, 6675, 6676]);
 
 /**
  * List of supported CRS URIs for API responses
@@ -146,9 +161,13 @@ export function transformBboxFilter(
  * Supports both 2D (4 values) and 3D (6 values) bboxes
  *
  * @param bboxString - Comma-separated bbox string "minX,minY,maxX,maxY"
+ * @param bboxCrs - Optional CRS URI for the bbox coordinates
  * @returns Parsed bbox array or null if invalid
  */
-export function parseBbox(bboxString: string): [number, number, number, number] | null {
+export function parseBbox(
+  bboxString: string,
+  bboxCrs?: string
+): [number, number, number, number] | null {
   const parts = bboxString.split(',').map(Number);
 
   // Only support 2D bbox for now
@@ -158,17 +177,19 @@ export function parseBbox(bboxString: string): [number, number, number, number] 
 
   const [minX, minY, maxX, maxY] = parts;
 
-  // Basic validation
+  // Basic ordering validation
   if (minX > maxX || minY > maxY) {
     return null;
   }
 
-  // Validate WGS84 coordinate ranges for default CRS
-  // (More lenient validation - projected CRS can have different ranges)
-  if (Math.abs(minX) > 180 || Math.abs(maxX) > 180 ||
-      Math.abs(minY) > 90 || Math.abs(maxY) > 90) {
-    // Could be in projected CRS, allow it but validate later
+  // Only validate WGS84 coordinate ranges when no projected CRS is specified
+  if (!bboxCrs || bboxCrs === CRS84 || bboxCrs === EPSG_4326) {
+    if (Math.abs(minX) > 180 || Math.abs(maxX) > 180 ||
+        Math.abs(minY) > 90 || Math.abs(maxY) > 90) {
+      return null;
+    }
   }
+  // For projected CRS (EPSG:3857, JGD2011 zones), allow any coordinate range
 
   return [minX, minY, maxX, maxY];
 }

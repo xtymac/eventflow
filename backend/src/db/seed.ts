@@ -73,10 +73,10 @@ async function seed() {
       await db.execute(sql`
         INSERT INTO construction_events (
           id, name, status, start_date, end_date, restriction_type,
-          geometry, post_end_decision, department, ward, created_by, updated_at
+          geometry, geometry_source, post_end_decision, department, ward, created_by, updated_at
         ) VALUES (
           ${eventId}, ${props.name}, ${props.status}, ${startDate}, ${endDate},
-          ${props.restrictionType}, ${toGeomSql(feature.geometry)},
+          ${props.restrictionType}, ${toGeomSql(feature.geometry)}, 'manual',
           ${props.postEndDecision || 'pending'}, ${props.department || 'Midori Seibi Kyoku'},
           ${props.ward ?? null}, 'seed', ${now}
         )
