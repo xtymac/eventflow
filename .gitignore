@@ -35,6 +35,8 @@ Thumbs.db
 
 # GIS / generated data
 sample-data/raw-roads/
+sample-data/raw-greenspaces/
+sample-data/raw-streetlights/
 sample-data/segmented-roads/
 sample-data/ward-boundaries/
 sample-data/road_assets.geojson
