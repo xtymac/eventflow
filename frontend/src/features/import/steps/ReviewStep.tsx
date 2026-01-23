@@ -459,8 +459,8 @@ export function ReviewStep() {
               </Badge>
             )}
             {validation.missingIdCount > 0 && (
-              <Badge color="red" size="lg">
-                {validation.missingIdCount} Missing IDs
+              <Badge color="blue" size="lg">
+                {validation.missingIdCount} Auto-generated IDs
               </Badge>
             )}
 
