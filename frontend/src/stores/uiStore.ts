@@ -115,6 +115,7 @@ interface UIState {
   // Import wizard state
   importWizardOpen: boolean;
   importWizardStep: 'upload' | 'configure' | 'review' | 'publish';
+  importHasReviewStep: boolean;  // Whether Review step is shown (true for exported files)
   currentImportVersionId: string | null;
 
   // Import/Export sidebar state
@@ -232,6 +233,7 @@ interface UIState {
   openImportWizard: () => void;
   closeImportWizard: () => void;
   setImportWizardStep: (step: UIState['importWizardStep']) => void;
+  setImportHasReviewStep: (v: boolean) => void;
   setCurrentImportVersionId: (id: string | null) => void;
 
   // Import/Export sidebar actions
@@ -358,6 +360,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   // Import wizard state
   importWizardOpen: false,
   importWizardStep: 'upload',
+  importHasReviewStep: true,
   currentImportVersionId: null,
 
   // Import/Export sidebar state
@@ -724,14 +727,17 @@ export const useUIStore = create<UIState>((set, get) => ({
   openImportWizard: () => set({
     importWizardOpen: true,
     importWizardStep: 'upload',
+    importHasReviewStep: true,
     currentImportVersionId: null,
   }),
   closeImportWizard: () => set({
     importWizardOpen: false,
     importWizardStep: 'upload',
+    importHasReviewStep: true,
     currentImportVersionId: null,
   }),
   setImportWizardStep: (step) => set({ importWizardStep: step }),
+  setImportHasReviewStep: (v) => set({ importHasReviewStep: v }),
   setCurrentImportVersionId: (id) => set({ currentImportVersionId: id }),
 
   // Import/Export sidebar actions

@@ -468,6 +468,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
             onViewChanges={handleViewDetails}
             onRollback={(versionId) => setRollbackVersionId(versionId)}
             rollbackJobId={rollbackJobId}
+            targetRollbackId={rollbackVersionId}
             rollbackInfo={lastRollbackInfo}
             onClearRollbackInfo={clearRollbackInfo}
             totalNonDraft={nonDraftTotal}

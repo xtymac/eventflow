@@ -13,26 +13,30 @@ import { ConfigureStep } from './steps/ConfigureStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PublishStep } from './steps/PublishStep';
 
-const STEP_ORDER: Array<'upload' | 'configure' | 'review' | 'publish'> = [
-  'upload',
-  'configure',
-  'review',
-  'publish',
-];
+type WizardStep = 'upload' | 'configure' | 'review' | 'publish';
 
-function getStepIndex(step: typeof STEP_ORDER[number]): number {
-  return STEP_ORDER.indexOf(step);
-}
+const STEP_CONFIG: Record<WizardStep, { label: string; description: string; icon: React.ReactNode }> = {
+  upload: { label: 'Upload', description: 'Select file', icon: <IconUpload size={18} /> },
+  configure: { label: 'Configure', description: 'Set options', icon: <IconSettings size={18} /> },
+  review: { label: 'Review', description: 'Check changes', icon: <IconEye size={18} /> },
+  publish: { label: 'Publish', description: 'Apply changes', icon: <IconRocket size={18} /> },
+};
 
 export function ImportWizard() {
   const {
     importWizardOpen,
     importWizardStep,
+    importHasReviewStep,
     closeImportWizard,
     setImportWizardStep,
   } = useUIStore();
 
-  const currentStepIndex = getStepIndex(importWizardStep);
+  // Single source of truth for step order
+  const stepOrder: WizardStep[] = importHasReviewStep
+    ? ['upload', 'configure', 'review', 'publish']
+    : ['upload', 'configure', 'publish'];
+
+  const currentStepIndex = stepOrder.indexOf(importWizardStep);
 
   const handleClose = () => {
     closeImportWizard();
@@ -41,7 +45,7 @@ export function ImportWizard() {
   // Handle step click - only allow navigating to previous/completed steps
   const handleStepClick = (stepIndex: number) => {
     if (stepIndex < currentStepIndex) {
-      setImportWizardStep(STEP_ORDER[stepIndex]);
+      setImportWizardStep(stepOrder[stepIndex]);
     }
   };
 
@@ -76,26 +80,14 @@ export function ImportWizard() {
           onStepClick={handleStepClick}
           allowNextStepsSelect={false}
         >
-          <Stepper.Step
-            label="Upload"
-            description="Select file"
-            icon={<IconUpload size={18} />}
-          />
-          <Stepper.Step
-            label="Configure"
-            description="Set options"
-            icon={<IconSettings size={18} />}
-          />
-          <Stepper.Step
-            label="Review"
-            description="Check changes"
-            icon={<IconEye size={18} />}
-          />
-          <Stepper.Step
-            label="Publish"
-            description="Apply changes"
-            icon={<IconRocket size={18} />}
-          />
+          {stepOrder.map((step) => (
+            <Stepper.Step
+              key={step}
+              label={STEP_CONFIG[step].label}
+              description={STEP_CONFIG[step].description}
+              icon={STEP_CONFIG[step].icon}
+            />
+          ))}
         </Stepper>
 
         <div style={{ minHeight: 300 }}>

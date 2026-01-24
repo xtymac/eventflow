@@ -36,6 +36,7 @@ interface ImportVersionTimelineProps {
   // onViewOnMap is now handled in details view
   onRollback: (versionId: string) => void;
   rollbackJobId: string | null;
+  targetRollbackId?: string | null;
   rollbackInfo: {
     fromVersionNumber: number;
     toVersionNumber: number;
@@ -113,6 +114,7 @@ export function ImportVersionTimeline({
   onViewChanges,
   onRollback,
   rollbackJobId,
+  targetRollbackId,
   rollbackInfo,
   onClearRollbackInfo,
   totalNonDraft,
@@ -127,6 +129,13 @@ export function ImportVersionTimeline({
       </Text>
     );
   }
+
+  // Find target version details for the alert
+  const targetVersion = targetRollbackId ? versions.find(v => v.id === targetRollbackId) : null;
+  const targetIndex = targetVersion ? versions.indexOf(targetVersion) : -1;
+  const targetDisplayNumber = targetIndex !== -1
+    ? totalNonDraft - ((page - 1) * pageSize) - targetIndex
+    : null;
 
   return (
     <Stack gap="xs">
@@ -152,7 +161,11 @@ export function ImportVersionTimeline({
         <Alert color="blue" variant="light" mb="sm">
           <Group gap="sm">
             <Loader size="sm" />
-            <Text size="sm">Rolling back to previous version...</Text>
+            <Text size="sm">
+              {targetVersion && targetDisplayNumber
+                ? `Restoring Version #${targetDisplayNumber} (${targetVersion.fileName})...`
+                : 'Restoring previous version...'}
+            </Text>
           </Group>
         </Alert>
       )}
@@ -175,6 +188,10 @@ export function ImportVersionTimeline({
           const hasSnapshot = !!version.snapshotPath;
           const canRollback = hasSnapshot && !isPublished && !isRolledBack && !isDraft;
 
+          // Determine if this is the target of the current rollback
+          const isTarget = version.id === targetRollbackId;
+          const isProcessing = !!rollbackJobId;
+
           // Get base status config, then override for archived without snapshot
           let statusConfig = getStatusConfig(version.status);
           if (isArchived && !hasSnapshot) {
@@ -194,7 +211,8 @@ export function ImportVersionTimeline({
           const showTrend = featureCountDiff !== null && featureCountDiff !== 0 && !isRolledBack;
 
           // Determine interactivity - archived requires snapshot to be viewable
-          const isInteractive = (isPublished || (isArchived && hasSnapshot)) && !isRolledBack;
+          // Disable interaction during rollback
+          const isInteractive = (isPublished || (isArchived && hasSnapshot)) && !isRolledBack && !isProcessing;
 
           return (
             <Timeline.Item
@@ -208,7 +226,7 @@ export function ImportVersionTimeline({
                   <Text size="xs" fw={700}>{displayNumber}</Text>
                 )
               }
-              color={isPublished ? 'green' : isRolledBack ? 'gray' : 'blue'}
+              color={isPublished ? 'green' : isRolledBack ? 'gray' : isTarget ? 'blue' : 'blue'}
               lineVariant={isRolledBack ? 'dashed' : 'solid'}
             >
               <Tooltip
@@ -228,11 +246,13 @@ export function ImportVersionTimeline({
                   opacity: isRolledBack ? 0.6 : (isArchived && !hasSnapshot) ? 0.5 : 1,
                   transition: 'all 0.2s ease',
                   // Visual differentiation by state
-                  borderColor: isPublished ? 'var(--mantine-color-green-4)' :
+                  borderColor: isTarget ? 'var(--mantine-color-blue-4)' :
+                               isPublished ? 'var(--mantine-color-green-4)' :
                                (isArchived && !hasSnapshot) ? 'var(--mantine-color-gray-4)' :
                                isArchived ? 'var(--mantine-color-gray-3)' : undefined,
                   borderStyle: (isArchived && !hasSnapshot) ? 'dashed' : 'solid',
-                  backgroundColor: isPublished ? 'var(--mantine-color-green-0)' :
+                  backgroundColor: isTarget ? 'var(--mantine-color-blue-0)' :
+                                   isPublished ? 'var(--mantine-color-green-0)' :
                                    (isArchived && !hasSnapshot) ? 'var(--mantine-color-gray-1)' :
                                    isArchived ? 'var(--mantine-color-gray-0)' : undefined,
                 }}
@@ -288,7 +308,7 @@ export function ImportVersionTimeline({
                               size="xs"
                               variant="transparent"
                               color={featureCountDiff! > 0 ? 'green' : 'orange'}
-                            >
+                              >
                               {featureCountDiff! > 0 ? <IconTrendingUp size={12} /> : <IconTrendingDown size={12} />}
                             </ThemeIcon>
                           </Tooltip>
@@ -306,6 +326,12 @@ export function ImportVersionTimeline({
 
                     {/* Inline Restore button */}
                     {canRollback && (
+                      isTarget && isProcessing ? (
+                        <Group gap={4}>
+                          <Loader size={12} />
+                          <Text size="xs" c="blue">Restoring...</Text>
+                        </Group>
+                      ) : (
                       <Button
                         variant="subtle"
                         color="orange"
@@ -315,10 +341,11 @@ export function ImportVersionTimeline({
                           e.stopPropagation();
                           onRollback(version.id);
                         }}
-                        loading={!!rollbackJobId}
+                        disabled={isProcessing}
                       >
                         Restore
                       </Button>
+                      )
                     )}
                   </Group>
                 )}

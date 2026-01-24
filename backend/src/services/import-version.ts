@@ -60,8 +60,15 @@ const VALID_ROAD_GEOMETRY_TYPES = ['LineString', 'MultiLineString'];
 // Valid road types
 const VALID_ROAD_TYPES = ['arterial', 'collector', 'local'];
 
-// Valid data sources
 const VALID_DATA_SOURCES = ['osm_test', 'official_ledger', 'manual'];
+
+/** Sanitize dataSource value: trim whitespace and validate against allowed values */
+function sanitizeDataSource(value: unknown, fallback: string | null): string | null {
+  if (value === undefined || value === null) return fallback;
+  const trimmed = String(value).trim();
+  if (!trimmed || !VALID_DATA_SOURCES.includes(trimmed)) return fallback;
+  return trimmed;
+}
 
 /**
  * Ensure all features have an ID property.
@@ -934,6 +941,41 @@ export class ImportVersionService {
           }
         }
 
+        // Re-evaluate "updated" features against baseline:
+        // If a feature matches the baseline exactly, the "update" is a false positive
+        // caused by DB state differences between export source and import target.
+        const remainingUpdated: Feature[] = [];
+        let falsePositiveCount = 0;
+        for (const feature of updated) {
+          const id = String(feature.properties?.id || '');
+          const baseline = baselineMap.get(id);
+
+          if (!baseline) {
+            // Not in baseline - keep as updated (matched by ID against DB in first pass)
+            remainingUpdated.push(feature);
+          } else {
+            // Check if the import feature matches the baseline (export source)
+            const hasGeomChange = feature.geometry && baseline.geometry
+              ? !this.geometriesEqual(feature.geometry, baseline.geometry)
+              : false;
+            const hasPropChange = this.hasBaselinePropertyChanges(feature, baseline);
+
+            if (hasGeomChange || hasPropChange) {
+              // Genuinely modified by user compared to what was exported
+              remainingUpdated.push(feature);
+            } else {
+              // False positive: import matches baseline, difference is DB inconsistency
+              unchanged++;
+              falsePositiveCount++;
+            }
+          }
+        }
+        if (falsePositiveCount > 0) {
+          console.log('[Import] Self-comparison: removed', falsePositiveCount, 'false-positive updates (matched baseline)');
+        }
+        updated.length = 0;
+        updated.push(...remainingUpdated);
+
         // Features in baseline but not in current import = would be removed
         // (only relevant if features were deleted from the file)
         const currentIds = new Set(importFeatures.map(f => String(f.properties?.id || '')).filter(Boolean));
@@ -1116,11 +1158,12 @@ export class ImportVersionService {
     }
 
     // Roads in scope but not in import = will be deactivated
-    // Always compute this for preview, but only actually deactivate if regionalRefresh is enabled
+    // In precise mode: compare against export record roads
+    // In bbox/geometry mode: compare against baseline if available, otherwise currentRoads
     // IMPORTANT: Only show roads that are STILL ACTIVE as "deactivated"
-    // If a road was already deactivated in a previous import, don't show it again
     const deactivated: Feature[] = [];
-    if (baselineFeatures) {
+    if (baselineFeatures && comparisonMode !== 'precise') {
+      // Non-precise mode with baseline: use baseline features for deactivation
       const currentIds = new Set(
         importFeatures
           .map(f => f.properties?.id)
@@ -1132,25 +1175,28 @@ export class ImportVersionService {
         if (!baseId || !feature.geometry) continue;
         const baseIdStr = String(baseId);
         if (currentIds.has(baseIdStr)) continue;
+        // Only show as deactivated if the road actually exists as active in the DB
+        const dbRoad = currentRoadMap.get(baseIdStr);
+        if (!dbRoad || dbRoad.status === 'inactive') continue;
         deactivated.push({
           type: 'Feature',
-          geometry: feature.geometry,
+          geometry: dbRoad.geometryJson as Geometry || feature.geometry,
           properties: {
             id: baseId,
-            name: feature.properties?.name ?? null,
-            roadType: feature.properties?.roadType ?? null,
-            ward: feature.properties?.ward ?? null,
+            name: dbRoad.name ?? feature.properties?.name ?? null,
+            roadType: dbRoad.roadType ?? feature.properties?.roadType ?? null,
+            ward: dbRoad.ward ?? feature.properties?.ward ?? null,
           },
         });
       }
     } else {
+      // Precise mode or no baseline: use export record / currentRoads for deactivation
       for (const road of currentRoads) {
-        const roadIdStr = String(road.id);  // Ensure string for consistent comparison
+        const roadIdStr = String(road.id);
         // Skip roads that were matched by geometry (they're accounted for in updated/unchanged)
         if (geometryMatchedDbIds.has(roadIdStr)) continue;
         if (!importIds.has(roadIdStr)) {
           // Only show as deactivated if the road is still active
-          // This prevents showing already-inactive roads as "removed" on repeated imports
           if (road.status === 'inactive') {
             continue;
           }
@@ -1654,7 +1700,7 @@ export class ImportVersionService {
             'active',
             ${now},
             ${props.ward || null},
-            ${props.dataSource || version.defaultDataSource},
+            ${sanitizeDataSource(props.dataSource, version.defaultDataSource)},
             ${now}
           )
           ON CONFLICT (id) DO UPDATE SET
@@ -1691,7 +1737,7 @@ export class ImportVersionService {
               lanes = COALESCE(${props.lanes ?? null}, lanes),
               direction = COALESCE(${props.direction ?? null}, direction),
               ward = COALESCE(${props.ward ?? null}, ward),
-              data_source = COALESCE(${props.dataSource ?? null}, data_source),
+              data_source = COALESCE(${sanitizeDataSource(props.dataSource, null)}, data_source),
               status = 'active',
               updated_at = ${now}
           WHERE id = ${dbId}
@@ -1815,7 +1861,7 @@ export class ImportVersionService {
             ${props.validFrom ? new Date(props.validFrom) : now},
             ${props.validTo ? new Date(props.validTo) : null},
             ${props.ward || null},
-            ${props.dataSource || 'manual'},
+            ${sanitizeDataSource(props.dataSource, 'manual')},
             ${now}
           )
           ON CONFLICT (id) DO UPDATE SET

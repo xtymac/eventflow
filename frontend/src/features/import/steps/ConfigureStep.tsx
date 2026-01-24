@@ -48,7 +48,7 @@ const DATA_SOURCE_OPTIONS = [
 ];
 
 export function ConfigureStep() {
-  const { currentImportVersionId, setImportWizardStep } = useUIStore();
+  const { currentImportVersionId, setImportWizardStep, setImportHasReviewStep } = useUIStore();
 
   // Form state
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
@@ -88,7 +88,7 @@ export function ConfigureStep() {
 
     try {
       // Configure version (importScope is auto-calculated from file bounding box by backend)
-      await configureMutation.mutateAsync({
+      const result = await configureMutation.mutateAsync({
         id: currentImportVersionId,
         config: {
           layerName: selectedLayer || undefined,
@@ -98,18 +98,25 @@ export function ConfigureStep() {
         },
       });
 
-      // Trigger validation
+      // Trigger validation (runs in background)
       await triggerValidationMutation.mutateAsync(currentImportVersionId);
 
-      // Proceed to validation step
-      setImportWizardStep('review');
+      // Navigate based on whether file was exported from our system
+      if (result.sourceExportId) {
+        setImportHasReviewStep(true);
+        setImportWizardStep('review');
+      } else {
+        setImportHasReviewStep(false);
+        setImportWizardStep('publish');
+      }
 
       notifications.show({
         title: 'Configuration saved',
-        message: 'Starting validation...',
+        message: result.sourceExportId ? 'Starting validation...' : 'Validating...',
         color: 'blue',
       });
     } catch (error) {
+      setImportHasReviewStep(true);
       notifications.show({
         title: 'Configuration failed',
         message: error instanceof Error ? error.message : 'Unknown error',
@@ -147,10 +154,12 @@ export function ConfigureStep() {
           <Text size="sm" fw={500}>Type:</Text>
           <Text size="sm">{version?.fileType?.toUpperCase()}</Text>
         </Group>
-        <Group justify="space-between" mt="xs">
-          <Text size="sm" fw={500}>Features:</Text>
-          <Text size="sm">{version?.featureCount?.toLocaleString()}</Text>
-        </Group>
+        {!!version?.featureCount && (
+          <Group justify="space-between" mt="xs">
+            <Text size="sm" fw={500}>Features:</Text>
+            <Text size="sm">{version.featureCount.toLocaleString()}</Text>
+          </Group>
+        )}
       </Card>
 
       {/* Layer selection (GeoPackage only) */}

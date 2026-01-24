@@ -33,6 +33,7 @@ import {
   useDiffPreview,
   usePublishVersion,
   useImportJobPolling,
+  useValidationResults,
   type ImportJob,
 } from '../../../hooks/useImportVersions';
 import { useUIStore } from '../../../stores/uiStore';
@@ -90,7 +91,7 @@ function bboxToPolygon(scope: string): GeoJSON.Polygon | null {
 }
 
 export function PublishStep() {
-  const { currentImportVersionId, closeImportWizard, startImportPreview } = useUIStore();
+  const { currentImportVersionId, importHasReviewStep, closeImportWizard, setImportWizardStep, startImportPreview } = useUIStore();
   const queryClient = useQueryClient();
 
   const [confirmed, setConfirmed] = useState(false);
@@ -101,6 +102,11 @@ export function PublishStep() {
   // Queries
   const { data: versionData } = useImportVersion(currentImportVersionId);
   const { data: diffData } = useDiffPreview(currentImportVersionId);
+
+  // Validation gate when Review step is skipped
+  const { data: validationData, isLoading: isLoadingValidation } = useValidationResults(
+    !importHasReviewStep ? currentImportVersionId : null
+  );
 
   // Mutations
   const publishMutation = usePublishVersion();
@@ -180,6 +186,43 @@ export function PublishStep() {
   const diff = diffData?.data;
   const scopeDisplay = diff?.scope ? formatScopeDisplay(diff.scope) : null;
   const job = jobData?.data;
+
+  // Validation loading state (only when Review step is skipped)
+  if (!importHasReviewStep && isLoadingValidation) {
+    return (
+      <Stack align="center" justify="center" mih={300} gap="md">
+        <Loader size="lg" />
+        <Text fw={500}>Validating import data...</Text>
+        <Text size="xs" c="dimmed">Checking for errors before publish</Text>
+      </Stack>
+    );
+  }
+
+  // Validation failed state (only when Review step is skipped)
+  if (!importHasReviewStep && validationData?.data && validationData.data.errors.length > 0) {
+    return (
+      <Stack align="center" justify="center" mih={300} gap="lg">
+        <ThemeIcon size={80} radius="xl" color="red">
+          <IconX size={48} />
+        </ThemeIcon>
+        <Text size="xl" fw={600} c="red">
+          Validation Failed
+        </Text>
+        <Alert color="red" variant="light" w="100%">
+          {validationData.data.errors[0].error}
+          {validationData.data.errors.length > 1 && ` (+${validationData.data.errors.length - 1} more)`}
+        </Alert>
+        <Group gap="md">
+          <Button variant="light" onClick={() => setImportWizardStep('configure')}>
+            Back to Configure
+          </Button>
+          <Button variant="subtle" color="gray" onClick={handleClose}>
+            Close
+          </Button>
+        </Group>
+      </Stack>
+    );
+  }
 
   // Show success state
   if (publishResult) {
@@ -269,18 +312,26 @@ export function PublishStep() {
 
   // Show progress state
   if (currentJobId) {
+    const progress = job?.progress ?? 0;
+    const statusLabel = progress >= 95 ? 'Finalizing...'
+      : progress >= 60 ? 'Applying changes to database...'
+      : progress >= 45 ? 'Creating backup snapshot...'
+      : progress >= 25 ? 'Calculating changes...'
+      : progress >= 15 ? 'Validating data...'
+      : 'Starting publish...';
+
     return (
       <Stack align="center" justify="center" mih={300} gap="md">
         <Loader size="lg" />
         <Text fw={500}>Publishing changes...</Text>
         <Progress
-          value={job?.progress ?? 0}
+          value={progress}
           size="xl"
           w="80%"
           animated
         />
         <Text size="sm" c="dimmed">
-          {job?.progress ?? 0}% complete
+          {statusLabel}
         </Text>
         <Text size="xs" c="dimmed">
           This may take a few minutes for large imports
