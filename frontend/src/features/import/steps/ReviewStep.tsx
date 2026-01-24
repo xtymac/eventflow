@@ -399,6 +399,7 @@ export function ReviewStep() {
 
   const hasErrors = validation.errors.length > 0;
   const hasWarnings = validation.warnings.length > 0;
+  const featureWarnings = validation.warnings.filter((w: ValidationWarning) => w.featureIndex >= 0);
   const isValid = !hasErrors;
   const hasChanges = diff && (diff.added.length > 0 || diff.updated.length > 0 || diff.deactivated.length > 0);
 
@@ -453,9 +454,9 @@ export function ReviewStep() {
                 {validation.errors.length} Errors
               </Badge>
             )}
-            {hasWarnings && (
+            {featureWarnings.length > 0 && (
               <Badge color="yellow" size="lg" leftSection={<IconAlertTriangle size={14} />}>
-                {validation.warnings.length} Warnings
+                {featureWarnings.length} Warnings
               </Badge>
             )}
             {validation.missingIdCount > 0 && (
@@ -464,9 +465,11 @@ export function ReviewStep() {
               </Badge>
             )}
 
-            <Anchor size="sm" onClick={() => setShowErrorDetails(!showErrorDetails)}>
-              {showErrorDetails ? 'Hide details' : 'View details'}
-            </Anchor>
+            {(hasErrors || featureWarnings.length > 0) && (
+              <Anchor size="sm" onClick={() => setShowErrorDetails(!showErrorDetails)}>
+                {showErrorDetails ? 'Hide details' : 'View details'}
+              </Anchor>
+            )}
           </Group>
         )}
 
@@ -511,9 +514,9 @@ export function ReviewStep() {
         </Accordion>
       )}
 
-      {showErrorDetails && hasWarnings && (
+      {showErrorDetails && featureWarnings.length > 0 && (
         <Accordion variant="separated">
-          {validation.warnings.slice(0, 50).map((warning: ValidationWarning, index: number) => (
+          {featureWarnings.slice(0, 50).map((warning: ValidationWarning, index: number) => (
             <Accordion.Item key={index} value={`warning-${index}`}>
               <Accordion.Control>
                 <Group gap="sm">
@@ -529,9 +532,9 @@ export function ReviewStep() {
               </Accordion.Panel>
             </Accordion.Item>
           ))}
-          {validation.warnings.length > 50 && (
+          {featureWarnings.length > 50 && (
             <Text size="sm" c="dimmed" ta="center" mt="sm">
-              Showing first 50 of {validation.warnings.length} warnings
+              Showing first 50 of {featureWarnings.length} warnings
             </Text>
           )}
         </Accordion>
