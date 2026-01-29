@@ -4,6 +4,15 @@
 
 The map component (`MapView.tsx`) uses MapLibre GL JS to render an interactive map with construction events, road assets, and inspection data.
 
+## Scope Update (2026-01-28)
+
+The prototype scope has changed. Key implications for map behavior:
+
+- Roads are **read-only tiles/layers** and must not be edited or linked to Events.
+- GIS is a presentation layer; the core workflow is Event -> WorkOrder -> Evidence -> Close.
+- Public Portal is a lightweight, read-only map; Partner and Mobile are separate apps.
+- The sections below describe the current internal map implementation; road editing behavior is **legacy** and out of scope for the prototype demo.
+
 ## Technology Stack
 
 | Technology | Purpose |
@@ -69,6 +78,8 @@ osm (raster basemap)
   └── preview-geometry-fill/line (corridor preview)
 ```
 
+**Prototype note**: road layers must be read-only tiles/layers. Interactive road editing layers are legacy and should be disabled in the prototype demo.
+
 ### GeoJSON Sources
 
 | Source ID | Type | Description |
@@ -108,7 +119,7 @@ osm (raster basemap)
 
 ## Viewport-based Loading
 
-Road assets are loaded based on the current map viewport to optimize performance:
+Road assets are loaded based on the current map viewport to optimize performance (legacy internal app):
 
 ```typescript
 // Only fetch assets when:
@@ -150,7 +161,7 @@ const getRoadTypesForZoom = (zoom: number): RoadType[] | undefined => {
 ### Click Handlers
 
 - **Event polygon/line**: Select event, switch to events view
-- **Asset line**: Select asset, switch to assets view
+- **Asset line**: Select asset (read-only), switch to assets view
 - **Empty area**: Clear selection
 
 ### Hover Effects
@@ -165,6 +176,8 @@ When an event or asset is selected:
 1. Highlight layer is updated
 2. Map flies to feature bounds with padding
 3. Detail panel opens in sidebar
+
+**Prototype note**: no road edit or road update mode should be exposed; selection is for reference only.
 
 ## State Management
 

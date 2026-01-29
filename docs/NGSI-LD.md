@@ -9,6 +9,14 @@ NGSI-LD is an information model and API for context information management, stan
 - Provide a standardized API for external consumers
 - Support subscription-based notifications for status changes
 
+## Principle Alignment: Asset vs Event Separation
+
+This integration follows P1 (see `docs/architecture-principles.md`):
+
+- **Event entities**: `ConstructionEvent`, `InspectionRecord` store time-bound operational records.
+- **Asset entities**: `RoadAsset` stores authoritative, long-lived ledger data.
+- **Linking**: Events reference assets via relationships (`affectedRoadAssets`, `relatedEvent`) without mixing lifecycle or workflow state.
+
 ### Architecture
 
 ```

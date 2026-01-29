@@ -10,6 +10,10 @@ Documents related to project planning, migration strategies, and architectural d
 |----------|-------------|
 | [project-plan.md](planning/project-plan.md) | Project execution plan with phased implementation details |
 | [requirements-alignment.md](planning/requirements-alignment.md) | DX requirements alignment vs current implementation |
+| [requirements-remediation-plan.md](planning/requirements-remediation-plan.md) | Remediation plan to align implementation with prototype scope |
+| [requirements-gap-issues.md](planning/requirements-gap-issues.md) | Ticket-style list of gaps/conflicts with touch points |
+| [architecture-principles.md](architecture-principles.md) | Architecture principles and design guardrails |
+| [implementation-architecture.md](implementation-architecture.md) | Prototype implementation architecture and app separation |
 | [ogc-api-scope.md](planning/ogc-api-scope.md) | OGC API Features/Tiles scope for Phase 7 |
 | [ogc-api-implementation-checklist.md](planning/ogc-api-implementation-checklist.md) | OGC API Phase 7 implementation checklist |
 | [postgis-migration-plan.md](planning/postgis-migration-plan.md) | Database migration strategy from JSON to PostGIS geometry |
@@ -40,6 +44,7 @@ User-facing features and frontend implementation details.
 ```
 docs/
 ├── INDEX.md                    # This file
+├── implementation-architecture.md  # Prototype implementation architecture
 ├── import-export.md            # Import/Export feature
 ├── ngsi-ld.md                  # NGSI-LD integration
 ├── qgis-setup-guide.md         # QGIS setup guide
@@ -49,6 +54,8 @@ docs/
 └── planning/
     ├── project-plan.md         # Project plan
     ├── requirements-alignment.md  # DX requirements alignment
+    ├── requirements-remediation-plan.md  # Remediation plan for prototype scope
+    ├── requirements-gap-issues.md  # Gap/conflict ticket list
     ├── ogc-api-scope.md        # OGC API scope (Phase 7)
     ├── ogc-api-implementation-checklist.md  # OGC API implementation checklist
     ├── postgis-migration-plan.md  # PostGIS migration

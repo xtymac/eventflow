@@ -1,108 +1,89 @@
-# DX Requirements Recalibration (Nagoya Infrastructure DX Platform)
+# Requirements Alignment Analysis (Prototype Architecture and Scope 1/28)
 
 ## Purpose
-Align the latest requirements with the current implementation and the project plan. This is a delta-oriented view for planning and prioritization.
+Compare the latest Prototype Architecture and Scope (1/28) requirements to the current implementation in this repo and identify alignments, gaps, and conflicts.
 
-## Latest Requirements Baseline (Normalized)
-- Standards and interoperability
-  - OGC API - Features for feature query/edit (WFS successor)
-  - OGC API - Tiles or MVT for scalable vector tile delivery
-  - NGSI-LD (FIWARE/Orion-LD) for event-driven status and anomaly flows
-  - GeoPackage + GeoJSON for offline and portable exchange
-  - CRS reprojection (EPSG:4326/3857 plus JGD2011 plane coordinate zones)
-  - SXF v3.0 parsing and generation for legacy legal CAD ledgers
-- Legal geometry and data engineering
-  - Road Law Article 18 road area polygons (legal boundaries)
-  - CAD-to-GIS semantic mapping with layer/attribute extraction
-  - PostGIS as spatial source of truth
-  - Versioning and historical (spatiotemporal) queries
-- Three-portal GIS architecture
-  - Internal GIS for staff (analysis, modeling, lifecycle management)
-  - External shared GIS for contractors (mobile field entry + GPS)
-  - Public GIS for citizens (read-only disclosure)
-- Performance and deployment
-  - PMTiles + CDN for large-scale static distribution
-  - Cloud-native deployment and security
-  - SSO integration across subsystems
-- Delivery and operations
-  - Preference for packaged products and configuration-first approach
-  - Long-term operational stability and support
+## Status Legend
+- Aligned: Implemented and consistent with requirement.
+- Partial: Implemented but incomplete or limited scope.
+- Gap: Not implemented.
+- Conflict: Implemented in a way that contradicts the requirement.
+
+## Requirements Baseline (1/28)
+- App-level separation: Gov Console, Public Portal, Partner Portal, Mobile Mock as distinct apps.
+- Single Master DB with Views and RBAC to separate roles.
+- Boundary rules:
+  - Roads are read-only tiles/layers only; no editing or Event linkage.
+  - GIS is presentation only; core is ledger + Event/WorkOrder workflow + auditability.
+  - Asset and Event strictly separated; Asset updates via AssetChangeRequest -> Draft -> Review -> Publish.
+- Workflow: Event must bind WorkOrder(s); WorkOrder cannot exist without Event; Evidence submission and acceptance loop.
+- Data strategy: OSM only as basemap; demo data is reference implementation aligned with CityOS/Digital Twin; init import from Excel/GIS/CAD with ID mapping and lineage.
 
 ## Current Implementation Snapshot (As-Is)
-- Spatial DB: PostGIS with geometry columns for events/assets/inspections.
-- APIs: Custom REST endpoints (Fastify) with bbox filtering and pagination.
-- Map: MapLibre GL JS with raster basemap; vector overlays from:
-  - Martin tile server (MVT) in production.
-  - PMTiles for local static tiles (pre-generated).
-- NGSI-LD: One-way sync for ConstructionEvent only.
-- Import/Export: GeoJSON + GeoPackage for road assets with validation, versioning, and rollback.
-- Road assets: Centerline LineStrings; polygon column exists but is not yet used for legal boundaries.
-- Legal road areas: Rendered as Nagoya designated road MVT overlays (read-only, not authoritative in road_assets).
-- Versioning: Import versions + road asset change logs; no full time-travel queries.
-- Portals: Single internal UI; no public/external portals or SSO.
+- Single web app with tabs for Events, Assets, Inspections. Evidence: `frontend/src/App.tsx`.
+- Core tables focus on road assets and construction events with join table and change logs. Evidence: `backend/src/db/schema.ts`.
+- Road assets are editable via REST and UI "road update mode". Evidence: `backend/src/routes/assets.ts`, `frontend/src/features/assets/RoadUpdateModePanel.tsx`.
+- Events require roadAssetIds and link to roads. Evidence: `backend/src/routes/events.ts`, `backend/src/db/schema.ts`.
+- Inspections exist as point records linked to events or road assets. Evidence: `backend/src/routes/inspections.ts`.
+- Import/Export and versioning are for road assets via GeoJSON/GPKG. Evidence: `backend/src/routes/import-versions.ts`, `backend/src/services/import-version.ts`, `docs/import-export.md`.
+- OGC API Features/Tiles for road assets, construction events, inspections. Evidence: `backend/src/routes/ogc`, `backend/src/services/ogc/collection-registry.ts`.
+- OSM based data pipelines and fields for assets. Evidence: `backend/src/services/osm-sync.ts`, `scripts/osm/import-to-db.ts`, `backend/src/db/schema.ts`.
+- No user/auth/RBAC model (OGC write uses optional API key only). Evidence: `backend/src/services/ogc/api-key-auth.ts`.
+- No WorkOrder or Evidence tables/routes. Evidence: no matches for work_order in repo.
+- No Public/Partner/Mobile apps. Evidence: `frontend/src/App.tsx`.
 
-## Alignment Matrix (Requirement -> Status)
+## Alignment Matrix
 
-### Standards and Interoperability
-- OGC API - Features: Gap.
-  - Current: `/assets` and `/events` support bbox filtering but are not OGC-conformant.
-  - Plan: OGC API Features with read/write, CQL2 filter, GeoJSON + GPKG output, CRS reprojection.
-  - Scope: See `docs/planning/ogc-api-scope.md`.
-- OGC API - Tiles / MVT: Partial.
-  - Current: MVT via Martin and PMTiles (custom endpoints, no OGC API Tiles metadata).
-  - Plan: Provide OGC API Tiles endpoints with TileMatrixSet metadata; MVT primary, PMTiles for static distribution.
-- NGSI-LD for events + anomalies: Partial.
-  - Current: ConstructionEvent sync only.
-  - Plan: Extend to RoadAsset and InspectionRecord (Phase 5).
-- GeoPackage + GeoJSON exchange: Implemented (road assets).
-  - Plan: Extend to events/inspections; expose GPKG export for OGC/API exchange.
-- SXF v3.0: Gap.
-  - Plan: Add SXF parse/generate pipeline and validation.
+### Architecture and Boundaries
+| Requirement | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| App-level separation (Gov/Public/Partner/Mobile as independent apps) | Gap | `frontend/src/App.tsx` | Single internal UI only. |
+| Single Master DB (Assets, Events, WorkOrders, Evidence) | Partial | `backend/src/db/schema.ts` | Single DB exists, but WorkOrders/Evidence missing; assets are road-centric. |
+| Views + RBAC to enforce role boundaries | Gap | `backend/src/services/ogc/api-key-auth.ts` | No auth, roles, or DB views. |
+| Roads are read-only tiles/layers; no editing | Conflict | `backend/src/routes/assets.ts`, `frontend/src/features/assets/RoadUpdateModePanel.tsx`, `docs/import-export.md` | Roads are editable and have import/export workflows. |
+| Roads cannot be linked to Events | Conflict | `backend/src/routes/events.ts`, `backend/src/db/schema.ts` | Events require roadAssetIds and use event_road_assets. |
+| GIS is not core (presentation only) | Conflict | `docs/map-implementation.md`, `frontend/src/components/MapView.tsx` | GIS is central to editing and workflows. |
+| Asset/Event separation; AssetChangeRequest flow | Conflict | `backend/src/routes/assets.ts` | Assets can be created/updated with eventId; no AssetChangeRequest workflow. |
 
-### Legal Geometry and Data Engineering
-- Road area polygons (legal boundary): Partial.
-  - Current: Overlays from official MVT; no authoritative polygon in core asset model.
-  - Plan: Persist legal polygons and link to assets; validate with JACIC samples.
-- CAD-to-GIS semantic mapping: Gap.
-  - Plan: ETL pipeline for CAD layers -> GIS schema + QA checks.
-- PostGIS: Implemented.
-- Spatiotemporal versioning: Partial.
-  - Current: Import versioning and change logs.
-  - Plan: Add temporal tables or history views for time-travel queries.
+### Apps and Roles
+| Requirement | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| Gov Console manages parks/trees/rivers/pumps/facilities + Events + WorkOrders | Partial | `backend/src/db/schema.ts`, `frontend/src/App.tsx` | Only roads are editable; some non-road read-only assets exist (rivers/greenspaces/streetlights); no WorkOrders. |
+| Public Portal (read-only disclosure) | Gap | `frontend/src/App.tsx` | No public app or routing. |
+| Partner Portal (assigned tasks + evidence) | Gap | `frontend/src/App.tsx` | No partner app or scoped data access. |
+| Mobile Mock (field evidence submission) | Gap | `frontend/src/App.tsx` | No mobile UI. |
 
-### Three-Portal GIS Architecture
-- Internal GIS: Implemented (single app).
-- External shared GIS (contractor/mobile): Gap.
-  - Plan: Contractor portal with GPS capture and simplified workflows.
-- Public GIS: Gap.
-  - Plan: Read-only disclosure portal with high-performance tiles.
-- SSO: Gap.
-  - Plan: Integrate IdP and unify user roles across portals.
+### Workflow and Data Model
+| Requirement | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| Event -> WorkOrder -> Evidence -> Accept/Close loop | Gap | `backend/src/db/schema.ts` | WorkOrder/Evidence models do not exist. |
+| Event must bind WorkOrder(s) | Gap | `backend/src/db/schema.ts` | No WorkOrder tables or routes. |
+| Evidence (photos/results) submission | Gap | `backend/src/routes/inspections.ts` | Inspections exist, but no evidence/attachments model. |
+| Event can reference assets but cannot modify assets | Conflict | `backend/src/routes/assets.ts` | Asset updates are directly tied to eventId. |
 
-### Performance and Operations
-- PMTiles + CDN: Partial.
-  - Current: PMTiles generation and local hosting; Martin for live tiles.
-  - Plan: CDN distribution for static tiles + cache policy.
-- Cloud-native deployment: Partial (Docker Compose baseline).
-  - Plan: Hardened deployment profile with monitoring and security controls.
+### Data Strategy and Import
+| Requirement | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| OSM is basemap only (not ledger) | Conflict | `backend/src/services/osm-sync.ts`, `backend/src/db/schema.ts` | OSM fields and sync populate asset tables. |
+| Reference implementation aligned with CityOS/Digital Twin models | Gap | `backend/src/db/schema.ts` | Schema is road and OSM centric; no CityOS-aligned asset taxonomy. |
+| Minimal demo dataset (park + assets + events + workorders + evidence) | Gap | `sample-data` | No dataset matching the required scenario. |
+| Init import from Excel/GIS/CAD with ID mapping and lineage | Partial | `backend/src/routes/import-versions.ts`, `backend/src/services/import-version.ts` | GeoJSON/GPKG import for roads only; no Excel/CAD, legacyId, or lineage metadata. |
+| Executable import script and before/after demo | Partial | `scripts/import-nagoya-to-assets.ts` | Scripts exist for roads; no Excel import flow. |
 
-## Plan Recalibration (Proposed Additions)
-- Phase 7: OGC Standards & Interoperability
-  - Deliverables: OGC API Features endpoints, Tiles metadata, conformance docs.
-  - Exit criteria: Features/Tiles queries work with standard clients.
-- Phase 8: Legal CAD/SXF Pipeline + Road Area Polygons
-  - Deliverables: SXF v3.0 import/export, CAD-to-GIS ETL, legal polygon storage.
-  - Exit criteria: JACIC sample validates end-to-end; legal polygons drive GIS views.
-- Phase 9: Multi-Portal GIS + SSO
-  - Deliverables: Internal/external/public portals, contractor mobile entry, SSO roles.
-  - Exit criteria: Role-based access works across all portals.
-- Phase 10: Spatiotemporal Versioning
-  - Deliverables: History model + time-travel queries for assets/events.
-  - Exit criteria: Boundary changes are queryable by timestamp.
+### Standards and Extensibility
+| Requirement | Status | Evidence | Notes |
+| --- | --- | --- | --- |
+| Open standards to avoid vendor lock-in | Partial | `backend/src/routes/ogc`, `docs/import-export.md` | OGC Features/Tiles and GeoJSON/GPKG exist but only for road assets/events/inspections. |
+| Visualization layer is tech-neutral | Partial | `docs/map-implementation.md` | MapLibre is open source, but map logic is tightly embedded in the main app. |
 
-## Open Questions
-- CQL2 support scope (functions, spatial predicates) and transaction semantics.
-- OGC API Features write path for inspections/repairs (collection boundaries and permissions).
-- SXF integration strategy (library choice, validation rules, output schema).
-- Authoritative source for legal road polygons (SXF vs MVT vs other).
-- IdP choice and SSO requirements (SAML/OIDC, tenant separation).
+## Key Conflicts (Highest Priority)
+1. Road assets are editable and Event-linked, but requirements mandate roads as read-only with no Event linkage.
+2. Asset/Event separation is violated by eventId-driven asset changes; no AssetChangeRequest flow exists.
+3. WorkOrder and Evidence model is missing, so the required closed-loop workflow is not implementable.
+4. App-level separation and RBAC are absent; only a single internal UI exists.
+5. OSM is used as asset source, conflicting with "OSM basemap only".
+
+## Implications for Existing Modules
+- Road asset editing (UI + APIs + QGIS workflows) is out of scope under the new boundary and should be deprecated or isolated.
+- Import/Export and OSM sync are road-centric and should be refocused toward init import of park/asset ledgers and reference data.
+- Event workflows need to be re-modeled around WorkOrders and Evidence rather than road edits and inspections.

@@ -576,6 +576,10 @@ export function MapView() {
     map.current.on('load', () => {
       if (!map.current) return;
 
+      // Guard against duplicate execution (can happen when useMapDraw fires 'load' event
+      // to force draw library layer creation)
+      if (map.current.getSource('assets')) return;
+
       // Add direction arrow image for one-way roads
       // Arrow points RIGHT (east) - MapLibre rotates from this base direction to follow line geometry
       const arrowSvg = `

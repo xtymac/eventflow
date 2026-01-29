@@ -13,6 +13,25 @@ EventFlow → Export GeoPackage → Edit in ArcGIS/QGIS → Import back to Event
 
 > **Note:** In GIS terminology, individual road segments are called "Features". In EventFlow, they are called "Road Assets" or simply "Assets". This documentation uses both terms interchangeably.
 
+## Scope Update (2026-01-28)
+
+The latest prototype scope treats **roads as read-only tiles/layers**. Road assets are **not** part of the editable core workflow and **must not** be linked to Events. This means the import/export pipeline described below is **legacy** (current implementation) and **out of scope** for the prototype demo.
+
+### Prototype Init Import (Target)
+
+The prototype must demonstrate an initialization import that onboards existing data into a unified ID system:
+
+- **Sources**: Excel ledger (parks), GIS (trees/asset points), CAD drawings (stored as evidence, not converted to geometry).
+- **ID mapping**: generate UUIDs if missing; preserve existing IDs as `legacyId`.
+- **Lineage**: record source, import time, and operator.
+- **Demo**: show "Excel before -> Asset list after".
+
+This init import replaces road editing workflows as the primary data onboarding story for the prototype.
+
+## Legacy Road Asset Import/Export (Current Implementation)
+
+The sections below document the existing road asset import/export pipeline and are kept for reference only.
+
 ## Architecture
 
 ```
