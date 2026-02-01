@@ -1,7 +1,8 @@
 import type { Feature, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection } from 'geojson';
 
 // Event status lifecycle
-export type EventStatus = 'planned' | 'active' | 'ended' | 'cancelled';
+// Phase 1: Added 'pending_review' and 'closed', 'ended' kept for backwards compatibility
+export type EventStatus = 'planned' | 'active' | 'pending_review' | 'ended' | 'closed' | 'archived' | 'cancelled';
 
 // Restriction types for construction events
 export type RestrictionType = 'full' | 'partial' | 'workzone';
@@ -105,6 +106,14 @@ export interface ConstructionEvent {
   department: string;
   ward?: string;
   createdBy?: string;
+  // Phase 1: Close tracking fields
+  closedBy?: string;
+  closedAt?: string | null;         // ISO 8601 timestamp
+  notifyMasterData?: boolean;
+  notificationId?: string | null;   // Reference to outbox_notifications.id
+  closeNotes?: string | null;
+  // Populated from JOINs (Phase 1)
+  workOrders?: WorkOrder[];
   updatedAt: string; // ISO 8601 timestamp
 }
 
@@ -225,7 +234,7 @@ export interface RoadAssetChange {
   createdAt: string; // ISO 8601 timestamp
 }
 
-// Inspection Record entity
+// Inspection Record entity (LEGACY - use WorkOrder with type='inspection' for new inspections)
 // Exactly one of eventId or roadAssetId must be set
 export interface InspectionRecord {
   id: string;
@@ -238,6 +247,112 @@ export interface InspectionRecord {
   createdAt: string; // ISO 8601 timestamp
 }
 
+// ============================================
+// Phase 1: WorkOrder / Evidence Types
+// ============================================
+
+// Work order types
+export type WorkOrderType = 'inspection' | 'repair' | 'update';
+
+// Work order status lifecycle
+export type WorkOrderStatus = 'draft' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+
+// Evidence types
+export type EvidenceType = 'photo' | 'document' | 'report' | 'cad' | 'other';
+
+// Evidence review status
+export type EvidenceReviewStatus = 'pending' | 'approved' | 'rejected';
+
+// Partner roles in work orders
+export type PartnerRole = 'contractor' | 'inspector' | 'reviewer';
+
+// Notification types for outbox
+export type NotificationType = 'event_closed' | 'asset_change_request';
+
+// Notification status
+export type NotificationStatus = 'pending' | 'sent' | 'delivered' | 'failed';
+
+// Work Order entity
+export interface WorkOrder {
+  id: string;
+  eventId: string;
+  type: WorkOrderType;
+  title: string;
+  description?: string;
+  status: WorkOrderStatus;
+  assignedDept?: string;
+  assignedBy?: string;
+  assignedAt?: string;      // ISO 8601 timestamp
+  dueDate?: string;         // ISO 8601 timestamp
+  startedAt?: string;       // ISO 8601 timestamp
+  completedAt?: string;     // ISO 8601 timestamp
+  reviewedBy?: string;
+  reviewedAt?: string;      // ISO 8601 timestamp
+  reviewNotes?: string;
+  createdBy?: string;
+  createdAt: string;        // ISO 8601 timestamp
+  updatedAt: string;        // ISO 8601 timestamp
+  // Populated from JOINs
+  locations?: WorkOrderLocation[];
+  partners?: WorkOrderPartner[];
+  evidence?: Evidence[];
+}
+
+// Work Order Location - points/areas associated with work order
+export interface WorkOrderLocation {
+  id: string;
+  workOrderId: string;
+  geometry: SupportedGeometry;
+  assetType?: string;       // 'road' | 'greenspace' | 'streetlight' | null
+  assetId?: string;         // Reference to the specific asset
+  note?: string;
+  sequenceOrder: number;
+  createdAt: string;        // ISO 8601 timestamp
+}
+
+// Work Order Partner - contractors/partners assigned
+export interface WorkOrderPartner {
+  workOrderId: string;
+  partnerId: string;
+  partnerName: string;
+  role: PartnerRole;
+  assignedAt: string;       // ISO 8601 timestamp
+}
+
+// Evidence - photos, documents attached to work orders
+export interface Evidence {
+  id: string;
+  workOrderId: string;
+  type: EvidenceType;
+  fileName: string;
+  filePath: string;
+  fileSizeBytes?: number;
+  mimeType?: string;
+  title?: string;
+  description?: string;
+  captureDate?: string;     // ISO 8601 timestamp
+  geometry?: Point;         // Geotagged location
+  submittedBy: string;
+  submittedAt: string;      // ISO 8601 timestamp
+  reviewedBy?: string;
+  reviewedAt?: string;      // ISO 8601 timestamp
+  reviewStatus: EvidenceReviewStatus;
+  reviewNotes?: string;
+}
+
+// Outbox Notification - cross-database notification boundary
+export interface OutboxNotification {
+  id: string;
+  eventId: string;
+  notificationType: NotificationType;
+  payload: Record<string, unknown>;
+  status: NotificationStatus;
+  createdAt: string;        // ISO 8601 timestamp
+  sentAt?: string;          // ISO 8601 timestamp
+  deliveredAt?: string;     // ISO 8601 timestamp
+  errorMessage?: string;
+}
+
 // GeoJSON Feature types for map rendering
 export type ConstructionEventFeature = Feature<SupportedGeometry, ConstructionEvent>;
 export type RoadAssetFeature = Feature<SupportedGeometry, RoadAsset>;
@@ -247,6 +362,9 @@ export type InspectionFeature = Feature<Point, InspectionRecord>;
 export type RiverAssetFeature = Feature<SupportedGeometry, RiverAsset>;
 export type GreenSpaceAssetFeature = Feature<Polygon, GreenSpaceAsset>;
 export type StreetLightAssetFeature = Feature<Point, StreetLightAsset>;
+
+// Phase 1: WorkOrder location feature for map display
+export type WorkOrderLocationFeature = Feature<SupportedGeometry, WorkOrderLocation & { workOrder: Partial<WorkOrder> }>;
 
 // API request/response types
 export interface CreateEventRequest {
@@ -311,6 +429,112 @@ export interface CreateInspectionRequest {
   result: string;
   notes?: string;
   geometry: Point;
+}
+
+// ============================================
+// Phase 1: WorkOrder / Evidence API Types
+// ============================================
+
+// Create work order request
+export interface CreateWorkOrderRequest {
+  eventId: string;            // Required - WorkOrder must belong to an Event
+  type: WorkOrderType;
+  title: string;
+  description?: string;
+  assignedDept?: string;
+  dueDate?: string;           // ISO 8601 timestamp
+}
+
+// Update work order request
+export interface UpdateWorkOrderRequest {
+  title?: string;
+  description?: string;
+  assignedDept?: string;
+  dueDate?: string;
+  reviewNotes?: string;
+}
+
+// Work order status change
+export interface WorkOrderStatusChangeRequest {
+  status: WorkOrderStatus;
+}
+
+// Work order assignment
+export interface AssignWorkOrderRequest {
+  assignedDept: string;
+  assignedBy?: string;
+}
+
+// Add location to work order
+export interface AddWorkOrderLocationRequest {
+  geometry: SupportedGeometry;
+  assetType?: string;
+  assetId?: string;
+  note?: string;
+  sequenceOrder?: number;
+}
+
+// Add partner to work order
+export interface AddWorkOrderPartnerRequest {
+  partnerId: string;
+  partnerName: string;
+  role?: PartnerRole;
+}
+
+// Upload evidence (multipart - actual file upload handled separately)
+export interface CreateEvidenceRequest {
+  type: EvidenceType;
+  title?: string;
+  description?: string;
+  captureDate?: string;
+  geometry?: Point;           // Geotagged location
+}
+
+// Review evidence
+export interface ReviewEvidenceRequest {
+  reviewStatus: 'approved' | 'rejected';
+  reviewNotes?: string;
+}
+
+// Event status change (updated for Phase 1)
+export interface EventStatusChangeRequest {
+  status: 'active' | 'pending_review';  // Phase 1: use /close endpoint for closing
+}
+
+// Event close request (Phase 1 - Gov only)
+export interface CloseEventRequest {
+  notifyMasterData: boolean;  // Required - must explicitly confirm notification decision
+  closeNotes?: string;
+  assetChangeRequests?: AssetChangeRequestSummary[];  // If notifyMasterData=true
+}
+
+// Summary of asset change for notification
+export interface AssetChangeRequestSummary {
+  assetId: string;
+  assetType: string;          // 'road' | 'greenspace' | 'streetlight' | etc
+  changeType: 'create' | 'update' | 'retire';
+  summary: string;
+}
+
+// Work order filters for list endpoint
+export interface WorkOrderFilters {
+  eventId?: string;
+  status?: WorkOrderStatus | WorkOrderStatus[];
+  type?: WorkOrderType | WorkOrderType[];
+  assignedDept?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// Evidence filters
+export interface EvidenceFilters {
+  workOrderId?: string;
+  type?: EvidenceType | EvidenceType[];
+  reviewStatus?: EvidenceReviewStatus | EvidenceReviewStatus[];
+  limit?: number;
+  offset?: number;
 }
 
 // Filter types for list endpoints

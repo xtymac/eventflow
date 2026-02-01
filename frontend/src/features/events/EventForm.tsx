@@ -16,7 +16,9 @@ import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward
 import { modals } from '@mantine/modals';
 import { useForm, Controller } from 'react-hook-form';
 import * as turf from '@turf/turf';
-import { AdvancedRoadAssetSelector } from './AdvancedRoadAssetSelector';
+// Phase 0: Road-Event linking disabled - Road editing is frozen
+// import { AdvancedRoadAssetSelector } from './AdvancedRoadAssetSelector';
+// Still needed for legacy code paths in effects
 import { getRoadAssetLabel } from '../../utils/roadAssetLabel';
 import { generateCorridorGeometry } from '../../utils/geometryGenerator';
 import { geometryToFeatures, getDrawTypeFromGeometry } from '../../utils/geometryToFeatures';
@@ -101,7 +103,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
   const { data: eventData, isLoading: isLoadingEvent } = useEvent(eventId || null);
   const { data: duplicateEventData } = useEvent(duplicateEventId || null);
-  const { data: intersectingAssetsData, isLoading: isLoadingIntersecting } = useEventIntersectingAssets(eventId || null);
+  // Phase 0: isLoadingIntersecting no longer used since AdvancedRoadAssetSelector is hidden
+  const { data: intersectingAssetsData } = useEventIntersectingAssets(eventId || null);
 
   // Helper to combine multiple features into final geometry for submission
   const combineFeatures = useCallback((features: import('geojson').Feature[]): SupportedGeometry | null => {
@@ -681,6 +684,19 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     try {
       const hasDrawnGeometry = drawnFeatures && drawnFeatures.length > 0;
 
+      // Phase 0: Geometry is required since road auto-generation is disabled
+      if (!hasDrawnGeometry || !geometry) {
+        modals.open({
+          title: 'Geometry Required',
+          children: (
+            <Text size="sm">
+              Please draw the event area on the map using the Polygon or Line tools before submitting.
+            </Text>
+          ),
+        });
+        return;
+      }
+
       const submitData = {
         name: data.name,
         startDate: data.startDate!.toISOString(),
@@ -688,13 +704,10 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         restrictionType: data.restrictionType,
         department: data.department,
         ward: data.ward || undefined,
-        roadAssetIds: data.selectedRoadAssetIds,
-        // Submit geometry if manually drawn
-        geometry: hasDrawnGeometry && geometry ? geometry : undefined,
-        // Signal backend to regenerate geometry if:
-        // 1. No manual geometry provided (!hasDrawnGeometry), OR
-        // 2. User explicitly requested recalculation
-        regenerateGeometry: !hasDrawnGeometry || userRequestedRecalculationRef.current,
+        // Phase 0: roadAssetIds is sent but ignored by backend (Road-Event linking disabled)
+        roadAssetIds: [] as string[],
+        // Geometry is now required (Phase 0: no auto-generation from roads)
+        geometry: geometry,
       };
 
       if (eventId) {
@@ -872,9 +885,9 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               </Button>
             </Group>
 
+            {/* Phase 0: Road-Event linking disabled
             <Divider label="Or select roads from the list" labelPosition="center" />
 
-            {/* Road Asset Selector */}
             <Controller
               name="selectedRoadAssetIds"
               control={control}
@@ -896,6 +909,11 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                 />
               )}
             />
+            */}
+
+            <Alert color="blue" variant="light" title="Phase 0: Road Selection Disabled">
+              Road-Event linking is currently disabled. Draw the event area directly on the map using the polygon or line tools above.
+            </Alert>
           </Stack>
         </div>
 

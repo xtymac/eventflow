@@ -1,49 +1,51 @@
+# Frozen v1 stack - isolated DB, containers, volumes
+# Start with: docker compose -f docker-compose.v1.yml -p eventflow-v1 up -d --build
+# Requires: docker network create eventflow-net (shared with main stack's Caddy)
+
 services:
   db:
     image: postgis/postgis:16-3.4
-    container_name: nagoya-db
+    container_name: nagoya-db-v1
     restart: unless-stopped
     environment:
-      POSTGRES_DB: nagoya_construction
+      POSTGRES_DB: nagoya_construction_v1
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v1:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction_v1"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - eventflow-net
 
   mongo:
     image: mongo:4.4
-    container_name: nagoya-mongo
+    container_name: nagoya-mongo-v1
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo_data_v1:/data/db
     healthcheck:
       test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - eventflow-net
 
   orion-ld:
     image: fiware/orion-ld:1.5.1
     platform: linux/amd64
-    container_name: nagoya-orion-ld
+    container_name: nagoya-orion-ld-v1
     restart: unless-stopped
     depends_on:
       mongo:
         condition: service_healthy
-    ports:
-      - "1026:1026"
     environment:
       ORIONLD_MONGO_HOST: mongo
-      ORIONLD_MONGO_DB: orionld
+      ORIONLD_MONGO_DB: orionld_v1
       ORIONLD_LOG_LEVEL: DEBUG
     command: -dbhost mongo -logLevel DEBUG
     healthcheck:
@@ -51,23 +53,23 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - eventflow-net
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: nagoya-api
+    container_name: nagoya-api-v1
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
       orion-ld:
         condition: service_healthy
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction_v1
       ORION_LD_URL: http://orion-ld:1026
       PORT: 3000
       TZ: Asia/Tokyo
@@ -80,63 +82,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - eventflow-net
 
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: nagoya-web
+    container_name: nagoya-web-v1
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
-    ports:
-      - "5173:5173"
     environment:
-      # API_PROXY_TARGET is for Vite server proxy (Docker internal)
-      # VITE_API_URL defaults to /api which uses the proxy
       API_PROXY_TARGET: http://api:3000
     volumes:
       - ./frontend/src:/app/src:ro
       - ./frontend/public/tiles:/app/public/tiles:ro
+    networks:
+      - eventflow-net
 
   martin:
     image: ghcr.io/maplibre/martin:v0.14.2
-    container_name: nagoya-martin
+    container_name: nagoya-martin-v1
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction_v1
     command: --auto-bounds calc
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: nagoya-caddy
-    restart: unless-stopped
-    depends_on:
-      - web
-      - api
-      - martin
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    environment:
-      ACME_AGREE: "true"
     networks:
-      - default
       - eventflow-net
 
 volumes:
-  postgres_data:
-  mongo_data:
-  caddy_data:
-  caddy_config:
+  postgres_data_v1:
+  mongo_data_v1:
 
 networks:
   eventflow-net:

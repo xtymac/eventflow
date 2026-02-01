@@ -14,6 +14,10 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Phase 0: Road assets are frozen (read-only) by default
+// Set ROAD_ASSETS_FROZEN=false to re-enable write operations
+const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN !== 'false';
+
 // Regenerate PMTiles in the background
 // Runs: export-road-assets.ts then tiles:generate
 function regenerateTilesInBackground(): void {
@@ -609,9 +613,18 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       body: CreateAssetSchema,
       response: {
         201: Type.Object({ data: AssetSchema }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: Road assets are read-only
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'Road assets are read-only',
+        message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+      });
+    }
+
     const body = request.body;
     const id = `RA-${nanoid(8)}`;
     const now = new Date();
@@ -704,10 +717,19 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       body: Type.Intersect([UpdateAssetSchema, Type.Object({ eventId: Type.Optional(Type.String()) })]),
       response: {
         200: Type.Object({ data: AssetSchema }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
         404: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: Road assets are read-only
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'Road assets are read-only',
+        message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+      });
+    }
+
     const { id } = request.params;
     const body = request.body;
 
@@ -853,11 +875,20 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       body: RetireAssetSchema,
       response: {
         200: Type.Object({ data: AssetSchema }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
         404: Type.Object({ error: Type.String() }),
         400: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: Road assets are read-only
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'Road assets are read-only',
+        message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+      });
+    }
+
     const { id } = request.params;
     const { eventId, replacedBy } = request.body;
 
@@ -959,11 +990,20 @@ export async function assetsRoutes(fastify: FastifyInstance) {
             data: AssetSchema,
           }),
           400: Type.Object({ error: Type.String() }),
+          403: Type.Object({ error: Type.String(), message: Type.String() }),
           404: Type.Object({ error: Type.String() }),
         },
       },
     },
     async (request, reply) => {
+      // Phase 0: Road assets are read-only
+      if (ROAD_ASSETS_FROZEN) {
+        return reply.status(403).send({
+          error: 'Road assets are read-only',
+          message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+        });
+      }
+
       const { id } = request.params;
       const displayName = request.body.displayName.trim();
 
@@ -1106,12 +1146,21 @@ export async function assetsRoutes(fastify: FastifyInstance) {
             data: AssetSchema,
           }),
           400: Type.Object({ error: Type.String() }),
+          403: Type.Object({ error: Type.String(), message: Type.String() }),
           404: Type.Object({ error: Type.String() }),
           503: Type.Object({ error: Type.String() }),
         },
       },
     },
     async (request, reply) => {
+      // Phase 0: Road assets are read-only
+      if (ROAD_ASSETS_FROZEN) {
+        return reply.status(403).send({
+          error: 'Road assets are read-only',
+          message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+        });
+      }
+
       // Check if Google Maps is configured
       if (!isGoogleMapsConfigured()) {
         return reply.status(503).send({
@@ -1237,9 +1286,18 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           tilesRefreshing: Type.Optional(Type.Boolean()),
         }),
         400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: Road assets are read-only
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'Road assets are read-only',
+        message: 'Road asset modifications are disabled. Use WorkOrder workflow for asset changes (Phase 2+).',
+      });
+    }
+
     const { bbox, ids, dryRun = true, refreshTiles = true } = request.query;
 
     if (!bbox && !ids) {

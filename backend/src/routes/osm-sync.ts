@@ -9,6 +9,10 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { osmSyncService, type BBox } from '../services/osm-sync.js';
 
+// Phase 0: Road assets are frozen (read-only) by default
+// Set ROAD_ASSETS_FROZEN=false to re-enable OSM sync API
+const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN !== 'false';
+
 // TypeBox schemas
 const BboxSchema = Type.Object({
   minLng: Type.Number({ minimum: -180, maximum: 180 }),
@@ -71,10 +75,19 @@ export async function osmSyncRoutes(fastify: FastifyInstance) {
       response: {
         200: Type.Object({ data: SyncResultSchema }),
         400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
         500: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: OSM sync is disabled when road assets are frozen
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'OSM sync is disabled',
+        message: 'Road asset modifications are disabled (Phase 0). OSM sync is not allowed.',
+      });
+    }
+
     const { bbox, triggeredBy } = request.body;
 
     // Validate bbox logic
@@ -107,11 +120,20 @@ export async function osmSyncRoutes(fastify: FastifyInstance) {
       response: {
         200: Type.Object({ data: SyncResultSchema }),
         400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
         404: Type.Object({ error: Type.String() }),
         500: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: OSM sync is disabled when road assets are frozen
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'OSM sync is disabled',
+        message: 'Road asset modifications are disabled (Phase 0). OSM sync is not allowed.',
+      });
+    }
+
     const { wardName } = request.params;
     const { triggeredBy } = request.query;
 

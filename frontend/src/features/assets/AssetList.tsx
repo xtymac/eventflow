@@ -15,9 +15,10 @@ import {
   ActionIcon,
   Tabs,
   Box,
+  Alert,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconChevronLeft, IconChevronRight, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconChevronDown, IconChevronLeft, IconChevronRight, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb, IconInfoCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import * as turf from '@turf/turf';
 import { useQueryClient } from '@tanstack/react-query';
@@ -492,6 +493,11 @@ export function AssetList() {
 
       <Tabs.Panel value="list">
         <Stack gap="sm">
+          {/* Phase 0: Read-only notice */}
+          <Alert color="blue" icon={<IconInfoCircle size={16} />} variant="light">
+            Road assets are read-only. Asset changes will be managed through WorkOrders in future phases.
+          </Alert>
+
           <TextInput
             placeholder="Search by name or ID..."
             leftSection={<IconSearch size={16} />}

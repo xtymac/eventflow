@@ -2,6 +2,12 @@
 
 This document provides an overview of all project documentation.
 
+## Deployment & Operations
+
+| Document | Description |
+|----------|-------------|
+| [deployment.md](deployment.md) | Dual-stack deployment guide (Main + v1 frozen) |
+
 ## Planning & Architecture
 
 Documents related to project planning, migration strategies, and architectural decisions.
@@ -14,6 +20,7 @@ Documents related to project planning, migration strategies, and architectural d
 | [requirements-gap-issues.md](planning/requirements-gap-issues.md) | Ticket-style list of gaps/conflicts with touch points |
 | [architecture-principles.md](architecture-principles.md) | Architecture principles and design guardrails |
 | [implementation-architecture.md](implementation-architecture.md) | Prototype implementation architecture and app separation |
+| [implementation-guide.md](implementation-guide.md) | Single-source implementation guide (workflow, RBAC, data model) |
 | [ogc-api-scope.md](planning/ogc-api-scope.md) | OGC API Features/Tiles scope for Phase 7 |
 | [ogc-api-implementation-checklist.md](planning/ogc-api-implementation-checklist.md) | OGC API Phase 7 implementation checklist |
 | [postgis-migration-plan.md](planning/postgis-migration-plan.md) | Database migration strategy from JSON to PostGIS geometry |
@@ -44,7 +51,9 @@ User-facing features and frontend implementation details.
 ```
 docs/
 ├── INDEX.md                    # This file
+├── deployment.md               # Dual-stack deployment guide
 ├── implementation-architecture.md  # Prototype implementation architecture
+├── implementation-guide.md     # Single-source implementation guide
 ├── import-export.md            # Import/Export feature
 ├── ngsi-ld.md                  # NGSI-LD integration
 ├── qgis-setup-guide.md         # QGIS setup guide

@@ -114,7 +114,7 @@ export function useChangeEventStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'active' | 'ended' }) =>
+    mutationFn: ({ id, status }: { id: string; status: 'active' | 'pending_review' | 'closed' }) =>
       fetchApi<{ data: ConstructionEvent }>(`/events/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
@@ -670,5 +670,151 @@ export function useStreetLightWards() {
   return useQuery({
     queryKey: ['streetlight-wards'],
     queryFn: () => fetchApi<{ data: string[] }>('/streetlights/wards'),
+  });
+}
+
+// ============================================
+// WorkOrders hooks (Phase 1)
+// ============================================
+
+import type { WorkOrder, Evidence, CloseEventRequest } from '@nagoya/shared';
+
+export function useWorkOrders(eventId?: string) {
+  const params = new URLSearchParams();
+  if (eventId) params.append('eventId', eventId);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['workorders', eventId],
+    queryFn: () => fetchApi<{ data: WorkOrder[]; meta: { total: number } }>(`/workorders${queryString}`),
+  });
+}
+
+export function useWorkOrder(id: string | null) {
+  return useQuery({
+    queryKey: ['workorder', id],
+    queryFn: () => fetchApi<{ data: WorkOrder }>(`/workorders/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useCreateWorkOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<WorkOrder>) =>
+      fetchApi<{ data: WorkOrder }>('/workorders', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['workorders'] });
+      if (variables.eventId) {
+        queryClient.invalidateQueries({ queryKey: ['workorders', variables.eventId] });
+      }
+    },
+  });
+}
+
+export function useUpdateWorkOrderStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      fetchApi<{ data: WorkOrder }>(`/workorders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['workorders'] });
+      queryClient.invalidateQueries({ queryKey: ['workorder', variables.id] });
+    },
+  });
+}
+
+// WorkOrder locations GeoJSON for map layer
+export function useWorkOrderLocationsGeoJSON(eventId?: string) {
+  const params = new URLSearchParams();
+  if (eventId) params.append('eventId', eventId);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['workorder-locations-geojson', eventId],
+    queryFn: () => fetchApi<FeatureCollection<Point>>(`/workorders/locations/geojson${queryString}`),
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+// ============================================
+// Evidence hooks (Phase 1)
+// ============================================
+
+export function useEvidence(workOrderId: string | null) {
+  return useQuery({
+    queryKey: ['evidence', workOrderId],
+    queryFn: () => fetchApi<{ data: Evidence[] }>(`/workorders/${workOrderId}/evidence`),
+    enabled: !!workOrderId,
+  });
+}
+
+export function useUploadEvidence() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ workOrderId, formData }: { workOrderId: string; formData: FormData }) => {
+      const response = await fetch(`${API_BASE}/workorders/${workOrderId}/evidence`, {
+        method: 'POST',
+        body: formData, // Don't set Content-Type - browser will set it with boundary
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorBody.error || errorBody.message || `HTTP ${response.status}`);
+      }
+
+      return response.json() as Promise<{ data: Evidence }>;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['evidence', variables.workOrderId] });
+      queryClient.invalidateQueries({ queryKey: ['workorder', variables.workOrderId] });
+    },
+  });
+}
+
+export function useDeleteEvidence() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ evidenceId }: { evidenceId: string }) =>
+      fetchApi<void>(`/evidence/${evidenceId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evidence'] });
+      queryClient.invalidateQueries({ queryKey: ['workorders'] });
+    },
+  });
+}
+
+// ============================================
+// Event Close hook (Phase 1 - Gov only)
+// ============================================
+
+export function useCloseEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, userRole }: { id: string; data: CloseEventRequest; userRole: string }) =>
+      fetchApi<{ data: { event: ConstructionEvent; notification?: { id: string } } }>(`/events/${id}/close`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'X-User-Role': userRole,
+        },
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', variables.id] });
+    },
   });
 }

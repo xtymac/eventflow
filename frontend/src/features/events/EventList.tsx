@@ -26,14 +26,20 @@ import { formatLocalDate } from '../../utils/dateFormat';
 const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
-  ended: 'gray',
+  pending_review: 'orange',
+  ended: 'gray',  // Legacy - kept for backwards compatibility
+  closed: 'gray',
+  archived: 'dark',
   cancelled: 'red',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
-  ended: 'Ended',
+  pending_review: 'Pending Review',
+  ended: 'Ended',  // Legacy
+  closed: 'Closed',
+  archived: 'Archived',
   cancelled: 'Cancelled',
 };
 
@@ -161,10 +167,11 @@ export function EventList() {
                 }
               }}
             >
-              <Group gap="xs">
+              <Group gap="xs" wrap="wrap">
                 <Chip value="planned">Planned</Chip>
                 <Chip value="active">Active</Chip>
-                <Chip value="ended">Ended</Chip>
+                <Chip value="pending_review" color="orange">Pending Review</Chip>
+                <Chip value="closed">Closed</Chip>
                 <Chip value="cancelled" color="red">Cancelled</Chip>
               </Group>
             </Chip.Group>

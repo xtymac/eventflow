@@ -5,7 +5,7 @@ This document defines the prototype implementation architecture based on the lat
 ## Summary (Non-Negotiable)
 
 - **App-Level Separation**: Public Portal (02) and Partner Portal (03) are independent apps, not just UI splits.
-- **Single Master DB**: One authoritative database with Views + RBAC, not multiple databases.
+- **Two DBs + Notification Boundary**: Master Data DB and Event/Case DB are separate; Event system notifies master data, never edits directly. Prototype may host both DBs on the same PostgreSQL instance to control cost.
 - **Asset / Event Separation**: Events never edit assets directly; assets update only through a controlled change flow.
 - **Roads Are Read-Only**: Road data is displayed as tiles/layers only; no editing, no Event linkage.
 - **GIS Is Not Core**: GIS is a presentation layer; the core is ledger + workflow + auditability.
@@ -15,12 +15,13 @@ This document defines the prototype implementation architecture based on the lat
 ## Architecture Overview
 
 ```
-+-----------------------------------------------------------------+
-|                           Master DB                             |
-| Assets / Events / WorkOrders / Evidence / Audit / Lineage        |
-+-----------------------------------------------------------------+
-                              |
-                              v
++---------------------------+     +------------------------------+
+| Master Data DB            |     | Event/Case DB                |
+| Assets / Versions / Audit |     | Events / WorkOrders / Evidence|
++---------------------------+     +------------------------------+
+             ^                               |
+             | <---- Notification Bridge ----+
+             v
 +-----------------------------------------------------------------+
 |                       Core API / Domain                         |
 |  - Asset change workflow                                        |
@@ -61,7 +62,8 @@ This document defines the prototype implementation architecture based on the lat
 ### Event (Operational History)
 - Time-bound administrative record (inspection, repair, project).
 - Must reference assets but **cannot edit assets**.
-- **Every Event must bind to WorkOrder(s)** (1:1 or 1:N).
+- **Event may exist without WorkOrder; WorkOrder cannot exist without Event** (1:N).
+- **Close is Gov-only** and requires confirmation of Master Data notification when changes are needed.
 
 ### WorkOrder
 - Execution unit tied to a specific Event.
@@ -75,12 +77,15 @@ This document defines the prototype implementation architecture based on the lat
 
 ## Access Control (RBAC + Views)
 
-- **Single Master DB**
+- **Two DBs (Master Data + Event/Case)**
 - Role-based access enforced at API and view layer.
 - Example view split:
   - `gov_assets_view`, `gov_events_view`, `gov_workorders_view`
   - `partner_workorders_view` (only assigned tasks)
   - `public_assets_view` (public-only fields)
+- Gov roles are separated by department:
+  - `gov_event_ops` (manage Events/WorkOrders, close Events)
+  - `gov_master_data` (review AssetChangeRequests, receive notifications)
 
 ---
 
@@ -90,6 +95,7 @@ This document defines the prototype implementation architecture based on the lat
 - Manage assets (excluding roads)
 - Create Events and link assets
 - Issue WorkOrders and accept Evidence
+- Department separation inside Gov Console (Event Ops vs Master Data)
 
 ### App 02: Public Portal
 - Public assets only (parks, basic info)
@@ -115,6 +121,8 @@ Create Event -> Bind WorkOrder -> Execute -> Submit Evidence -> Review -> Close
 
 - Event cannot be closed without WorkOrder completion.
 - WorkOrder cannot exist without Event.
+- Event close requires Gov role and confirmation of Master Data notification if changes are needed.
+- Inspection WorkOrder (Gov) may trigger a **Repair WorkOrder under the same Event**, assigned to partner(s).
 
 ---
 
@@ -160,10 +168,11 @@ Create Event -> Bind WorkOrder -> Execute -> Submit Evidence -> Review -> Close
 
 ## High Points for Demo
 
-- Same DB, different roles, **completely different interfaces**
+- Two DBs (may run on the same instance), different roles, **completely different interfaces**
 - Full **Event -> WorkOrder -> Evidence -> Close** loop
 - Road layer is read-only (clearly out of scope)
 - Init Import exists and is shown
+- Event areas and WorkOrder points are shown simultaneously on the map
 
 ---
 

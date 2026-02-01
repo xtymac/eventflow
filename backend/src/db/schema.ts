@@ -47,6 +47,8 @@ const jsonbColumn = customType<{ data: unknown; driverData: string }>({
 export const constructionEvents = pgTable('construction_events', {
   id: varchar('id', { length: 50 }).primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
+  // Status: 'planned' | 'active' | 'pending_review' | 'closed' | 'archived' | 'cancelled'
+  // Note: 'ended' is legacy and maps to 'closed' in Phase 1
   status: varchar('status', { length: 20 }).notNull().default('planned'),
   startDate: timestamp('start_date', { withTimezone: true }).notNull(),
   endDate: timestamp('end_date', { withTimezone: true }).notNull(),
@@ -59,6 +61,12 @@ export const constructionEvents = pgTable('construction_events', {
   department: varchar('department', { length: 100 }).notNull(),
   ward: varchar('ward', { length: 100 }),
   createdBy: varchar('created_by', { length: 100 }),
+  // Phase 1: Close tracking fields
+  closedBy: varchar('closed_by', { length: 100 }),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  notifyMasterData: boolean('notify_master_data').default(false),
+  notificationId: varchar('notification_id', { length: 50 }),  // Reference to outbox_notifications.id
+  closeNotes: text('close_notes'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   statusIdx: index('idx_events_status').on(table.status),
@@ -593,3 +601,124 @@ export const nagoyaBuildingZones = pgTable('nagoya_building_zones', {
 
 export type NagoyaBuildingZone = typeof nagoyaBuildingZones.$inferSelect;
 export type NewNagoyaBuildingZone = typeof nagoyaBuildingZones.$inferInsert;
+
+// ============================================
+// Phase 1: WorkOrder / Evidence / Notifications
+// ============================================
+
+// Work orders table - tasks spawned from events
+export const workOrders = pgTable('work_orders', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  eventId: varchar('event_id', { length: 50 }).notNull()
+    .references(() => constructionEvents.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 20 }).notNull(),  // 'inspection' | 'repair' | 'update'
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).notNull().default('draft'),  // 'draft' | 'assigned' | 'in_progress' | 'completed' | 'cancelled'
+  assignedDept: varchar('assigned_dept', { length: 100 }),
+  assignedBy: varchar('assigned_by', { length: 100 }),
+  assignedAt: timestamp('assigned_at', { withTimezone: true }),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  reviewedBy: varchar('reviewed_by', { length: 100 }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewNotes: text('review_notes'),
+  createdBy: varchar('created_by', { length: 100 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  eventIdIdx: index('idx_workorders_event_id').on(table.eventId),
+  statusIdx: index('idx_workorders_status').on(table.status),
+  typeIdx: index('idx_workorders_type').on(table.type),
+  dueDateIdx: index('idx_workorders_due_date').on(table.dueDate),
+}));
+
+// Work order locations - points/geometries associated with a work order
+export const workOrderLocations = pgTable('work_order_locations', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  workOrderId: varchar('work_order_id', { length: 50 }).notNull()
+    .references(() => workOrders.id, { onDelete: 'cascade' }),
+  geometry: geometryColumn('geometry').notNull(),
+  assetType: varchar('asset_type', { length: 20 }),  // 'road' | 'greenspace' | 'streetlight' | null
+  assetId: varchar('asset_id', { length: 50 }),  // Reference to the asset (no FK for flexibility)
+  note: text('note'),
+  sequenceOrder: integer('sequence_order').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  workOrderIdIdx: index('idx_wo_locations_workorder_id').on(table.workOrderId),
+  assetTypeIdx: index('idx_wo_locations_asset_type').on(table.assetType),
+}));
+
+// Work order partners - contractors/partners assigned to work orders
+export const workOrderPartners = pgTable('work_order_partners', {
+  workOrderId: varchar('work_order_id', { length: 50 }).notNull()
+    .references(() => workOrders.id, { onDelete: 'cascade' }),
+  partnerId: varchar('partner_id', { length: 50 }).notNull(),
+  partnerName: varchar('partner_name', { length: 255 }).notNull(),
+  role: varchar('role', { length: 50 }).default('contractor'),  // 'contractor' | 'inspector' | 'reviewer'
+  assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.workOrderId, table.partnerId] }),
+  partnerIdIdx: index('idx_wo_partners_partner_id').on(table.partnerId),
+}));
+
+// Evidence table - photos, documents, reports attached to work orders
+export const evidence = pgTable('evidence', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  workOrderId: varchar('work_order_id', { length: 50 }).notNull()
+    .references(() => workOrders.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 20 }).notNull(),  // 'photo' | 'document' | 'report' | 'cad' | 'other'
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  filePath: varchar('file_path', { length: 500 }).notNull(),
+  fileSizeBytes: integer('file_size_bytes'),
+  mimeType: varchar('mime_type', { length: 100 }),
+  title: varchar('title', { length: 255 }),
+  description: text('description'),
+  captureDate: timestamp('capture_date', { withTimezone: true }),
+  geometry: pointColumn('geometry'),  // Location where photo was taken (geotagged)
+  submittedBy: varchar('submitted_by', { length: 100 }).notNull(),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+  reviewedBy: varchar('reviewed_by', { length: 100 }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewStatus: varchar('review_status', { length: 20 }).notNull().default('pending'),  // 'pending' | 'approved' | 'rejected'
+  reviewNotes: text('review_notes'),
+}, (table) => ({
+  workOrderIdIdx: index('idx_evidence_workorder_id').on(table.workOrderId),
+  typeIdx: index('idx_evidence_type').on(table.type),
+  reviewStatusIdx: index('idx_evidence_review_status').on(table.reviewStatus),
+}));
+
+// Outbox notifications - Event DB → Master Data DB notification boundary
+export const outboxNotifications = pgTable('outbox_notifications', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  eventId: varchar('event_id', { length: 50 }).notNull()
+    .references(() => constructionEvents.id, { onDelete: 'cascade' }),
+  notificationType: varchar('notification_type', { length: 50 }).notNull(),  // 'event_closed' | 'asset_change_request'
+  payload: jsonbColumn('payload').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),  // 'pending' | 'sent' | 'delivered' | 'failed'
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+  errorMessage: text('error_message'),
+}, (table) => ({
+  eventIdIdx: index('idx_outbox_event_id').on(table.eventId),
+  statusIdx: index('idx_outbox_status').on(table.status),
+  typeIdx: index('idx_outbox_type').on(table.notificationType),
+}));
+
+// Type exports for Phase 1 tables
+export type WorkOrder = typeof workOrders.$inferSelect;
+export type NewWorkOrder = typeof workOrders.$inferInsert;
+
+export type WorkOrderLocation = typeof workOrderLocations.$inferSelect;
+export type NewWorkOrderLocation = typeof workOrderLocations.$inferInsert;
+
+export type WorkOrderPartner = typeof workOrderPartners.$inferSelect;
+export type NewWorkOrderPartner = typeof workOrderPartners.$inferInsert;
+
+export type Evidence = typeof evidence.$inferSelect;
+export type NewEvidence = typeof evidence.$inferInsert;
+
+export type OutboxNotification = typeof outboxNotifications.$inferSelect;
+export type NewOutboxNotification = typeof outboxNotifications.$inferInsert;

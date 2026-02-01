@@ -124,6 +124,12 @@ async function seed() {
       createdBy: constructionEvents.createdBy,
       updatedAt: constructionEvents.updatedAt,
       geometrySource: constructionEvents.geometrySource,
+      // Phase 1: Close tracking fields
+      closedBy: constructionEvents.closedBy,
+      closedAt: constructionEvents.closedAt,
+      notifyMasterData: constructionEvents.notifyMasterData,
+      notificationId: constructionEvents.notificationId,
+      closeNotes: constructionEvents.closeNotes,
     };
     const allEvents = await db.select(eventSelect).from(constructionEvents);
     for (const event of allEvents) {

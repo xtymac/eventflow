@@ -5,7 +5,7 @@ import { Protocol } from 'pmtiles';
 import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox } from '../hooks/useApi';
+import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore } from '../stores/uiStore';
@@ -118,8 +118,18 @@ const THEME_CONFIG: Record<MapTheme, { tiles: string[], attribution: string, til
 const STATUS_COLORS: Record<string, string> = {
   planned: '#3B82F6', // blue
   active: '#F59E0B', // amber
-  ended: '#6B7280', // gray
+  pending_review: '#F97316', // orange
+  ended: '#6B7280', // gray (legacy)
+  closed: '#6B7280', // gray
+  archived: '#374151', // dark gray
   cancelled: '#EF4444', // red
+};
+
+// WorkOrder type colors for map layer
+const WORKORDER_TYPE_COLORS: Record<string, string> = {
+  inspection: '#3B82F6', // blue
+  repair: '#F59E0B', // amber
+  update: '#10B981', // green
 };
 
 const ROAD_TYPE_COLORS: Record<string, string> = {
@@ -341,6 +351,9 @@ export function MapView() {
     { enabled: showAssets && (!!mapBbox || useGlobalFilter) && (currentZoom >= 14 || hasActiveAssetFilters) }
   );
   const { data: inspectionsData } = useInspections();
+
+  // WorkOrder locations - Phase 1 (displayed as points on the map)
+  const { data: workOrderLocationsData } = useWorkOrderLocationsGeoJSON();
 
   // Rivers data - load when visible and zoom >= 13 (with geometry simplification)
   const { data: riversData } = useRiversInBbox(
@@ -1118,6 +1131,52 @@ export function MapView() {
         },
       });
 
+      // CLOSED events (same styling as ended - gray)
+      map.current.addLayer({
+        id: 'events-closed-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'closed']],
+        paint: {
+          'fill-color': STATUS_COLORS.closed,
+          'fill-opacity': 0.1,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'events-closed-line',
+        type: 'line',
+        source: 'events',
+        filter: ['==', 'status', 'closed'],
+        paint: {
+          'line-color': STATUS_COLORS.closed,
+          'line-width': 2,
+        },
+      });
+
+      // PENDING_REVIEW events (orange - between planned and active)
+      map.current.addLayer({
+        id: 'events-pending-review-fill',
+        type: 'fill',
+        source: 'events',
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'pending_review']],
+        paint: {
+          'fill-color': STATUS_COLORS.pending_review,
+          'fill-opacity': 0.18,
+        },
+      });
+
+      map.current.addLayer({
+        id: 'events-pending-review-line',
+        type: 'line',
+        source: 'events',
+        filter: ['==', 'status', 'pending_review'],
+        paint: {
+          'line-color': STATUS_COLORS.pending_review,
+          'line-width': 3.5,
+        },
+      });
+
       // ACTIVE events (top layer - amber, most prominent)
       map.current.addLayer({
         id: 'events-active-fill',
@@ -1208,6 +1267,51 @@ export function MapView() {
           'circle-color': '#EC4899',
           'circle-stroke-width': 2,
           'circle-stroke-color': '#fff',
+        },
+      });
+
+      // WorkOrder locations source and layer (Phase 1)
+      map.current.addSource('workorder-locations', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.current.addLayer({
+        id: 'workorder-locations-point',
+        type: 'circle',
+        source: 'workorder-locations',
+        paint: {
+          'circle-radius': 10,
+          'circle-color': [
+            'match', ['get', 'workOrderType'],
+            'inspection', WORKORDER_TYPE_COLORS.inspection,
+            'repair', WORKORDER_TYPE_COLORS.repair,
+            'update', WORKORDER_TYPE_COLORS.update,
+            '#6B7280' // default gray
+          ],
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // WorkOrder location label
+      map.current.addLayer({
+        id: 'workorder-locations-label',
+        type: 'symbol',
+        source: 'workorder-locations',
+        minzoom: 14,
+        layout: {
+          'text-field': ['get', 'workOrderTitle'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 11,
+          'text-offset': [0, 1.5],
+          'text-anchor': 'top',
+          'text-max-width': 10,
+        },
+        paint: {
+          'text-color': '#374151',
+          'text-halo-color': '#fff',
+          'text-halo-width': 1.5,
         },
       });
 
@@ -2580,6 +2684,23 @@ export function MapView() {
     source.setData({ type: 'FeatureCollection', features });
     map.current.setLayoutProperty('inspections-point', 'visibility', showInspections ? 'visible' : 'none');
   }, [inspectionsData, showInspections, mapLoaded]);
+
+  // Update workorder locations layer (Phase 1)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const source = map.current.getSource('workorder-locations') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    // Set data from GeoJSON response (or empty FeatureCollection)
+    const data = workOrderLocationsData || { type: 'FeatureCollection' as const, features: [] };
+    source.setData(data);
+
+    // WorkOrder layer is always visible when there's data (no toggle yet)
+    const hasData = data.features && data.features.length > 0;
+    map.current.setLayoutProperty('workorder-locations-point', 'visibility', hasData ? 'visible' : 'none');
+    map.current.setLayoutProperty('workorder-locations-label', 'visibility', hasData ? 'visible' : 'none');
+  }, [workOrderLocationsData, mapLoaded]);
 
   // Highlight and fly to selected event
   useEffect(() => {

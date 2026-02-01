@@ -21,14 +21,20 @@ import { InspectionsListSection } from '../inspections/InspectionsListSection';
 const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
-  ended: 'gray',
+  pending_review: 'orange',
+  ended: 'gray',  // Legacy
+  closed: 'gray',
+  archived: 'dark',
   cancelled: 'red',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
-  ended: 'Ended',
+  pending_review: 'Pending Review',
+  ended: 'Ended',  // Legacy
+  closed: 'Closed',
+  archived: 'Archived',
   cancelled: 'Cancelled',
 };
 

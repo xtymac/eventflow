@@ -31,7 +31,7 @@ interface UIState {
   isDecisionModalOpen: boolean;
   decisionEventId: string | null;
   isStatusChangeModalOpen: boolean;
-  statusChangeTargetStatus: 'active' | 'ended' | null;
+  statusChangeTargetStatus: 'active' | 'pending_review' | 'closed' | null;
   detailModalEventId: string | null;
   isRoadUpdateModeActive: boolean;
   editingEventId: string | null;
@@ -165,7 +165,7 @@ interface UIState {
   closeInspectionForm: () => void;
   openDecisionModal: (eventId: string) => void;
   closeDecisionModal: () => void;
-  openStatusChangeModal: (targetStatus: 'active' | 'ended') => void;
+  openStatusChangeModal: (targetStatus: 'active' | 'pending_review' | 'closed') => void;
   closeStatusChangeModal: () => void;
   openEventDetailModal: (eventId: string) => void;
   closeEventDetailModal: () => void;

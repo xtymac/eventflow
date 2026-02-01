@@ -10,6 +10,10 @@ import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { importVersionService } from '../services/import-version.js';
 
+// Phase 0: Road assets are frozen (read-only) by default
+// Set ROAD_ASSETS_FROZEN=false to re-enable import publish
+const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN !== 'false';
+
 // TypeBox schemas
 const ImportVersionSchema = Type.Object({
   id: Type.String(),
@@ -435,11 +439,20 @@ export async function importVersionsRoutes(fastify: FastifyInstance) {
       response: {
         200: Type.Object({ data: ImportJobSchema }),
         400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String(), message: Type.String() }),
         404: Type.Object({ error: Type.String() }),
         500: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
+    // Phase 0: Road asset import is disabled
+    if (ROAD_ASSETS_FROZEN) {
+      return reply.status(403).send({
+        error: 'Road asset import is disabled',
+        message: 'Road asset modifications are disabled (Phase 0). Import publish is not allowed.',
+      });
+    }
+
     const { id } = request.params;
 
     const version = await importVersionService.getVersion(id);

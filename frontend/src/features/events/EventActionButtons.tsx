@@ -1,7 +1,8 @@
 import { Group, Button, Text } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff, IconRoad } from '@tabler/icons-react';
+// Phase 0: IconRoad removed - Road Update Mode disabled
+import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useChangeEventStatus, useCancelEvent, useArchiveEvent, useUnarchiveEvent } from '../../hooks/useApi';
 import type { ConstructionEvent } from '@nagoya/shared';
@@ -11,7 +12,8 @@ interface EventActionButtonsProps {
 }
 
 export function EventActionButtons({ event }: EventActionButtonsProps) {
-  const { openEventForm, openDecisionModal, openDuplicateEventForm, selectEvent, closeEventDetailModal, selectedEventId, detailModalEventId, enterRoadUpdateMode } = useUIStore();
+  // Phase 0: enterRoadUpdateMode removed - Road Update Mode disabled
+  const { openEventForm, openDecisionModal, openDuplicateEventForm, selectEvent, closeEventDetailModal, selectedEventId, detailModalEventId } = useUIStore();
   const changeStatus = useChangeEventStatus();
   const cancelEvent = useCancelEvent();
   const archiveEvent = useArchiveEvent();
@@ -63,16 +65,24 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
     });
   };
 
-  const handleEndEvent = () => {
+  const handleRequestReview = () => {
     modals.openConfirmModal({
-      title: 'End Event',
-      children: <Text size="sm">Are you sure you want to end this event?</Text>,
-      labels: { confirm: 'End Event', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
+      title: 'Request Review',
+      children: <Text size="sm">Are you sure you want to mark this event for review? This will move it to "Pending Review" status.</Text>,
+      labels: { confirm: 'Request Review', cancel: 'Cancel' },
+      confirmProps: { color: 'orange' },
       onConfirm: () => {
         changeStatus.mutate(
-          { id: event.id, status: 'ended' },
-          { onSuccess: () => openDecisionModal(event.id) }
+          { id: event.id, status: 'pending_review' },
+          {
+            onSuccess: () => {
+              notifications.show({
+                title: 'Event Pending Review',
+                message: 'The event is now awaiting Gov review for closure.',
+                color: 'orange',
+              });
+            },
+          }
         );
       },
       zIndex: 1100,
@@ -191,15 +201,29 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
         <Button
           size="xs"
           variant="light"
-          color="red"
+          color="orange"
           leftSection={<IconPlayerStop size={14} />}
-          onClick={handleEndEvent}
+          onClick={handleRequestReview}
           loading={isLoading}
         >
-          End
+          Request Review
         </Button>
       )}
 
+      {/* Phase 1: pending_review status - Gov can close the event */}
+      {event.status === 'pending_review' && !event.archivedAt && (
+        <Button
+          size="xs"
+          variant="filled"
+          color="teal"
+          onClick={() => openDecisionModal(event.id)}
+          disabled={isLoading}
+        >
+          Close Event
+        </Button>
+      )}
+
+      {/* Legacy: ended status with pending decision (for backward compatibility) */}
       {event.status === 'ended' && event.postEndDecision === 'pending' && !event.archivedAt && (
         <Button
           size="xs"
@@ -212,21 +236,8 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
         </Button>
       )}
 
-      {/* Re-entry to Road Update Mode for permanent-change events that aren't archived */}
-      {event.status === 'ended' && event.postEndDecision === 'permanent-change' && !event.archivedAt && (
-        <Button
-          size="xs"
-          variant="filled"
-          color="teal"
-          leftSection={<IconRoad size={14} />}
-          onClick={() => enterRoadUpdateMode(event.id)}
-          disabled={isLoading}
-        >
-          Road Update
-        </Button>
-      )}
-
-      {event.status === 'ended' && !event.archivedAt && (
+      {/* Closed events can be duplicated and archived */}
+      {(event.status === 'closed' || event.status === 'ended') && !event.archivedAt && (
         <>
           <Button
             size="xs"

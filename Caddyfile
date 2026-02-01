@@ -55,3 +55,52 @@ eventflow.uixai.org {
         format console
     }
 }
+
+# v1 frozen version - uses container names (not service names) since it's a separate compose project
+v1.eventflow.uixai.org {
+    handle /tiles/*.pmtiles {
+        header Cache-Control "public, max-age=86400"
+        reverse_proxy nagoya-web-v1:5173
+    }
+
+    handle /tiles/* {
+        header Cache-Control "public, max-age=300"
+        uri strip_prefix /tiles
+        reverse_proxy nagoya-martin-v1:3000
+    }
+
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy nagoya-api-v1:3000
+    }
+
+    @ogc path /ogc /ogc/*
+    handle @ogc {
+        reverse_proxy nagoya-api-v1:3000
+    }
+
+    handle /sse/* {
+        uri strip_prefix /sse
+        reverse_proxy nagoya-api-v1:3000 {
+            flush_interval -1
+        }
+    }
+
+    @frontend {
+        not path /api/*
+        not path /ogc /ogc/*
+        not path /sse/*
+        not path /tiles/*
+        not path /.well-known/*
+    }
+    handle @frontend {
+        reverse_proxy nagoya-web-v1:5173
+    }
+
+    encode gzip
+
+    log {
+        output stdout
+        format console
+    }
+}

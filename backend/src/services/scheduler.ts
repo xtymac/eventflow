@@ -19,6 +19,10 @@ dayjs.extend(timezone);
 
 const TIMEZONE = 'Asia/Tokyo';
 
+// Phase 0: Road assets are frozen (read-only) by default
+// Set ROAD_ASSETS_FROZEN=false to re-enable OSM sync
+const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN !== 'false';
+
 // Explicit select for constructionEvents with geometry conversion
 const eventSelect = {
   id: constructionEvents.id,
@@ -82,14 +86,16 @@ export function initScheduler() {
         );
 
       for (const event of activeEvents) {
+        // Phase 1: Active events transition to pending_review (not ended/closed)
+        // Event closure requires Gov approval via /events/:id/close endpoint
         await db.update(constructionEvents)
           .set({
-            status: 'ended',
+            status: 'pending_review',
             updatedAt: now,
           })
           .where(eq(constructionEvents.id, event.id));
 
-        console.log(`[Scheduler] Event ${event.id} transitioned to ended`);
+        console.log(`[Scheduler] Event ${event.id} transitioned to pending_review (requires Gov close)`);
 
         // Sync to Orion-LD
         const updatedEvent = await db.select(eventSelect)
@@ -111,8 +117,13 @@ export function initScheduler() {
   // OSM Sync Scheduled Tasks
   // ============================================
 
-  const OSM_SYNC_HOURLY_ENABLED = process.env.OSM_SYNC_HOURLY_ENABLED === 'true';
-  const OSM_SYNC_DAILY_ENABLED = process.env.OSM_SYNC_DAILY_ENABLED === 'true';
+  // Phase 0: Disable OSM sync when road assets are frozen
+  if (ROAD_ASSETS_FROZEN) {
+    console.log('[Scheduler] OSM sync disabled: ROAD_ASSETS_FROZEN=true (Phase 0)');
+  }
+
+  const OSM_SYNC_HOURLY_ENABLED = !ROAD_ASSETS_FROZEN && process.env.OSM_SYNC_HOURLY_ENABLED === 'true';
+  const OSM_SYNC_DAILY_ENABLED = !ROAD_ASSETS_FROZEN && process.env.OSM_SYNC_DAILY_ENABLED === 'true';
   const TILES_REBUILD_ENABLED = process.env.TILES_REBUILD_ENABLED === 'true';
 
   // Helper to delay between ward syncs

@@ -24,6 +24,8 @@ This document captures stable architecture principles for EventFlow.
 - Relation/log tables: event_asset_links, asset_change_requests, asset_versions, audit_logs
 - Relationships: Events reference Assets for traceability, but Assets do not carry event workflow state
 - Storage: Asset data treated as authoritative ledger; Event data treated as time-series operational records
+- Database separation: Master Data DB and Event/Case DB are separate (prototype can co-locate on the same Postgres instance)
+- Governance separation: Event Ops and Master Data are different gov departments with distinct roles and permissions
 - Road data: read-only tiles/layers only; no Event linking and no asset edit workflow
 
 ## P2. Asset 台账以“权威发布”为核心职责

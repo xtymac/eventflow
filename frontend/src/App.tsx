@@ -16,7 +16,8 @@ import { useUIStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useNotifications } from './hooks/useNotifications';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
-import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
+// Phase 0: RoadUpdateModeOverlay disabled - Road editing is frozen
+// import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
 import { ImportWizard } from './features/import/ImportWizard';
@@ -108,8 +109,9 @@ function App() {
     detailModalEventId,
     closeEventDetailModal,
     isRoadUpdateModeActive,
-    roadUpdateEventId,
-    exitRoadUpdateMode,
+    // Phase 0: Road Update Mode disabled - these are no longer used
+    // roadUpdateEventId,
+    // exitRoadUpdateMode,
     isInspectionFormOpen,
     selectedInspectionForEdit,
     inspectionFormEventId,
@@ -128,8 +130,9 @@ function App() {
     detailModalEventId: state.detailModalEventId,
     closeEventDetailModal: state.closeEventDetailModal,
     isRoadUpdateModeActive: state.isRoadUpdateModeActive,
-    roadUpdateEventId: state.roadUpdateEventId,
-    exitRoadUpdateMode: state.exitRoadUpdateMode,
+    // Phase 0: Road Update Mode disabled - these are no longer used
+    // roadUpdateEventId: state.roadUpdateEventId,
+    // exitRoadUpdateMode: state.exitRoadUpdateMode,
     isInspectionFormOpen: state.isInspectionFormOpen,
     selectedInspectionForEdit: state.selectedInspectionForEdit,
     inspectionFormEventId: state.inspectionFormEventId,
@@ -282,12 +285,14 @@ function App() {
           />
         )}
 
+        {/* Phase 0: RoadUpdateModeOverlay disabled - Road editing is frozen
         {isRoadUpdateModeActive && roadUpdateEventId && (
           <RoadUpdateModeOverlay
             eventId={roadUpdateEventId}
             onClose={exitRoadUpdateMode}
           />
         )}
+        */}
 
         {isInspectionFormOpen && (
           <InspectionEditorOverlay

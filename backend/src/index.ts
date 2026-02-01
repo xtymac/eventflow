@@ -21,6 +21,7 @@ import { ogcRoutes } from './routes/ogc/index.js';
 import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 import { importVersionsRoutes } from './routes/import-versions.js';
+import { workordersRoutes } from './routes/workorders.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -89,6 +90,7 @@ async function main() {
   // Register routes
   await fastify.register(eventsRoutes, { prefix: '/events' });
   await fastify.register(assetsRoutes, { prefix: '/assets' });
+  await fastify.register(workordersRoutes, { prefix: '/workorders' });
   await fastify.register(inspectionsRoutes, { prefix: '/inspections' });
   await fastify.register(importExportRoutes, { prefix: '/import' });
   await fastify.register(importExportRoutes, { prefix: '/export' });
