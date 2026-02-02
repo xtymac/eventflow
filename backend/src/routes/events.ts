@@ -195,14 +195,21 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       updatedAt: constructionEvents.updatedAt,
     };
 
-    // Sort: Active first, then Planned (by startDate ASC), then Ended (by endDate DESC)
+    // Sort: Active → Pending Review → Planned → Closed → Cancelled
+    // Within same status: Active/Pending/Planned by startDate ASC, Closed/Cancelled by endDate DESC
     const orderByClause = [
       sql`CASE ${constructionEvents.status}
         WHEN 'active' THEN 1
-        WHEN 'planned' THEN 2
-        WHEN 'ended' THEN 3
+        WHEN 'pending_review' THEN 2
+        WHEN 'planned' THEN 3
+        WHEN 'closed' THEN 4
+        WHEN 'cancelled' THEN 5
+        WHEN 'ended' THEN 6
+        ELSE 7
       END`,
-      sql`CASE WHEN ${constructionEvents.status} = 'ended' THEN ${constructionEvents.endDate} END DESC`,
+      sql`CASE
+        WHEN ${constructionEvents.status} IN ('closed', 'cancelled', 'ended') THEN ${constructionEvents.endDate}
+        END DESC`,
       asc(constructionEvents.startDate),
     ];
 

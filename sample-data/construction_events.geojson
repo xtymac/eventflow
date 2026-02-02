@@ -475,6 +475,101 @@
         "postEndDecision": "pending",
         "affectedRoadAssetIds": ["RA-KITA-0330", "RA-KITA-0331", "RA-KITA-0332"]
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9300, 35.2280],
+          [136.9305, 35.2285],
+          [136.9310, 35.2290]
+        ]
+      },
+      "properties": {
+        "id": "CE-021",
+        "name": "Sidewalk Repair - Pending Government Review",
+        "status": "pending_review",
+        "startDate": "2025-12-01T00:00:00Z",
+        "endDate": "2025-12-25T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Midori Seibi Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0340", "RA-KITA-0341"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9320, 35.2300],
+          [136.9325, 35.2305],
+          [136.9330, 35.2310]
+        ]
+      },
+      "properties": {
+        "id": "CE-022",
+        "name": "Water Pipe Replacement - Completed & Closed",
+        "status": "closed",
+        "startDate": "2025-11-01T00:00:00Z",
+        "endDate": "2025-11-30T00:00:00Z",
+        "restrictionType": "full",
+        "department": "Joge Suido Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "no-change",
+        "affectedRoadAssetIds": ["RA-KITA-0350", "RA-KITA-0351"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [136.9340, 35.2320],
+          [136.9345, 35.2325],
+          [136.9350, 35.2330]
+        ]
+      },
+      "properties": {
+        "id": "CE-023",
+        "name": "Old Bridge Maintenance - Cancelled",
+        "status": "cancelled",
+        "startDate": "2026-02-01T00:00:00Z",
+        "endDate": "2026-03-31T00:00:00Z",
+        "restrictionType": "partial",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "pending",
+        "affectedRoadAssetIds": ["RA-KITA-0360", "RA-KITA-0361"]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [136.9360, 35.2340],
+          [136.9375, 35.2340],
+          [136.9375, 35.2355],
+          [136.9360, 35.2355],
+          [136.9360, 35.2340]
+        ]]
+      },
+      "properties": {
+        "id": "CE-024",
+        "name": "Historical Road Repair - Archived",
+        "status": "closed",
+        "startDate": "2025-06-01T00:00:00Z",
+        "endDate": "2025-08-31T00:00:00Z",
+        "restrictionType": "full",
+        "department": "Doboku Kanri Kyoku",
+        "ward": "Kita-ku",
+        "postEndDecision": "permanent-change",
+        "archivedAt": "2025-09-15T00:00:00Z",
+        "affectedRoadAssetIds": ["RA-KITA-0370", "RA-KITA-0371"]
+      }
     }
   ]
 }

@@ -69,16 +69,19 @@ async function seed() {
       const startDate = new Date(props.startDate);
       const endDate = new Date(props.endDate);
 
+      // Parse archivedAt if provided
+      const archivedAt = props.archivedAt ? new Date(props.archivedAt) : null;
+
       // Use raw SQL for geometry insert
       await db.execute(sql`
         INSERT INTO construction_events (
           id, name, status, start_date, end_date, restriction_type,
-          geometry, geometry_source, post_end_decision, department, ward, created_by, updated_at
+          geometry, geometry_source, post_end_decision, department, ward, created_by, updated_at, archived_at
         ) VALUES (
           ${eventId}, ${props.name}, ${props.status}, ${startDate}, ${endDate},
           ${props.restrictionType}, ${toGeomSql(feature.geometry)}, 'manual',
           ${props.postEndDecision || 'pending'}, ${props.department || 'Midori Seibi Kyoku'},
-          ${props.ward ?? null}, 'seed', ${now}
+          ${props.ward ?? null}, 'seed', ${now}, ${archivedAt}
         )
         ON CONFLICT DO NOTHING
       `);
