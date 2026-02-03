@@ -153,7 +153,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   };
 
   const isLoading = changeStatus.isPending || cancelEvent.isPending || archiveEvent.isPending || unarchiveEvent.isPending;
-  // Only planned and active events can be edited (ended/cancelled are read-only for audit)
+  // Only planned and active events can be edited (closed/cancelled are read-only for audit)
   const canEdit = event.status === 'planned' || event.status === 'active';
 
   return (
@@ -223,21 +223,8 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
         </Button>
       )}
 
-      {/* Legacy: ended status with pending decision (for backward compatibility) */}
-      {event.status === 'ended' && event.postEndDecision === 'pending' && !event.archivedAt && (
-        <Button
-          size="xs"
-          variant="filled"
-          color="orange"
-          onClick={() => openDecisionModal(event.id)}
-          disabled={isLoading}
-        >
-          Set Decision
-        </Button>
-      )}
-
       {/* Closed events can be duplicated and archived */}
-      {(event.status === 'closed' || event.status === 'ended') && !event.archivedAt && (
+      {event.status === 'closed' && !event.archivedAt && (
         <>
           <Button
             size="xs"

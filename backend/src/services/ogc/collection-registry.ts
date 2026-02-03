@@ -127,7 +127,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
     propertyTypes: {
       id: { type: 'string', title: 'Feature ID' },
       name: { type: 'string', title: 'Event Name' },
-      status: { type: 'string', title: 'Status', enum: ['planned', 'active', 'completed', 'cancelled'] },
+      status: { type: 'string', title: 'Status', enum: ['planned', 'active', 'pending_review', 'closed', 'archived', 'cancelled'] },
       restrictionType: { type: 'string', title: 'Restriction Type', enum: ['full', 'partial', 'none'] },
       department: { type: 'string', title: 'Department' },
       ward: { type: 'string', title: 'Ward' },

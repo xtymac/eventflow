@@ -73,16 +73,16 @@ Compare the latest Prototype Architecture and Scope (1/30 update) requirements t
 ### Workflow and Data Model
 | Requirement | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| Event -> WorkOrder -> Evidence -> Review/Close loop | Gap | `backend/src/db/schema.ts` | WorkOrder/Evidence models do not exist. |
-| Event can exist without WorkOrder; WorkOrder requires Event | Gap | `backend/src/db/schema.ts` | No WorkOrder tables or routes. |
-| WorkOrder types (inspection/repair/update), multi-location, multi-partner | Gap | `backend/src/db/schema.ts` | No WorkOrder tables or routes. |
+| Event -> WorkOrder -> Evidence -> Review/Close loop | Aligned | `backend/src/db/schema.ts` | Phase 1: Full CRUD for WorkOrders and Evidence with status machine. |
+| Event can exist without WorkOrder; WorkOrder requires Event | Aligned | `backend/src/db/schema.ts` | Phase 1: WorkOrder has `event_id` FK; Event can exist alone. |
+| WorkOrder types (inspection/repair/update), multi-location, multi-partner | Aligned | `backend/src/db/schema.ts` | Phase 1: WO types, work_order_locations, work_order_partners tables. |
 | Gov inspection WorkOrders with gov mobile app | Gap | `frontend/src/App.tsx` | No mobile app or gov inspection flows. |
 | Evidence (photos/results) submission | Gap | `backend/src/routes/inspections.ts` | Inspections exist, but no evidence/attachments model. |
-| Event status machine (Planned/Active/Pending Review/Closed/Archived) | Conflict | `backend/src/routes/events.ts` | Current statuses: planned/active/ended + postEndDecision. |
-| Event closure is Gov-only + notification confirmation | Gap | `backend/src/routes/events.ts` | No RBAC and no close-time notification confirmation. |
+| Event status machine (Planned/Active/Pending Review/Closed/Archived) | Aligned | `backend/src/routes/events.ts` | Phase 1: planned/active/pending_review/closed/archived/cancelled. Gov-only close with WO gate. |
+| Event closure is Gov-only + notification confirmation | Partial | `backend/src/routes/events.ts` | Phase 1: Gov-only close via `X-User-Role` header + WO completion gate. Notification confirmation deferred to Phase 2. |
 | Event can reference assets but cannot modify assets | Conflict | `backend/src/routes/assets.ts` | Asset updates are directly tied to eventId. |
-| Notification boundary (outbox/inbox) for master data updates | Gap | `backend/src/*` | No notification/outbox mechanism exists. |
-| Map display: Event + WorkOrder simultaneously | Gap | `frontend/src/components/MapView.tsx` | Map shows events/assets/inspections; no WorkOrder layer. |
+| Notification boundary (outbox/inbox) for master data updates | Gap | `backend/src/*` | Deferred to Phase 2. Phase 1 event close records `closeNotes` only. |
+| Map display: Event + WorkOrder simultaneously | Aligned | `frontend/src/components/MapView.tsx` | Phase 1: Event polygons + WO location points displayed simultaneously with status-based styling. |
 
 ### Data Strategy and Import
 | Requirement | Status | Evidence | Notes |
@@ -111,5 +111,5 @@ Compare the latest Prototype Architecture and Scope (1/30 update) requirements t
 - Road asset editing (UI + APIs + QGIS workflows) is out of scope under the new boundary and should be deprecated or isolated.
 - Import/Export and OSM sync are road-centric and should be refocused toward init import of park/asset ledgers and reference data.
 - Event workflows need to be re-modeled around WorkOrders and Evidence rather than road edits and inspections.
-- Existing event status transitions (planned/active/ended) must be replaced with the new lifecycle.
-- A notification boundary between Event workflows and Asset updates must be introduced (two DBs, possibly on the same instance).
+- Event status transitions now follow the correct lifecycle: planned/active/pending_review/closed/archived/cancelled.
+- A notification boundary between Event workflows and Asset updates must be introduced in Phase 2 (two DBs, possibly on the same instance).

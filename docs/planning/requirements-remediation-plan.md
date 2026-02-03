@@ -39,13 +39,13 @@ Bring the current implementation into alignment with the Prototype Architecture 
 - Enforce Event/WorkOrder binding rules (WorkOrder requires Event; Event can exist without WorkOrder).
 - Implement Event state machine: Planned → Active → Pending Review → Closed → Archived.
 - Add review gate: Event closure goes through Pending Review before Closed.
-- Event close flow requires Gov role + notification confirmation when changes affect Master Data.
+- Event close flow requires Gov role (enforced via `X-User-Role` header; notification confirmation deferred to Phase 2).
 - Support inspection → repair flow: Gov creates inspection WorkOrder, then creates repair WorkOrder under the **same Event** and assigns to partner(s).
 
 **Exit Criteria**
 - Event cannot close without WorkOrder completion + review.
 - WorkOrder cannot exist without Event.
-- Only Gov can close Events; notification decision is recorded at closure.
+- Only Gov can close Events (notification decision deferred to Phase 2).
 
 ### Phase 2: AssetChangeRequest + Notification Boundary
 **Goal:** Enforce asset update workflow and add an outbox/inbox boundary between Master Data DB and Event DB.
@@ -104,7 +104,7 @@ Bring the current implementation into alignment with the Prototype Architecture 
 ## Dependencies and Risks
 - Disabling road edits may break existing workflows; coordinate with demo stakeholders.
 - WorkOrder/Evidence additions require new storage (DB + file/object storage).
-- Notification boundary adds integration complexity (outbox/inbox).
+- Notification boundary adds integration complexity (outbox/inbox — Phase 2).
 - Event status change impacts existing UI and API contracts.
 - RBAC and app separation impact all UI routing and API contracts.
 - Import pipeline needs clear source data formats and field mapping decisions.

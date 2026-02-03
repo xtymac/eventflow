@@ -126,22 +126,6 @@ export function useChangeEventStatus() {
   });
 }
 
-export function useSetPostEndDecision() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, decision }: { id: string; decision: 'no-change' | 'permanent-change' }) =>
-      fetchApi<{ data: ConstructionEvent }>(`/events/${id}/decision`, {
-        method: 'PATCH',
-        body: JSON.stringify({ decision }),
-      }),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['event', variables.id] });
-    },
-  });
-}
-
 export function useCancelEvent() {
   const queryClient = useQueryClient();
 
@@ -805,7 +789,7 @@ export function useCloseEvent() {
 
   return useMutation({
     mutationFn: ({ id, data, userRole }: { id: string; data: CloseEventRequest; userRole: string }) =>
-      fetchApi<{ data: { event: ConstructionEvent; notification?: { id: string } } }>(`/events/${id}/close`, {
+      fetchApi<{ data: ConstructionEvent }>(`/events/${id}/close`, {
         method: 'POST',
         body: JSON.stringify(data),
         headers: {

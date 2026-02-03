@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Modal, Stack, Button, Text, Alert, Textarea, Switch, Select, Group, Divider } from '@mantine/core';
+import { Modal, Stack, Button, Text, Alert, Textarea, Select, Group, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
-import { useSetPostEndDecision, useArchiveEvent, useCloseEvent, useWorkOrders, useEvent } from '../../hooks/useApi';
+import { useCloseEvent, useWorkOrders, useEvent } from '../../hooks/useApi';
 
 // Temporary Gov role options (Phase 3 will have proper RBAC)
 const GOV_ROLE_OPTIONS = [
@@ -13,8 +13,6 @@ const GOV_ROLE_OPTIONS = [
 
 export function DecisionModal() {
   const { isDecisionModalOpen, decisionEventId, closeDecisionModal } = useUIStore();
-  const setDecision = useSetPostEndDecision();
-  const archiveEvent = useArchiveEvent();
   const closeEvent = useCloseEvent();
 
   // Fetch event to check status
@@ -26,7 +24,6 @@ export function DecisionModal() {
   const workOrders = workOrdersData?.data || [];
 
   // State for close form
-  const [notifyMasterData, setNotifyMasterData] = useState(false);
   const [closeNotes, setCloseNotes] = useState('');
   const [selectedRole, setSelectedRole] = useState<string | null>('gov_admin');
 
@@ -36,18 +33,16 @@ export function DecisionModal() {
   );
   const hasIncompleteWorkOrders = incompleteWorkOrders.length > 0;
 
-  // Determine which flow to show
   const isPendingReview = event?.status === 'pending_review';
 
   // Reset form when modal closes
   const handleClose = () => {
-    setNotifyMasterData(false);
     setCloseNotes('');
     setSelectedRole('gov_admin');
     closeDecisionModal();
   };
 
-  // Phase 1: Close event flow for pending_review status
+  // Close event flow for pending_review status
   const handleCloseEvent = () => {
     if (!decisionEventId || !selectedRole) return;
 
@@ -55,20 +50,16 @@ export function DecisionModal() {
       {
         id: decisionEventId,
         data: {
-          notifyMasterData,
           closeNotes: closeNotes || undefined,
         },
         userRole: selectedRole,
       },
       {
-        onSuccess: (response) => {
+        onSuccess: () => {
           handleClose();
-          const message = response.data.notification
-            ? 'Event closed. Notification created for Master Data team.'
-            : 'Event closed successfully.';
           notifications.show({
             title: 'Event Closed',
-            message,
+            message: 'Event closed successfully.',
             color: 'green',
           });
         },
@@ -83,35 +74,11 @@ export function DecisionModal() {
     );
   };
 
-  // Legacy: Phase 0 decision flow for ended status
-  const handleSetDecision = (decision: 'no-change') => {
-    if (!decisionEventId) return;
-    setDecision.mutate(
-      { id: decisionEventId, decision },
-      {
-        onSuccess: () => {
-          handleClose();
-
-          // Archive immediately for "No Change"
-          archiveEvent.mutate(decisionEventId, {
-            onSuccess: () => {
-              notifications.show({
-                title: 'Event Archived',
-                message: 'Event marked as "No Change" and archived.',
-                color: 'green',
-              });
-            },
-          });
-        },
-      }
-    );
-  };
-
   return (
     <Modal
       opened={isDecisionModalOpen}
       onClose={handleClose}
-      title={isPendingReview ? 'Close Event' : 'Set Post-End Decision'}
+      title="Close Event"
       centered
       zIndex={300}
       size="md"
@@ -121,7 +88,6 @@ export function DecisionModal() {
           No event selected. Please close and try again.
         </Alert>
       ) : isPendingReview ? (
-        /* Phase 1: Close Event Flow */
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             Review the event and confirm closure. Gov role required.
@@ -159,21 +125,6 @@ export function DecisionModal() {
             required
           />
 
-          {/* Notify Master Data Decision */}
-          <Switch
-            label="Notify Master Data team"
-            description="Send notification about asset changes that need to be applied to the Master Data database"
-            checked={notifyMasterData}
-            onChange={(e) => setNotifyMasterData(e.currentTarget.checked)}
-            color="teal"
-          />
-
-          {notifyMasterData && (
-            <Alert color="blue" icon={<IconAlertCircle size={16} />}>
-              A notification will be created in the outbox for the Master Data team to review and apply changes.
-            </Alert>
-          )}
-
           {/* Close Notes */}
           <Textarea
             label="Close Notes"
@@ -203,23 +154,9 @@ export function DecisionModal() {
           </Group>
         </Stack>
       ) : (
-        /* Legacy: Phase 0 Decision Flow */
-        <Stack gap="md">
-          <Text size="sm">
-            The event has ended. Please select the outcome:
-          </Text>
-          <Button
-            fullWidth
-            variant="light"
-            onClick={() => handleSetDecision('no-change')}
-            loading={setDecision.isPending}
-          >
-            No Change (Archive)
-          </Button>
-          <Alert color="blue" icon={<IconAlertCircle size={16} />}>
-            Road updates are currently disabled (Phase 0). Asset changes will be managed through WorkOrders in future phases.
-          </Alert>
-        </Stack>
+        <Alert icon={<IconAlertCircle size={16} />} color="yellow">
+          This event is not in pending review status and cannot be closed.
+        </Alert>
       )}
     </Modal>
   );

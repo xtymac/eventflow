@@ -71,7 +71,7 @@ function bboxFromCenter(center: [number, number], radiusMeters: number) {
 type SearchTarget = 'events' | 'roads' | 'greenspaces' | 'streetlights' | 'rivers' | 'places';
 
 type SearchFilters = {
-  eventStatus?: 'planned' | 'active' | 'ended' | 'cancelled' | null;
+  eventStatus?: 'planned' | 'active' | 'pending_review' | 'closed' | 'cancelled' | null;
   eventDepartment?: string | null;
   eventWard?: string | null;
   eventDateFrom?: string | null;
@@ -232,7 +232,7 @@ function buildIntentPrompt(query: string, locale?: string) {
     '  "targets": ["events","roads","greenspaces","streetlights","rivers","places"],',
     '  "query": string|null,',
     '  "filters": {',
-    '    "eventStatus": "planned"|"active"|"ended"|"cancelled"|null,',
+    '    "eventStatus": "planned"|"active"|"pending_review"|"closed"|"cancelled"|null,',
     '    "eventDepartment": string|null,',
     '    "eventWard": string|null,',
     '    "eventDateFrom": string|null,',

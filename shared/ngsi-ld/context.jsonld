@@ -1,0 +1,280 @@
+{
+  "@context": {
+    "type": "@type",
+    "id": "@id",
+
+    "ngsi-ld": "https://uri.etsi.org/ngsi-ld/",
+    "sdm": "https://smartdatamodels.org/",
+    "nagoya": "https://nagoya-construction.example.org/datamodel/",
+    "schema": "https://schema.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "geojson": "https://purl.org/geojson/vocab#",
+
+    "Property": "ngsi-ld:Property",
+    "Relationship": "ngsi-ld:Relationship",
+    "GeoProperty": "ngsi-ld:GeoProperty",
+
+    "CivicOperation": "nagoya:CivicOperation",
+    "WorkOrder": "nagoya:WorkOrder",
+    "WorkLocation": "nagoya:WorkLocation",
+    "Road": "sdm:dataModel.Transportation/Road",
+    "RoadSegment": "sdm:dataModel.Transportation/RoadSegment",
+    "GreenSpace": "nagoya:GreenSpace",
+    "Streetlight": "sdm:dataModel.Streetlighting/Streetlight",
+    "WaterBody": "nagoya:WaterBody",
+    "Evidence": "nagoya:Evidence",
+    "Organization": "schema:Organization",
+    "DesignatedRoad": "nagoya:DesignatedRoad",
+    "BuildingZone": "nagoya:BuildingZone",
+    "StreetTree": "nagoya:StreetTree",
+    "ParkFacility": "nagoya:ParkFacility",
+    "PavementSection": "nagoya:PavementSection",
+    "PumpStation": "nagoya:PumpStation",
+    "InspectionRecord": "nagoya:InspectionRecord",
+    "LifecyclePlan": "nagoya:LifecyclePlan",
+
+    "name": "schema:name",
+    "alternateName": "schema:alternateName",
+    "description": "schema:description",
+    "location": "ngsi-ld:location",
+    "address": "schema:address",
+    "areaServed": "schema:areaServed",
+    "dateCreated": "dcterms:created",
+    "dateModified": "dcterms:modified",
+    "dataProvider": "sdm:dataProvider",
+    "source": "dcterms:source",
+    "owner": "sdm:owner",
+    "seeAlso": "schema:seeAlso",
+
+    "status": "nagoya:status",
+    "startDate": "schema:startDate",
+    "endDate": "schema:endDate",
+    "dateStarted": "nagoya:dateStarted",
+    "dateFinished": "nagoya:dateFinished",
+    "restrictionCategory": "nagoya:restrictionCategory",
+    "geometrySource": "nagoya:geometrySource",
+    "postEndDecision": "nagoya:postEndDecision",
+    "department": "nagoya:department",
+    "ward": "nagoya:ward",
+    "createdBy": "nagoya:createdBy",
+    "closedBy": "nagoya:closedBy",
+    "closedAt": "nagoya:closedAt",
+    "closeNotes": "nagoya:closeNotes",
+    "archivedAt": "nagoya:archivedAt",
+
+    "title": "schema:name",
+    "category": "sdm:category",
+    "resolutionStatus": "nagoya:resolutionStatus",
+    "assignedDepartment": "nagoya:assignedDepartment",
+    "assignedBy": "nagoya:assignedBy",
+    "assignedAt": "nagoya:assignedAt",
+    "dueDate": "nagoya:dueDate",
+    "reviewedBy": "nagoya:reviewedBy",
+    "reviewedAt": "nagoya:reviewedAt",
+    "reviewNotes": "nagoya:reviewNotes",
+
+    "roadClass": "sdm:dataModel.Transportation/roadClass",
+    "length": "sdm:dataModel.Transportation/length",
+    "totalLaneNumber": "sdm:dataModel.Transportation/totalLaneNumber",
+    "direction": "nagoya:direction",
+    "responsible": "sdm:dataModel.Transportation/responsible",
+    "refCode": "nagoya:refCode",
+    "localRef": "nagoya:localRef",
+    "displayName": "nagoya:displayName",
+    "validFrom": "schema:validFrom",
+    "validTo": "schema:validThrough",
+    "landmark": "nagoya:landmark",
+    "sublocality": "nagoya:sublocality",
+    "crossSection": "nagoya:crossSection",
+    "managingDept": "nagoya:managingDept",
+    "intersection": "nagoya:intersection",
+    "pavementState": "nagoya:pavementState",
+    "nameSource": "nagoya:nameSource",
+    "nameConfidence": "nagoya:nameConfidence",
+    "sourceVersion": "nagoya:sourceVersion",
+    "sourceDate": "nagoya:sourceDate",
+    "lastVerifiedAt": "nagoya:lastVerifiedAt",
+    "osmType": "nagoya:osmType",
+    "osmId": "nagoya:osmId",
+    "osmTimestamp": "nagoya:osmTimestamp",
+    "lastSyncedAt": "nagoya:lastSyncedAt",
+    "isManuallyEdited": "nagoya:isManuallyEdited",
+
+    "lampId": "nagoya:lampId",
+    "lampTechnology": "sdm:dataModel.Streetlighting/lampTechnology",
+    "powerConsumption": "sdm:dataModel.Streetlighting/powerConsumption",
+    "dateInstalled": "sdm:dataModel.Streetlighting/dateInstalled",
+    "operatingStatus": "sdm:dataModel.Streetlighting/status",
+
+    "operator": "schema:operator",
+    "openingHours": "schema:openingHours",
+    "leisureType": "nagoya:leisureType",
+    "landuseType": "nagoya:landuseType",
+    "naturalType": "nagoya:naturalType",
+    "vegetationType": "nagoya:vegetationType",
+
+    "width": "nagoya:width",
+    "managementLevel": "nagoya:managementLevel",
+    "maintainer": "nagoya:maintainer",
+    "geometryRepresentation": "nagoya:geometryRepresentation",
+
+    "mediaType": "nagoya:mediaType",
+    "fileName": "nagoya:fileName",
+    "filePath": "nagoya:filePath",
+    "fileSizeBytes": "nagoya:fileSizeBytes",
+    "mimeType": "schema:encodingFormat",
+    "captureDate": "nagoya:captureDate",
+    "submittedBy": "nagoya:submittedBy",
+    "submittedAt": "nagoya:submittedAt",
+    "reviewStatus": "nagoya:reviewStatus",
+
+    "assetType": "nagoya:assetType",
+    "note": "nagoya:note",
+    "sequenceOrder": "nagoya:sequenceOrder",
+    "role": "nagoya:role",
+
+    "sourceLayer": "nagoya:sourceLayer",
+    "keycode": "nagoya:keycode",
+    "daichoBan": "nagoya:daichoBan",
+    "kyokaBan": "nagoya:kyokaBan",
+    "shiteiYmd": "nagoya:shiteiYmd",
+    "rawProperties": "nagoya:rawProperties",
+    "syncedAt": "nagoya:syncedAt",
+
+    "zoneType": "nagoya:zoneType",
+    "kyoteiName": "nagoya:kyoteiName",
+    "kubun": "nagoya:kubun",
+    "ninteiYmd": "nagoya:ninteiYmd",
+    "ninteiNo": "nagoya:ninteiNo",
+    "area": "nagoya:area",
+
+    "ledgerId": "nagoya:ledgerId",
+    "speciesName": "nagoya:speciesName",
+    "scientificName": "nagoya:scientificName",
+    "trunkDiameter": "nagoya:trunkDiameter",
+    "height": "nagoya:height",
+    "crownSpread": "nagoya:crownSpread",
+    "datePlanted": "nagoya:datePlanted",
+    "estimatedAge": "nagoya:estimatedAge",
+    "healthStatus": "nagoya:healthStatus",
+    "conditionGrade": "nagoya:conditionGrade",
+    "lastDiagnosticDate": "nagoya:lastDiagnosticDate",
+    "diagnosticNotes": "nagoya:diagnosticNotes",
+
+    "facilityId": "nagoya:facilityId",
+    "subCategory": "nagoya:subCategory",
+    "manufacturer": "nagoya:manufacturer",
+    "material": "nagoya:material",
+    "quantity": "nagoya:quantity",
+    "designLife": "nagoya:designLife",
+    "lastInspectionDate": "nagoya:lastInspectionDate",
+    "nextInspectionDate": "nagoya:nextInspectionDate",
+    "safetyConcern": "nagoya:safetyConcern",
+
+    "sectionId": "nagoya:sectionId",
+    "routeNumber": "nagoya:routeNumber",
+    "pavementType": "nagoya:pavementType",
+    "thickness": "nagoya:thickness",
+    "lastResurfacingDate": "nagoya:lastResurfacingDate",
+    "mci": "nagoya:mci",
+    "crackRate": "nagoya:crackRate",
+    "rutDepth": "nagoya:rutDepth",
+    "iri": "nagoya:iri",
+    "lastMeasurementDate": "nagoya:lastMeasurementDate",
+    "plannedInterventionYear": "nagoya:plannedInterventionYear",
+    "estimatedCost": "nagoya:estimatedCost",
+    "priorityRank": "nagoya:priorityRank",
+
+    "stationId": "nagoya:stationId",
+    "dateCommissioned": "nagoya:dateCommissioned",
+    "designCapacity": "nagoya:designCapacity",
+    "pumpCount": "nagoya:pumpCount",
+    "totalPower": "nagoya:totalPower",
+    "drainageArea": "nagoya:drainageArea",
+    "equipmentStatus": "nagoya:equipmentStatus",
+    "lastMaintenanceDate": "nagoya:lastMaintenanceDate",
+    "nextMaintenanceDate": "nagoya:nextMaintenanceDate",
+    "managingOffice": "nagoya:managingOffice",
+
+    "inspectionType": "nagoya:inspectionType",
+    "inspectionDate": "nagoya:inspectionDate",
+    "result": "nagoya:result",
+    "findings": "nagoya:findings",
+    "inspector": "nagoya:inspector",
+    "inspectorOrganization": "nagoya:inspectorOrganization",
+    "measurements": "nagoya:measurements",
+    "mediaUrls": "nagoya:mediaUrls",
+
+    "version": "nagoya:version",
+    "planStartYear": "nagoya:planStartYear",
+    "planEndYear": "nagoya:planEndYear",
+    "planStatus": "nagoya:planStatus",
+    "baselineCondition": "nagoya:baselineCondition",
+    "remainingLife": "nagoya:remainingLife",
+    "interventions": "nagoya:interventions",
+    "totalLifecycleCostJpy": "nagoya:totalLifecycleCostJpy",
+    "annualAverageCostJpy": "nagoya:annualAverageCostJpy",
+    "approvedAt": "nagoya:approvedAt",
+
+    "refAffectedAsset": {
+      "@id": "nagoya:refAffectedAsset",
+      "@type": "@id"
+    },
+    "refWorkOrder": {
+      "@id": "nagoya:refWorkOrder",
+      "@type": "@id"
+    },
+    "refCivicOperation": {
+      "@id": "nagoya:refCivicOperation",
+      "@type": "@id"
+    },
+    "refWorkLocation": {
+      "@id": "nagoya:refWorkLocation",
+      "@type": "@id"
+    },
+    "refPartner": {
+      "@id": "nagoya:refPartner",
+      "@type": "@id"
+    },
+    "refEvidence": {
+      "@id": "nagoya:refEvidence",
+      "@type": "@id"
+    },
+    "refAsset": {
+      "@id": "nagoya:refAsset",
+      "@type": "@id"
+    },
+    "refRoad": {
+      "@id": "sdm:dataModel.Streetlighting/refRoad",
+      "@type": "@id"
+    },
+    "refRoadSegment": {
+      "@id": "sdm:dataModel.Transportation/refRoadSegment",
+      "@type": "@id"
+    },
+    "refReplacedBy": {
+      "@id": "nagoya:refReplacedBy",
+      "@type": "@id"
+    },
+    "refGreenSpace": {
+      "@id": "nagoya:refGreenSpace",
+      "@type": "@id"
+    },
+    "refWaterBody": {
+      "@id": "nagoya:refWaterBody",
+      "@type": "@id"
+    },
+    "refInspectionRecord": {
+      "@id": "nagoya:refInspectionRecord",
+      "@type": "@id"
+    },
+    "refInspectedAsset": {
+      "@id": "nagoya:refInspectedAsset",
+      "@type": "@id"
+    },
+    "refLifecyclePlan": {
+      "@id": "nagoya:refLifecyclePlan",
+      "@type": "@id"
+    }
+  }
+}

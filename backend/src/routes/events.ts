@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
-import { constructionEvents, eventRoadAssets, roadAssets, workOrders, outboxNotifications } from '../db/schema.js';
+import { constructionEvents, eventRoadAssets, roadAssets, workOrders } from '../db/schema.js';
 import { eq, and, or, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
@@ -37,12 +37,10 @@ const RoadAssetSchema = Type.Object({
 const EventSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
-  // Phase 1: Added pending_review, closed, archived
   status: Type.Union([
     Type.Literal('planned'),
     Type.Literal('active'),
     Type.Literal('pending_review'),
-    Type.Literal('ended'),  // Legacy, maps to pending_review
     Type.Literal('closed'),
     Type.Literal('archived'),
     Type.Literal('cancelled'),
@@ -61,8 +59,6 @@ const EventSchema = Type.Object({
   // Phase 1: Close tracking fields
   closedBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   closedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
-  notifyMasterData: Type.Optional(Type.Boolean()),
-  notificationId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   closeNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   updatedAt: Type.String({ format: 'date-time' }),
 });
@@ -204,11 +200,10 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         WHEN 'planned' THEN 3
         WHEN 'closed' THEN 4
         WHEN 'cancelled' THEN 5
-        WHEN 'ended' THEN 6
-        ELSE 7
+        ELSE 6
       END`,
       sql`CASE
-        WHEN ${constructionEvents.status} IN ('closed', 'cancelled', 'ended') THEN ${constructionEvents.endDate}
+        WHEN ${constructionEvents.status} IN ('closed', 'cancelled') THEN ${constructionEvents.endDate}
         END DESC`,
       asc(constructionEvents.startDate),
     ];
@@ -428,8 +423,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       // Phase 1: Close tracking fields (default null for new events)
       closedBy: null,
       closedAt: null as Date | null,
-      notifyMasterData: false,
-      notificationId: null,
       closeNotes: null,
       updatedAt: now,
     };
@@ -478,8 +471,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     const { status } = existingEvents[0];
 
-    // Only planned and active events can be edited (ended/cancelled are read-only for audit)
-    if (status === 'ended' || status === 'cancelled') {
+    // Only planned and active events can be edited
+    if (status === 'pending_review' || status === 'closed' || status === 'cancelled') {
       return reply.status(400).send({
         error: `Cannot edit ${status} events. Historical records must be preserved for audit.`,
       });
@@ -625,7 +618,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     // planned → active, cancelled
     // active → pending_review, cancelled
     // pending_review → active (reopen), cancelled (note: closed via /close endpoint)
-    // ended (legacy) → same as pending_review
     // closed → no transitions via this endpoint (use archive)
     // cancelled → terminal
     // archived → terminal
@@ -633,7 +625,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       planned: ['active', 'cancelled'],
       active: ['pending_review', 'cancelled'],
       pending_review: ['active', 'cancelled'],  // 'closed' via /close endpoint only
-      ended: ['active', 'cancelled'],  // Legacy: treat as pending_review
       closed: [],  // Use archive endpoint
       cancelled: [],
       archived: [],
@@ -789,117 +780,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  // PATCH /events/:id/decision - Set post-end decision
-  app.patch('/:id/decision', {
-    schema: {
-      params: Type.Object({
-        id: Type.String(),
-      }),
-      body: PostEndDecisionSchema,
-      response: {
-        200: Type.Object({ data: EventSchema }),
-        400: Type.Object({ error: Type.String() }),
-        404: Type.Object({ error: Type.String() }),
-      },
-    },
-  }, async (request, reply) => {
-    const { id } = request.params;
-    const { decision } = request.body;
-
-    // Check current status and decision (no geometry needed)
-    const existingEvents = await db.select({
-      id: constructionEvents.id,
-      status: constructionEvents.status,
-      postEndDecision: constructionEvents.postEndDecision,
-    }).from(constructionEvents).where(eq(constructionEvents.id, id));
-
-    if (existingEvents.length === 0) {
-      return reply.status(404).send({ error: 'Event not found' });
-    }
-
-    const currentEvent = existingEvents[0];
-
-    if (currentEvent.status !== 'ended') {
-      return reply.status(400).send({ error: 'Post-end decision can only be set for ended events' });
-    }
-
-    if (currentEvent.postEndDecision !== 'pending') {
-      return reply.status(400).send({ error: 'Post-end decision has already been made' });
-    }
-
-    await db.update(constructionEvents).set({
-      postEndDecision: decision,
-      updatedAt: new Date(),
-    }).where(eq(constructionEvents.id, id));
-
-    // Fetch updated event with geometry conversion
-    const eventSelect = {
-      id: constructionEvents.id,
-      name: constructionEvents.name,
-      status: constructionEvents.status,
-      startDate: constructionEvents.startDate,
-      endDate: constructionEvents.endDate,
-      restrictionType: constructionEvents.restrictionType,
-      geometry: fromGeomSql(constructionEvents.geometry),
-      geometrySource: constructionEvents.geometrySource,
-      postEndDecision: constructionEvents.postEndDecision,
-      archivedAt: constructionEvents.archivedAt,
-      department: constructionEvents.department,
-      ward: constructionEvents.ward,
-      createdBy: constructionEvents.createdBy,
-      updatedAt: constructionEvents.updatedAt,
-    };
-
-    const updatedEvents = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
-    const event = updatedEvents[0];
-
-    // Fetch related road assets
-    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, id));
-    const assetIds = relations.map(r => r.roadAssetId);
-
-    const assetSelect = {
-      id: roadAssets.id,
-      name: roadAssets.name,
-      geometry: fromGeomSql(roadAssets.geometry),
-      roadType: roadAssets.roadType,
-      lanes: roadAssets.lanes,
-      direction: roadAssets.direction,
-      status: roadAssets.status,
-      validFrom: roadAssets.validFrom,
-      validTo: roadAssets.validTo,
-      replacedBy: roadAssets.replacedBy,
-      ownerDepartment: roadAssets.ownerDepartment,
-      ward: roadAssets.ward,
-      landmark: roadAssets.landmark,
-      updatedAt: roadAssets.updatedAt,
-    };
-
-    const assets = assetIds.length > 0
-      ? await db.select(assetSelect).from(roadAssets).where(inArray(roadAssets.id, assetIds))
-      : [];
-
-    const eventAssets = assets.map(a => ({
-      ...a,
-      validFrom: a.validFrom.toISOString(),
-      validTo: a.validTo?.toISOString() ?? null,
-      updatedAt: a.updatedAt.toISOString(),
-    }));
-
-    // Sync to Orion-LD
-    await syncEventToOrion(event);
-
-    return {
-      data: {
-        ...event,
-        startDate: event.startDate.toISOString(),
-        endDate: event.endDate.toISOString(),
-        archivedAt: event.archivedAt?.toISOString() ?? null,
-        updatedAt: event.updatedAt.toISOString(),
-        roadAssets: eventAssets,
-      },
-    };
-  });
-
   // DELETE /events/:id - Cancel event (soft delete)
   app.delete('/:id', {
     schema: {
@@ -936,9 +816,9 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    if (status === 'ended') {
+    if (status === 'pending_review' || status === 'closed') {
       return reply.status(400).send({
-        error: 'Ended events cannot be deleted. Historical records must be preserved for traceability.',
+        error: 'Events in review/closed status cannot be deleted. Archive instead.',
       });
     }
 
@@ -1020,7 +900,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  // PATCH /events/:id/archive - Archive an ended event
+  // PATCH /events/:id/archive - Archive a closed event
   app.patch('/:id/archive', {
     schema: {
       params: Type.Object({
@@ -1048,9 +928,9 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     const currentEvent = existingEvents[0];
 
-    // Only ended or closed events can be archived (Phase 1: 'closed' added)
-    if (currentEvent.status !== 'ended' && currentEvent.status !== 'closed') {
-      return reply.status(400).send({ error: 'Only ended/closed events can be archived' });
+    // Only closed events can be archived
+    if (currentEvent.status !== 'closed') {
+      return reply.status(400).send({ error: 'Only closed events can be archived' });
     }
 
     // Check if already archived
@@ -1237,14 +1117,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
   // ============================================
 
   const CloseEventSchema = Type.Object({
-    notifyMasterData: Type.Boolean(),  // Required: must confirm notification decision
     closeNotes: Type.Optional(Type.String()),
-    assetChangeRequests: Type.Optional(Type.Array(Type.Object({
-      assetId: Type.String(),
-      assetType: Type.String(),
-      changeType: Type.Union([Type.Literal('create'), Type.Literal('update'), Type.Literal('retire')]),
-      summary: Type.String(),
-    }))),
   });
 
   // Temporary Gov role check (Phase 3 will have full RBAC)
@@ -1260,10 +1133,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       response: {
         200: Type.Object({
           data: EventSchema,
-          notification: Type.Optional(Type.Object({
-            id: Type.String(),
-            status: Type.String(),
-          })),
         }),
         400: Type.Object({ error: Type.String() }),
         403: Type.Object({ error: Type.String(), hint: Type.Optional(Type.String()) }),
@@ -1272,7 +1141,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { id } = request.params;
-    const { notifyMasterData, closeNotes, assetChangeRequests } = request.body;
+    const { closeNotes } = request.body;
 
     // Phase 1: Temporary Gov role check via header
     const userRole = request.headers['x-user-role'] as string;
@@ -1299,8 +1168,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     const currentEvent = existingEvents[0];
 
-    // Only pending_review or ended (legacy) events can be closed
-    if (currentEvent.status !== 'pending_review' && currentEvent.status !== 'ended') {
+    // Only pending_review events can be closed
+    if (currentEvent.status !== 'pending_review') {
       return reply.status(400).send({
         error: `Cannot close event in ${currentEvent.status} status. Must be pending_review.`
       });
@@ -1329,39 +1198,11 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     const now = new Date();
     const closedBy = userRole;  // TODO: Get actual user ID from auth
 
-    // Create outbox notification if requested
-    let notificationId: string | null = null;
-    if (notifyMasterData) {
-      notificationId = `NOTIF-${nanoid(12)}`;
-
-      const payload = {
-        eventId: id,
-        eventName: currentEvent.name,
-        department: currentEvent.department,
-        ward: currentEvent.ward,
-        closedAt: now.toISOString(),
-        closedBy,
-        closeNotes,
-        assetChangeRequests: assetChangeRequests || [],
-      };
-
-      await db.insert(outboxNotifications).values({
-        id: notificationId,
-        eventId: id,
-        notificationType: 'event_closed',
-        payload,
-        status: 'pending',
-        createdAt: now,
-      });
-    }
-
     // Update event status to closed
     await db.update(constructionEvents).set({
       status: 'closed',
       closedBy,
       closedAt: now,
-      notifyMasterData,
-      notificationId,
       closeNotes: closeNotes ?? null,
       updatedAt: now,
     }).where(eq(constructionEvents.id, id));
@@ -1383,8 +1224,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       closedBy: constructionEvents.closedBy,
       closedAt: constructionEvents.closedAt,
-      notifyMasterData: constructionEvents.notifyMasterData,
-      notificationId: constructionEvents.notificationId,
       closeNotes: constructionEvents.closeNotes,
       updatedAt: constructionEvents.updatedAt,
     };
@@ -1435,7 +1274,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       // Don't fail the request, just log the error
     }
 
-    const response: Record<string, unknown> = {
+    return {
       data: {
         ...event,
         startDate: event.startDate.toISOString(),
@@ -1446,15 +1285,6 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         roadAssets: eventAssets,
       },
     };
-
-    if (notificationId) {
-      response.notification = {
-        id: notificationId,
-        status: 'pending',
-      };
-    }
-
-    return response;
   });
 
   // GET /events/enrich-road-names/status - Check status of unnamed event-covered roads

@@ -1,0 +1,156 @@
+{
+  "$metadata": {
+    "name": "EventFlow Design System",
+    "description": "Design tokens for EventFlow prototype - Nagoya Construction Lifecycle",
+    "version": "1.0.0",
+    "source": "figma-design-spec.md"
+  },
+  "global": {
+    "colors": {
+      "primary": {
+        "blue-0": { "value": "#e7f5ff", "type": "color" },
+        "blue-1": { "value": "#d0ebff", "type": "color" },
+        "blue-2": { "value": "#a5d8ff", "type": "color" },
+        "blue-3": { "value": "#74c0fc", "type": "color" },
+        "blue-4": { "value": "#4dabf7", "type": "color" },
+        "blue-5": { "value": "#339af0", "type": "color" },
+        "blue-6": { "value": "#228be6", "type": "color" },
+        "blue-7": { "value": "#1c7ed6", "type": "color" },
+        "blue-8": { "value": "#1971c2", "type": "color" },
+        "blue-9": { "value": "#1864ab", "type": "color" }
+      },
+      "neutral": {
+        "gray-0": { "value": "#f8f9fa", "type": "color" },
+        "gray-1": { "value": "#f1f3f5", "type": "color" },
+        "gray-2": { "value": "#e9ecef", "type": "color" },
+        "gray-3": { "value": "#dee2e6", "type": "color" },
+        "gray-4": { "value": "#ced4da", "type": "color" },
+        "gray-5": { "value": "#adb5bd", "type": "color" },
+        "gray-6": { "value": "#868e96", "type": "color" },
+        "gray-7": { "value": "#495057", "type": "color" },
+        "gray-8": { "value": "#343a40", "type": "color" },
+        "gray-9": { "value": "#212529", "type": "color" }
+      },
+      "semantic": {
+        "red-6": { "value": "#fa5252", "type": "color" },
+        "yellow-6": { "value": "#fcc419", "type": "color" },
+        "orange-6": { "value": "#fd7e14", "type": "color" },
+        "green-6": { "value": "#40c057", "type": "color" },
+        "cyan-6": { "value": "#15aabf", "type": "color" },
+        "violet-6": { "value": "#7950f2", "type": "color" }
+      },
+      "status": {
+        "planned": { "value": "#3B82F6", "type": "color", "description": "Event status: planned" },
+        "active": { "value": "#F59E0B", "type": "color", "description": "Event status: active" },
+        "pending-review": { "value": "#F97316", "type": "color", "description": "Event status: pending review" },
+        "closed": { "value": "#6B7280", "type": "color", "description": "Event status: closed/ended" },
+        "archived": { "value": "#374151", "type": "color", "description": "Event status: archived" },
+        "cancelled": { "value": "#EF4444", "type": "color", "description": "Event status: cancelled" }
+      },
+      "map": {
+        "road-arterial": { "value": "#8B5CF6", "type": "color" },
+        "road-collector": { "value": "#06B6D4", "type": "color" },
+        "road-local": { "value": "#84CC16", "type": "color" },
+        "workorder-inspection": { "value": "#3B82F6", "type": "color" },
+        "workorder-repair": { "value": "#F59E0B", "type": "color" },
+        "workorder-update": { "value": "#10B981", "type": "color" },
+        "draw-fill": { "value": "#06B6D4", "type": "color" },
+        "draw-stroke": { "value": "#0891B2", "type": "color" },
+        "hover-highlight": { "value": "#F59E0B", "type": "color" },
+        "selected-highlight": { "value": "#EF4444", "type": "color" },
+        "river-fill": { "value": "#60A5FA", "type": "color" },
+        "river-stroke": { "value": "#3B82F6", "type": "color" },
+        "greenspace-fill": { "value": "#22C55E", "type": "color" },
+        "greenspace-stroke": { "value": "#16A34A", "type": "color" },
+        "streetlight": { "value": "#FBBF24", "type": "color" }
+      }
+    },
+    "spacing": {
+      "xs": { "value": "10px", "type": "spacing" },
+      "sm": { "value": "12px", "type": "spacing" },
+      "md": { "value": "16px", "type": "spacing" },
+      "lg": { "value": "20px", "type": "spacing" },
+      "xl": { "value": "32px", "type": "spacing" }
+    },
+    "borderRadius": {
+      "xs": { "value": "2px", "type": "borderRadius" },
+      "sm": { "value": "4px", "type": "borderRadius" },
+      "md": { "value": "8px", "type": "borderRadius" },
+      "lg": { "value": "16px", "type": "borderRadius" },
+      "xl": { "value": "32px", "type": "borderRadius" }
+    },
+    "typography": {
+      "fontFamilies": {
+        "system": {
+          "value": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+          "type": "fontFamilies"
+        },
+        "monospace": {
+          "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace",
+          "type": "fontFamilies"
+        }
+      },
+      "fontSizes": {
+        "h1": { "value": "34px", "type": "fontSizes" },
+        "h2": { "value": "26px", "type": "fontSizes" },
+        "h3": { "value": "22px", "type": "fontSizes" },
+        "h4": { "value": "18px", "type": "fontSizes" },
+        "h5": { "value": "16px", "type": "fontSizes" },
+        "h6": { "value": "14px", "type": "fontSizes" },
+        "xs": { "value": "12px", "type": "fontSizes" },
+        "sm": { "value": "14px", "type": "fontSizes" },
+        "md": { "value": "16px", "type": "fontSizes" },
+        "lg": { "value": "18px", "type": "fontSizes" },
+        "xl": { "value": "20px", "type": "fontSizes" }
+      },
+      "lineHeights": {
+        "h1": { "value": "1.3", "type": "lineHeights" },
+        "h2": { "value": "1.35", "type": "lineHeights" },
+        "h3": { "value": "1.4", "type": "lineHeights" },
+        "h4": { "value": "1.45", "type": "lineHeights" },
+        "h5": { "value": "1.5", "type": "lineHeights" },
+        "h6": { "value": "1.5", "type": "lineHeights" },
+        "xs": { "value": "1.4", "type": "lineHeights" },
+        "sm": { "value": "1.45", "type": "lineHeights" },
+        "md": { "value": "1.55", "type": "lineHeights" },
+        "lg": { "value": "1.6", "type": "lineHeights" },
+        "xl": { "value": "1.65", "type": "lineHeights" }
+      },
+      "fontWeights": {
+        "regular": { "value": "400", "type": "fontWeights" },
+        "medium": { "value": "500", "type": "fontWeights" },
+        "semibold": { "value": "600", "type": "fontWeights" },
+        "bold": { "value": "700", "type": "fontWeights" }
+      }
+    },
+    "shadows": {
+      "xs": { "value": "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 1px 2px rgba(0, 0, 0, 0.1)", "type": "boxShadow" },
+      "sm": { "value": "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 10px 15px -5px rgba(0, 0, 0, 0.05), 0px 7px 7px -5px rgba(0, 0, 0, 0.04)", "type": "boxShadow" },
+      "md": { "value": "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 20px 25px -5px rgba(0, 0, 0, 0.05), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)", "type": "boxShadow" },
+      "lg": { "value": "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 28px 23px -7px rgba(0, 0, 0, 0.05), 0px 12px 12px -7px rgba(0, 0, 0, 0.04)", "type": "boxShadow" },
+      "xl": { "value": "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 36px 28px -7px rgba(0, 0, 0, 0.05), 0px 17px 17px -7px rgba(0, 0, 0, 0.04)", "type": "boxShadow" },
+      "card-hover": { "value": "0px 2px 8px rgba(0, 0, 0, 0.08)", "type": "boxShadow" }
+    },
+    "sizing": {
+      "header-height": { "value": "60px", "type": "sizing" },
+      "sidebar-left-default": { "value": "400px", "type": "sizing" },
+      "sidebar-left-min": { "value": "280px", "type": "sizing" },
+      "sidebar-left-max": { "value": "600px", "type": "sizing" },
+      "sidebar-right": { "value": "400px", "type": "sizing" },
+      "resize-handle": { "value": "6px", "type": "sizing" },
+      "button-xs": { "value": "30px", "type": "sizing" },
+      "button-sm": { "value": "36px", "type": "sizing" },
+      "button-md": { "value": "42px", "type": "sizing" },
+      "button-lg": { "value": "50px", "type": "sizing" },
+      "button-xl": { "value": "60px", "type": "sizing" },
+      "touch-target-min": { "value": "44px", "type": "sizing" }
+    },
+    "breakpoints": {
+      "xs": { "value": "576px", "type": "breakpoints" },
+      "sm": { "value": "768px", "type": "breakpoints" },
+      "md": { "value": "992px", "type": "breakpoints" },
+      "lg": { "value": "1200px", "type": "breakpoints" },
+      "xl": { "value": "1408px", "type": "breakpoints" }
+    }
+  }
+}

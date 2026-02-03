@@ -75,7 +75,7 @@ export function initScheduler() {
         }
       }
 
-      // Transition active -> ended events
+      // Transition active events past endDate to pending_review
       const activeEvents = await db.select(eventSelect)
         .from(constructionEvents)
         .where(
@@ -86,8 +86,7 @@ export function initScheduler() {
         );
 
       for (const event of activeEvents) {
-        // Phase 1: Active events transition to pending_review (not ended/closed)
-        // Event closure requires Gov approval via /events/:id/close endpoint
+        // Active events transition to pending_review; closure requires Gov approval via /events/:id/close
         await db.update(constructionEvents)
           .set({
             status: 'pending_review',

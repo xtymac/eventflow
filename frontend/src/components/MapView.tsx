@@ -119,7 +119,6 @@ const STATUS_COLORS: Record<string, string> = {
   planned: '#3B82F6', // blue
   active: '#F59E0B', // amber
   pending_review: '#F97316', // orange
-  ended: '#6B7280', // gray (legacy)
   closed: '#6B7280', // gray
   archived: '#374151', // dark gray
   cancelled: '#EF4444', // red
@@ -1076,39 +1075,14 @@ export function MapView() {
       });
 
       // Events source and layers
-      // Status-based layers: ended (bottom) → planned (middle) → active (top)
+      // Status-based layers: planned (bottom) → closed → pending_review → active (top)
       // This ensures active events are always clickable on top
       map.current.addSource('events', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // ENDED events (bottom layer - gray, less prominent)
-      // Note: Using legacy filter syntax - property names as strings, not ['get', 'prop']
-      // $type only supports Point, LineString, Polygon (MultiPolygon treated as Polygon)
-      map.current.addLayer({
-        id: 'events-ended-fill',
-        type: 'fill',
-        source: 'events',
-        filter: ['all', ['==', '$type', 'Polygon'], ['==', 'status', 'ended']],
-        paint: {
-          'fill-color': STATUS_COLORS.ended,
-          'fill-opacity': 0.1,
-        },
-      });
-
-      map.current.addLayer({
-        id: 'events-ended-line',
-        type: 'line',
-        source: 'events',
-        filter: ['==', 'status', 'ended'],
-        paint: {
-          'line-color': STATUS_COLORS.ended,
-          'line-width': 2,
-        },
-      });
-
-      // PLANNED events (middle layer - blue)
+      // PLANNED events (bottom layer - blue)
       map.current.addLayer({
         id: 'events-planned-fill',
         type: 'fill',
@@ -1131,7 +1105,7 @@ export function MapView() {
         },
       });
 
-      // CLOSED events (same styling as ended - gray)
+      // CLOSED events (gray)
       map.current.addLayer({
         id: 'events-closed-fill',
         type: 'fill',
@@ -1681,9 +1655,10 @@ export function MapView() {
         // Check if we clicked on any features
         const features = map.current?.queryRenderedFeatures(e.point, {
           layers: [
-            'events-ended-fill', 'events-ended-line',
             'events-planned-fill', 'events-planned-line',
             'events-active-fill', 'events-active-line',
+            'events-closed-fill', 'events-closed-line',
+            'events-pending-review-fill', 'events-pending-review-line',
             'events-hit-area-fill', 'events-hit-area-line',
             'assets-line', 'inspections-point'
           ]
@@ -1791,7 +1766,7 @@ export function MapView() {
       map.current.on('dblclick', (e) => {
         const features = map.current?.queryRenderedFeatures(e.point, {
           layers: [
-            'events-ended-fill', 'events-ended-line',
+
             'events-planned-fill', 'events-planned-line',
             'events-active-fill', 'events-active-line',
             'events-hit-area-fill', 'events-hit-area-line',
@@ -1807,7 +1782,7 @@ export function MapView() {
       // Add click handlers for all status-specific event layers
       // Include selected-event layers so clicking a selected event still works
       const eventLayerIds = [
-        'events-ended-fill', 'events-ended-line',
+
         'events-planned-fill', 'events-planned-line',
         'events-active-fill', 'events-active-line',
         'events-hit-area-fill', 'events-hit-area-line',
@@ -1961,7 +1936,7 @@ export function MapView() {
 
       // Cursor changes for event layers
       const eventCursorLayerIds = [
-        'events-ended-fill', 'events-ended-line',
+
         'events-planned-fill', 'events-planned-line',
         'events-active-fill', 'events-active-line',
         'events-hit-area-fill', 'events-hit-area-line',
@@ -2048,7 +2023,7 @@ export function MapView() {
 
       // Add hover handlers for all status-specific event layers
       const eventHoverLayerIds = [
-        'events-ended-fill', 'events-ended-line',
+
         'events-planned-fill', 'events-planned-line',
         'events-active-fill', 'events-active-line',
         'events-hit-area-fill', 'events-hit-area-line',
@@ -2623,9 +2598,10 @@ export function MapView() {
     // Hide all events while editing to allow clicking roads underneath
     const eventsVisible = showEvents && !isEventFormOpen;
     const statusLayers = [
-      'events-ended-fill', 'events-ended-line',
       'events-planned-fill', 'events-planned-line',
       'events-active-fill', 'events-active-line',
+      'events-closed-fill', 'events-closed-line',
+      'events-pending-review-fill', 'events-pending-review-line',
       'events-hit-area-fill', 'events-hit-area-line',
       'hovered-event-fill', 'hovered-event-line',
     ];
@@ -2642,9 +2618,10 @@ export function MapView() {
     if (!map.current || !mapLoaded) return;
 
     const fillLayers = [
-      'events-ended-fill',
       'events-planned-fill',
       'events-active-fill',
+      'events-closed-fill',
+      'events-pending-review-fill',
       'selected-event-fill',
     ];
 
@@ -3914,8 +3891,8 @@ export function MapView() {
             <Text size="xs">Active</Text>
           </Group>
           <Group gap="xs">
-            <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.ended, borderRadius: 2 }} />
-            <Text size="xs">Ended</Text>
+            <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.closed, borderRadius: 2 }} />
+            <Text size="xs">Closed</Text>
           </Group>
         </Stack>
 

@@ -14,24 +14,24 @@ This guide translates the latest requirements (meeting update: 2026-01-30) into 
 - **Roads are read-only** tiles/layers; no editing, no Event linkage.
 - GIS is a presentation layer; core value is ledger + workflow + auditability.
 - Apps are separated: Gov, Public, Partner, Mobile.
-- **Event close is Gov-only** and must confirm whether changes need notification to Master Data.
-- **Gov Event Ops and Gov Master Data** are different departments; roles and permissions must be separated.
+- **Event close is Gov-only** (enforced via `X-User-Role: gov` header in Phase 1; notification decision deferred to Phase 2).
+- **Gov Event Ops and Gov Master Data** are different departments; roles and permissions must be separated (Phase 3).
 - **Map must show Event polygons + WorkOrder points simultaneously**.
 
 ## 2. Architecture Overview
 
 ```
-Master Data DB                    Event/Case DB
+Master Data DB (Phase 2)          Event/Case DB (Phase 1 ✓)
 --------------------             ----------------------
 assets                            events
 asset_change_requests             work_orders
 asset_versions                    work_order_locations
 asset_audit                        work_order_partners
 import_lineage                    evidence
-inbox_notifications               outbox_notifications
+inbox_notifications               (outbox — Phase 2)
 ```
 
-Notification flow: Event DB writes **outbox_notifications** → bridge → Master Data DB **inbox_notifications**.
+> **Phase 2:** Notification flow (Event DB outbox → bridge → Master Data DB inbox) is not yet implemented. Phase 1 focuses on Event/WorkOrder/Evidence core workflow.
 
 ## 3. Roles and RBAC
 
@@ -43,7 +43,7 @@ Notification flow: Event DB writes **outbox_notifications** → bridge → Maste
 
 ### Key RBAC Rules
 - Only `gov_event_ops` can close Events.
-- Close flow must record **notification decision** (notify Master Data or not).
+- Close flow will record **notification decision** (Phase 2; currently close records `closeNotes` only).
 - `gov_master_data` is the only role that can publish asset changes.
 
 ## 4. Data Model (Minimum)
@@ -71,7 +71,7 @@ Notification flow: Event DB writes **outbox_notifications** → bridge → Maste
   - `workOrderId`, `partnerId`
 - **evidence**
   - `workOrderId`, `type`, `files[]`, `submittedBy`, `submittedAt`
-- **outbox_notifications**
+- **outbox_notifications** (Phase 2 — not yet implemented)
   - `id`, `eventId`, `payload`, `status`, `createdAt`
 
 ## 5. Workflow Rules
@@ -93,20 +93,20 @@ Notification flow: Event DB writes **outbox_notifications** → bridge → Maste
 5) Assign repair WorkOrder to partner(s)  
 6) Partner submits Evidence  
 7) Gov reviews → Pending Review → Closed  
-8) On close: confirm whether to notify Master Data
+8) On close: Gov closes event with close notes (notification to Master Data deferred to Phase 2)
 
-## 6. Notification Boundary (Outbox/Inbox)
+## 6. Notification Boundary (Outbox/Inbox) — Phase 2
 
-### When to notify
+> **Not yet implemented.** The outbox/inbox notification boundary between Event DB and Master Data DB is planned for Phase 2. Phase 1 focuses on Event/WorkOrder/Evidence core workflow with Gov-only close.
+
+### When to notify (Phase 2)
 - At **Event close**, if changes require Master Data update.
 
-### Minimum payload
+### Minimum payload (Phase 2)
 - `eventId`, `assetId(s)`, `changeType`, `summary`, `evidenceLinks`
 
-### Required behavior
-- Event close records:
-  - `notifyMasterData = true/false`
-  - `notificationId` (if dispatched)
+### Required behavior (Phase 2)
+- Event close will record notification decision and dispatch to Master Data inbox.
 - Master Data team handles inbox notifications as **input** to AssetChangeRequest.
 
 ## 7. API Surface (Draft)
@@ -116,7 +116,7 @@ Notification flow: Event DB writes **outbox_notifications** → bridge → Maste
 - `PATCH /events/:id/status`
 - `POST /workorders` `GET /workorders/:id`
 - `POST /workorders/:id/evidence`
-- `POST /events/:id/close` (Gov-only; requires notification decision)
+- `POST /events/:id/close` (Gov-only; notification decision deferred to Phase 2)
 
 ### Master Data DB
 - `GET /assets`
@@ -156,9 +156,9 @@ Interaction rules:
 
 ## 11. Implementation Phasing (Short Form)
 
-1) **Phase 0**: freeze boundaries (roads read-only, remove event-road links)
-2) **Phase 1**: workorder/evidence + status machine
-3) **Phase 2**: outbox/inbox + asset change workflow (two DBs)
+1) **Phase 0**: freeze boundaries (roads read-only, remove event-road links) ✓
+2) **Phase 1**: workorder/evidence + status machine + Gov-only close ✓
+3) **Phase 2**: outbox/inbox + notification boundary + asset change workflow (two DBs)
 4) **Phase 3**: RBAC + app separation
 5) **Phase 4**: import + demo data + schemas
 

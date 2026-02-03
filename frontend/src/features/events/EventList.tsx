@@ -27,7 +27,6 @@ const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
   pending_review: 'orange',
-  ended: 'gray',  // Legacy - kept for backwards compatibility
   closed: 'gray',
   archived: 'dark',
   cancelled: 'red',
@@ -37,7 +36,6 @@ const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
   pending_review: 'Pending Review',
-  ended: 'Ended',  // Legacy
   closed: 'Closed',
   archived: 'Archived',
   cancelled: 'Cancelled',
@@ -45,7 +43,7 @@ const STATUS_LABELS: Record<EventStatus, string> = {
 
 export function EventList() {
   // Persisted filter state from store (including filtersOpen)
-  const { selectedEventId, selectEvent, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry, setHoveredEvent, isEventFormOpen } = useUIStore();
+  const { selectedEventId, selectEvent, openEventDetailModal, openEventForm, eventFilters, setEventFilter, resetEventFilters, filtersOpen, toggleFilters, setFlyToGeometry, setHoveredEvent, isEventFormOpen } = useUIStore();
 
   // Cleanup hover state on unmount to prevent stale hover
   useEffect(() => {
@@ -260,8 +258,9 @@ export function EventList() {
                     setFlyToGeometry(event.geometry, newCloseUp);
                   }
                 } else {
-                  // First click: select, reset to overview, and fly to event
+                  // First click: select, open detail panel, and fly to event
                   selectEvent(event.id);
+                  openEventDetailModal(event.id);
                   setIsCloseUp(false);
                   if (event.geometry) {
                     setFlyToGeometry(event.geometry, false);
@@ -373,6 +372,7 @@ export function EventList() {
                         }
                       } else {
                         selectEvent(event.id);
+                        openEventDetailModal(event.id);
                         setIsCloseUp(false);
                         if (event.geometry) {
                           setFlyToGeometry(event.geometry, false);

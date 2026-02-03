@@ -11,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "match-roads": "tsx ../scripts/match-roads.ts",
     "osm:fetch-boundaries": "tsx ../scripts/fetch-ward-boundaries.ts",

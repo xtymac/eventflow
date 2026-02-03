@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Stack,
   Group,
@@ -17,12 +18,14 @@ import dayjs from 'dayjs';
 import { EventActionButtons } from './EventActionButtons';
 import { AffectedAssetsList } from './AffectedAssetsList';
 import { InspectionsListSection } from '../inspections/InspectionsListSection';
+import { WorkOrdersListSection } from '../workorders/WorkOrdersListSection';
+import { WorkOrderDetailModal } from '../workorders/WorkOrderDetailModal';
+import { WorkOrderCreateModal } from '../workorders/WorkOrderCreateModal';
 
 const STATUS_COLORS: Record<EventStatus, string> = {
   planned: 'blue',
   active: 'yellow',
   pending_review: 'orange',
-  ended: 'gray',  // Legacy
   closed: 'gray',
   archived: 'dark',
   cancelled: 'red',
@@ -32,7 +35,6 @@ const STATUS_LABELS: Record<EventStatus, string> = {
   planned: 'Planned',
   active: 'Active',
   pending_review: 'Pending Review',
-  ended: 'Ended',  // Legacy
   closed: 'Closed',
   archived: 'Archived',
   cancelled: 'Cancelled',
@@ -52,6 +54,10 @@ interface EventDetailPanelProps {
 export function EventDetailPanel({ eventId, showBackButton = true }: EventDetailPanelProps) {
   const { data, isLoading, error } = useEvent(eventId);
   const { selectEvent } = useUIStore();
+
+  // WorkOrder modal state (local to this component)
+  const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null);
+  const [isCreateWorkOrderOpen, setIsCreateWorkOrderOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -183,10 +189,29 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
         </Paper>
       )}
 
+      {/* Work Orders (Phase 1) */}
+      <Paper p="sm" withBorder radius="sm">
+        <WorkOrdersListSection
+          eventId={eventId}
+          onCreateWorkOrder={() => setIsCreateWorkOrderOpen(true)}
+          onSelectWorkOrder={(id) => setSelectedWorkOrderId(id)}
+        />
+      </Paper>
+
       {/* Inspections */}
       <Paper p="sm" withBorder radius="sm">
         <InspectionsListSection eventId={eventId} />
       </Paper>
+
+      {/* WorkOrder Modals */}
+      <WorkOrderDetailModal
+        workOrderId={selectedWorkOrderId}
+        onClose={() => setSelectedWorkOrderId(null)}
+      />
+      <WorkOrderCreateModal
+        eventId={isCreateWorkOrderOpen ? eventId : null}
+        onClose={() => setIsCreateWorkOrderOpen(false)}
+      />
     </Stack>
   );
 }

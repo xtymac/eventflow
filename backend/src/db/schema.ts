@@ -48,7 +48,6 @@ export const constructionEvents = pgTable('construction_events', {
   id: varchar('id', { length: 50 }).primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   // Status: 'planned' | 'active' | 'pending_review' | 'closed' | 'archived' | 'cancelled'
-  // Note: 'ended' is legacy and maps to 'closed' in Phase 1
   status: varchar('status', { length: 20 }).notNull().default('planned'),
   startDate: timestamp('start_date', { withTimezone: true }).notNull(),
   endDate: timestamp('end_date', { withTimezone: true }).notNull(),
@@ -64,8 +63,6 @@ export const constructionEvents = pgTable('construction_events', {
   // Phase 1: Close tracking fields
   closedBy: varchar('closed_by', { length: 100 }),
   closedAt: timestamp('closed_at', { withTimezone: true }),
-  notifyMasterData: boolean('notify_master_data').default(false),
-  notificationId: varchar('notification_id', { length: 50 }),  // Reference to outbox_notifications.id
   closeNotes: text('close_notes'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
@@ -689,24 +686,6 @@ export const evidence = pgTable('evidence', {
   reviewStatusIdx: index('idx_evidence_review_status').on(table.reviewStatus),
 }));
 
-// Outbox notifications - Event DB → Master Data DB notification boundary
-export const outboxNotifications = pgTable('outbox_notifications', {
-  id: varchar('id', { length: 50 }).primaryKey(),
-  eventId: varchar('event_id', { length: 50 }).notNull()
-    .references(() => constructionEvents.id, { onDelete: 'cascade' }),
-  notificationType: varchar('notification_type', { length: 50 }).notNull(),  // 'event_closed' | 'asset_change_request'
-  payload: jsonbColumn('payload').notNull(),
-  status: varchar('status', { length: 20 }).notNull().default('pending'),  // 'pending' | 'sent' | 'delivered' | 'failed'
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  sentAt: timestamp('sent_at', { withTimezone: true }),
-  deliveredAt: timestamp('delivered_at', { withTimezone: true }),
-  errorMessage: text('error_message'),
-}, (table) => ({
-  eventIdIdx: index('idx_outbox_event_id').on(table.eventId),
-  statusIdx: index('idx_outbox_status').on(table.status),
-  typeIdx: index('idx_outbox_type').on(table.notificationType),
-}));
-
 // Type exports for Phase 1 tables
 export type WorkOrder = typeof workOrders.$inferSelect;
 export type NewWorkOrder = typeof workOrders.$inferInsert;
@@ -719,6 +698,3 @@ export type NewWorkOrderPartner = typeof workOrderPartners.$inferInsert;
 
 export type Evidence = typeof evidence.$inferSelect;
 export type NewEvidence = typeof evidence.$inferInsert;
-
-export type OutboxNotification = typeof outboxNotifications.$inferSelect;
-export type NewOutboxNotification = typeof outboxNotifications.$inferInsert;

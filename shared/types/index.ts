@@ -1,8 +1,7 @@
 import type { Feature, Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection } from 'geojson';
 
 // Event status lifecycle
-// Phase 1: Added 'pending_review' and 'closed', 'ended' kept for backwards compatibility
-export type EventStatus = 'planned' | 'active' | 'pending_review' | 'ended' | 'closed' | 'archived' | 'cancelled';
+export type EventStatus = 'planned' | 'active' | 'pending_review' | 'closed' | 'archived' | 'cancelled';
 
 // Restriction types for construction events
 export type RestrictionType = 'full' | 'partial' | 'workzone';
@@ -109,8 +108,6 @@ export interface ConstructionEvent {
   // Phase 1: Close tracking fields
   closedBy?: string;
   closedAt?: string | null;         // ISO 8601 timestamp
-  notifyMasterData?: boolean;
-  notificationId?: string | null;   // Reference to outbox_notifications.id
   closeNotes?: string | null;
   // Populated from JOINs (Phase 1)
   workOrders?: WorkOrder[];
@@ -266,12 +263,6 @@ export type EvidenceReviewStatus = 'pending' | 'approved' | 'rejected';
 // Partner roles in work orders
 export type PartnerRole = 'contractor' | 'inspector' | 'reviewer';
 
-// Notification types for outbox
-export type NotificationType = 'event_closed' | 'asset_change_request';
-
-// Notification status
-export type NotificationStatus = 'pending' | 'sent' | 'delivered' | 'failed';
-
 // Work Order entity
 export interface WorkOrder {
   id: string;
@@ -340,19 +331,6 @@ export interface Evidence {
   reviewNotes?: string;
 }
 
-// Outbox Notification - cross-database notification boundary
-export interface OutboxNotification {
-  id: string;
-  eventId: string;
-  notificationType: NotificationType;
-  payload: Record<string, unknown>;
-  status: NotificationStatus;
-  createdAt: string;        // ISO 8601 timestamp
-  sentAt?: string;          // ISO 8601 timestamp
-  deliveredAt?: string;     // ISO 8601 timestamp
-  errorMessage?: string;
-}
-
 // GeoJSON Feature types for map rendering
 export type ConstructionEventFeature = Feature<SupportedGeometry, ConstructionEvent>;
 export type RoadAssetFeature = Feature<SupportedGeometry, RoadAsset>;
@@ -391,7 +369,7 @@ export interface UpdateEventRequest {
 }
 
 export interface StatusChangeRequest {
-  status: 'active' | 'ended';
+  status: 'active' | 'pending_review';
 }
 
 export interface PostEndDecisionRequest {
@@ -503,17 +481,7 @@ export interface EventStatusChangeRequest {
 
 // Event close request (Phase 1 - Gov only)
 export interface CloseEventRequest {
-  notifyMasterData: boolean;  // Required - must explicitly confirm notification decision
   closeNotes?: string;
-  assetChangeRequests?: AssetChangeRequestSummary[];  // If notifyMasterData=true
-}
-
-// Summary of asset change for notification
-export interface AssetChangeRequestSummary {
-  assetId: string;
-  assetType: string;          // 'road' | 'greenspace' | 'streetlight' | etc
-  changeType: 'create' | 'update' | 'retire';
-  summary: string;
 }
 
 // Work order filters for list endpoint

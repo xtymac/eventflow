@@ -31,6 +31,7 @@ This is a ticket-style breakdown of gaps and conflicts identified in the latest 
 ### REQ-003: Master Data DB vs Event DB separation + notification boundary
 - Type: Conflict
 - Priority: P0
+- Phase: **Phase 2** (outbox/inbox deferred; Phase 1 focuses on Event/WorkOrder/Evidence core workflow)
 - Outcome: Separate Master Data DB and Event/Case DB; introduce outbox/inbox so Events can **notify** asset updates but cannot edit assets directly. Prototype may run both DBs on the same Postgres instance.
 - Touch points:
   - `backend/src/db/schema.ts`
@@ -62,12 +63,13 @@ This is a ticket-style breakdown of gaps and conflicts identified in the latest 
 ### REQ-006: Gov-only Event closure + notification confirmation
 - Type: Gap
 - Priority: P0
+- Phase: Gov-only close implemented in **Phase 1** (via `X-User-Role` header); notification confirmation deferred to **Phase 2**
 - Outcome: Only Gov can close Events; close flow must confirm whether changes should be notified to Master Data, and record notification dispatch.
 - Touch points:
-  - `backend/src/routes/events.ts`
-  - `backend/src/routes/notifications.ts` (new)
-  - `backend/src/services/*` (notification outbox)
-  - `frontend/src/features/events/*`
+  - `backend/src/routes/events.ts` (Phase 1 ✓ — Gov-only close with work order gate)
+  - `backend/src/routes/notifications.ts` (Phase 2)
+  - `backend/src/services/*` (notification outbox — Phase 2)
+  - `frontend/src/features/events/*` (Phase 1 ✓ — DecisionModal for close)
 
 ### REQ-007: App-level separation (Gov/Public/Partner/Mobile)
 - Type: Gap
