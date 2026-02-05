@@ -105,7 +105,9 @@ const AssetSchema = Type.Object({
   width: Type.Union([Type.String(), Type.Null()]),  // OSM width in meters
   widthSource: Type.Union([Type.Literal('osm_width'), Type.Literal('osm_lanes'), Type.Literal('default'), Type.Null()]),
   direction: Type.String(),
-  status: Type.Union([Type.Literal('active'), Type.Literal('inactive')]),
+  status: Type.Union([Type.Literal('active'), Type.Literal('inactive'), Type.Literal('removed')]),
+  condition: Type.Union([Type.String(), Type.Null()]),
+  riskLevel: Type.Union([Type.String(), Type.Null()]),
   validFrom: Type.String({ format: 'date-time' }),
   validTo: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   replacedBy: Type.Union([Type.String(), Type.Null()]),
@@ -418,6 +420,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         name_confidence as "nameConfidence",
         ST_AsGeoJSON(geometry)::json as geometry,
         road_type as "roadType", lanes, width, width_source as "widthSource", direction, status,
+        condition, risk_level as "riskLevel",
         valid_from as "validFrom", valid_to as "validTo",
         replaced_by as "replacedBy", owner_department as "ownerDepartment",
         ward, landmark, sublocality,
@@ -453,7 +456,9 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       width: string | null;
       widthSource: 'osm_width' | 'osm_lanes' | 'default' | null;
       direction: string;
-      status: 'active' | 'inactive';
+      status: 'active' | 'inactive' | 'removed';
+      condition: string | null;
+      riskLevel: string | null;
       validFrom: Date | string;
       validTo: Date | string | null;
       replacedBy: string | null;
@@ -517,6 +522,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
+      condition: roadAssets.condition,
+      riskLevel: roadAssets.riskLevel,
       validFrom: roadAssets.validFrom,
       validTo: roadAssets.validTo,
       replacedBy: roadAssets.replacedBy,
@@ -546,7 +553,9 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       data: {
         ...asset,
         sublocality: null,
-        status: asset.status as 'active' | 'inactive',
+        status: asset.status as 'active' | 'inactive' | 'removed',
+        condition: asset.condition ?? null,
+        riskLevel: asset.riskLevel ?? null,
         dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
         validFrom: asset.validFrom.toISOString(),
         validTo: asset.validTo?.toISOString() ?? null,
@@ -688,6 +697,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         widthSource: null,
         direction: body.direction,
         status: 'active' as const,
+        condition: null,
+        riskLevel: null,
         validFrom: now.toISOString(),
         validTo: null,
         replacedBy: null,
@@ -831,6 +842,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
+      condition: roadAssets.condition,
+      riskLevel: roadAssets.riskLevel,
       validFrom: roadAssets.validFrom,
       validTo: roadAssets.validTo,
       replacedBy: roadAssets.replacedBy,
@@ -855,7 +868,9 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       data: {
         ...asset,
         sublocality: null,
-        status: asset.status as 'active' | 'inactive',
+        status: asset.status as 'active' | 'inactive' | 'removed',
+        condition: asset.condition ?? null,
+        riskLevel: asset.riskLevel ?? null,
         dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
         validFrom: asset.validFrom.toISOString(),
         validTo: asset.validTo?.toISOString() ?? null,
@@ -948,6 +963,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       widthSource: roadAssets.widthSource,
       direction: roadAssets.direction,
       status: roadAssets.status,
+      condition: roadAssets.condition,
+      riskLevel: roadAssets.riskLevel,
       validFrom: roadAssets.validFrom,
       validTo: roadAssets.validTo,
       replacedBy: roadAssets.replacedBy,
@@ -971,8 +988,13 @@ export async function assetsRoutes(fastify: FastifyInstance) {
     return {
       data: {
         ...asset,
+        sublocality: null,
+        condition: asset.condition ?? null,
+        riskLevel: asset.riskLevel ?? null,
         validFrom: asset.validFrom.toISOString(),
-        validTo: asset.validTo?.toISOString(),
+        validTo: asset.validTo?.toISOString() ?? null,
+        sourceDate: asset.sourceDate?.toISOString() ?? null,
+        lastVerifiedAt: asset.lastVerifiedAt?.toISOString() ?? null,
         updatedAt: asset.updatedAt.toISOString(),
       },
     };
@@ -1050,6 +1072,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         lanes: roadAssets.lanes,
         direction: roadAssets.direction,
         status: roadAssets.status,
+        condition: roadAssets.condition,
+        riskLevel: roadAssets.riskLevel,
         validFrom: roadAssets.validFrom,
         validTo: roadAssets.validTo,
         replacedBy: roadAssets.replacedBy,
@@ -1227,6 +1251,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           widthSource: roadAssets.widthSource,
           direction: roadAssets.direction,
           status: roadAssets.status,
+          condition: roadAssets.condition,
+          riskLevel: roadAssets.riskLevel,
           validFrom: roadAssets.validFrom,
           validTo: roadAssets.validTo,
           replacedBy: roadAssets.replacedBy,
@@ -1251,7 +1277,9 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         return {
           data: {
             ...updatedAsset,
-            status: updatedAsset.status as 'active' | 'inactive',
+            status: updatedAsset.status as 'active' | 'inactive' | 'removed',
+            condition: updatedAsset.condition ?? null,
+            riskLevel: updatedAsset.riskLevel ?? null,
             dataSource: updatedAsset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
             validFrom: updatedAsset.validFrom.toISOString(),
             validTo: updatedAsset.validTo?.toISOString() ?? null,

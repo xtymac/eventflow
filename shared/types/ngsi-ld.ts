@@ -288,6 +288,7 @@ export const AssetLifecycleStatus = {
   Active: 'active',
   Inactive: 'inactive',
   Retired: 'retired',
+  Removed: 'removed',
 } as const;
 export type AssetLifecycleStatusType = typeof AssetLifecycleStatus[keyof typeof AssetLifecycleStatus];
 
@@ -493,6 +494,8 @@ export interface CivicOperation extends NgsiLdEntity {
   refAffectedAsset?: Relationship;
   /** WorkOrders spawned from this operation */
   refWorkOrder?: Relationship;
+  /** Reference to a specific asset this operation is related to (singular) */
+  refAsset?: Relationship;
 
   // --- Provenance ---
   dataProvider?: Property<string>;
@@ -649,6 +652,10 @@ export interface Road extends NgsiLdEntity {
   // --- Lifecycle status ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Start of validity period */
   validFrom: Property<DateTime>;
   /** End of validity period (retired roads) */
@@ -753,6 +760,10 @@ export interface GreenSpace extends NgsiLdEntity {
   // --- Status ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
 
@@ -804,6 +815,10 @@ export interface Streetlight extends NgsiLdEntity {
   // --- Status ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
 
@@ -863,6 +878,10 @@ export interface WaterBody extends NgsiLdEntity {
   // --- Status ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
 
@@ -1058,6 +1077,10 @@ export interface StreetTree extends NgsiLdEntity {
   // --- Administrative ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
   /** Managing department (e.g. 緑地維持課) */
@@ -1139,6 +1162,10 @@ export interface ParkFacility extends NgsiLdEntity {
   // --- Administrative ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
   /** Managing department (e.g. 緑地管理課) */
@@ -1224,6 +1251,10 @@ export interface PavementSection extends NgsiLdEntity {
   // --- Administrative ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
   /** Managing department (e.g. 道路維持課) */
@@ -1299,6 +1330,10 @@ export interface PumpStation extends NgsiLdEntity {
   // --- Administrative ---
   /** Data lifecycle status */
   status: Property<AssetLifecycleStatusType>;
+  /** Governance-level condition assessment */
+  condition?: Property<string>;
+  /** Governance-level risk level */
+  riskLevel?: Property<string>;
   /** Ward / district */
   ward?: Property<string>;
   /** Managing department (e.g. 河川工務課) */

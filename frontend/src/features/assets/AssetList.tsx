@@ -1,118 +1,156 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Stack,
-  TextInput,
   Card,
   Text,
   Badge,
   Group,
   Loader,
   Center,
-  Chip,
-  Button,
-  Collapse,
-  UnstyledButton,
   ActionIcon,
   Tabs,
   Box,
-  Alert,
 } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
-import { IconSearch, IconFilter, IconChevronDown, IconChevronLeft, IconChevronRight, IconCheck, IconMapPin, IconRoad, IconTree, IconBulb, IconInfoCircle } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { IconChevronLeft, IconChevronRight, IconTree, IconLeaf, IconRuler2, IconDroplet } from '@tabler/icons-react';
 import * as turf from '@turf/turf';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAssets, useAsset, useWards, useGreenSpacesInBbox, useStreetLightsInBbox } from '../../hooks/useApi';
+import { useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox, useGreenSpacesInBbox } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
-import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
-import type { RoadAsset, RoadType, AssetStatus, GreenSpaceAsset, StreetLightAsset } from '@nagoya/shared';
+import type { StreetTreeAsset, ParkFacilityAsset, PavementSectionAsset, PumpStationAsset, GreenSpaceAsset } from '@nagoya/shared';
+import type { Feature } from 'geojson';
 
-const LIMIT = 200;
-
-const ROAD_TYPE_COLORS: Record<RoadType, string> = {
-  arterial: 'violet',
-  collector: 'cyan',
-  local: 'lime',
+const TREE_CATEGORY_COLORS: Record<string, string> = {
+  deciduous: 'green',
+  evergreen: 'teal',
+  conifer: 'lime',
+  palmLike: 'orange',
+  shrub: 'yellow',
 };
 
-const ROAD_TYPE_LABELS: Record<RoadType, string> = {
-  arterial: 'Arterial',
-  collector: 'Collector',
-  local: 'Local',
+const TREE_CATEGORY_LABELS: Record<string, string> = {
+  deciduous: '落葉樹',
+  evergreen: '常緑樹',
+  conifer: '針葉樹',
+  palmLike: 'ヤシ類',
+  shrub: '低木',
 };
 
-const GREENSPACE_TYPE_COLORS: Record<string, string> = {
-  park: 'green',
-  garden: 'teal',
+const PARK_FACILITY_COLORS: Record<string, string> = {
+  toilet: 'blue',
   playground: 'orange',
-  forest: 'lime',
+  bench: 'gray',
+  shelter: 'teal',
+  fence: 'dark',
+  gate: 'dark',
+  drainage: 'cyan',
+  lighting: 'yellow',
+  waterFountain: 'blue',
+  signBoard: 'indigo',
+  pavement: 'gray',
+  sportsFacility: 'lime',
+  building: 'violet',
   other: 'gray',
 };
 
-const GREENSPACE_TYPE_LABELS: Record<string, string> = {
-  park: 'Park',
-  garden: 'Garden',
-  playground: 'Playground',
-  forest: 'Forest',
-  other: 'Other',
+const PAVEMENT_TYPE_COLORS: Record<string, string> = {
+  asphalt: 'dark',
+  concrete: 'gray',
+  interlocking: 'orange',
+  gravel: 'yellow',
+  other: 'gray',
 };
+
+const PUMP_CATEGORY_COLORS: Record<string, string> = {
+  stormwater: 'blue',
+  sewage: 'violet',
+  irrigation: 'green',
+  combined: 'cyan',
+};
+
+const PUMP_CATEGORY_LABELS: Record<string, string> = {
+  stormwater: '雨水',
+  sewage: '汚水',
+  irrigation: '灌漑',
+  combined: '合流',
+};
+
+// Semantic emoji for visual distinction from workorder cards
+const FACILITY_EMOJI: Record<string, string> = {
+  toilet: '\u{1F6BB}', playground: '\u{1F6DD}', bench: '\u{1FA91}', shelter: '\u26E9\uFE0F',
+  fence: '\u{1F6A7}', gate: '\u{1F6AA}', drainage: '\u{1F30A}', lighting: '\u{1F4A1}',
+  waterFountain: '\u26F2', signBoard: '\u{1FAA7}', pavement: '\u2B1C',
+  sportsFacility: '\u26BD', building: '\u{1F3E2}', other: '\u{1F4E6}',
+};
+
+const TREE_EMOJI: Record<string, string> = {
+  deciduous: '\u{1F333}', evergreen: '\u{1F332}', conifer: '\u{1F332}',
+  palmLike: '\u{1F334}', shrub: '\u{1F33F}',
+};
+
+const PUMP_EMOJI: Record<string, string> = {
+  stormwater: '\u{1F4A7}', sewage: '\u{1F7E3}', irrigation: '\u{1F33E}', combined: '\u{1F504}',
+};
+
+// Build a wide bbox around a center point (~10km radius) for the asset list.
+// This ensures the list always finds nearby items even when the viewport
+// is zoomed into an area without data.
+function wideBboxFromCenter(center: [number, number] | null): string | null {
+  if (!center) return null;
+  const [lng, lat] = center;
+  // ~0.1 degrees ≈ 10km at Nagoya latitude
+  const pad = 0.1;
+  return `${lng - pad},${lat - pad},${lng + pad},${lat + pad}`;
+}
 
 export function AssetList() {
   // Local UI state
-  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const tabsScrollRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState(0);
-  const [loadedAssets, setLoadedAssets] = useState<RoadAsset[]>([]);
 
   // Tab scroll state
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Inline edit state for manual naming
-  const [editName, setEditName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLookingUp, setIsLookingUp] = useState(false);
+  const { mapBbox, mapCenter, setFlyToGeometry, selectAsset, selectedAssetId } = useUIStore();
 
-  // Persisted filter state from store (including filtersOpen)
-  const { selectedAssetId, selectAsset, assetFilters, setAssetFilter, mapBbox, mapCenter, mapZoom, setHoveredAsset, setHoveredGreenspace, setHoveredStreetlight, setSidebarAssets, filtersOpen, setFiltersOpen, setFlyToGeometry } = useUIStore();
-  const { roadType: roadTypeFilter, status: statusFilter, ward: wardFilter, search: searchInput, unnamed: unnamedFilter } = assetFilters;
-  const [debouncedSearch] = useDebouncedValue(searchInput, 300);
+  // Use a wide bbox for the list queries so we always find nearby items,
+  // even when the viewport is focused on an area without assets.
+  const listBbox = useMemo(() => {
+    return wideBboxFromCenter(mapCenter) ?? mapBbox ?? null;
+  }, [mapCenter, mapBbox]);
 
-  const queryClient = useQueryClient();
-  const { data: wardsData } = useWards();
-  const { data, isLoading, error, isFetching } = useAssets({
-    roadType: roadTypeFilter as RoadType | undefined,
-    status: (statusFilter as AssetStatus | undefined) || 'active',  // Default to active
-    ward: wardFilter || undefined,
-    q: debouncedSearch || undefined,
-    unnamed: unnamedFilter || undefined,
-    // Always use bbox - filters narrow down results within current viewport
-    bbox: mapBbox ?? undefined,
-    limit: LIMIT,
-    offset: offset,
-    includeTotal: true,
-  });
-
-  // Always fetch selected asset individually to pin it at top until deselected
-  const { data: selectedAssetData } = useAsset(selectedAssetId);
-
-  // Fetch greenspaces and streetlights for their tabs
-  const { data: greenSpacesData, isLoading: isLoadingGreenspaces } = useGreenSpacesInBbox(
-    mapBbox,
+  // Fetch green spaces for park grouping headers
+  const { data: greenSpacesData } = useGreenSpacesInBbox(
+    listBbox,
     undefined,
-    { enabled: !!mapBbox, zoom: mapZoom }
-  );
-  const { data: streetLightsData, isLoading: isLoadingStreetlights } = useStreetLightsInBbox(
-    mapBbox,
-    undefined,
-    { enabled: !!mapBbox && mapZoom >= 14 }
+    { enabled: !!listBbox }
   );
 
-  // Sort greenspaces by distance from map center
-  const sortedGreenspaces = useMemo(() => {
-    if (!greenSpacesData?.features || !mapCenter) return greenSpacesData?.features ?? [];
-    return [...greenSpacesData.features].sort((a, b) => {
+  // Fetch asset data for tabs — use wide bbox, no minimum zoom restriction
+  const { data: parkFacilitiesData, isLoading: isLoadingParkFacilities } = useParkFacilitiesInBbox(
+    listBbox,
+    undefined,
+    { enabled: !!listBbox }
+  );
+  const { data: streetTreesData, isLoading: isLoadingStreetTrees } = useStreetTreesInBbox(
+    listBbox,
+    undefined,
+    { enabled: !!listBbox }
+  );
+  const { data: pavementSectionsData, isLoading: isLoadingPavementSections } = usePavementSectionsInBbox(
+    listBbox,
+    undefined,
+    { enabled: !!listBbox }
+  );
+  const { data: pumpStationsData, isLoading: isLoadingPumpStations } = usePumpStationsInBbox(
+    listBbox,
+    undefined,
+    { enabled: !!listBbox }
+  );
+
+  // Sort park facilities by distance from map center
+  const sortedParkFacilities = useMemo(() => {
+    if (!parkFacilitiesData?.features || !mapCenter) return parkFacilitiesData?.features ?? [];
+    return [...parkFacilitiesData.features].sort((a, b) => {
       try {
         const centerPoint = turf.point(mapCenter);
         const centerA = turf.center(a);
@@ -122,12 +160,12 @@ export function AssetList() {
         return 0;
       }
     });
-  }, [greenSpacesData?.features, mapCenter]);
+  }, [parkFacilitiesData?.features, mapCenter]);
 
-  // Sort streetlights by distance from map center
-  const sortedStreetlights = useMemo(() => {
-    if (!streetLightsData?.features || !mapCenter) return streetLightsData?.features ?? [];
-    return [...streetLightsData.features].sort((a, b) => {
+  // Sort street trees by distance from map center
+  const sortedStreetTrees = useMemo(() => {
+    if (!streetTreesData?.features || !mapCenter) return streetTreesData?.features ?? [];
+    return [...streetTreesData.features].sort((a, b) => {
       try {
         const centerPoint = turf.point(mapCenter);
         return turf.distance(centerPoint, a) - turf.distance(centerPoint, b);
@@ -135,210 +173,71 @@ export function AssetList() {
         return 0;
       }
     });
-  }, [streetLightsData?.features, mapCenter]);
+  }, [streetTreesData?.features, mapCenter]);
 
-  // Compute active filter count (include unnamed toggle)
-  const activeFilterCount = [roadTypeFilter, statusFilter, wardFilter, unnamedFilter].filter(Boolean).length;
-
-  // Toggle handler
-  const handleToggleFilters = () => {
-    setFiltersOpen(!filtersOpen);
-  };
-
-  // Reset offset when filters change
-  useEffect(() => {
-    setOffset(0);
-  }, [debouncedSearch, roadTypeFilter, statusFilter, wardFilter, unnamedFilter]);
-
-  // Populate loadedAssets when data arrives
-  // Include filter deps to handle cache hits (same data reference)
-  useEffect(() => {
-    if (!data?.data) {
-      setLoadedAssets([]);
-      return;
-    }
-
-    if (offset === 0) {
-      // Replace all when offset is 0 (initial load or after filter change)
-      setLoadedAssets(data.data);
-    } else {
-      // For pagination, append with dedup
-      setLoadedAssets((prev) => {
-        const existingIds = new Set(prev.map((a) => a.id));
-        const newAssets = data.data.filter((a) => !existingIds.has(a.id));
-        return [...prev, ...newAssets];
-      });
-    }
-  }, [data, offset, debouncedSearch, roadTypeFilter, statusFilter, wardFilter, unnamedFilter]);
-
-  // hasNextPage logic (handles total=null)
-  const hasNextPage =
-    data?.meta?.total != null
-      ? loadedAssets.length < data.meta.total
-      : data?.data?.length === LIMIT;
-
-  // Compute display list: sort by distance from map center, include selected asset if not in list
-  const displayList = useMemo(() => {
-    const selectedAsset = selectedAssetData?.data;
-
-    // Check if selected asset matches current filters
-    const selectedAssetMatchesFilters = (asset: typeof selectedAsset): boolean => {
-      if (!asset) return false;
-      if (statusFilter && asset.status !== statusFilter) return false;
-      if (roadTypeFilter && asset.roadType !== roadTypeFilter) return false;
-      if (wardFilter && asset.ward !== wardFilter) return false;
-      if (unnamedFilter && asset.name) return false;
-      return true;
-    };
-
-    // Merge selected asset into list only if it matches current filters
-    let assets = [...loadedAssets];
-    if (selectedAsset && !assets.some((a) => a.id === selectedAsset.id) && selectedAssetMatchesFilters(selectedAsset)) {
-      assets.push(selectedAsset);
-    }
-
-    return assets.sort((a, b) => {
-      if (!mapCenter) return 0;
+  // Sort pavement sections by distance from map center
+  const sortedPavementSections = useMemo(() => {
+    if (!pavementSectionsData?.features || !mapCenter) return pavementSectionsData?.features ?? [];
+    return [...pavementSectionsData.features].sort((a, b) => {
       try {
         const centerPoint = turf.point(mapCenter);
-        const centerA = turf.center(a.geometry);
-        const centerB = turf.center(b.geometry);
+        const centerA = turf.center(a);
+        const centerB = turf.center(b);
         return turf.distance(centerPoint, centerA) - turf.distance(centerPoint, centerB);
       } catch {
         return 0;
       }
     });
-  }, [loadedAssets, mapCenter, selectedAssetData?.data, statusFilter, roadTypeFilter, wardFilter, unnamedFilter]);
+  }, [pavementSectionsData?.features, mapCenter]);
 
-  // Sync sidebar assets to store for map markers
-  useEffect(() => {
-    setSidebarAssets(displayList.map((a) => ({ id: a.id, name: a.name ?? null, geometry: a.geometry })));
-  }, [displayList, setSidebarAssets]);
-
-  // Track scroll state to avoid duplicate scrolls
-  const hasScrolledToAssetRef = useRef<string | null>(null);
-
-  // Scroll to selected asset when it becomes available in the list
-  useEffect(() => {
-    if (!selectedAssetId) {
-      hasScrolledToAssetRef.current = null;
-      return;
-    }
-
-    // Already scrolled to this asset
-    if (hasScrolledToAssetRef.current === selectedAssetId) return;
-
-    // Small delay to ensure card is rendered after state update
-    const scrollToCard = () => {
-      const card = cardRefs.current.get(selectedAssetId);
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        hasScrolledToAssetRef.current = selectedAssetId;
+  // Sort pump stations by distance from map center
+  const sortedPumpStations = useMemo(() => {
+    if (!pumpStationsData?.features || !mapCenter) return pumpStationsData?.features ?? [];
+    return [...pumpStationsData.features].sort((a, b) => {
+      try {
+        const centerPoint = turf.point(mapCenter);
+        const centerA = turf.center(a);
+        const centerB = turf.center(b);
+        return turf.distance(centerPoint, centerA) - turf.distance(centerPoint, centerB);
+      } catch {
+        return 0;
       }
-      // If card not found, don't mark as scrolled - will retry when selectedAssetData loads
-    };
+    });
+  }, [pumpStationsData?.features, mapCenter]);
 
-    const timer = setTimeout(scrollToCard, 150);
-    return () => clearTimeout(timer);
-  }, [selectedAssetId]);
-
-  // Pre-populate edit state with current name when selection changes
-  useEffect(() => {
-    const asset = selectedAssetData?.data;
-    if (asset) {
-      // Pre-fill with current display name if exists
-      setEditName(asset.displayName || asset.name || '');
-    } else {
-      setEditName('');
+  // Build a lookup map from greenSpaceRef → GreenSpaceAsset for park headers
+  const greenSpaceMap = useMemo(() => {
+    const map = new Map<string, { asset: GreenSpaceAsset; feature: Feature }>();
+    if (!greenSpacesData?.features) return map;
+    for (const f of greenSpacesData.features) {
+      const gs = f.properties as GreenSpaceAsset;
+      map.set(gs.id, { asset: gs, feature: f as Feature });
     }
-  }, [selectedAssetId, selectedAssetData?.data]);
+    return map;
+  }, [greenSpacesData?.features]);
 
-  // Handle manual naming save
-  const handleSaveName = async (assetId: string) => {
-    const trimmedName = editName.trim();
-    if (!trimmedName) {
-      notifications.show({
-        title: 'Error',
-        message: 'Name cannot be empty',
-        color: 'red',
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/assets/${assetId}/name`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: trimmedName }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update name');
+  // Group park facilities by their parent green space
+  const parkGroups = useMemo(() => {
+    const groups = new Map<string, { parkName: string; feature: Feature | null; facilities: typeof sortedParkFacilities }>();
+    for (const f of sortedParkFacilities) {
+      const pf = f.properties as ParkFacilityAsset;
+      const ref = pf.greenSpaceRef || '__unknown__';
+      if (!groups.has(ref)) {
+        const gs = greenSpaceMap.get(ref);
+        const parkName = gs?.asset.displayName || gs?.asset.nameJa || gs?.asset.name || '公園';
+        groups.set(ref, { parkName, feature: gs?.feature ?? null, facilities: [] });
       }
-
-      await response.json();
-
-      // Invalidate queries to refresh list and map
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
-      queryClient.invalidateQueries({ queryKey: ['asset', assetId] });
-
-      setEditName('');
-      notifications.show({
-        title: 'Success',
-        message: `Road renamed to "${trimmedName}"`,
-        color: 'green',
-      });
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to save name',
-        color: 'red',
-      });
-    } finally {
-      setIsSaving(false);
+      groups.get(ref)!.facilities.push(f);
     }
-  };
+    return Array.from(groups.entries()).map(([id, g]) => ({ parkId: id, ...g }));
+  }, [sortedParkFacilities, greenSpaceMap]);
 
-  // Handle Google Maps name lookup
-  const handleGoogleLookup = async (assetId: string) => {
-    setIsLookingUp(true);
-    try {
-      const response = await fetch(`/api/assets/${assetId}/lookup-google-name`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to lookup name');
-      }
-
-      const result = await response.json();
-
-      if (result.data.roadName) {
-        setEditName(result.data.roadName);
-        notifications.show({
-          title: 'Google Maps',
-          message: `Found: ${result.data.roadName}`,
-          color: 'blue',
-        });
-      } else {
-        notifications.show({
-          title: 'Google Maps',
-          message: 'No road name found at this location',
-          color: 'yellow',
-        });
-      }
-    } catch (error) {
-      notifications.show({
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to lookup name',
-        color: 'red',
-      });
-    } finally {
-      setIsLookingUp(false);
-    }
+  // Strip park name prefix from facility name for cleaner display
+  const stripParkPrefix = (facilityName: string, parkName: string): string => {
+    // Try removing "ParkName " or "ParkName　" prefix
+    if (facilityName.startsWith(parkName + ' ')) return facilityName.slice(parkName.length + 1);
+    if (facilityName.startsWith(parkName + '\u3000')) return facilityName.slice(parkName.length + 1);
+    return facilityName;
   };
 
   // Tab scroll detection (must be before early returns to follow hooks rules)
@@ -385,7 +284,7 @@ export function AssetList() {
     // Also check after a short delay to ensure layout is complete
     const timer = setTimeout(updateScrollState, 100);
     return () => clearTimeout(timer);
-  }, [data, sortedGreenspaces.length, sortedStreetlights.length]);
+  }, [sortedParkFacilities.length, sortedStreetTrees.length, sortedPavementSections.length, sortedPumpStations.length]);
 
   // Tab scroll handlers
   const handleScrollLeft = () => {
@@ -410,24 +309,8 @@ export function AssetList() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Center py="xl">
-        <Loader />
-      </Center>
-    );
-  }
-
-  if (error) {
-    return (
-      <Center py="xl">
-        <Text c="red">Failed to load assets</Text>
-      </Center>
-    );
-  }
-
   return (
-    <Tabs defaultValue="list">
+    <Tabs defaultValue="park-facilities">
       <Group gap={4} mb="md" wrap="nowrap" align="center">
         {canScrollLeft && (
           <ActionIcon
@@ -453,28 +336,36 @@ export function AssetList() {
         >
           <Tabs.List style={{ flexWrap: 'nowrap', minWidth: 'max-content' }}>
             <Tabs.Tab
-              value="list"
-              leftSection={<IconRoad size={14} />}
-              ref={(el) => { tabRefs.current['list'] = el; }}
-              onClick={() => handleTabClick('list')}
-            >
-              Roads ({data?.meta?.total ?? loadedAssets.length})
-            </Tabs.Tab>
-            <Tabs.Tab
-              value="greenspaces"
+              value="park-facilities"
               leftSection={<IconTree size={14} />}
-              ref={(el) => { tabRefs.current['greenspaces'] = el; }}
-              onClick={() => handleTabClick('greenspaces')}
+              ref={(el) => { tabRefs.current['park-facilities'] = el; }}
+              onClick={() => handleTabClick('park-facilities')}
             >
-              Green ({sortedGreenspaces.length})
+              公園 ({sortedParkFacilities.length})
             </Tabs.Tab>
             <Tabs.Tab
-              value="streetlights"
-              leftSection={<IconBulb size={14} />}
-              ref={(el) => { tabRefs.current['streetlights'] = el; }}
-              onClick={() => handleTabClick('streetlights')}
+              value="street-trees"
+              leftSection={<IconLeaf size={14} />}
+              ref={(el) => { tabRefs.current['street-trees'] = el; }}
+              onClick={() => handleTabClick('street-trees')}
             >
-              Lights ({sortedStreetlights.length})
+              街路樹 ({sortedStreetTrees.length})
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="pavement-sections"
+              leftSection={<IconRuler2 size={14} />}
+              ref={(el) => { tabRefs.current['pavement-sections'] = el; }}
+              onClick={() => handleTabClick('pavement-sections')}
+            >
+              道路舗装 ({sortedPavementSections.length})
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="pump-stations"
+              leftSection={<IconDroplet size={14} />}
+              ref={(el) => { tabRefs.current['pump-stations'] = el; }}
+              onClick={() => handleTabClick('pump-stations')}
+            >
+              ポンプ施設 ({sortedPumpStations.length})
             </Tabs.Tab>
           </Tabs.List>
         </Box>
@@ -491,344 +382,150 @@ export function AssetList() {
         )}
       </Group>
 
-      <Tabs.Panel value="list">
-        <Stack gap="sm">
-          {/* Phase 0: Read-only notice */}
-          <Alert color="blue" icon={<IconInfoCircle size={16} />} variant="light">
-            Road assets are read-only. Asset changes will be managed through WorkOrders in future phases.
-          </Alert>
-
-          <TextInput
-            placeholder="Search by name or ID..."
-            leftSection={<IconSearch size={16} />}
-            value={searchInput}
-            onChange={(e) => setAssetFilter('search', e.target.value)}
-          />
-
-          <UnstyledButton
-            onClick={handleToggleFilters}
-            aria-expanded={filtersOpen}
-            aria-controls="asset-filters"
-            style={{ width: '100%', textAlign: 'left' }}
-          >
-            <Group justify="space-between">
-              <Group gap="xs">
-                <IconFilter size={14} />
-                <Text size="sm" fw={500}>Filters</Text>
-                {activeFilterCount > 0 && (
-                  <Badge size="xs" radius="xl">{activeFilterCount}</Badge>
-                )}
-              </Group>
-              <IconChevronDown
-                size={14}
-                style={{
-                  transform: filtersOpen ? 'rotate(180deg)' : undefined,
-                  transition: 'transform 200ms',
-                }}
-              />
-            </Group>
-          </UnstyledButton>
-
-          <Collapse in={filtersOpen} id="asset-filters">
-            <Stack gap="sm">
-              <div>
-                <Text size="xs" c="dimmed" fw={600} mb={4}>Road Type</Text>
-                <Chip.Group
-                  multiple
-                  value={roadTypeFilter ? [roadTypeFilter] : []}
-                  onChange={(val) => {
-                    if (val.length === 0) {
-                      setAssetFilter('roadType', null);
-                    } else {
-                      const newValue = val.find((v) => v !== roadTypeFilter);
-                      setAssetFilter('roadType', newValue || val[0]);
-                    }
-                  }}
-                >
-                  <Group gap="xs">
-                    <Chip value="arterial">Arterial</Chip>
-                    <Chip value="collector">Collector</Chip>
-                    <Chip value="local">Local</Chip>
-                  </Group>
-                </Chip.Group>
-              </div>
-
-              <div>
-                <Text size="xs" c="dimmed" fw={600} mb={4}>Status</Text>
-                <Chip.Group
-                  multiple
-                  value={statusFilter ? [statusFilter] : []}
-                  onChange={(val) => {
-                    if (val.length === 0) {
-                      setAssetFilter('status', null);
-                    } else {
-                      const newValue = val.find((v) => v !== statusFilter);
-                      setAssetFilter('status', newValue || val[0]);
-                    }
-                  }}
-                >
-                  <Group gap="xs">
-                    <Chip value="active">Active</Chip>
-                    <Chip value="inactive">Inactive</Chip>
-                  </Group>
-                </Chip.Group>
-              </div>
-
-              {wardsData && wardsData.data.length > 0 && (
-                <div>
-                  <Text size="xs" c="dimmed" fw={600} mb={4}>Ward</Text>
-                  <Chip.Group
-                    multiple
-                    value={wardFilter ? [wardFilter] : []}
-                    onChange={(val) => {
-                      if (val.length === 0) {
-                        setAssetFilter('ward', null);
-                      } else {
-                        const newValue = val.find((v) => v !== wardFilter);
-                        setAssetFilter('ward', newValue || val[0]);
-                      }
-                    }}
-                  >
-                    <Group gap="xs">
-                      {wardsData.data.map((ward) => (
-                        <Chip key={ward} value={ward} size="xs">
-                          {ward}
-                        </Chip>
-                      ))}
-                    </Group>
-                  </Chip.Group>
-                </div>
-              )}
-
-              <div>
-                <Text size="xs" c="dimmed" fw={600} mb={4}>Special</Text>
-                <Chip.Group
-                  multiple
-                  value={unnamedFilter ? ['unnamed'] : []}
-                  onChange={(val) => setAssetFilter('unnamed', val.includes('unnamed'))}
-                >
-                  <Group gap="xs">
-                    <Chip value="unnamed" size="xs">Unnamed Only</Chip>
-                  </Group>
-                </Chip.Group>
-              </div>
-            </Stack>
-          </Collapse>
-
-          <Stack gap="xs">
-        {displayList.map((asset: RoadAsset) => {
-          const displayText = getRoadAssetLabel(asset);
-          const isUnnamed = isRoadAssetUnnamed(asset);
-          // For generic names like "道路", add more disambiguation
-          const isGenericName = displayText === '道路' || displayText === 'Unnamed Road';
-          const locationLabel = asset.sublocality || asset.ward;
-          const shortId = asset.id.replace(/^RA-/, '').replace(/^[A-Z]+-/, '');  // e.g. "RA-ATSU-1890" -> "1890"
-
-          return (
-            <Card
-              key={asset.id}
-              ref={(el) => {
-                if (el) cardRefs.current.set(asset.id, el);
-              }}
-              padding="sm"
-              radius="sm"
-              withBorder
-              style={{
-                cursor: 'pointer',
-                borderColor: selectedAssetId === asset.id ? 'var(--mantine-color-blue-5)' : undefined,
-                backgroundColor: selectedAssetId === asset.id ? 'var(--mantine-color-blue-0)' : undefined,
-                transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-              }}
-              className="asset-card-hover"
-              onClick={() => selectAsset(asset.id, asset.geometry)}
-              onMouseEnter={() => setHoveredAsset(asset.id)}
-              onMouseLeave={() => setHoveredAsset(null)}
-            >
-              <Group gap="sm" wrap="nowrap" align="center">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Group justify="space-between" wrap="nowrap" gap="xs">
-                    <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
-                      {isGenericName
-                        ? `${displayText}${locationLabel ? ` · ${locationLabel}` : ''}${shortId ? ` · #${shortId}` : ''}`
-                        : `${displayText}${asset.ward ? ` · ${asset.ward}` : ''}`
-                      }
-                    </Text>
-                    <Badge color={ROAD_TYPE_COLORS[asset.roadType]} size="sm" style={{ flexShrink: 0 }}>
-                      {ROAD_TYPE_LABELS[asset.roadType]}
-                    </Badge>
-                  </Group>
-
-                  <Group gap="xs" mt={4}>
-                    <Badge
-                      variant="outline"
-                      size="xs"
-                      color={asset.status === 'active' ? 'green' : 'gray'}
-                    >
-                      {asset.status}
-                    </Badge>
-                    <Badge variant="outline" size="xs" color="gray">
-                      {asset.lanes} lanes
-                    </Badge>
-                    {!isUnnamed && asset.nameSource && (
-                      <Badge
-                        variant="light"
-                        size="xs"
-                        color={asset.nameSource === 'osm' ? 'blue' : asset.nameSource === 'google' ? 'red' : 'teal'}
-                        title="Name source"
-                      >
-                        {asset.nameSource === 'osm' ? 'OSM名' : asset.nameSource === 'google' ? 'Google名' : '手動名'}
-                      </Badge>
-                    )}
-                  </Group>
-
-                  {asset.landmark && (
-                    <Text size="xs" c="dimmed" mt={4}>
-                      Near: {asset.landmark}
-                    </Text>
-                  )}
-
-                  <Text
-                    size="xs"
-                    c={isUnnamed ? 'dark' : 'dimmed'}
-                    fw={isUnnamed ? 500 : undefined}
-                    ff="monospace"
-                    mt={4}
-                  >
-                    ID: {asset.id}
-                  </Text>
-
-                  {/* Inline edit for selected roads */}
-                  {selectedAssetId === asset.id && (
-                    <Group mt="xs" gap="xs" onClick={(e) => e.stopPropagation()}>
-                      <TextInput
-                        size="xs"
-                        placeholder="Road name..."
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveName(asset.id);
-                        }}
-                        style={{ flex: 1 }}
-                        disabled={isSaving || isLookingUp}
-                      />
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        size="sm"
-                        onClick={() => handleGoogleLookup(asset.id)}
-                        loading={isLookingUp}
-                        disabled={isSaving}
-                        title="Lookup from Google Maps"
-                      >
-                        <IconMapPin size={14} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="filled"
-                        color="green"
-                        size="sm"
-                        onClick={() => handleSaveName(asset.id)}
-                        loading={isSaving}
-                        disabled={!editName.trim() || isLookingUp}
-                      >
-                        <IconCheck size={14} />
-                      </ActionIcon>
-                    </Group>
-                  )}
-                </div>
-              </Group>
-            </Card>
-          );
-        })}
-
-        {displayList.length === 0 && !isLoading && !isFetching && (!data?.data || data.data.length === 0) && (
-          <Text c="dimmed" ta="center" py="lg">
-            No assets found
-          </Text>
-        )}
-
-        {hasNextPage && (
-          <Button
-            variant="subtle"
-            onClick={() => setOffset((prev) => prev + LIMIT)}
-            loading={isFetching}
-            fullWidth
-          >
-            {data?.meta?.total != null
-              ? `Load more (${loadedAssets.length} of ${data.meta.total})`
-              : 'Load more...'}
-          </Button>
-        )}
-          </Stack>
-        </Stack>
-      </Tabs.Panel>
-
-      <Tabs.Panel value="greenspaces">
+      <Tabs.Panel value="park-facilities">
         <Stack gap="xs">
-          {isLoadingGreenspaces ? (
+          {isLoadingParkFacilities ? (
             <Center py="xl">
               <Loader />
             </Center>
-          ) : sortedGreenspaces.length === 0 ? (
+          ) : parkGroups.length === 0 ? (
             <Text c="dimmed" ta="center" py="lg">
-              {mapZoom < 12 ? 'Zoom in to see green spaces' : 'No green spaces in current view'}
+              周辺に公園施設がありません
             </Text>
           ) : (
-            sortedGreenspaces.map((feature) => {
-              const gs = feature.properties as GreenSpaceAsset;
-              const displayName = gs.displayName || gs.nameJa || gs.name || 'Unnamed Green Space';
-              const gsType = gs.greenSpaceType || 'other';
-              const areaM2 = gs.areaM2 || 0;
-              const areaDisplay = areaM2 >= 10000
-                ? `${(areaM2 / 10000).toFixed(1)} ha`
-                : `${Math.round(areaM2)} m²`;
+            parkGroups.map((group) => (
+              <Box key={group.parkId}>
+                {/* Park header */}
+                <Group
+                  gap="xs"
+                  mb={6}
+                  mt="xs"
+                  px="xs"
+                  py={4}
+                  style={{
+                    cursor: group.feature ? 'pointer' : 'default',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                    backgroundColor: selectedAssetId === group.parkId ? 'var(--mantine-color-teal-0)' : undefined,
+                    border: selectedAssetId === group.parkId ? '1px solid var(--mantine-color-teal-5)' : '1px solid transparent',
+                  }}
+                  onClick={() => {
+                    if (group.feature?.geometry) {
+                      selectAsset(group.parkId, 'green-space', group.feature.geometry);
+                      setFlyToGeometry(group.feature.geometry, true);
+                    }
+                  }}
+                >
+                  <Text fw={700} size="sm">
+                    {'\u{1F3DE}\uFE0F'} {group.parkName}
+                  </Text>
+                  <Badge size="xs" variant="light" color="green">
+                    {group.facilities.length}
+                  </Badge>
+                </Group>
+
+                {/* Facility cards under this park */}
+                <Stack gap={4} ml="md">
+                  {group.facilities.map((feature) => {
+                    const pf = feature.properties as ParkFacilityAsset;
+                    const rawName = pf.name || pf.facilityId || '施設';
+                    const shortName = stripParkPrefix(rawName, group.parkName);
+                    const emoji = FACILITY_EMOJI[pf.category] || '\u{1F4E6}';
+
+                    return (
+                      <Card
+                        key={pf.id}
+                        padding="xs"
+                        radius="sm"
+                        withBorder
+                        style={{
+                          cursor: 'pointer',
+                          transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                          borderColor: selectedAssetId === pf.id ? 'var(--mantine-color-violet-5)' : undefined,
+                          backgroundColor: selectedAssetId === pf.id ? 'var(--mantine-color-violet-0)' : undefined,
+                        }}
+                        className="asset-card-hover"
+                        onClick={() => {
+                          selectAsset(pf.id, 'park-facility', feature.geometry);
+                          if (feature.geometry) setFlyToGeometry(feature.geometry, true);
+                        }}
+                      >
+                        <Group gap="xs" wrap="nowrap" align="center">
+                          <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                            {emoji}
+                          </Text>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text fw={500} size="sm" lineClamp={1}>
+                              {shortName}
+                            </Text>
+                            <Badge color={PARK_FACILITY_COLORS[pf.category] || 'gray'} size="xs" mt={2}>
+                              {pf.category}
+                            </Badge>
+                          </div>
+                        </Group>
+                      </Card>
+                    );
+                  })}
+                </Stack>
+              </Box>
+            ))
+          )}
+        </Stack>
+      </Tabs.Panel>
+
+      <Tabs.Panel value="street-trees">
+        <Stack gap="xs">
+          {isLoadingStreetTrees ? (
+            <Center py="xl">
+              <Loader />
+            </Center>
+          ) : sortedStreetTrees.length === 0 ? (
+            <Text c="dimmed" ta="center" py="lg">
+              周辺に街路樹がありません
+            </Text>
+          ) : (
+            sortedStreetTrees.map((feature) => {
+              const tree = feature.properties as StreetTreeAsset;
+              const displayName = tree.displayName || tree.speciesName || tree.ledgerId || '街路樹';
+              const treeEmoji = TREE_EMOJI[tree.category] || '\u{1F333}';
 
               return (
                 <Card
-                  key={gs.id}
-                  padding="sm"
+                  key={tree.id}
+                  padding="xs"
                   radius="sm"
                   withBorder
                   style={{
                     cursor: 'pointer',
                     transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                    borderColor: selectedAssetId === tree.id ? 'var(--mantine-color-green-5)' : undefined,
+                    backgroundColor: selectedAssetId === tree.id ? 'var(--mantine-color-green-0)' : undefined,
                   }}
                   className="asset-card-hover"
                   onClick={() => {
-                    console.log('[AssetList] Greenspace clicked:', gs.id, 'geometry type:', feature.geometry?.type);
-                    if (feature.geometry) {
-                      setFlyToGeometry(feature.geometry, true);
-                    } else {
-                      console.error('[AssetList] Greenspace geometry is undefined for:', gs.id);
-                    }
+                    selectAsset(tree.id, 'street-tree', feature.geometry);
+                    if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                   }}
-                  onMouseEnter={() => setHoveredGreenspace(gs.id)}
-                  onMouseLeave={() => setHoveredGreenspace(null)}
                 >
-                  <Group gap="sm" wrap="nowrap" align="center">
+                  <Group gap="xs" wrap="nowrap" align="center">
+                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                      {treeEmoji}
+                    </Text>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <Group justify="space-between" wrap="nowrap" gap="xs">
                         <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
                           {displayName}
                         </Text>
-                        <Badge color={GREENSPACE_TYPE_COLORS[gsType] || 'gray'} size="sm" style={{ flexShrink: 0 }}>
-                          {GREENSPACE_TYPE_LABELS[gsType] || gsType}
+                        <Badge color={TREE_CATEGORY_COLORS[tree.category] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                          {TREE_CATEGORY_LABELS[tree.category] || tree.category}
                         </Badge>
                       </Group>
 
-                      <Group gap="xs" mt={4}>
-                        <Badge variant="outline" size="xs" color="gray">
-                          {areaDisplay}
-                        </Badge>
-                        {gs.ward && (
-                          <Badge variant="outline" size="xs" color="blue">
-                            {gs.ward}
-                          </Badge>
-                        )}
-                      </Group>
 
-                      <Text size="xs" c="dimmed" ff="monospace" mt={4}>
-                        ID: {gs.id}
-                      </Text>
+                      {tree.height && (
+                        <Text size="xs" c="dimmed" mt={2}>
+                          {tree.height}m{tree.trunkDiameter ? ` · ${tree.trunkDiameter}cm` : ''}
+                        </Text>
+                      )}
                     </div>
                   </Group>
                 </Card>
@@ -838,85 +535,138 @@ export function AssetList() {
         </Stack>
       </Tabs.Panel>
 
-      <Tabs.Panel value="streetlights">
+      <Tabs.Panel value="pavement-sections">
         <Stack gap="xs">
-          {mapZoom < 14 ? (
-            <Text c="dimmed" ta="center" py="lg">
-              Zoom in to see street lights (zoom level 14+)
-            </Text>
-          ) : isLoadingStreetlights ? (
+          {isLoadingPavementSections ? (
             <Center py="xl">
               <Loader />
             </Center>
-          ) : sortedStreetlights.length === 0 ? (
+          ) : sortedPavementSections.length === 0 ? (
             <Text c="dimmed" ta="center" py="lg">
-              No street lights in current view
+              周辺に道路舗装がありません
             </Text>
           ) : (
-            sortedStreetlights.map((feature) => {
-              const sl = feature.properties as StreetLightAsset;
-              const displayName = sl.displayName || sl.lampId || 'Street Light';
-              const lampType = sl.lampType || 'unknown';
-              const wattage = sl.wattage;
+            sortedPavementSections.map((feature) => {
+              const ps = feature.properties as PavementSectionAsset;
+              const displayName = ps.name || ps.sectionId || ps.routeNumber || '舗装区間';
 
               return (
                 <Card
-                  key={sl.id}
-                  padding="sm"
+                  key={ps.id}
+                  padding="xs"
                   radius="sm"
                   withBorder
                   style={{
                     cursor: 'pointer',
                     transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                    borderColor: selectedAssetId === ps.id ? 'var(--mantine-color-orange-5)' : undefined,
+                    backgroundColor: selectedAssetId === ps.id ? 'var(--mantine-color-orange-0)' : undefined,
                   }}
                   className="asset-card-hover"
                   onClick={() => {
-                    console.log('[AssetList] Streetlight clicked:', sl.id, 'geometry type:', feature.geometry?.type);
-                    if (feature.geometry) {
-                      setFlyToGeometry(feature.geometry, true);
-                    } else {
-                      console.error('[AssetList] Streetlight geometry is undefined for:', sl.id);
-                    }
+                    selectAsset(ps.id, 'pavement-section', feature.geometry);
+                    if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                   }}
-                  onMouseEnter={() => setHoveredStreetlight(sl.id)}
-                  onMouseLeave={() => setHoveredStreetlight(null)}
                 >
-                  <Group gap="sm" wrap="nowrap" align="center">
+                  <Group gap="xs" wrap="nowrap" align="center">
+                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                      {'\u{1F6E3}\uFE0F'}
+                    </Text>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <Group justify="space-between" wrap="nowrap" gap="xs">
                         <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
                           {displayName}
                         </Text>
-                        <Badge color="yellow" size="sm" style={{ flexShrink: 0 }}>
-                          {lampType}
+                        <Badge color={PAVEMENT_TYPE_COLORS[ps.pavementType] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                          {ps.pavementType}
                         </Badge>
                       </Group>
 
-                      <Group gap="xs" mt={4}>
-                        {wattage && (
-                          <Badge variant="outline" size="xs" color="orange">
-                            {wattage}W
-                          </Badge>
-                        )}
-                        {sl.ward && (
-                          <Badge variant="outline" size="xs" color="blue">
-                            {sl.ward}
-                          </Badge>
-                        )}
-                        {sl.lampStatus && (
+                      <Group gap={4} mt={2}>
+                        {ps.mci != null && (
                           <Badge
                             variant="outline"
                             size="xs"
-                            color={sl.lampStatus === 'operational' ? 'green' : sl.lampStatus === 'damaged' ? 'red' : 'gray'}
+                            color={ps.mci >= 7 ? 'green' : ps.mci >= 4 ? 'yellow' : 'red'}
                           >
-                            {sl.lampStatus}
+                            MCI {ps.mci.toFixed(1)}
+                          </Badge>
+                        )}
+                        {ps.priorityRank != null && (
+                          <Badge variant="outline" size="xs" color="orange">
+                            #{ps.priorityRank}
                           </Badge>
                         )}
                       </Group>
 
-                      <Text size="xs" c="dimmed" ff="monospace" mt={4}>
-                        ID: {sl.id}
-                      </Text>
+                      {(ps.length || ps.width) && (
+                        <Text size="xs" c="dimmed" mt={2}>
+                          {ps.length ? `${ps.length}m` : ''}{ps.length && ps.width ? ' × ' : ''}{ps.width ? `${ps.width}m` : ''}
+                        </Text>
+                      )}
+                    </div>
+                  </Group>
+                </Card>
+              );
+            })
+          )}
+        </Stack>
+      </Tabs.Panel>
+
+      <Tabs.Panel value="pump-stations">
+        <Stack gap="xs">
+          {isLoadingPumpStations ? (
+            <Center py="xl">
+              <Loader />
+            </Center>
+          ) : sortedPumpStations.length === 0 ? (
+            <Text c="dimmed" ta="center" py="lg">
+              周辺にポンプ施設がありません
+            </Text>
+          ) : (
+            sortedPumpStations.map((feature) => {
+              const pump = feature.properties as PumpStationAsset;
+              const displayName = pump.name || pump.stationId || 'ポンプ施設';
+              const pumpEmoji = PUMP_EMOJI[pump.category] || '\u{1F4A7}';
+
+              return (
+                <Card
+                  key={pump.id}
+                  padding="xs"
+                  radius="sm"
+                  withBorder
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+                    borderColor: selectedAssetId === pump.id ? 'var(--mantine-color-blue-5)' : undefined,
+                    backgroundColor: selectedAssetId === pump.id ? 'var(--mantine-color-blue-0)' : undefined,
+                  }}
+                  className="asset-card-hover"
+                  onClick={() => {
+                    selectAsset(pump.id, 'pump-station', feature.geometry);
+                    if (feature.geometry) setFlyToGeometry(feature.geometry, true);
+                  }}
+                >
+                  <Group gap="xs" wrap="nowrap" align="center">
+                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                      {pumpEmoji}
+                    </Text>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Group justify="space-between" wrap="nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                          {displayName}
+                        </Text>
+                        <Badge color={PUMP_CATEGORY_COLORS[pump.category] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                          {PUMP_CATEGORY_LABELS[pump.category] || pump.category}
+                        </Badge>
+                      </Group>
+
+
+                      {pump.designCapacity && (
+                        <Text size="xs" c="dimmed" mt={2}>
+                          {pump.designCapacity} m³/min{pump.pumpCount ? ` · ${pump.pumpCount}台` : ''}
+                        </Text>
+                      )}
                     </div>
                   </Group>
                 </Card>

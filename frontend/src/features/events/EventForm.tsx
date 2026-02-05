@@ -30,7 +30,8 @@ import {
   useAssets,
   useEventIntersectingAssets,
 } from '../../hooks/useApi';
-import type { RestrictionType, SupportedGeometry } from '@nagoya/shared';
+import type { RestrictionType, SupportedGeometry, AssetTypeRef } from '@nagoya/shared';
+import { GenericAssetSelector, ASSET_TYPE_LABELS } from '../../components/GenericAssetSelector';
 
 interface EventFormProps {
   eventId?: string | null;
@@ -51,6 +52,9 @@ interface EventFormData {
   department: string;
   ward: string;
   selectedRoadAssetIds: string[];
+  // Reference to a related asset (singular)
+  refAssetType: AssetTypeRef | null;
+  refAssetId: string | null;
 }
 
 const defaultValues: EventFormData = {
@@ -61,7 +65,15 @@ const defaultValues: EventFormData = {
   department: '',
   ward: '',
   selectedRoadAssetIds: [],
+  refAssetType: null,
+  refAssetId: null,
 };
+
+// Asset type options for Select
+const ASSET_TYPE_OPTIONS = Object.entries(ASSET_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export function EventForm({ eventId, onClose }: EventFormProps) {
   const {
@@ -84,6 +96,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     setCurrentDrawType,
     // Duplicate state
     duplicateEventId,
+    // Prefill state (from AssetDetailPanel "Create Event" button)
+    eventFormPrefill,
     // Unified editing history (for both drawing AND asset selection)
     editHistory,
     editRedoStack,
@@ -263,6 +277,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         department: event.department,
         ward: event.ward || '',
         selectedRoadAssetIds: linkedRoadIds,
+        refAssetId: event.refAssetId ?? null,
+        refAssetType: event.refAssetType ?? null,
       });
       setSelectedRoadAssetsForForm(linkedRoadIds);
       setGeometry(event.geometry);
@@ -293,7 +309,12 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       }
     } else if (!eventId) {
       // CREATE mode - reset all refs
-      reset(defaultValues);
+      // Check for prefill from AssetDetailPanel "Create Event" button
+      reset({
+        ...defaultValues,
+        refAssetId: eventFormPrefill?.refAssetId ?? null,
+        refAssetType: eventFormPrefill?.refAssetType ?? null,
+      });
       setSelectedRoadAssetsForForm([]);
       setGeometry(null);
       resetAssetSelectorFilters();
@@ -302,7 +323,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       isReadyToTrackRef.current = true; // Create mode is ready immediately
       didMergeIntersectingRef.current = false;
     }
-  }, [eventId, eventData, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters, setFlyToGeometry]);
+  }, [eventId, eventData, eventFormPrefill, reset, setSelectedRoadAssetsForForm, cacheAssetDetails, resetAssetSelectorFilters, setFlyToGeometry]);
 
   // Phase 1b: Load duplicate event data (only when NOT editing)
   useEffect(() => {
@@ -333,6 +354,9 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
       department: event.department,
       ward: event.ward || '',
       selectedRoadAssetIds: linkedRoadIds,
+      // Copy refAsset from original event
+      refAssetId: event.refAssetId ?? null,
+      refAssetType: event.refAssetType ?? null,
     });
     setSelectedRoadAssetsForForm(linkedRoadIds);
 
@@ -708,6 +732,11 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         roadAssetIds: [] as string[],
         // Geometry is now required (Phase 0: no auto-generation from roads)
         geometry: geometry,
+        // Reference to a related asset (singular, both or neither)
+        ...(data.refAssetId && data.refAssetType && {
+          refAssetId: data.refAssetId,
+          refAssetType: data.refAssetType,
+        }),
       };
 
       if (eventId) {
@@ -757,6 +786,46 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
             <Text size="sm" c="dimmed">
               Draw on the map or select roads below. Double-click to finish drawing.
             </Text>
+
+            {/* Optional: Link to Asset */}
+            <Stack gap="xs">
+              <Text size="xs" c="dimmed">
+                任意: このイベントに関連する資産を選択
+              </Text>
+              <Group grow>
+                <Controller
+                  name="refAssetType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label="資産タイプ"
+                      placeholder="任意"
+                      data={ASSET_TYPE_OPTIONS}
+                      clearable
+                      size="xs"
+                      {...field}
+                      value={field.value ?? null}
+                      onChange={(val) => {
+                        field.onChange(val);
+                        // Clear asset selection when type changes
+                        setValue('refAssetId', null);
+                      }}
+                    />
+                  )}
+                />
+                {watch('refAssetType') && (
+                  <GenericAssetSelector
+                    assetType={watch('refAssetType')!}
+                    value={watch('refAssetId')}
+                    onChange={(val) => setValue('refAssetId', val)}
+                    label="資産を選択"
+                    placeholder="検索..."
+                  />
+                )}
+              </Group>
+            </Stack>
+
+            <Divider size="xs" />
 
             {/* Drawing controls row: Undo/Redo | Drawing tools | Clear All */}
             <Group gap="xs" wrap="wrap" align="center">

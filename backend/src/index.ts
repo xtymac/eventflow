@@ -5,6 +5,7 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 import { eventsRoutes } from './routes/events.js';
 import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
@@ -22,6 +23,11 @@ import { initScheduler } from './services/scheduler.js';
 import { db } from './db/index.js';
 import { importVersionsRoutes } from './routes/import-versions.js';
 import { workordersRoutes } from './routes/workorders.js';
+import { streetTreesRoutes } from './routes/street-trees.js';
+import { parkFacilitiesRoutes } from './routes/park-facilities.js';
+import { pavementSectionsRoutes } from './routes/pavement-sections.js';
+import { pumpStationsRoutes } from './routes/pump-stations.js';
+import { lifecyclePlansRoutes } from './routes/lifecycle-plans.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -87,6 +93,17 @@ async function main() {
     };
   });
 
+  // Serve NGSI-LD @context document
+  const contextJsonLd = readFileSync(
+    join(__dirname, '../../shared/ngsi-ld/context.jsonld'),
+    'utf-8'
+  );
+  fastify.get('/ngsi-ld/v1/context.jsonld', async (_request, reply) => {
+    reply.header('Content-Type', 'application/ld+json');
+    reply.header('Cache-Control', 'public, max-age=86400');
+    return reply.send(contextJsonLd);
+  });
+
   // Register routes
   await fastify.register(eventsRoutes, { prefix: '/events' });
   await fastify.register(assetsRoutes, { prefix: '/assets' });
@@ -102,6 +119,13 @@ async function main() {
   await fastify.register(riversRoutes, { prefix: '/rivers' });
   await fastify.register(greenspacesRoutes, { prefix: '/greenspaces' });
   await fastify.register(streetlightsRoutes, { prefix: '/streetlights' });
+
+  // RFI asset type routes
+  await fastify.register(streetTreesRoutes, { prefix: '/street-trees' });
+  await fastify.register(parkFacilitiesRoutes, { prefix: '/park-facilities' });
+  await fastify.register(pavementSectionsRoutes, { prefix: '/pavement-sections' });
+  await fastify.register(pumpStationsRoutes, { prefix: '/pump-stations' });
+  await fastify.register(lifecyclePlansRoutes, { prefix: '/lifecycle-plans' });
 
   // Search routes (Google Maps + local data)
   await fastify.register(searchRoutes, { prefix: '/search' });

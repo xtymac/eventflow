@@ -21,6 +21,11 @@ interface MapState {
   showRivers: boolean;
   showGreenSpaces: boolean;
   showStreetLights: boolean;
+  showStreetTrees: boolean;
+  showParkFacilities: boolean;
+  showPavementSections: boolean;
+  showPumpStations: boolean;
+  showInspectionRecords: boolean;
   showNagoyaRoads: boolean;
   showNagoyaBuildingZones: boolean;
   highlightedFeatureId: string | null;
@@ -39,6 +44,11 @@ interface MapState {
   toggleRivers: () => void;
   toggleGreenSpaces: () => void;
   toggleStreetLights: () => void;
+  toggleStreetTrees: () => void;
+  toggleParkFacilities: () => void;
+  togglePavementSections: () => void;
+  togglePumpStations: () => void;
+  toggleInspectionRecords: () => void;
   toggleNagoyaRoads: () => void;
   toggleNagoyaBuildingZones: () => void;
   setHighlightedFeature: (id: string | null) => void;
@@ -64,6 +74,11 @@ export const useMapStore = create<MapState>()(
       showRivers: true,
       showGreenSpaces: true,
       showStreetLights: false, // Off by default (large quantity)
+      showStreetTrees: false, // Off by default (large quantity, zoom 16+)
+      showParkFacilities: true,
+      showPavementSections: false, // Off by default (line geometry, zoom 13+)
+      showPumpStations: true,
+      showInspectionRecords: false, // Off by default (opt-in)
       showNagoyaRoads: false, // Off by default (official designated roads overlay)
       showNagoyaBuildingZones: false, // Off by default (building regulation zones)
       highlightedFeatureId: null,
@@ -81,6 +96,11 @@ export const useMapStore = create<MapState>()(
       toggleRivers: () => set((state) => ({ showRivers: !state.showRivers })),
       toggleGreenSpaces: () => set((state) => ({ showGreenSpaces: !state.showGreenSpaces })),
       toggleStreetLights: () => set((state) => ({ showStreetLights: !state.showStreetLights })),
+      toggleStreetTrees: () => set((state) => ({ showStreetTrees: !state.showStreetTrees })),
+      toggleParkFacilities: () => set((state) => ({ showParkFacilities: !state.showParkFacilities })),
+      togglePavementSections: () => set((state) => ({ showPavementSections: !state.showPavementSections })),
+      togglePumpStations: () => set((state) => ({ showPumpStations: !state.showPumpStations })),
+      toggleInspectionRecords: () => set((state) => ({ showInspectionRecords: !state.showInspectionRecords })),
       toggleNagoyaRoads: () => set((state) => ({ showNagoyaRoads: !state.showNagoyaRoads })),
       toggleNagoyaBuildingZones: () => set((state) => ({ showNagoyaBuildingZones: !state.showNagoyaBuildingZones })),
       setHighlightedFeature: (id) => set({ highlightedFeatureId: id }),

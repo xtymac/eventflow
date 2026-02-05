@@ -62,11 +62,19 @@ export function MapSearch() {
     showGreenSpaces,
     showStreetLights,
     showRivers,
+    showStreetTrees,
+    showParkFacilities,
+    showPavementSections,
+    showPumpStations,
     toggleEvents,
     toggleAssets,
     toggleGreenSpaces,
     toggleStreetLights,
     toggleRivers,
+    toggleStreetTrees,
+    toggleParkFacilities,
+    togglePavementSections,
+    togglePumpStations,
   } = useMapStore();
 
   const { data, isLoading, isFetching, error } = useMapSearch(query, {
@@ -143,11 +151,12 @@ export function MapSearch() {
       if (geometry) setFlyToGeometry(geometry, false);
     } else if (result.type === 'road') {
       if (!showAssets) toggleAssets();
-      selectAsset(sourceId, geometry ?? null);
+      selectAsset(sourceId, null, geometry ?? null);
       setCurrentView('assets');
       if (geometry) setFlyToGeometry(geometry, true);
     } else if (result.type === 'greenspace') {
       if (!showGreenSpaces) toggleGreenSpaces();
+      selectAsset(sourceId, 'green-space', geometry ?? null);
       setCurrentView('assets');
       if (geometry) setFlyToGeometry(geometry, true);
     } else if (result.type === 'streetlight') {
@@ -156,6 +165,26 @@ export function MapSearch() {
       if (geometry) setFlyToGeometry(geometry, true);
     } else if (result.type === 'river') {
       if (!showRivers) toggleRivers();
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'street-tree') {
+      if (!showStreetTrees) toggleStreetTrees();
+      selectAsset(sourceId, 'street-tree', geometry ?? null);
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'park-facility') {
+      if (!showParkFacilities) toggleParkFacilities();
+      selectAsset(sourceId, 'park-facility', geometry ?? null);
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'pavement-section') {
+      if (!showPavementSections) togglePavementSections();
+      selectAsset(sourceId, 'pavement-section', geometry ?? null);
+      setCurrentView('assets');
+      if (geometry) setFlyToGeometry(geometry, true);
+    } else if (result.type === 'pump-station') {
+      if (!showPumpStations) togglePumpStations();
+      selectAsset(sourceId, 'pump-station', geometry ?? null);
+      setCurrentView('assets');
       if (geometry) setFlyToGeometry(geometry, true);
     }
 
@@ -181,6 +210,10 @@ export function MapSearch() {
     greenspace: '緑地',
     streetlight: '街灯',
     river: '河川',
+    'street-tree': '街路樹',
+    'park-facility': '公園施設',
+    'pavement-section': '舗装',
+    'pump-station': 'ポンプ場',
   };
   const getTypeIcon = (type: SearchResult['type']) => {
     switch (type) {
@@ -194,6 +227,12 @@ export function MapSearch() {
         return <IconBulb size={16} />;
       case 'river':
         return <IconMap2 size={16} />;
+      case 'street-tree':
+        return <IconTree size={16} />;
+      case 'park-facility':
+      case 'pavement-section':
+      case 'pump-station':
+        return <IconMapPin size={16} />;
       case 'coordinate':
       case 'place':
       default:

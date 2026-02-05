@@ -16,6 +16,18 @@ const GeometrySchema = Type.Object({
   coordinates: Type.Any(),
 });
 
+// Asset type enum for refAsset (matches all 8 asset types)
+const RefAssetTypeEnum = Type.Union([
+  Type.Literal('road'),
+  Type.Literal('river'),
+  Type.Literal('streetlight'),
+  Type.Literal('greenspace'),
+  Type.Literal('street_tree'),
+  Type.Literal('park_facility'),
+  Type.Literal('pavement_section'),
+  Type.Literal('pump_station'),
+]);
+
 const RoadAssetSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -60,6 +72,9 @@ const EventSchema = Type.Object({
   closedBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   closedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
   closeNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  // Reference to a related asset (singular)
+  refAssetId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  refAssetType: Type.Optional(Type.Union([RefAssetTypeEnum, Type.Null()])),
   updatedAt: Type.String({ format: 'date-time' }),
 });
 
@@ -73,6 +88,9 @@ const CreateEventSchema = Type.Object({
   ward: Type.Optional(Type.String()),
   // Phase 0: roadAssetIds is ignored - Road-Event linking is disabled
   roadAssetIds: Type.Optional(Type.Array(Type.String())),
+  // Reference to a related asset (singular)
+  refAssetId: Type.Optional(Type.String()),
+  refAssetType: Type.Optional(RefAssetTypeEnum),
 });
 
 const UpdateEventSchema = Type.Partial(Type.Object({
@@ -87,6 +105,9 @@ const UpdateEventSchema = Type.Partial(Type.Object({
   roadAssetIds: Type.Array(Type.String()),
   // Phase 0: regenerateGeometry is disabled - no road asset geometry union
   regenerateGeometry: Type.Boolean(),
+  // Reference to a related asset (singular) - can set to null to clear
+  refAssetId: Type.Union([Type.String(), Type.Null()]),
+  refAssetType: Type.Union([RefAssetTypeEnum, Type.Null()]),
 }));
 
 // Phase 1: Extended status transitions
@@ -188,6 +209,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -305,6 +328,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -388,6 +413,13 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Validate refAsset fields are paired (both or neither)
+    if ((body.refAssetId && !body.refAssetType) || (!body.refAssetId && body.refAssetType)) {
+      return reply.status(400).send({
+        error: 'refAssetId and refAssetType must both be provided or both be omitted',
+      });
+    }
+
     const geometrySource: 'manual' | 'auto' = 'manual';
     const eventGeometry = body.geometry;
 
@@ -395,10 +427,12 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     await db.execute(sql`
       INSERT INTO construction_events (
         id, name, status, start_date, end_date, restriction_type,
-        geometry, geometry_source, post_end_decision, department, ward, updated_at
+        geometry, geometry_source, post_end_decision, department, ward,
+        ref_asset_id, ref_asset_type, updated_at
       ) VALUES (
         ${id}, ${body.name}, 'planned', ${startDate}, ${endDate}, ${body.restrictionType},
-        ${toGeomSql(eventGeometry)}, ${geometrySource}, 'pending', ${body.department}, ${body.ward ?? null}, ${now}
+        ${toGeomSql(eventGeometry)}, ${geometrySource}, 'pending', ${body.department}, ${body.ward ?? null},
+        ${body.refAssetId ?? null}, ${body.refAssetType ?? null}, ${now}
       )
     `);
 
@@ -424,6 +458,9 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       closedBy: null,
       closedAt: null as Date | null,
       closeNotes: null,
+      // Reference to related asset (singular)
+      refAssetId: body.refAssetId ?? null,
+      refAssetType: body.refAssetType ?? null,
       updatedAt: now,
     };
 
@@ -437,6 +474,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         endDate: endDate.toISOString(),
         archivedAt: null,
         updatedAt: now.toISOString(),
+        refAssetId: body.refAssetId ?? null,
+        refAssetType: body.refAssetType ?? null,
         roadAssets: [], // Phase 0: No road asset relations
       },
     });
@@ -490,6 +529,15 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       console.log(`[Phase 0] Event ${id}: regenerateGeometry ignored - Road-Event auto-geometry disabled`);
     }
 
+    // Validate refAsset fields are paired (both or neither) when updating
+    const hasRefAssetId = body.refAssetId !== undefined;
+    const hasRefAssetType = body.refAssetType !== undefined;
+    if (hasRefAssetId !== hasRefAssetType) {
+      return reply.status(400).send({
+        error: 'refAssetId and refAssetType must both be provided or both be omitted when updating',
+      });
+    }
+
     // Handle geometry update (only explicit geometry is supported in Phase 0)
     if (body.geometry) {
       await db.execute(sql`
@@ -507,6 +555,9 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     if (body.restrictionType) updates.restrictionType = body.restrictionType;
     if (body.department) updates.department = body.department;
     if (body.ward !== undefined) updates.ward = body.ward;
+    // Handle refAsset update (can set to null to clear)
+    if (body.refAssetId !== undefined) updates.refAssetId = body.refAssetId;
+    if (body.refAssetType !== undefined) updates.refAssetType = body.refAssetType;
 
     // Only run non-geometry update if there are non-geometry fields
     const hasNonGeomUpdates = Object.keys(updates).length > 1; // more than just updatedAt
@@ -532,6 +583,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -657,6 +710,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -847,6 +902,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -959,6 +1016,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1062,6 +1121,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       department: constructionEvents.department,
       ward: constructionEvents.ward,
       createdBy: constructionEvents.createdBy,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1225,6 +1286,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       closedBy: constructionEvents.closedBy,
       closedAt: constructionEvents.closedAt,
       closeNotes: constructionEvents.closeNotes,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       updatedAt: constructionEvents.updatedAt,
     };
 

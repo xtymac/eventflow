@@ -10,8 +10,21 @@ import {
   Center,
   Paper,
 } from '@mantine/core';
-import { IconArrowLeft, IconMapPin, IconAlertCircle } from '@tabler/icons-react';
+import { IconArrowLeft, IconMapPin, IconAlertCircle, IconExternalLink } from '@tabler/icons-react';
 import { useEvent } from '../../hooks/useApi';
+import type { AssetTypeRef } from '@nagoya/shared';
+
+// Asset type labels for display
+const ASSET_TYPE_LABELS: Record<AssetTypeRef, string> = {
+  road: '道路',
+  river: '河川',
+  streetlight: '街路灯',
+  greenspace: '緑地',
+  street_tree: '街路樹',
+  park_facility: '公園施設',
+  pavement_section: '舗装区間',
+  pump_station: 'ポンプ場',
+};
 import { useUIStore } from '../../stores/uiStore';
 import type { EventStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
@@ -53,7 +66,7 @@ interface EventDetailPanelProps {
 
 export function EventDetailPanel({ eventId, showBackButton = true }: EventDetailPanelProps) {
   const { data, isLoading, error } = useEvent(eventId);
-  const { selectEvent } = useUIStore();
+  const { selectEvent, selectAsset } = useUIStore();
 
   // WorkOrder modal state (local to this component)
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null);
@@ -171,6 +184,22 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
                <Stack gap={4}>
                 <Text size="sm" c="dimmed">Created By</Text>
                 <Text size="sm">{event.createdBy}</Text>
+              </Stack>
+            )}
+
+            {/* Linked Asset (refAsset) */}
+            {event.refAssetId && event.refAssetType && (
+              <Stack gap={4}>
+                <Text size="sm" c="dimmed">関連資産</Text>
+                <Badge
+                  variant="light"
+                  color="blue"
+                  style={{ cursor: 'pointer', maxWidth: 'fit-content' }}
+                  onClick={() => selectAsset(event.refAssetId!, event.refAssetType!)}
+                  rightSection={<IconExternalLink size={12} />}
+                >
+                  {ASSET_TYPE_LABELS[event.refAssetType as AssetTypeRef]}: {event.refAssetId}
+                </Badge>
               </Stack>
             )}
           </Stack>

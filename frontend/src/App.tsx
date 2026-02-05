@@ -20,6 +20,7 @@ import { EventEditorOverlay } from './features/events/EventEditorOverlay';
 // import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
+import { AssetDetailPanel } from './features/assets/AssetDetailPanel';
 import { ImportWizard } from './features/import/ImportWizard';
 import { ExportBboxConfirmOverlay } from './features/import/components/ExportBboxConfirmOverlay';
 import { ImportPreviewOverlay } from './features/import/components/ImportPreviewOverlay';
@@ -119,6 +120,9 @@ function App() {
     closeInspectionForm,
     selectedInspectionId,
     selectInspection,
+    selectedAssetId,
+    selectedAssetType,
+    selectAsset,
     isHistoricalPreviewMode,
   } = useUIStore(useShallow((state) => ({
     currentView: state.currentView,
@@ -140,6 +144,9 @@ function App() {
     closeInspectionForm: state.closeInspectionForm,
     selectedInspectionId: state.selectedInspectionId,
     selectInspection: state.selectInspection,
+    selectedAssetId: state.selectedAssetId,
+    selectedAssetType: state.selectedAssetType,
+    selectAsset: state.selectAsset,
     isHistoricalPreviewMode: state.isHistoricalPreviewMode,
   })));
 
@@ -150,8 +157,9 @@ function App() {
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const isFullScreenMap = isEditing || isHistoricalPreviewMode;
   const prevDetailModalEventId = useRef(detailModalEventId);
+  const prevSelectedAssetId = useRef(selectedAssetId);
 
-  // When right sidebar closes, reopen left sidebar
+  // When right sidebar closes (event or asset detail), reopen left sidebar
   useEffect(() => {
     if (prevDetailModalEventId.current && !detailModalEventId) {
       openDesktop();
@@ -159,6 +167,14 @@ function App() {
     }
     prevDetailModalEventId.current = detailModalEventId;
   }, [detailModalEventId, openDesktop, openMobile]);
+
+  useEffect(() => {
+    if (prevSelectedAssetId.current && !selectedAssetId) {
+      openDesktop();
+      openMobile();
+    }
+    prevSelectedAssetId.current = selectedAssetId;
+  }, [selectedAssetId, openDesktop, openMobile]);
 
   const renderSidebarContent = () => {
     switch (currentView) {
@@ -184,7 +200,7 @@ function App() {
         aside={{
           width: 400,
           breakpoint: 'sm',
-          collapsed: { mobile: !detailModalEventId && !isHistoricalPreviewMode, desktop: !detailModalEventId && !isHistoricalPreviewMode },
+          collapsed: { mobile: !detailModalEventId && !selectedAssetId && !isHistoricalPreviewMode, desktop: !detailModalEventId && !selectedAssetId && !isHistoricalPreviewMode },
         }}
         padding={0}
       >
@@ -304,11 +320,25 @@ function App() {
         )}
       </AppShell.Main>
 
-      {/* Right sidebar - Event Details or Historical Preview */}
+      {/* Right sidebar - Event Details, Asset Details, or Historical Preview */}
       <AppShell.Aside p={isHistoricalPreviewMode ? 0 : 'md'}>
         {isHistoricalPreviewMode ? (
           <HistoricalPreviewSidebar />
-        ) : (
+        ) : selectedAssetId && selectedAssetType ? (
+          <>
+            <AppShell.Section>
+              <Group justify="space-between" mb="md">
+                <Text fw={600}>Asset Details</Text>
+                <ActionIcon variant="subtle" color="gray" onClick={() => selectAsset(null)}>
+                  <IconX size={18} />
+                </ActionIcon>
+              </Group>
+            </AppShell.Section>
+            <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
+              <AssetDetailPanel assetId={selectedAssetId} assetType={selectedAssetType} />
+            </AppShell.Section>
+          </>
+        ) : detailModalEventId ? (
           <>
             <AppShell.Section>
               <Group justify="space-between" mb="md">
@@ -319,12 +349,10 @@ function App() {
               </Group>
             </AppShell.Section>
             <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
-              {detailModalEventId && (
-                <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
-              )}
+              <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
             </AppShell.Section>
           </>
-        )}
+        ) : null}
       </AppShell.Aside>
 
       <DecisionModal />

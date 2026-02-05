@@ -68,7 +68,7 @@ function bboxFromCenter(center: [number, number], radiusMeters: number) {
   };
 }
 
-type SearchTarget = 'events' | 'roads' | 'greenspaces' | 'streetlights' | 'rivers' | 'places';
+type SearchTarget = 'events' | 'roads' | 'greenspaces' | 'streetlights' | 'rivers' | 'places' | 'street-trees' | 'park-facilities' | 'pavement-sections' | 'pump-stations';
 
 type SearchFilters = {
   eventStatus?: 'planned' | 'active' | 'pending_review' | 'closed' | 'cancelled' | null;
@@ -84,6 +84,12 @@ type SearchFilters = {
   streetlightLampType?: 'led' | 'sodium' | 'mercury' | 'fluorescent' | 'halogen' | null;
   streetlightLampStatus?: 'operational' | 'maintenance' | 'damaged' | 'replaced' | null;
   riverWaterwayType?: 'river' | 'stream' | 'canal' | 'drain' | null;
+  streetTreeCategory?: 'deciduous' | 'evergreen' | 'conifer' | 'palmLike' | 'shrub' | null;
+  streetTreeHealthStatus?: 'healthy' | 'declining' | 'hazardous' | 'dead' | 'removed' | null;
+  parkFacilityCategory?: string | null;
+  pavementType?: 'asphalt' | 'concrete' | 'interlocking' | 'gravel' | 'other' | null;
+  pumpStationCategory?: 'stormwater' | 'sewage' | 'irrigation' | 'combined' | null;
+  pumpEquipmentStatus?: 'operational' | 'standby' | 'underMaintenance' | 'outOfService' | null;
 };
 
 interface SearchIntent {
@@ -139,6 +145,10 @@ const UnifiedSearchResultSchema = Type.Object({
     Type.Literal('greenspace'),
     Type.Literal('streetlight'),
     Type.Literal('river'),
+    Type.Literal('street-tree'),
+    Type.Literal('park-facility'),
+    Type.Literal('pavement-section'),
+    Type.Literal('pump-station'),
   ]),
   name: Type.String(),
   subtitle: Type.Optional(Type.String()),
@@ -168,7 +178,7 @@ const MAX_STREETLIGHT_BBOX_M2 = 2_000_000;
 function normalizeIntent(raw: unknown, fallbackQuery: string): SearchIntent {
   const safe = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
   const rawTargets = Array.isArray(safe.targets) ? safe.targets : [];
-  const allowedTargets = new Set<SearchTarget>(['events', 'roads', 'greenspaces', 'streetlights', 'rivers', 'places']);
+  const allowedTargets = new Set<SearchTarget>(['events', 'roads', 'greenspaces', 'streetlights', 'rivers', 'places', 'street-trees', 'park-facilities', 'pavement-sections', 'pump-stations']);
   const targets = rawTargets
     .filter((t): t is SearchTarget => typeof t === 'string' && allowedTargets.has(t as SearchTarget));
   const query = typeof safe.query === 'string' && safe.query.trim() ? safe.query.trim() : fallbackQuery.trim();
@@ -201,6 +211,12 @@ function normalizeIntent(raw: unknown, fallbackQuery: string): SearchIntent {
     streetlightLampType: typeof filters.streetlightLampType === 'string' ? filters.streetlightLampType as SearchFilters['streetlightLampType'] : null,
     streetlightLampStatus: typeof filters.streetlightLampStatus === 'string' ? filters.streetlightLampStatus as SearchFilters['streetlightLampStatus'] : null,
     riverWaterwayType: typeof filters.riverWaterwayType === 'string' ? filters.riverWaterwayType as SearchFilters['riverWaterwayType'] : null,
+    streetTreeCategory: typeof filters.streetTreeCategory === 'string' ? filters.streetTreeCategory as SearchFilters['streetTreeCategory'] : null,
+    streetTreeHealthStatus: typeof filters.streetTreeHealthStatus === 'string' ? filters.streetTreeHealthStatus as SearchFilters['streetTreeHealthStatus'] : null,
+    parkFacilityCategory: typeof filters.parkFacilityCategory === 'string' ? filters.parkFacilityCategory : null,
+    pavementType: typeof filters.pavementType === 'string' ? filters.pavementType as SearchFilters['pavementType'] : null,
+    pumpStationCategory: typeof filters.pumpStationCategory === 'string' ? filters.pumpStationCategory as SearchFilters['pumpStationCategory'] : null,
+    pumpEquipmentStatus: typeof filters.pumpEquipmentStatus === 'string' ? filters.pumpEquipmentStatus as SearchFilters['pumpEquipmentStatus'] : null,
   };
 
   if (!normalizedFilters.assetWard && normalizedFilters.eventWard) {
@@ -229,7 +245,7 @@ function buildIntentPrompt(query: string, locale?: string) {
     languageHint,
     'Schema:',
     '{',
-    '  "targets": ["events","roads","greenspaces","streetlights","rivers","places"],',
+    '  "targets": ["events","roads","greenspaces","streetlights","rivers","places","street-trees","park-facilities","pavement-sections","pump-stations"],',
     '  "query": string|null,',
     '  "filters": {',
     '    "eventStatus": "planned"|"active"|"pending_review"|"closed"|"cancelled"|null,',
@@ -244,7 +260,13 @@ function buildIntentPrompt(query: string, locale?: string) {
     '    "greenspaceType": "park"|"garden"|"grass"|"forest"|"meadow"|"playground"|null,',
     '    "streetlightLampType": "led"|"sodium"|"mercury"|"fluorescent"|"halogen"|null,',
     '    "streetlightLampStatus": "operational"|"maintenance"|"damaged"|"replaced"|null,',
-    '    "riverWaterwayType": "river"|"stream"|"canal"|"drain"|null',
+    '    "riverWaterwayType": "river"|"stream"|"canal"|"drain"|null,',
+    '    "streetTreeCategory": "deciduous"|"evergreen"|"conifer"|"palmLike"|"shrub"|null,',
+    '    "streetTreeHealthStatus": "healthy"|"declining"|"hazardous"|"dead"|"removed"|null,',
+    '    "parkFacilityCategory": "toilet"|"playground"|"bench"|"shelter"|"fence"|"gate"|"drainage"|"lighting"|"waterFountain"|"signBoard"|"pavement"|"sportsFacility"|"building"|"other"|null,',
+    '    "pavementType": "asphalt"|"concrete"|"interlocking"|"gravel"|"other"|null,',
+    '    "pumpStationCategory": "stormwater"|"sewage"|"irrigation"|"combined"|null,',
+    '    "pumpEquipmentStatus": "operational"|"standby"|"underMaintenance"|"outOfService"|null',
     '  },',
     '  "location": {',
     '    "type": "place"|"coordinate"|null,',
@@ -261,6 +283,10 @@ function buildIntentPrompt(query: string, locale?: string) {
     '- If the user mentions greenspace (公園/緑地/park), include "greenspaces".',
     '- If the user mentions streetlights (街灯/路灯/streetlight), include "streetlights".',
     '- If the user mentions rivers (川/河川/river), include "rivers".',
+    '- If the user mentions street trees (街路樹/tree/trees), include "street-trees".',
+    '- If the user mentions park facilities (公園施設/facility/toilet/bench/playground equipment), include "park-facilities".',
+    '- If the user mentions pavement (舗装/pavement/road surface), include "pavement-sections".',
+    '- If the user mentions pump stations (ポンプ場/ポンプ/pump), include "pump-stations".',
     '- If no explicit target, default to ["places","events","roads"].',
     '- Put the remaining keywords into "query". If unsure, use the original input.',
     'Input:',
@@ -326,6 +352,10 @@ function fallbackIntentFromQuery(query: string): SearchIntent {
   if (/(公園|緑地|park|green)/i.test(query)) targets.add('greenspaces');
   if (/(街灯|路灯|streetlight|light)/i.test(query)) targets.add('streetlights');
   if (/(川|河川|river|stream|canal|drain)/i.test(query)) targets.add('rivers');
+  if (/(街路樹|street.?tree)/i.test(query)) targets.add('street-trees');
+  if (/(公園施設|park.?facilit|toilet|bench|playground.?equip)/i.test(query)) targets.add('park-facilities');
+  if (/(舗装|pavement|road.?surface)/i.test(query)) targets.add('pavement-sections');
+  if (/(ポンプ場|ポンプ|pump.?station|pump)/i.test(query)) targets.add('pump-stations');
   if (/(地標|地标|地点|場所|place|landmark)/i.test(query)) targets.add('places');
 
   return normalizeIntent({ targets: Array.from(targets), query }, query);
@@ -379,7 +409,7 @@ function formatSubtitle(parts: Array<string | null | undefined>) {
 
 type UnifiedSearchResult = {
   id: string;
-  type: 'place' | 'coordinate' | 'event' | 'road' | 'greenspace' | 'streetlight' | 'river';
+  type: 'place' | 'coordinate' | 'event' | 'road' | 'greenspace' | 'streetlight' | 'river' | 'street-tree' | 'park-facility' | 'pavement-section' | 'pump-station';
   name: string;
   subtitle?: string;
   coordinates?: [number, number];
@@ -743,6 +773,292 @@ async function searchRivers(
   });
 }
 
+async function searchStreetTrees(
+  query: string,
+  filters: SearchFilters | undefined,
+  bbox: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null,
+  limit: number,
+): Promise<UnifiedSearchResult[]> {
+  if (!bbox) return [];
+  const conditions: ReturnType<typeof sql>[] = [
+    sql`ST_Intersects(geometry, ST_MakeEnvelope(${bbox.minLng}, ${bbox.minLat}, ${bbox.maxLng}, ${bbox.maxLat}, 4326))`,
+  ];
+  const trimmedQuery = query.trim();
+
+  if (filters?.streetTreeCategory) conditions.push(sql`category = ${filters.streetTreeCategory}`);
+  if (filters?.streetTreeHealthStatus) conditions.push(sql`health_status = ${filters.streetTreeHealthStatus}`);
+  if (filters?.assetWard) conditions.push(sql`ward = ${filters.assetWard}`);
+  if (trimmedQuery) {
+    const pattern = `%${trimmedQuery}%`;
+    conditions.push(sql`(
+      COALESCE(display_name, '') ILIKE ${pattern}
+      OR COALESCE(species_name, '') ILIKE ${pattern}
+      OR COALESCE(scientific_name, '') ILIKE ${pattern}
+      OR COALESCE(ledger_id, '') ILIKE ${pattern}
+      OR id ILIKE ${pattern}
+    )`);
+  }
+
+  const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+
+  type StreetTreeRow = {
+    id: string;
+    displayName: string | null;
+    speciesName: string | null;
+    category: string | null;
+    healthStatus: string | null;
+    ward: string | null;
+    geometry: { type: string; coordinates: unknown } | null;
+  };
+
+  const rows = await db.execute<StreetTreeRow>(sql`
+    SELECT
+      id,
+      display_name as "displayName",
+      species_name as "speciesName",
+      category,
+      health_status as "healthStatus",
+      ward,
+      ST_AsGeoJSON(geometry)::json as geometry
+    FROM street_tree_assets
+    ${whereClause}
+    ORDER BY updated_at DESC
+    LIMIT ${limit}
+  `);
+
+  return rows.rows.map((asset) => {
+    const displayName = asset.displayName || asset.speciesName || asset.id;
+    return {
+      id: `street-tree:${asset.id}`,
+      type: 'street-tree',
+      name: displayName,
+      subtitle: formatSubtitle([asset.category, asset.healthStatus, asset.ward]),
+      geometry: asset.geometry ?? undefined,
+      sourceId: asset.id,
+      metadata: {
+        category: asset.category,
+        healthStatus: asset.healthStatus,
+        speciesName: asset.speciesName,
+        ward: asset.ward,
+      },
+    };
+  });
+}
+
+async function searchParkFacilities(
+  query: string,
+  filters: SearchFilters | undefined,
+  bbox: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null,
+  limit: number,
+): Promise<UnifiedSearchResult[]> {
+  if (!bbox) return [];
+  const conditions: ReturnType<typeof sql>[] = [
+    sql`ST_Intersects(geometry, ST_MakeEnvelope(${bbox.minLng}, ${bbox.minLat}, ${bbox.maxLng}, ${bbox.maxLat}, 4326))`,
+  ];
+  const trimmedQuery = query.trim();
+
+  if (filters?.parkFacilityCategory) conditions.push(sql`category = ${filters.parkFacilityCategory}`);
+  if (filters?.assetWard) conditions.push(sql`ward = ${filters.assetWard}`);
+  if (trimmedQuery) {
+    const pattern = `%${trimmedQuery}%`;
+    conditions.push(sql`(
+      COALESCE(name, '') ILIKE ${pattern}
+      OR COALESCE(description, '') ILIKE ${pattern}
+      OR COALESCE(facility_id, '') ILIKE ${pattern}
+      OR id ILIKE ${pattern}
+    )`);
+  }
+
+  const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+
+  type ParkFacilityRow = {
+    id: string;
+    name: string | null;
+    category: string | null;
+    conditionGrade: string | null;
+    ward: string | null;
+    greenSpaceRef: string | null;
+    geometry: { type: string; coordinates: unknown } | null;
+  };
+
+  const rows = await db.execute<ParkFacilityRow>(sql`
+    SELECT
+      id,
+      name,
+      category,
+      condition_grade as "conditionGrade",
+      ward,
+      green_space_ref as "greenSpaceRef",
+      ST_AsGeoJSON(geometry)::json as geometry
+    FROM park_facilities
+    ${whereClause}
+    ORDER BY updated_at DESC
+    LIMIT ${limit}
+  `);
+
+  return rows.rows.map((asset) => {
+    const displayName = asset.name || asset.id;
+    return {
+      id: `park-facility:${asset.id}`,
+      type: 'park-facility',
+      name: displayName,
+      subtitle: formatSubtitle([asset.category, asset.conditionGrade ? `Grade ${asset.conditionGrade}` : null, asset.ward]),
+      geometry: asset.geometry ?? undefined,
+      sourceId: asset.id,
+      metadata: {
+        category: asset.category,
+        conditionGrade: asset.conditionGrade,
+        ward: asset.ward,
+        greenSpaceRef: asset.greenSpaceRef,
+      },
+    };
+  });
+}
+
+async function searchPavementSections(
+  query: string,
+  filters: SearchFilters | undefined,
+  bbox: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null,
+  limit: number,
+): Promise<UnifiedSearchResult[]> {
+  if (!bbox) return [];
+  const conditions: ReturnType<typeof sql>[] = [
+    sql`ST_Intersects(geometry, ST_MakeEnvelope(${bbox.minLng}, ${bbox.minLat}, ${bbox.maxLng}, ${bbox.maxLat}, 4326))`,
+  ];
+  const trimmedQuery = query.trim();
+
+  if (filters?.pavementType) conditions.push(sql`pavement_type = ${filters.pavementType}`);
+  if (filters?.assetWard) conditions.push(sql`ward = ${filters.assetWard}`);
+  if (trimmedQuery) {
+    const pattern = `%${trimmedQuery}%`;
+    conditions.push(sql`(
+      COALESCE(name, '') ILIKE ${pattern}
+      OR COALESCE(section_id, '') ILIKE ${pattern}
+      OR COALESCE(route_number, '') ILIKE ${pattern}
+      OR id ILIKE ${pattern}
+    )`);
+  }
+
+  const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+
+  type PavementRow = {
+    id: string;
+    name: string | null;
+    sectionId: string | null;
+    pavementType: string | null;
+    mci: string | null;
+    priorityRank: number | null;
+    ward: string | null;
+    geometry: { type: string; coordinates: unknown } | null;
+  };
+
+  const rows = await db.execute<PavementRow>(sql`
+    SELECT
+      id,
+      name,
+      section_id as "sectionId",
+      pavement_type as "pavementType",
+      mci::text,
+      priority_rank as "priorityRank",
+      ward,
+      ST_AsGeoJSON(geometry)::json as geometry
+    FROM pavement_sections
+    ${whereClause}
+    ORDER BY priority_rank ASC NULLS LAST, updated_at DESC
+    LIMIT ${limit}
+  `);
+
+  return rows.rows.map((asset) => {
+    const displayName = asset.name || asset.sectionId || asset.id;
+    const mciVal = asset.mci ? parseFloat(asset.mci) : null;
+    return {
+      id: `pavement-section:${asset.id}`,
+      type: 'pavement-section',
+      name: displayName,
+      subtitle: formatSubtitle([asset.pavementType, mciVal != null ? `MCI ${mciVal.toFixed(1)}` : null, asset.ward]),
+      geometry: asset.geometry ?? undefined,
+      sourceId: asset.id,
+      metadata: {
+        pavementType: asset.pavementType,
+        mci: mciVal,
+        priorityRank: asset.priorityRank,
+        ward: asset.ward,
+      },
+    };
+  });
+}
+
+async function searchPumpStations(
+  query: string,
+  filters: SearchFilters | undefined,
+  bbox: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null,
+  limit: number,
+): Promise<UnifiedSearchResult[]> {
+  if (!bbox) return [];
+  const conditions: ReturnType<typeof sql>[] = [
+    sql`ST_Intersects(geometry, ST_MakeEnvelope(${bbox.minLng}, ${bbox.minLat}, ${bbox.maxLng}, ${bbox.maxLat}, 4326))`,
+  ];
+  const trimmedQuery = query.trim();
+
+  if (filters?.pumpStationCategory) conditions.push(sql`category = ${filters.pumpStationCategory}`);
+  if (filters?.pumpEquipmentStatus) conditions.push(sql`equipment_status = ${filters.pumpEquipmentStatus}`);
+  if (filters?.assetWard) conditions.push(sql`ward = ${filters.assetWard}`);
+  if (trimmedQuery) {
+    const pattern = `%${trimmedQuery}%`;
+    conditions.push(sql`(
+      COALESCE(name, '') ILIKE ${pattern}
+      OR COALESCE(station_id, '') ILIKE ${pattern}
+      OR COALESCE(description, '') ILIKE ${pattern}
+      OR id ILIKE ${pattern}
+    )`);
+  }
+
+  const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
+
+  type PumpStationRow = {
+    id: string;
+    name: string | null;
+    category: string | null;
+    equipmentStatus: string | null;
+    conditionGrade: string | null;
+    ward: string | null;
+    geometry: { type: string; coordinates: unknown } | null;
+  };
+
+  const rows = await db.execute<PumpStationRow>(sql`
+    SELECT
+      id,
+      name,
+      category,
+      equipment_status as "equipmentStatus",
+      condition_grade as "conditionGrade",
+      ward,
+      ST_AsGeoJSON(geometry)::json as geometry
+    FROM pump_stations
+    ${whereClause}
+    ORDER BY updated_at DESC
+    LIMIT ${limit}
+  `);
+
+  return rows.rows.map((asset) => {
+    const displayName = asset.name || asset.id;
+    return {
+      id: `pump-station:${asset.id}`,
+      type: 'pump-station',
+      name: displayName,
+      subtitle: formatSubtitle([asset.category, asset.equipmentStatus, asset.ward]),
+      geometry: asset.geometry ?? undefined,
+      sourceId: asset.id,
+      metadata: {
+        category: asset.category,
+        equipmentStatus: asset.equipmentStatus,
+        conditionGrade: asset.conditionGrade,
+        ward: asset.ward,
+      },
+    };
+  });
+}
+
 export async function searchRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
@@ -855,6 +1171,18 @@ export async function searchRoutes(fastify: FastifyInstance) {
     }
     if (intent.targets.includes('rivers')) {
       await addResults(() => searchRivers(queryText, intent.filters, searchBbox, perTargetLimit));
+    }
+    if (intent.targets.includes('street-trees')) {
+      await addResults(() => searchStreetTrees(queryText, intent.filters, searchBbox, perTargetLimit));
+    }
+    if (intent.targets.includes('park-facilities')) {
+      await addResults(() => searchParkFacilities(queryText, intent.filters, searchBbox, perTargetLimit));
+    }
+    if (intent.targets.includes('pavement-sections')) {
+      await addResults(() => searchPavementSections(queryText, intent.filters, searchBbox, perTargetLimit));
+    }
+    if (intent.targets.includes('pump-stations')) {
+      await addResults(() => searchPumpStations(queryText, intent.filters, searchBbox, perTargetLimit));
     }
 
     return {

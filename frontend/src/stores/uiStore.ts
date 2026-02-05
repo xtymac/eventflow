@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import type { Geometry, Feature, Point } from 'geojson';
+import type { AssetTypeRef } from '@nagoya/shared';
+
+export type AssetType = 'street-tree' | 'park-facility' | 'pavement-section' | 'pump-station' | 'green-space';
 
 type ViewType = 'events' | 'assets' | 'inspections';
 
@@ -23,6 +26,7 @@ export interface EditingStateSnapshot {
 interface UIState {
   selectedEventId: string | null;
   selectedAssetId: string | null;
+  selectedAssetType: AssetType | null;
   selectedAssetGeometry: Geometry | null; // For fly-to when asset is outside viewport
   selectedInspectionId: string | null;
   isEventFormOpen: boolean;
@@ -36,6 +40,8 @@ interface UIState {
   isRoadUpdateModeActive: boolean;
   editingEventId: string | null;
   duplicateEventId: string | null;  // ID of event being duplicated (for prefill)
+  // Prefill data for creating event linked to asset
+  eventFormPrefill: { refAssetId: string; refAssetType: AssetTypeRef } | null;
   drawMode: 'polygon' | 'line' | 'point' | null;
   currentView: ViewType;
 
@@ -153,12 +159,13 @@ interface UIState {
 
   // Actions
   selectEvent: (id: string | null) => void;
-  selectAsset: (id: string | null, geometry?: Geometry | null) => void;
+  selectAsset: (id: string | null, type?: AssetType | null, geometry?: Geometry | null) => void;
   selectInspection: (id: string | null) => void;
   openEventForm: (editingId?: string) => void;
   closeEventForm: () => void;
   openDuplicateEventForm: (id: string) => void;
   clearDuplicateEvent: () => void;
+  setEventFormPrefill: (prefill: { refAssetId: string; refAssetType: AssetTypeRef } | null) => void;
   openAssetForm: () => void;
   closeAssetForm: () => void;
   openInspectionForm: (editingId?: string | null, eventId?: string | null, assetId?: string | null) => void;
@@ -271,6 +278,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   selectedEventId: null,
   selectedAssetId: null,
+  selectedAssetType: null,
   selectedAssetGeometry: null,
   selectedInspectionId: null,
   isEventFormOpen: false,
@@ -284,6 +292,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isRoadUpdateModeActive: false,
   editingEventId: null,
   duplicateEventId: null,
+  eventFormPrefill: null,
   drawMode: null,
   currentView: 'events',
 
@@ -393,12 +402,20 @@ export const useUIStore = create<UIState>((set, get) => ({
   selectEvent: (id) => set({
     selectedEventId: id,
     selectedAssetId: null,
+    selectedAssetType: null,
     selectedAssetGeometry: null,
     selectedInspectionId: null,
     detailModalEventId: id,  // Sync sidebar with selection
   }),
-  selectAsset: (id, geometry) => set({ selectedAssetId: id, selectedAssetGeometry: geometry ?? null, selectedEventId: null, selectedInspectionId: null }),
-  selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetGeometry: null }),
+  selectAsset: (id, type, geometry) => set({
+    selectedAssetId: id,
+    selectedAssetType: type ?? null,
+    selectedAssetGeometry: geometry ?? null,
+    selectedEventId: null,
+    selectedInspectionId: null,
+    detailModalEventId: null,
+  }),
+  selectInspection: (id) => set({ selectedInspectionId: id, selectedEventId: null, selectedAssetId: null, selectedAssetType: null, selectedAssetGeometry: null }),
 
   openEventForm: (editingId) => set({
     isEventFormOpen: true,
@@ -424,6 +441,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     isEventFormOpen: false,
     editingEventId: null,
     duplicateEventId: null,
+    eventFormPrefill: null,  // Clear prefill when closing
     // Clear drawing context when closing form
     drawingContext: null,
     drawMode: null,
@@ -458,6 +476,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   }),
 
   clearDuplicateEvent: () => set({ duplicateEventId: null }),
+
+  setEventFormPrefill: (prefill) => set({ eventFormPrefill: prefill }),
 
   openAssetForm: () => set({ isAssetFormOpen: true }),
   closeAssetForm: () => set({ isAssetFormOpen: false, drawMode: null }),

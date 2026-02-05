@@ -46,6 +46,14 @@ User-facing features and frontend implementation details.
 | [recent-road-edits.md](recent-road-edits.md) | Road edit notification system using SSE |
 | [map-implementation.md](map-implementation.md) | MapLibre GL JS frontend map implementation |
 
+## Notion Sync
+
+Auto-synced architecture documentation from Notion. Updated daily via cron.
+
+| Document | Description |
+|----------|-------------|
+| [notion/index.md](notion/index.md) | Notion workspace root (auto-synced) |
+
 ## Directory Structure
 
 ```
@@ -60,6 +68,10 @@ docs/
 ├── realtime-map-sync.md        # Real-time sync
 ├── recent-road-edits.md        # Road edit notifications
 ├── map-implementation.md       # Map implementation
+├── notion/                     # Auto-synced from Notion (daily)
+│   ├── index.md                # Root page
+│   ├── assets/                 # Downloaded images and files
+│   └── ...                     # Recursively generated pages
 └── planning/
     ├── project-plan.md         # Project plan
     ├── requirements-alignment.md  # DX requirements alignment

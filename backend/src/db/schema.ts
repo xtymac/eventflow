@@ -64,12 +64,17 @@ export const constructionEvents = pgTable('construction_events', {
   closedBy: varchar('closed_by', { length: 100 }),
   closedAt: timestamp('closed_at', { withTimezone: true }),
   closeNotes: text('close_notes'),
+  // Reference to a related asset (singular, any type) - per Event Creation spec
+  refAssetId: varchar('ref_asset_id', { length: 50 }),
+  refAssetType: varchar('ref_asset_type', { length: 50 }), // road | river | streetlight | greenspace | street_tree | park_facility | pavement_section | pump_station
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   statusIdx: index('idx_events_status').on(table.status),
   departmentIdx: index('idx_events_department').on(table.department),
   startDateIdx: index('idx_events_start_date').on(table.startDate),
   endDateIdx: index('idx_events_end_date').on(table.endDate),
+  refAssetIdx: index('idx_events_ref_asset').on(table.refAssetType, table.refAssetId),
+  refAssetIdIdx: index('idx_events_ref_asset_id').on(table.refAssetId),
 }));
 
 export const roadAssets = pgTable('road_assets', {
@@ -89,6 +94,8 @@ export const roadAssets = pgTable('road_assets', {
   widthSource: varchar('width_source', { length: 20 }).default('default'),  // 'osm_width' | 'osm_lanes' | 'default'
   direction: varchar('direction', { length: 50 }).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
   validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
   validTo: timestamp('valid_to', { withTimezone: true }),
   // Self-reference for replaced_by - no FK constraint to avoid circular type inference
@@ -156,23 +163,46 @@ export const roadAssetChanges = pgTable('road_asset_changes', {
   changeTypeIdx: index('idx_changes_change_type').on(table.changeType),
 }));
 
-// Inspection records with FK references (exactly one of eventId or roadAssetId must be set)
-// CHECK constraint is defined in migration SQL
+// Inspection records - expanded for cross-asset inspection support
+// Legacy fields (eventId, roadAssetId) preserved; new assetType+assetId takes precedence when set
+// CHECK constraints defined in migration SQL
 export const inspectionRecords = pgTable('inspection_records', {
   id: varchar('id', { length: 50 }).primaryKey(),
+  // Legacy references (preserved for backward compatibility)
   eventId: varchar('event_id', { length: 50 })
     .references(() => constructionEvents.id, { onDelete: 'set null' }),
   roadAssetId: varchar('road_asset_id', { length: 50 })
     .references(() => roadAssets.id, { onDelete: 'set null' }),
+  // New generic asset reference (takes precedence when set)
+  assetType: varchar('asset_type', { length: 50 }),  // 'road' | 'street-tree' | 'park-facility' | 'pavement-section' | 'pump-station'
+  assetId: varchar('asset_id', { length: 50 }),  // Reference to any asset table's id
+  // Core inspection fields
   inspectionDate: timestamp('inspection_date', { mode: 'date' }).notNull(),
+  inspectionType: varchar('inspection_type', { length: 50 }),  // 'routine' | 'detailed' | 'emergency' | 'diagnostic'
   result: varchar('result', { length: 100 }).notNull(),
+  conditionGrade: varchar('condition_grade', { length: 10 }),  // 'A' | 'B' | 'C' | 'D' | 'S'
+  findings: text('findings'),
   notes: text('notes'),
+  // Inspector info
+  inspector: varchar('inspector', { length: 100 }),
+  inspectorOrganization: varchar('inspector_organization', { length: 255 }),
+  // Measurements and media
+  measurements: jsonbColumn('measurements'),  // Flexible measurement data (MCI, crack rate, etc.)
+  mediaUrls: jsonbColumn('media_urls'),  // string[] of photo/document URLs
+  // Location
   geometry: pointColumn('geometry').notNull(),
+  // Work order reference (no FK constraint - defined after workOrders table)
+  refWorkOrderId: varchar('ref_work_order_id', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   eventIdIdx: index('idx_inspections_event_id').on(table.eventId),
   roadAssetIdIdx: index('idx_inspections_road_asset_id').on(table.roadAssetId),
   inspectionDateIdx: index('idx_inspections_inspection_date').on(table.inspectionDate),
+  assetTypeAssetIdIdx: index('idx_inspections_asset_type_id').on(table.assetType, table.assetId),
+  inspectionTypeIdx: index('idx_inspections_type').on(table.inspectionType),
+  resultIdx: index('idx_inspections_result').on(table.result),
+  conditionGradeIdx: index('idx_inspections_condition_grade').on(table.conditionGrade),
 }));
 
 // OSM sync logs table (uses jsonbColumn defined at top)
@@ -339,6 +369,8 @@ export const riverAssets = pgTable('river_assets', {
 
   // Status and location
   status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
   ward: varchar('ward', { length: 100 }),
 
   // Data source tracking
@@ -387,6 +419,8 @@ export const greenSpaceAssets = pgTable('greenspace_assets', {
 
   // Status and location
   status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
   ward: varchar('ward', { length: 100 }),
 
   // Data source tracking
@@ -433,6 +467,8 @@ export const streetLightAssets = pgTable('streetlight_assets', {
 
   // Status and location
   status: varchar('status', { length: 20 }).notNull().default('active'),  // Data lifecycle status
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
   ward: varchar('ward', { length: 100 }),
 
   // Data source tracking
@@ -698,3 +734,286 @@ export type NewWorkOrderPartner = typeof workOrderPartners.$inferInsert;
 
 export type Evidence = typeof evidence.$inferSelect;
 export type NewEvidence = typeof evidence.$inferInsert;
+
+// ============================================
+// RFI追加: New Asset Types (Street Trees, Park Facilities, Pavement, Pump Stations, Lifecycle Plans)
+// ============================================
+
+// Street tree assets table - Point geometry
+// Covers 街路樹維持管理台帳 subsystem requirements
+export const streetTreeAssets = pgTable('street_tree_assets', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Identification
+  ledgerId: varchar('ledger_id', { length: 100 }),  // 台帳番号
+  displayName: varchar('display_name', { length: 255 }),
+  speciesName: varchar('species_name', { length: 255 }),  // 和名
+  scientificName: varchar('scientific_name', { length: 255 }),  // 学名
+  category: varchar('category', { length: 50 }).notNull(),  // CHECK: deciduous|evergreen|conifer|palmLike|shrub
+
+  // Physical attributes
+  trunkDiameter: numeric('trunk_diameter', { precision: 6, scale: 1 }),  // cm (胸高直径)
+  height: numeric('height', { precision: 5, scale: 1 }),  // meters (樹高)
+  crownSpread: numeric('crown_spread', { precision: 5, scale: 1 }),  // meters (枝張り)
+  datePlanted: timestamp('date_planted', { withTimezone: true }),
+  estimatedAge: integer('estimated_age'),  // years
+
+  // Health & diagnostics
+  healthStatus: varchar('health_status', { length: 50 }).notNull(),  // CHECK: healthy|declining|hazardous|dead|removed
+  conditionGrade: varchar('condition_grade', { length: 10 }),  // CHECK: A|B|C|D|S
+  lastDiagnosticDate: timestamp('last_diagnostic_date', { withTimezone: true }),
+  diagnosticNotes: text('diagnostic_notes'),
+
+  // Geometry
+  geometry: pointColumn('geometry').notNull(),
+
+  // Administrative
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
+  ward: varchar('ward', { length: 100 }),
+  managingDept: varchar('managing_dept', { length: 100 }),
+
+  // References (no FK constraints for flexibility, matching streetlight pattern)
+  roadRef: varchar('road_ref', { length: 50 }),  // Reference to road_assets.id
+  greenSpaceRef: varchar('green_space_ref', { length: 50 }),  // Reference to greenspace_assets.id
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_street_trees_status').on(table.status),
+  categoryIdx: index('idx_street_trees_category').on(table.category),
+  healthStatusIdx: index('idx_street_trees_health_status').on(table.healthStatus),
+  conditionGradeIdx: index('idx_street_trees_condition_grade').on(table.conditionGrade),
+  wardIdx: index('idx_street_trees_ward').on(table.ward),
+  roadRefIdx: index('idx_street_trees_road_ref').on(table.roadRef),
+  greenSpaceRefIdx: index('idx_street_trees_green_space_ref').on(table.greenSpaceRef),
+}));
+
+// Park facilities table - Point or Polygon geometry
+// Covers 公園管理システム 施設情報管理 requirements
+export const parkFacilities = pgTable('park_facilities', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Identification
+  facilityId: varchar('facility_id', { length: 100 }),  // 施設管理番号
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 50 }).notNull(),  // CHECK: toilet|playground|bench|shelter|fence|gate|drainage|lighting|waterFountain|signBoard|pavement|sportsFacility|building|other
+  subCategory: varchar('sub_category', { length: 100 }),
+
+  // Physical attributes
+  dateInstalled: timestamp('date_installed', { withTimezone: true }),
+  manufacturer: varchar('manufacturer', { length: 255 }),
+  material: varchar('material', { length: 100 }),
+  quantity: integer('quantity'),
+  designLife: integer('design_life'),  // years (設計供用年数)
+
+  // Condition assessment
+  conditionGrade: varchar('condition_grade', { length: 10 }),  // CHECK: A|B|C|D|S
+  lastInspectionDate: timestamp('last_inspection_date', { withTimezone: true }),
+  nextInspectionDate: timestamp('next_inspection_date', { withTimezone: true }),
+  safetyConcern: boolean('safety_concern').default(false),
+
+  // Geometry (Point for equipment, Polygon for areas like pavement/playground)
+  geometry: geometryColumn('geometry').notNull(),
+
+  // Administrative
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
+  ward: varchar('ward', { length: 100 }),
+  managingDept: varchar('managing_dept', { length: 100 }),
+
+  // References
+  greenSpaceRef: varchar('green_space_ref', { length: 50 }).notNull(),  // Reference to greenspace_assets.id (required)
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_park_facilities_status').on(table.status),
+  categoryIdx: index('idx_park_facilities_category').on(table.category),
+  conditionGradeIdx: index('idx_park_facilities_condition_grade').on(table.conditionGrade),
+  wardIdx: index('idx_park_facilities_ward').on(table.ward),
+  greenSpaceRefIdx: index('idx_park_facilities_green_space_ref').on(table.greenSpaceRef),
+}));
+
+// Pavement sections table - LineString or Polygon geometry
+// Covers 舗装維持補修支援システム requirements
+export const pavementSections = pgTable('pavement_sections', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Identification
+  sectionId: varchar('section_id', { length: 100 }),  // 区間管理番号
+  name: varchar('name', { length: 255 }),
+  routeNumber: varchar('route_number', { length: 100 }),  // 路線番号
+
+  // Pavement attributes
+  pavementType: varchar('pavement_type', { length: 50 }).notNull(),  // CHECK: asphalt|concrete|interlocking|gravel|other
+  length: numeric('length', { precision: 10, scale: 2 }),  // meters
+  width: numeric('width', { precision: 6, scale: 2 }),  // meters
+  thickness: numeric('thickness', { precision: 5, scale: 1 }),  // cm
+  lastResurfacingDate: timestamp('last_resurfacing_date', { withTimezone: true }),
+
+  // Condition indices (路面性状値)
+  mci: numeric('mci', { precision: 4, scale: 1 }),  // Maintenance Control Index (0-10)
+  crackRate: numeric('crack_rate', { precision: 5, scale: 2 }),  // % (ひび割れ率)
+  rutDepth: numeric('rut_depth', { precision: 5, scale: 1 }),  // mm (わだち掘れ量)
+  iri: numeric('iri', { precision: 5, scale: 2 }),  // m/km (International Roughness Index)
+  lastMeasurementDate: timestamp('last_measurement_date', { withTimezone: true }),
+
+  // Planning
+  plannedInterventionYear: integer('planned_intervention_year'),
+  estimatedCost: numeric('estimated_cost', { precision: 12, scale: 0 }),  // JPY
+  priorityRank: integer('priority_rank'),
+
+  // Geometry (LineString along centerline or Polygon for section area)
+  geometry: geometryColumn('geometry').notNull(),
+
+  // Administrative
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
+  ward: varchar('ward', { length: 100 }),
+  managingDept: varchar('managing_dept', { length: 100 }),
+
+  // References
+  roadRef: varchar('road_ref', { length: 50 }).notNull(),  // Reference to road_assets.id (required)
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_pavement_sections_status').on(table.status),
+  pavementTypeIdx: index('idx_pavement_sections_type').on(table.pavementType),
+  wardIdx: index('idx_pavement_sections_ward').on(table.ward),
+  priorityRankIdx: index('idx_pavement_sections_priority_rank').on(table.priorityRank),
+  roadRefIdx: index('idx_pavement_sections_road_ref').on(table.roadRef),
+}));
+
+// Pump stations table - Point or Polygon geometry
+// Covers ポンプ施設管理システム requirements
+export const pumpStations = pgTable('pump_stations', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Identification
+  stationId: varchar('station_id', { length: 100 }),  // 施設管理番号
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 50 }).notNull(),  // CHECK: stormwater|sewage|irrigation|combined
+
+  // Physical attributes
+  dateCommissioned: timestamp('date_commissioned', { withTimezone: true }),
+  designCapacity: numeric('design_capacity', { precision: 8, scale: 2 }),  // m³/min
+  pumpCount: integer('pump_count'),
+  totalPower: numeric('total_power', { precision: 8, scale: 2 }),  // kW
+  drainageArea: numeric('drainage_area', { precision: 8, scale: 2 }),  // ha
+
+  // Equipment status
+  equipmentStatus: varchar('equipment_status', { length: 50 }).notNull(),  // CHECK: operational|standby|underMaintenance|outOfService
+  conditionGrade: varchar('condition_grade', { length: 10 }),  // CHECK: A|B|C|D|S
+  lastMaintenanceDate: timestamp('last_maintenance_date', { withTimezone: true }),
+  nextMaintenanceDate: timestamp('next_maintenance_date', { withTimezone: true }),
+
+  // Geometry (Point for station location, or Polygon for compound)
+  geometry: geometryColumn('geometry').notNull(),
+
+  // Administrative
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  condition: varchar('condition', { length: 20 }),
+  riskLevel: varchar('risk_level', { length: 20 }),
+  ward: varchar('ward', { length: 100 }),
+  managingDept: varchar('managing_dept', { length: 100 }),
+  managingOffice: varchar('managing_office', { length: 255 }),
+
+  // References
+  riverRef: varchar('river_ref', { length: 50 }),  // Reference to river_assets.id
+
+  // Data source tracking
+  dataSource: varchar('data_source', { length: 20 }).default('manual'),
+  sourceVersion: varchar('source_version', { length: 100 }),
+  sourceDate: timestamp('source_date', { withTimezone: true }),
+  lastVerifiedAt: timestamp('last_verified_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  statusIdx: index('idx_pump_stations_status').on(table.status),
+  categoryIdx: index('idx_pump_stations_category').on(table.category),
+  equipmentStatusIdx: index('idx_pump_stations_equipment_status').on(table.equipmentStatus),
+  conditionGradeIdx: index('idx_pump_stations_condition_grade').on(table.conditionGrade),
+  wardIdx: index('idx_pump_stations_ward').on(table.ward),
+  riverRefIdx: index('idx_pump_stations_river_ref').on(table.riverRef),
+}));
+
+// Lifecycle plans table - no geometry
+// Covers 長寿命化計画 / LCC requirements
+export const lifecyclePlans = pgTable('lifecycle_plans', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+
+  // Core plan fields
+  title: varchar('title', { length: 255 }).notNull(),
+  version: varchar('version', { length: 50 }),
+  planStartYear: integer('plan_start_year').notNull(),
+  planEndYear: integer('plan_end_year').notNull(),
+  planStatus: varchar('plan_status', { length: 20 }).notNull().default('draft'),  // CHECK: draft|approved|active|archived
+
+  // Asset baseline
+  assetType: varchar('asset_type', { length: 50 }).notNull(),  // 'ParkFacility' | 'PavementSection' | 'PumpStation' | 'StreetTree'
+  baselineCondition: varchar('baseline_condition', { length: 10 }),  // CHECK: A|B|C|D|S
+  designLife: integer('design_life'),  // years
+  remainingLife: integer('remaining_life'),  // years
+
+  // Cost projections
+  interventions: jsonbColumn('interventions'),  // Array<{ year, type, description, estimatedCostJpy }>
+  totalLifecycleCostJpy: numeric('total_lifecycle_cost_jpy', { precision: 15, scale: 0 }),
+  annualAverageCostJpy: numeric('annual_average_cost_jpy', { precision: 12, scale: 0 }),
+
+  // Asset reference
+  assetRef: varchar('asset_ref', { length: 50 }),  // Reference to any asset's id
+
+  // Administrative
+  managingDept: varchar('managing_dept', { length: 100 }),
+  createdBy: varchar('created_by', { length: 100 }),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  assetTypeIdx: index('idx_lifecycle_plans_asset_type').on(table.assetType),
+  planStatusIdx: index('idx_lifecycle_plans_status').on(table.planStatus),
+  assetRefIdx: index('idx_lifecycle_plans_asset_ref').on(table.assetRef),
+}));
+
+// Type exports for RFI tables
+export type StreetTreeAssetRow = typeof streetTreeAssets.$inferSelect;
+export type NewStreetTreeAsset = typeof streetTreeAssets.$inferInsert;
+
+export type ParkFacilityRow = typeof parkFacilities.$inferSelect;
+export type NewParkFacility = typeof parkFacilities.$inferInsert;
+
+export type PavementSectionRow = typeof pavementSections.$inferSelect;
+export type NewPavementSection = typeof pavementSections.$inferInsert;
+
+export type PumpStationRow = typeof pumpStations.$inferSelect;
+export type NewPumpStation = typeof pumpStations.$inferInsert;
+
+export type LifecyclePlanRow = typeof lifecyclePlans.$inferSelect;
+export type NewLifecyclePlan = typeof lifecyclePlans.$inferInsert;

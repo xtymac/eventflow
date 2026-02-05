@@ -55,7 +55,7 @@ export function NotificationSidebar() {
     if (edit.editType === 'delete') {
       const bboxGeometry = createBboxGeometry(edit.bbox);
       if (bboxGeometry) {
-        selectAsset(edit.roadAssetId, bboxGeometry);
+        selectAsset(edit.roadAssetId, null, bboxGeometry);
         setFlyToGeometry(bboxGeometry, true);
       }
       markViewed();
@@ -71,7 +71,7 @@ export function NotificationSidebar() {
         const asset = result.data;
         if (asset?.geometry) {
           // Select with actual road geometry for highlighting
-          selectAsset(edit.roadAssetId, asset.geometry);
+          selectAsset(edit.roadAssetId, null, asset.geometry);
           // Fly to the road
           setFlyToGeometry(asset.geometry, true);
           markViewed();
@@ -86,7 +86,7 @@ export function NotificationSidebar() {
     // Fallback: use bbox for highlighting and navigation
     const bboxGeometry = createBboxGeometry(edit.bbox);
     if (bboxGeometry) {
-      selectAsset(edit.roadAssetId, bboxGeometry);
+      selectAsset(edit.roadAssetId, null, bboxGeometry);
       setFlyToGeometry(bboxGeometry, true);
     }
 

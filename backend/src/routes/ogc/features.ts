@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../../db/index.js';
@@ -43,6 +43,34 @@ import {
 } from '../../services/ogc/format-negotiation.js';
 import { toGeomSql } from '../../db/geometry.js';
 import { nanoid } from 'nanoid';
+import {
+  toNgsiLdRoad,
+  toNgsiLdCivicOperation,
+  toNgsiLdInspectionRecord,
+  toNgsiLdStreetTree,
+  toNgsiLdParkFacility,
+  toNgsiLdPavementSection,
+  toNgsiLdPumpStation,
+} from '../../../../shared/ngsi-ld/converters.js';
+
+// NGSI-LD format detection
+function isNgsiLdRequested(request: FastifyRequest): boolean {
+  const fParam = (request.query as Record<string, string>).f?.toLowerCase();
+  if (fParam === 'ngsi-ld') return true;
+  const accept = request.headers.accept || '';
+  return accept.includes('application/ld+json');
+}
+
+// Collection ID → NGSI-LD converter mapping
+const NGSI_LD_CONVERTERS: Record<string, (row: any) => any> = {
+  'road-assets': toNgsiLdRoad,
+  'construction-events': toNgsiLdCivicOperation,
+  'inspections': toNgsiLdInspectionRecord,
+  'street-trees': toNgsiLdStreetTree,
+  'park-facilities': toNgsiLdParkFacility,
+  'pavement-sections': toNgsiLdPavementSection,
+  'pump-stations': toNgsiLdPumpStation,
+};
 
 // Default and max limits
 const DEFAULT_LIMIT = 100;
@@ -304,6 +332,29 @@ export async function featuresRoutes(fastify: FastifyInstance) {
       }
     }
 
+    // NGSI-LD content negotiation
+    if (isNgsiLdRequested(request)) {
+      const converter = NGSI_LD_CONVERTERS[collectionId];
+      if (converter) {
+        const entities = featuresResult.rows.map((row: Record<string, unknown>) => {
+          const { id, geometry, ...properties } = row;
+          // Format dates for internal type
+          const formatted: Record<string, unknown> = { id, geometry };
+          for (const [key, value] of Object.entries(properties)) {
+            formatted[key] = value instanceof Date ? value.toISOString() : value;
+          }
+          return converter(formatted);
+        });
+
+        const baseUrl = `${request.protocol}://${request.hostname}`;
+        reply.header('Content-Type', 'application/ld+json');
+        reply.header('Link', `<${baseUrl}/ngsi-ld/v1/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"`);
+        // NGSI-LD response has a different shape than GeoJSON FeatureCollection
+        (reply as any).send(entities);
+        return;
+      }
+    }
+
     // Build GeoJSON response
     const baseUrl = `${request.protocol}://${request.hostname}`;
     const links = buildItemsLinks(baseUrl, collectionId, {
@@ -395,6 +446,24 @@ export async function featuresRoutes(fastify: FastifyInstance) {
 
     const row = result.rows[0] as Record<string, unknown>;
     const { id, geometry, ...properties } = row;
+
+    // NGSI-LD content negotiation for single feature
+    if (isNgsiLdRequested(request)) {
+      const converter = NGSI_LD_CONVERTERS[collectionId];
+      if (converter) {
+        const formatted: Record<string, unknown> = { id, geometry };
+        for (const [key, value] of Object.entries(properties)) {
+          formatted[key] = value instanceof Date ? value.toISOString() : value;
+        }
+        const entity = converter(formatted);
+
+        const baseUrl = `${request.protocol}://${request.hostname}`;
+        reply.header('Content-Type', 'application/ld+json');
+        reply.header('Link', `<${baseUrl}/ngsi-ld/v1/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"`);
+        (reply as any).send(entity);
+        return;
+      }
+    }
 
     // Format date fields
     const formattedProperties: Record<string, unknown> = {};

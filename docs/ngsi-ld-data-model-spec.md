@@ -626,8 +626,14 @@ Every NGSI-LD entity references the context as:
 │  RiverAsset          │ ──────▶ │  WaterBody                │
 │  WorkOrder           │ ──────▶ │  WorkOrder                │
 │  Evidence            │ ──────▶ │  Evidence                 │
+│  StreetTreeAsset     │ ──────▶ │  StreetTree               │
+│  ParkFacilityAsset   │ ──────▶ │  ParkFacility             │
+│  PavementSectionAsset│ ──────▶ │  PavementSection          │
+│  PumpStationAsset    │ ──────▶ │  PumpStation              │
+│  InspectionRecord    │ ──────▶ │  InspectionRecord         │
+│  LifecyclePlan       │ ──────▶ │  LifecyclePlan            │
 │                      │ fromNgsi│                           │
-│                      │ ◀────── │                           │
+│                      │ ◀────── │  (export-only for now)    │
 └──────────────────────┘         └───────────────────────────┘
 ```
 
@@ -645,6 +651,15 @@ Converter functions are defined in `shared/ngsi-ld/converters.ts`:
 | `toNgsiLdStreetlight()` | DB → NGSI-LD | Convert StreetLightAsset to Streetlight |
 | `toNgsiLdWaterBody()` | DB → NGSI-LD | Convert RiverAsset to WaterBody |
 | `toNgsiLdEvidence()` | DB → NGSI-LD | Convert Evidence to NGSI-LD Evidence |
+| `toNgsiLdStreetTree()` | DB → NGSI-LD | Convert StreetTreeAsset to StreetTree |
+| `toNgsiLdParkFacility()` | DB → NGSI-LD | Convert ParkFacilityAsset to ParkFacility |
+| `toNgsiLdPavementSection()` | DB → NGSI-LD | Convert PavementSectionAsset to PavementSection |
+| `toNgsiLdPumpStation()` | DB → NGSI-LD | Convert PumpStationAsset to PumpStation |
+| `toNgsiLdInspectionRecord()` | DB → NGSI-LD | Convert InspectionRecord to NGSI-LD InspectionRecord |
+| `toNgsiLdLifecyclePlan()` | DB → NGSI-LD | Convert LifecyclePlan to NGSI-LD LifecyclePlan |
+
+> **Note:** The Orion-LD context broker sync (`NGSI_SYNC_ENABLED`) defaults to `false`.
+> NGSI-LD export is served directly via OGC API content negotiation (see Section 9.3).
 
 ---
 
@@ -653,11 +668,23 @@ Converter functions are defined in `shared/ngsi-ld/converters.ts`:
 ```
 shared/
 ├── types/
-│   ├── index.ts            # Internal PostGIS types (unchanged)
-│   └── ngsi-ld.ts          # NGSI-LD entity type definitions
+│   ├── index.ts            # Internal PostGIS types + RFI enums & interfaces
+│   └── ngsi-ld.ts          # NGSI-LD entity type definitions (17 entity types)
 ├── ngsi-ld/
 │   ├── context.jsonld       # JSON-LD @context vocabulary
-│   └── converters.ts        # PostGIS ↔ NGSI-LD converters
+│   └── converters.ts        # PostGIS → NGSI-LD converters (16 functions)
+backend/
+├── src/routes/
+│   ├── street-trees.ts      # GET /api/street-trees (bbox-filtered)
+│   ├── park-facilities.ts   # GET /api/park-facilities (bbox-filtered)
+│   ├── pavement-sections.ts # GET /api/pavement-sections (bbox-filtered)
+│   ├── pump-stations.ts     # GET /api/pump-stations (bbox-filtered)
+│   ├── lifecycle-plans.ts   # GET /api/lifecycle-plans (non-geo)
+│   └── ogc/features.ts      # OGC API + NGSI-LD content negotiation
+├── src/services/
+│   └── ngsi-sync.ts         # Orion-LD sync (NGSI_SYNC_ENABLED=false by default)
+├── src/db/
+│   └── seed-rfi.ts          # Seed data for RFI entities
 docs/
 └── ngsi-ld-data-model-spec.md  # This specification document
 ```
@@ -725,18 +752,42 @@ const roadAsset = fromNgsiLdRoad(ngsiRoad);
 await db.insert(roadAssets).values(roadAsset).onConflictDoUpdate({ ... });
 ```
 
-### 9.3 OGC API + NGSI-LD Dual Endpoint
+### 9.3 OGC API + NGSI-LD Content Negotiation
 
-The existing OGC API Features endpoint can serve NGSI-LD format via content negotiation:
+The OGC API Features endpoint serves NGSI-LD format via content negotiation or query parameter:
 
 ```
-GET /collections/civic-operations/items/evt-001
+# NGSI-LD via Accept header
+GET /ogc/collections/street-trees/items?bbox=136.9,35.15,136.93,35.17
 Accept: application/ld+json
-→ Returns NGSI-LD normalized format
+→ Returns array of NGSI-LD StreetTree entities
+→ Link: <{baseUrl}/ngsi-ld/v1/context.jsonld>; rel="http://www.w3.org/ns/json-ld#context"
 
-GET /collections/civic-operations/items/evt-001
+# NGSI-LD via query parameter
+GET /ogc/collections/street-trees/items?bbox=136.9,35.15,136.93,35.17&f=ngsi-ld
+→ Same NGSI-LD response
+
+# GeoJSON (default)
+GET /ogc/collections/street-trees/items?bbox=136.9,35.15,136.93,35.17
 Accept: application/geo+json
-→ Returns GeoJSON (existing behavior)
+→ Returns GeoJSON FeatureCollection
+
+# Single item
+GET /ogc/collections/street-trees/items/ST-001
+Accept: application/ld+json
+→ Returns single NGSI-LD entity
+```
+
+**Supported collections with NGSI-LD export:**
+`road-assets`, `construction-events`, `inspections`, `street-trees`, `park-facilities`, `pavement-sections`, `pump-stations`
+
+### 9.4 JSON-LD Context Endpoint
+
+```
+GET /ngsi-ld/v1/context.jsonld
+→ Content-Type: application/ld+json
+→ Cache-Control: public, max-age=86400
+→ Returns the shared/ngsi-ld/context.jsonld vocabulary
 ```
 
 ---

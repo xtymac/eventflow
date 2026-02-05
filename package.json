@@ -31,13 +31,16 @@
     "nagoya:sync": "echo 'Start Nagoya sync via API' && curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:3000/nagoya-sync/start && curl -X POST -H 'Content-Type: application/json' -d '{}' http://localhost:3000/nagoya-building-sync/start",
     "nagoya:import": "npx tsx scripts/import-nagoya-to-assets.ts",
     "nagoya:status": "curl -s http://localhost:3000/nagoya-sync/status | jq && curl -s http://localhost:3000/nagoya-building-sync/status | jq",
-    "nagoya:export-stats": "curl -s http://localhost:3000/pmtiles-export/stats | jq"
+    "nagoya:export-stats": "curl -s http://localhost:3000/pmtiles-export/stats | jq",
+    "docs:notion:sync": "npx tsx scripts/notion-sync.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
   },
   "dependencies": {
+    "@notionhq/client": "^5.9.0",
     "@types/proj4": "^2.5.6",
+    "notion-to-md": "^3.1.9",
     "proj4": "^2.20.2",
     "shapefile": "^0.6.6"
   },

@@ -5,10 +5,10 @@ import { Protocol } from 'pmtiles';
 import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconTrash } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON } from '../hooks/useApi';
+import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON, useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
-import { useUIStore } from '../stores/uiStore';
+import { useUIStore, type AssetType } from '../stores/uiStore';
 import { useSearchStore } from '../stores/searchStore';
 import { useMapDraw } from '../hooks/useMapDraw';
 import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
@@ -186,6 +186,10 @@ export function MapView() {
     showRivers,
     showGreenSpaces,
     showStreetLights,
+    showStreetTrees,
+    showParkFacilities,
+    showPavementSections,
+    showPumpStations,
     showNagoyaRoads,
     showNagoyaBuildingZones,
     toggleEvents,
@@ -194,6 +198,10 @@ export function MapView() {
     toggleRivers,
     toggleGreenSpaces,
     toggleStreetLights,
+    toggleStreetTrees,
+    toggleParkFacilities,
+    togglePavementSections,
+    togglePumpStations,
     toggleNagoyaRoads,
     toggleNagoyaBuildingZones,
     roadTileVersion,
@@ -374,6 +382,34 @@ export function MapView() {
     mapBbox ?? null,
     undefined,
     { enabled: !!mapBbox }
+  );
+
+  // Street trees data - load when visible and zoomed in (point density high)
+  const { data: streetTreesData } = useStreetTreesInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showStreetTrees && !!mapBbox && currentZoom >= 16 }
+  );
+
+  // Park facilities data - load when visible
+  const { data: parkFacilitiesData } = useParkFacilitiesInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showParkFacilities && !!mapBbox && currentZoom >= 14 }
+  );
+
+  // Pavement sections data - load when visible (with zoom for simplification)
+  const { data: pavementSectionsData } = usePavementSectionsInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showPavementSections && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
+  );
+
+  // Pump stations data - load when visible
+  const { data: pumpStationsData } = usePumpStationsInBbox(
+    mapBbox ?? null,
+    undefined,
+    { enabled: showPumpStations && !!mapBbox && currentZoom >= 13 }
   );
 
   // Drawing mode: enable when any editor has active drawing context
@@ -626,7 +662,7 @@ export function MapView() {
             16, 6,
             18, 8
           ],
-          'line-opacity': 0.8,
+          'line-opacity': 0.35,
         },
       });
 
@@ -741,7 +777,7 @@ export function MapView() {
             '#84CC16' // default
           ],
           'line-width': ['interpolate', ['linear'], ['zoom'], 13, 2, 14, 4],
-          'line-opacity': 0.8,
+          'line-opacity': 0.35,
         },
       }, 'assets-line'); // Insert below assets-line
 
@@ -1226,7 +1262,26 @@ export function MapView() {
         },
       });
 
-      // Inspections source and layers
+      // Inspections source and layers — emoji by result
+      const inspectionEmojis: Record<string, string> = {
+        pass: '\u2705', minor: '\u26A0\uFE0F', needsRepair: '\u{1F527}', critical: '\u{1F6A8}',
+      };
+      for (const [key, emoji] of Object.entries(inspectionEmojis)) {
+        const size = 40;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        ctx.font = '30px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, size / 2, size / 2);
+        const imgName = `insp-${key}`;
+        if (!map.current.hasImage(imgName)) {
+          map.current.addImage(imgName, ctx.getImageData(0, 0, size, size), { pixelRatio: 2 });
+        }
+      }
+
       map.current.addSource('inspections', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -1234,13 +1289,20 @@ export function MapView() {
 
       map.current.addLayer({
         id: 'inspections-point',
-        type: 'circle',
+        type: 'symbol',
         source: 'inspections',
-        paint: {
-          'circle-radius': 8,
-          'circle-color': '#EC4899',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#fff',
+        layout: {
+          'icon-image': [
+            'match', ['get', 'result'],
+            'pass', 'insp-pass',
+            'minor', 'insp-minor',
+            'needsRepair', 'insp-needsRepair',
+            'critical', 'insp-critical',
+            'insp-critical'
+          ],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 16, 1.2, 18, 1.8],
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
         },
       });
 
@@ -1430,6 +1492,142 @@ export function MapView() {
           'circle-stroke-width': 2,
           'circle-stroke-color': '#fff',
           'circle-opacity': 1,
+        },
+      });
+
+      // ============================================
+      // RFI Asset Layers
+      // ============================================
+
+      // Street Trees - circle layer colored by healthStatus
+      map.current.addSource('street-trees', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+      map.current.addLayer({
+        id: 'street-trees-circle',
+        type: 'circle',
+        source: 'street-trees',
+        minzoom: 16,
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 16, 5, 18, 10],
+          'circle-color': [
+            'match', ['get', 'healthStatus'],
+            'healthy', '#22C55E',
+            'declining', '#F59E0B',
+            'hazardous', '#EF4444',
+            'dead', '#6B7280',
+            'removed', '#D1D5DB',
+            '#22C55E' // default
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Park Facilities - emoji icon layer by category
+      // Render emoji to canvas images (MapLibre glyph servers don't support emoji)
+      const facilityEmojis: Record<string, string> = {
+        toilet: '\u{1F6BB}', playground: '\u{1F6DD}', bench: '\u{1FA91}', shelter: '\u26E9\uFE0F',
+        fence: '\u{1F6A7}', gate: '\u{1F6AA}', drainage: '\u{1F30A}', lighting: '\u{1F4A1}',
+        waterFountain: '\u26F2', signBoard: '\u{1FAA7}', sportsFacility: '\u26BD',
+        building: '\u{1F3E2}', other: '\u{1F4E6}',
+      };
+      for (const [cat, emoji] of Object.entries(facilityEmojis)) {
+        const size = 40;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+        ctx.font = '30px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, size / 2, size / 2);
+        const imgName = `pf-${cat}`;
+        if (!map.current.hasImage(imgName)) {
+          map.current.addImage(imgName, ctx.getImageData(0, 0, size, size), { pixelRatio: 2 });
+        }
+      }
+
+      map.current.addSource('park-facilities', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+      map.current.addLayer({
+        id: 'park-facilities-circle',
+        type: 'symbol',
+        source: 'park-facilities',
+        minzoom: 14,
+        layout: {
+          'icon-image': [
+            'match', ['get', 'category'],
+            'toilet', 'pf-toilet',
+            'playground', 'pf-playground',
+            'bench', 'pf-bench',
+            'shelter', 'pf-shelter',
+            'fence', 'pf-fence',
+            'gate', 'pf-gate',
+            'drainage', 'pf-drainage',
+            'lighting', 'pf-lighting',
+            'waterFountain', 'pf-waterFountain',
+            'signBoard', 'pf-signBoard',
+            'sportsFacility', 'pf-sportsFacility',
+            'building', 'pf-building',
+            'pf-other'
+          ],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.8, 16, 1.2, 18, 1.8],
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+      });
+
+      // Pavement Sections - line layer colored by conditionGrade
+      map.current.addSource('pavement-sections', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+      map.current.addLayer({
+        id: 'pavement-sections-line',
+        type: 'line',
+        source: 'pavement-sections',
+        minzoom: 13,
+        paint: {
+          'line-color': [
+            'match', ['get', 'conditionGrade'],
+            'A', '#22C55E',
+            'B', '#84CC16',
+            'C', '#F59E0B',
+            'D', '#EF4444',
+            'S', '#6B7280',
+            '#F59E0B' // default
+          ],
+          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3, 16, 6],
+          'line-opacity': 0.7,
+        },
+      }, 'roads-preview-line');
+
+      // Pump Stations - circle layer colored by equipmentStatus
+      map.current.addSource('pump-stations', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+      map.current.addLayer({
+        id: 'pump-stations-circle',
+        type: 'circle',
+        source: 'pump-stations',
+        minzoom: 13,
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 5, 16, 8, 18, 12],
+          'circle-color': [
+            'match', ['get', 'equipmentStatus'],
+            'operational', '#22C55E',
+            'standby', '#F59E0B',
+            'underMaintenance', '#F97316',
+            'outOfService', '#EF4444',
+            '#22C55E' // default
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
         },
       });
 
@@ -1660,7 +1858,10 @@ export function MapView() {
             'events-closed-fill', 'events-closed-line',
             'events-pending-review-fill', 'events-pending-review-line',
             'events-hit-area-fill', 'events-hit-area-line',
-            'assets-line', 'inspections-point'
+            'assets-line', 'inspections-point',
+            'street-trees-circle', 'park-facilities-circle',
+            'pavement-sections-line', 'pump-stations-circle',
+            'greenspaces-fill'
           ]
         });
 
@@ -1682,19 +1883,8 @@ export function MapView() {
         }
       });
 
-      // Helper to check if road interaction should be enabled
-      const shouldAllowRoadInteraction = () => {
-        const state = useUIStore.getState();
-        // Allow road interaction in event form (for asset selection)
-        if (state.isEventFormOpen) return true;
-        // Allow road interaction in road update mode (for asset selection)
-        if (state.isRoadUpdateModeActive) return true;
-        // Disable road interaction when event is selected, UNLESS in assets view
-        if (state.selectedEventId && state.currentView !== 'assets') {
-          return false;
-        }
-        return true;
-      };
+      // Road interaction is fully disabled - roads are a transparent background layer
+      const shouldAllowRoadInteraction = () => false;
 
       // Event click handler with manual double-click detection
       const handleEventClick = (e: maplibregl.MapLayerMouseEvent) => {
@@ -1792,128 +1982,7 @@ export function MapView() {
         map.current.on('click', layerId, handleEventClick);
       }
 
-      map.current.on('click', 'assets-line', (e) => {
-        if (e.features && e.features[0]) {
-          const feature = e.features[0];
-          const props = feature.properties;
-          const assetId = props?.id as string | undefined;
-          if (!assetId) return;
-
-          const state = useUIStore.getState();
-
-          // Don't handle road clicks while actively drawing - let the draw library handle them
-          if (state.isDrawingActive) {
-            return;
-          }
-
-          // Check if click is on a drawn feature - if so, let the draw library handle it
-          // This allows clicking on polygons/lines to select them for editing
-          if (state.isEventFormOpen && state.drawnFeatures && state.drawnFeatures.length > 0) {
-            const clickPoint = turf.point([e.lngLat.lng, e.lngLat.lat]);
-
-            for (const feature of state.drawnFeatures) {
-              if (!feature.geometry) continue;
-
-              try {
-                if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                  // Check if click is inside polygon
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  if (turf.booleanPointInPolygon(clickPoint, feature as any)) {
-                    console.log('[MapView] Click inside drawn polygon, letting draw library handle');
-                    return;
-                  }
-                } else if (feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString') {
-                  // Check if click is near line (within ~20 pixels at current zoom)
-                  const tolerance = 0.0001 * Math.pow(2, 18 - (map.current?.getZoom() || 14));
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const buffered = turf.buffer(feature as any, tolerance, { units: 'degrees' });
-                  if (buffered && turf.booleanPointInPolygon(clickPoint, buffered)) {
-                    console.log('[MapView] Click near drawn line, letting draw library handle');
-                    return;
-                  }
-                }
-              } catch (err) {
-                console.warn('[MapView] Error checking click against drawn feature:', err);
-              }
-            }
-          }
-
-          if (state.isEventFormOpen) {
-            e.originalEvent.stopPropagation();
-            const current = state.selectedRoadAssetIdsForForm || [];
-            const isRemoving = current.includes(assetId);
-            const next = isRemoving
-              ? current.filter((id) => id !== assetId)
-              : [...current, assetId];
-            state.setSelectedRoadAssetsForForm(next);
-
-            // Cache asset details when adding (not removing)
-            if (!isRemoving && props) {
-              const assetFields: RoadAssetLabelFields = {
-                id: assetId,
-                name: props.name as string | undefined,
-                nameJa: props.nameJa as string | undefined,
-                ref: props.ref as string | undefined,
-                localRef: props.localRef as string | undefined,
-                displayName: props.displayName as string | undefined,
-              };
-              const label = getRoadAssetLabel(assetFields);
-              const wardLabel = (props.ward as string) || 'No ward';
-              const fullLabel = isRoadAssetUnnamed(assetFields)
-                ? `${label} (${wardLabel})`
-                : `${label} (${wardLabel}) - ${assetId}`;
-
-              state.cacheAssetDetails([{
-                id: assetId,
-                label: fullLabel,
-                ward: props.ward as string | undefined,
-                roadType: props.roadType as string | undefined,
-                geometry: feature.geometry as Geometry,  // Include geometry for display at all zoom levels
-              }]);
-            }
-            return;
-          }
-
-          // Road Update Mode: toggle asset selection
-          if (state.isRoadUpdateModeActive) {
-            e.originalEvent.stopPropagation();
-            state.toggleRoadUpdateAsset(assetId);
-
-            // Cache asset details for display
-            if (props) {
-              const assetFields: RoadAssetLabelFields = {
-                id: assetId,
-                name: props.name as string | undefined,
-                nameJa: props.nameJa as string | undefined,
-                ref: props.ref as string | undefined,
-                localRef: props.localRef as string | undefined,
-                displayName: props.displayName as string | undefined,
-              };
-              const label = getRoadAssetLabel(assetFields);
-
-              state.cacheAssetDetails([{
-                id: assetId,
-                label,
-                ward: props.ward as string | undefined,
-                roadType: props.roadType as string | undefined,
-                geometry: feature.geometry as Geometry,
-              }]);
-            }
-            return;
-          }
-
-          // Don't allow road selection when event is selected (unless in assets view or road update mode)
-          if (!shouldAllowRoadInteraction()) {
-            return;
-          }
-
-          e.originalEvent.stopPropagation();
-
-          // Allow asset selection - this will clear any selected event
-          selectAsset(assetId);
-          setCurrentView('assets');
-        }
-      });
+      // Road assets click handler removed - roads are now a transparent, non-interactive background layer
 
       // Inspection point click handler
       map.current.on('click', 'inspections-point', (e) => {
@@ -1930,6 +1999,37 @@ export function MapView() {
           selectInspection(inspectionId);
         }
       });
+
+      // Asset click handlers — select asset and open detail panel
+      const assetLayerMap: Record<string, AssetType> = {
+        'street-trees-circle': 'street-tree',
+        'park-facilities-circle': 'park-facility',
+        'pavement-sections-line': 'pavement-section',
+        'pump-stations-circle': 'pump-station',
+        'greenspaces-fill': 'green-space',
+      };
+
+      for (const [layerId, assetType] of Object.entries(assetLayerMap)) {
+        map.current.on('click', layerId, (e: maplibregl.MapLayerMouseEvent) => {
+          if (e.features && e.features[0]) {
+            const state = useUIStore.getState();
+            if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+
+            // Events take priority — skip if click also hits an event layer
+            const eventFeatures = map.current?.queryRenderedFeatures(e.point, {
+              layers: ['events-planned-fill', 'events-active-fill', 'events-hit-area-fill']
+            });
+            if (eventFeatures && eventFeatures.length > 0) return;
+
+            e.originalEvent.stopPropagation();
+            const id = e.features[0].properties?.id as string;
+            if (!id) return;
+            const geometry = e.features[0].geometry as Geometry;
+            selectAsset(id, assetType, geometry);
+            setCurrentView('assets');
+          }
+        });
+      }
 
       // Alias for backward compatibility in hover handlers
       const shouldAllowRoadHover = shouldAllowRoadInteraction;
@@ -1958,6 +2058,17 @@ export function MapView() {
       map.current.on('mouseleave', 'assets-line', () => {
         if (map.current) map.current.getCanvas().style.cursor = '';
       });
+
+      // Cursor changes for asset layers
+      const assetLayerIds = Object.keys(assetLayerMap);
+      for (const layerId of assetLayerIds) {
+        map.current.on('mouseenter', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+        });
+        map.current.on('mouseleave', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = '';
+        });
+      }
 
       // Hover tooltip for events (using React component)
       // Shows preview tooltip for non-selected events, locked tooltip stays visible
@@ -2416,6 +2527,68 @@ export function MapView() {
     map.current.setLayoutProperty('streetlights-circle', 'visibility', visibility);
   }, [streetLightsData, showStreetLights, mapLoaded, currentZoom]);
 
+  // Update street trees layer
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const source = map.current.getSource('street-trees') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    if (!showStreetTrees || currentZoom < 16) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const features = Array.isArray(streetTreesData?.features) ? streetTreesData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
+  }, [streetTreesData, showStreetTrees, mapLoaded, currentZoom]);
+
+  // Update park facilities layer
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const source = map.current.getSource('park-facilities') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    if (!showParkFacilities || currentZoom < 14) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const features = Array.isArray(parkFacilitiesData?.features) ? parkFacilitiesData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
+  }, [parkFacilitiesData, showParkFacilities, mapLoaded, currentZoom]);
+
+  // Update pavement sections layer
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const source = map.current.getSource('pavement-sections') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    if (!showPavementSections || currentZoom < 13) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      map.current.setLayoutProperty('pavement-sections-line', 'visibility', 'none');
+      return;
+    }
+
+    const features = Array.isArray(pavementSectionsData?.features) ? pavementSectionsData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
+    map.current.setLayoutProperty('pavement-sections-line', 'visibility', 'visible');
+  }, [pavementSectionsData, showPavementSections, mapLoaded, currentZoom]);
+
+  // Update pump stations layer
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const source = map.current.getSource('pump-stations') as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    if (!showPumpStations || currentZoom < 13) {
+      source.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const features = Array.isArray(pumpStationsData?.features) ? pumpStationsData.features : [];
+    source.setData({ type: 'FeatureCollection', features });
+  }, [pumpStationsData, showPumpStations, mapLoaded, currentZoom]);
+
   // Toggle Nagoya designated roads layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -2536,7 +2709,7 @@ export function MapView() {
     const shouldHidePreview = !showAssets || hasActiveAssetFilters;
 
     // Opacity: reduce when API data is visible (zoom >= 14) to avoid visual clutter
-    const previewOpacity = z >= 14 && showAssets ? 0.5 : 0.6;
+    const previewOpacity = z >= 14 && showAssets ? 0.25 : 0.35;
 
     try {
       const visibility = shouldHidePreview ? 'none' : 'visible';
@@ -3771,8 +3944,8 @@ export function MapView() {
         </Paper>
       )}
 
-      {/* Layer controls */}
-      <Paper
+      {/* Layer controls — hidden for demo */}
+      {false && <Paper
         shadow="sm"
         p="sm"
         style={{
@@ -3839,6 +4012,30 @@ export function MapView() {
                 onChange={toggleGreenSpaces}
                 size="sm"
               />
+              <Switch
+                label="Street Trees"
+                checked={showStreetTrees}
+                onChange={toggleStreetTrees}
+                size="sm"
+              />
+              <Switch
+                label="Park Facilities"
+                checked={showParkFacilities}
+                onChange={toggleParkFacilities}
+                size="sm"
+              />
+              <Switch
+                label="Pavement"
+                checked={showPavementSections}
+                onChange={togglePavementSections}
+                size="sm"
+              />
+              <Switch
+                label="Pump Stations"
+                checked={showPumpStations}
+                onChange={togglePumpStations}
+                size="sm"
+              />
             </Stack>
           </Box>
 
@@ -3866,10 +4063,10 @@ export function MapView() {
           </Box>
 
         </Stack>
-      </Paper>
+      </Paper>}
 
-      {/* Legend */}
-      <Paper
+      {/* Legend — hidden for demo */}
+      {false && <Paper
         shadow="sm"
         p="sm"
         style={{
@@ -3981,7 +4178,7 @@ export function MapView() {
             </Stack>
           </>
         )}
-      </Paper>
+      </Paper>}
 
       {/* Locked tooltip for selected event - stays visible */}
       {lockedEvent && lockedTooltipPosition && (

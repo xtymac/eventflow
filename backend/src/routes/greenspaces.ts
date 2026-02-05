@@ -47,6 +47,8 @@ const GreenSpaceAssetSchema = Type.Object({
   osmType: Type.Union([Type.String(), Type.Null()]),
   osmId: Type.Union([Type.String(), Type.Null()]),
   status: Type.String(),
+  condition: Type.Union([Type.String(), Type.Null()]),
+  riskLevel: Type.Union([Type.String(), Type.Null()]),
   ward: Type.Union([Type.String(), Type.Null()]),
   updatedAt: Type.String({ format: 'date-time' }),
 });
@@ -169,7 +171,7 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
         natural_type as "naturalType", area_m2 as "areaM2",
         vegetation_type as "vegetationType", operator,
         data_source as "dataSource", osm_type as "osmType", osm_id as "osmId",
-        status, ward, updated_at as "updatedAt"
+        status, condition, risk_level as "riskLevel", ward, updated_at as "updatedAt"
       FROM greenspace_assets
       ${whereClause}
       ORDER BY id
@@ -195,6 +197,8 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
         osmType: row.osmType as string | null,
         osmId: row.osmId as string | null,
         status: row.status as string,
+        condition: row.condition as string | null,
+        riskLevel: row.riskLevel as string | null,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },
@@ -235,7 +239,7 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
         natural_type as "naturalType", area_m2 as "areaM2",
         vegetation_type as "vegetationType", operator,
         data_source as "dataSource", osm_type as "osmType", osm_id as "osmId",
-        status, ward, updated_at as "updatedAt"
+        status, condition, risk_level as "riskLevel", ward, updated_at as "updatedAt"
       FROM greenspace_assets
       WHERE id = ${id}
     `);
@@ -264,6 +268,8 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
         osmType: row.osmType as string | null,
         osmId: row.osmId as string | null,
         status: row.status as string,
+        condition: row.condition as string | null,
+        riskLevel: row.riskLevel as string | null,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },

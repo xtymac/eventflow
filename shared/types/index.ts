@@ -9,8 +9,14 @@ export type RestrictionType = 'full' | 'partial' | 'workzone';
 // Post-end decision options
 export type PostEndDecision = 'pending' | 'no-change' | 'permanent-change';
 
-// Road asset status
-export type AssetStatus = 'active' | 'inactive';
+// Asset lifecycle status (governance-level)
+export type AssetStatus = 'active' | 'inactive' | 'removed';
+
+// Asset condition assessment (governance-level, set by Decision)
+export type AssetCondition = 'good' | 'attention' | 'bad' | 'unknown';
+
+// Asset risk level (governance-level, set by Decision)
+export type AssetRiskLevel = 'low' | 'medium' | 'high';
 
 // Road types
 export type RoadType = 'arterial' | 'collector' | 'local';
@@ -20,6 +26,11 @@ export type ChangeType = 'create' | 'update' | 'retire';
 
 // Event-Asset relation types
 export type RelationType = 'affected' | 'updated';
+
+// Asset type identifiers for refAsset (matches backend enum)
+export type AssetTypeRef =
+  | 'road' | 'river' | 'streetlight' | 'greenspace'
+  | 'street_tree' | 'park_facility' | 'pavement_section' | 'pump_station';
 
 // Geometry source (manual draw vs auto-generated)
 export type GeometrySource = 'manual' | 'auto';
@@ -76,6 +87,70 @@ export type LampType = 'led' | 'sodium' | 'mercury' | 'fluorescent' | 'halogen';
 // Equipment operational status (different from data lifecycle status)
 export type LampStatus = 'operational' | 'maintenance' | 'damaged' | 'replaced';
 
+// ============================================
+// NEW: Street Tree Asset Types (RFI: 街路樹)
+// ============================================
+
+// Tree species classification
+export type TreeCategory = 'deciduous' | 'evergreen' | 'conifer' | 'palmLike' | 'shrub';
+
+// Tree health / vitality status
+export type TreeHealthStatus = 'healthy' | 'declining' | 'hazardous' | 'dead' | 'removed';
+
+// ============================================
+// NEW: Condition Grade (shared across asset types)
+// ============================================
+
+// Facility/asset condition grade (劣化度)
+export type ConditionGrade = 'A' | 'B' | 'C' | 'D' | 'S';
+
+// ============================================
+// NEW: Park Facility Types (RFI: 公園施設)
+// ============================================
+
+// Park facility type classification
+export type ParkFacilityCategory =
+  | 'toilet' | 'playground' | 'bench' | 'shelter' | 'fence' | 'gate'
+  | 'drainage' | 'lighting' | 'waterFountain' | 'signBoard' | 'pavement'
+  | 'sportsFacility' | 'building' | 'other';
+
+// ============================================
+// NEW: Pavement Types (RFI: 舗装維持)
+// ============================================
+
+// Pavement surface type
+export type PavementType = 'asphalt' | 'concrete' | 'interlocking' | 'gravel' | 'other';
+
+// ============================================
+// NEW: Pump Station Types (RFI: ポンプ施設)
+// ============================================
+
+// Pump station type classification
+export type PumpStationCategory = 'stormwater' | 'sewage' | 'irrigation' | 'combined';
+
+// Pump equipment status
+export type PumpEquipmentStatus = 'operational' | 'standby' | 'underMaintenance' | 'outOfService';
+
+// ============================================
+// NEW: Inspection Types (RFI: 点検・診断 expanded)
+// ============================================
+
+// Inspection type classification
+export type InspectionType = 'routine' | 'detailed' | 'emergency' | 'diagnostic';
+
+// Inspection result summary
+export type InspectionResult = 'pass' | 'minor' | 'needsRepair' | 'critical';
+
+// ============================================
+// NEW: Lifecycle Plan Types (RFI: 長寿命化計画)
+// ============================================
+
+// Lifecycle plan status
+export type LifecyclePlanStatus = 'draft' | 'approved' | 'active' | 'archived';
+
+// Lifecycle plan intervention type
+export type InterventionType = 'repair' | 'renewal' | 'replacement' | 'removal';
+
 // Supported geometry types
 export type SupportedGeometry =
   | Point
@@ -109,6 +184,9 @@ export interface ConstructionEvent {
   closedBy?: string;
   closedAt?: string | null;         // ISO 8601 timestamp
   closeNotes?: string | null;
+  // Reference to a related asset (singular)
+  refAssetId?: string | null;
+  refAssetType?: AssetTypeRef | null;
   // Populated from JOINs (Phase 1)
   workOrders?: WorkOrder[];
   updatedAt: string; // ISO 8601 timestamp
@@ -146,6 +224,8 @@ export interface RoadAsset extends DataSourceTracking, OsmTracking {
   lanes: number;
   direction: string;
   status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
   validFrom: string; // ISO 8601 timestamp
   validTo?: string; // ISO 8601 timestamp
   replacedBy?: string; // ID of replacement asset
@@ -177,6 +257,8 @@ export interface RiverAsset extends DataSourceTracking, OsmTracking {
   managementLevel?: ManagementLevel;
   maintainer?: string;
   status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
   ward?: string;
   updatedAt: string;
 }
@@ -198,6 +280,8 @@ export interface GreenSpaceAsset extends DataSourceTracking, OsmTracking {
   vegetationType?: VegetationType;
   operator?: string;          // Operating organization
   status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
   ward?: string;
   updatedAt: string;
 }
@@ -216,7 +300,164 @@ export interface StreetLightAsset extends DataSourceTracking, OsmTracking {
   lampStatus: LampStatus;     // Equipment status
   roadRef?: string;           // Reference to road_assets.id
   status: AssetStatus;        // Data lifecycle status
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
   ward?: string;
+  updatedAt: string;
+}
+
+// ============================================
+// NEW: Street Tree Asset Entity (RFI: 街路樹維持管理台帳)
+// ============================================
+export interface StreetTreeAsset extends DataSourceTracking {
+  id: string;
+  ledgerId?: string;          // 台帳番号
+  displayName?: string;
+  speciesName?: string;       // 和名
+  scientificName?: string;    // 学名
+  category: TreeCategory;
+  trunkDiameter?: number;     // cm (胸高直径)
+  height?: number;            // meters (樹高)
+  crownSpread?: number;       // meters (枝張り)
+  datePlanted?: string;       // ISO 8601 timestamp
+  estimatedAge?: number;      // years
+  healthStatus: TreeHealthStatus;
+  conditionGrade?: ConditionGrade;
+  lastDiagnosticDate?: string;  // ISO 8601 timestamp
+  diagnosticNotes?: string;
+  geometry: Point;
+  status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
+  ward?: string;
+  managingDept?: string;
+  roadRef?: string;           // Reference to road_assets.id
+  greenSpaceRef?: string;     // Reference to greenspace_assets.id
+  createdAt: string;          // ISO 8601 timestamp
+  updatedAt: string;          // ISO 8601 timestamp
+}
+
+// ============================================
+// NEW: Park Facility Asset Entity (RFI: 公園管理 施設情報)
+// ============================================
+export interface ParkFacilityAsset extends DataSourceTracking {
+  id: string;
+  facilityId?: string;        // 施設管理番号
+  name: string;
+  description?: string;
+  category: ParkFacilityCategory;
+  subCategory?: string;
+  dateInstalled?: string;     // ISO 8601 timestamp
+  manufacturer?: string;
+  material?: string;
+  quantity?: number;
+  designLife?: number;        // years (設計供用年数)
+  conditionGrade?: ConditionGrade;
+  lastInspectionDate?: string;  // ISO 8601 timestamp
+  nextInspectionDate?: string;  // ISO 8601 timestamp
+  safetyConcern?: boolean;
+  geometry: SupportedGeometry;  // Point or Polygon
+  status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
+  ward?: string;
+  managingDept?: string;
+  greenSpaceRef: string;      // Reference to greenspace_assets.id (required)
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// NEW: Pavement Section Asset Entity (RFI: 舗装維持補修支援)
+// ============================================
+export interface PavementSectionAsset extends DataSourceTracking {
+  id: string;
+  sectionId?: string;         // 区間管理番号
+  name?: string;
+  routeNumber?: string;       // 路線番号
+  pavementType: PavementType;
+  length?: number;            // meters
+  width?: number;             // meters
+  thickness?: number;         // cm
+  lastResurfacingDate?: string;  // ISO 8601 timestamp
+  // Condition indices (路面性状値)
+  mci?: number;               // Maintenance Control Index (0-10)
+  crackRate?: number;         // % (ひび割れ率)
+  rutDepth?: number;          // mm (わだち掘れ量)
+  iri?: number;               // m/km (International Roughness Index)
+  lastMeasurementDate?: string;  // ISO 8601 timestamp
+  // Planning
+  plannedInterventionYear?: number;
+  estimatedCost?: number;     // JPY
+  priorityRank?: number;
+  geometry: SupportedGeometry;  // LineString or Polygon
+  status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
+  ward?: string;
+  managingDept?: string;
+  roadRef: string;            // Reference to road_assets.id (required)
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// NEW: Pump Station Asset Entity (RFI: ポンプ施設管理)
+// ============================================
+export interface PumpStationAsset extends DataSourceTracking {
+  id: string;
+  stationId?: string;         // 施設管理番号
+  name: string;
+  description?: string;
+  category: PumpStationCategory;
+  dateCommissioned?: string;  // ISO 8601 timestamp
+  designCapacity?: number;    // m³/min
+  pumpCount?: number;
+  totalPower?: number;        // kW
+  drainageArea?: number;      // ha
+  equipmentStatus: PumpEquipmentStatus;
+  conditionGrade?: ConditionGrade;
+  lastMaintenanceDate?: string;  // ISO 8601 timestamp
+  nextMaintenanceDate?: string;  // ISO 8601 timestamp
+  geometry: SupportedGeometry;  // Point or Polygon
+  status: AssetStatus;
+  condition?: AssetCondition;
+  riskLevel?: AssetRiskLevel;
+  ward?: string;
+  managingDept?: string;
+  managingOffice?: string;
+  riverRef?: string;          // Reference to river_assets.id
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// NEW: Lifecycle Plan Entity (RFI: 長寿命化計画 / LCC)
+// ============================================
+export interface LifecyclePlan {
+  id: string;
+  title: string;
+  version?: string;
+  planStartYear: number;
+  planEndYear: number;
+  planStatus: LifecyclePlanStatus;
+  assetType: string;          // 'ParkFacility' | 'PavementSection' | 'PumpStation' | 'StreetTree'
+  baselineCondition?: ConditionGrade;
+  designLife?: number;        // years
+  remainingLife?: number;     // years
+  interventions?: Array<{
+    year: number;
+    type: InterventionType;
+    description?: string;
+    estimatedCostJpy: number;
+  }>;
+  totalLifecycleCostJpy?: number;
+  annualAverageCostJpy?: number;
+  assetRef?: string;          // Reference to any asset's id
+  managingDept?: string;
+  createdBy?: string;
+  approvedAt?: string;        // ISO 8601 timestamp
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -231,17 +472,35 @@ export interface RoadAssetChange {
   createdAt: string; // ISO 8601 timestamp
 }
 
-// Inspection Record entity (LEGACY - use WorkOrder with type='inspection' for new inspections)
-// Exactly one of eventId or roadAssetId must be set
+// Inspection Record entity (expanded for cross-asset inspection support)
+// Legacy: eventId/roadAssetId preserved; new assetType+assetId takes precedence
 export interface InspectionRecord {
   id: string;
-  eventId: string | null; // FK to construction_events
-  roadAssetId: string | null; // FK to road_assets
-  inspectionDate: string; // ISO 8601 date
+  // Legacy references (preserved for backward compatibility)
+  eventId: string | null;         // FK to construction_events
+  roadAssetId: string | null;     // FK to road_assets
+  // New generic asset reference (takes precedence when set)
+  assetType?: string | null;      // 'road' | 'street-tree' | 'park-facility' | 'pavement-section' | 'pump-station'
+  assetId?: string | null;        // Reference to any asset table's id
+  // Core inspection fields
+  inspectionDate: string;         // ISO 8601 date
+  inspectionType?: InspectionType | null;
   result: string;
+  conditionGrade?: ConditionGrade | null;
+  findings?: string | null;
   notes?: string;
+  // Inspector info
+  inspector?: string | null;
+  inspectorOrganization?: string | null;
+  // Measurements and media
+  measurements?: Record<string, unknown> | null;  // Flexible measurement data
+  mediaUrls?: string[] | null;    // Photo/document URLs
+  // Location
   geometry: Point;
-  createdAt: string; // ISO 8601 timestamp
+  // Work order reference
+  refWorkOrderId?: string | null;
+  createdAt: string;              // ISO 8601 timestamp
+  updatedAt: string;              // ISO 8601 timestamp
 }
 
 // ============================================
@@ -341,6 +600,12 @@ export type RiverAssetFeature = Feature<SupportedGeometry, RiverAsset>;
 export type GreenSpaceAssetFeature = Feature<Polygon, GreenSpaceAsset>;
 export type StreetLightAssetFeature = Feature<Point, StreetLightAsset>;
 
+// NEW: Feature types for RFI asset types
+export type StreetTreeAssetFeature = Feature<Point, StreetTreeAsset>;
+export type ParkFacilityAssetFeature = Feature<SupportedGeometry, ParkFacilityAsset>;
+export type PavementSectionAssetFeature = Feature<SupportedGeometry, PavementSectionAsset>;
+export type PumpStationAssetFeature = Feature<SupportedGeometry, PumpStationAsset>;
+
 // Phase 1: WorkOrder location feature for map display
 export type WorkOrderLocationFeature = Feature<SupportedGeometry, WorkOrderLocation & { workOrder: Partial<WorkOrder> }>;
 
@@ -354,6 +619,9 @@ export interface CreateEventRequest {
   department: string;
   ward?: string;
   roadAssetIds: string[]; // Required - at least 1 road asset
+  // Reference to a related asset (singular, optional)
+  refAssetId?: string;
+  refAssetType?: AssetTypeRef;
 }
 
 export interface UpdateEventRequest {
@@ -366,6 +634,9 @@ export interface UpdateEventRequest {
   ward?: string;
   roadAssetIds?: string[];
   regenerateGeometry?: boolean; // Explicit flag to regenerate from roads
+  // Reference to a related asset (singular, can set to null to clear)
+  refAssetId?: string | null;
+  refAssetType?: AssetTypeRef | null;
 }
 
 export interface StatusChangeRequest {
@@ -571,6 +842,74 @@ export interface StreetLightFilters {
   offset?: number;
 }
 
+// ============================================
+// NEW: Filter types for RFI asset types
+// ============================================
+
+export interface StreetTreeFilters {
+  bbox: string;                // REQUIRED: "minLng,minLat,maxLng,maxLat"
+  category?: TreeCategory | TreeCategory[];
+  healthStatus?: TreeHealthStatus | TreeHealthStatus[];
+  conditionGrade?: ConditionGrade | ConditionGrade[];
+  ward?: string;
+  q?: string;                  // Text search (speciesName, displayName)
+  limit?: number;
+  offset?: number;
+}
+
+export interface ParkFacilityFilters {
+  bbox: string;                // REQUIRED
+  category?: ParkFacilityCategory | ParkFacilityCategory[];
+  conditionGrade?: ConditionGrade | ConditionGrade[];
+  greenSpaceRef?: string;
+  ward?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PavementSectionFilters {
+  bbox: string;                // REQUIRED
+  pavementType?: PavementType | PavementType[];
+  priorityRank?: number;
+  roadRef?: string;
+  ward?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PumpStationFilters {
+  bbox: string;                // REQUIRED
+  category?: PumpStationCategory | PumpStationCategory[];
+  equipmentStatus?: PumpEquipmentStatus | PumpEquipmentStatus[];
+  conditionGrade?: ConditionGrade | ConditionGrade[];
+  ward?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface InspectionRecordFilters {
+  bbox?: string;               // Optional for inspection records
+  inspectionType?: InspectionType | InspectionType[];
+  result?: InspectionResult | InspectionResult[];
+  conditionGrade?: ConditionGrade | ConditionGrade[];
+  assetType?: string;
+  assetId?: string;
+  ward?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface LifecyclePlanFilters {
+  assetType?: string;
+  planStatus?: LifecyclePlanStatus | LifecyclePlanStatus[];
+  assetRef?: string;
+  limit?: number;
+  offset?: number;
+}
+
 // API response wrapper
 export interface ApiResponse<T> {
   data: T;
@@ -599,7 +938,11 @@ export type SearchResultType =
   | 'road'
   | 'greenspace'
   | 'streetlight'
-  | 'river';
+  | 'river'
+  | 'street-tree'
+  | 'park-facility'
+  | 'pavement-section'
+  | 'pump-station';
 
 // Unified search result format
 export interface SearchResult {

@@ -4,6 +4,7 @@ import { eventRoadAssets } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 const ORION_LD_URL = process.env.ORION_LD_URL || 'http://localhost:1026';
+const NGSI_SYNC_ENABLED = process.env.NGSI_SYNC_ENABLED === 'true';
 
 // Retry utility functions
 function sleep(ms: number): Promise<void> {
@@ -144,6 +145,8 @@ function eventToNgsiLd(event: ConstructionEvent, affectedRoadAssetIds: string[])
 }
 
 export async function syncEventToOrion(event: ConstructionEvent): Promise<void> {
+  if (!NGSI_SYNC_ENABLED) return;
+
   // Query join table for related road assets
   const relations = await db.select({ roadAssetId: eventRoadAssets.roadAssetId })
     .from(eventRoadAssets)
@@ -222,6 +225,8 @@ export async function syncEventToOrion(event: ConstructionEvent): Promise<void> 
 }
 
 export async function deleteEventFromOrion(eventId: string): Promise<void> {
+  if (!NGSI_SYNC_ENABLED) return;
+
   const entityId = `urn:ngsi-ld:ConstructionEvent:${eventId}`;
 
   try {

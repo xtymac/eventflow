@@ -8,6 +8,27 @@
       "when": 1770034964787,
       "tag": "0000_great_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770122400000,
+      "tag": "0001_rfi_entities",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770208800000,
+      "tag": "0002_asset_state_dimensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770295200000,
+      "tag": "0003_ref_asset",
+      "breakpoints": true
     }
   ]
 }

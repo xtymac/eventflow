@@ -170,7 +170,7 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         install_date as "installDate", lamp_status as "lampStatus",
         road_ref as "roadRef",
         data_source as "dataSource", osm_type as "osmType", osm_id as "osmId",
-        status, ward, updated_at as "updatedAt"
+        status, condition, risk_level as "riskLevel", ward, updated_at as "updatedAt"
       FROM streetlight_assets
       ${whereClause}
       ORDER BY id
@@ -196,6 +196,8 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         osmType: row.osmType as string | null,
         osmId: row.osmId != null ? String(row.osmId) : null,  // Convert bigint to string
         status: row.status as string,
+        condition: row.condition as string | null,
+        riskLevel: row.riskLevel as string | null,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },
@@ -235,7 +237,7 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         install_date as "installDate", lamp_status as "lampStatus",
         road_ref as "roadRef",
         data_source as "dataSource", osm_type as "osmType", osm_id as "osmId",
-        status, ward, updated_at as "updatedAt"
+        status, condition, risk_level as "riskLevel", ward, updated_at as "updatedAt"
       FROM streetlight_assets
       WHERE id = ${id}
     `);
@@ -264,6 +266,8 @@ export async function streetlightsRoutes(fastify: FastifyInstance) {
         osmType: row.osmType as string | null,
         osmId: row.osmId != null ? String(row.osmId) : null,  // Convert bigint to string
         status: row.status as string,
+        condition: row.condition as string | null,
+        riskLevel: row.riskLevel as string | null,
         ward: row.ward as string | null,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
       },

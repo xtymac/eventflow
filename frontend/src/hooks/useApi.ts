@@ -658,6 +658,208 @@ export function useStreetLightWards() {
 }
 
 // ============================================
+// Street Trees hooks
+// ============================================
+
+import type {
+  StreetTreeAsset,
+  StreetTreeFilters,
+  ParkFacilityAsset,
+  ParkFacilityFilters,
+  PavementSectionAsset,
+  PavementSectionFilters,
+  PumpStationAsset,
+  PumpStationFilters,
+  LifecyclePlan,
+  LifecyclePlanFilters,
+} from '@nagoya/shared';
+
+export function useStreetTreesInBbox(
+  bbox: string | null,
+  filters?: Omit<StreetTreeFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['street-trees', bbox, filters?.category, filters?.healthStatus, filters?.conditionGrade, filters?.ward],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Point, StreetTreeAsset>>(`/street-trees${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useStreetTree(id: string | null) {
+  return useQuery({
+    queryKey: ['street-tree', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: StreetTreeAsset; geometry: Point }>(`/street-trees/${id}`),
+    enabled: !!id,
+  });
+}
+
+// ============================================
+// Park Facilities hooks
+// ============================================
+
+export function useParkFacilitiesInBbox(
+  bbox: string | null,
+  filters?: Omit<ParkFacilityFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['park-facilities', bbox, filters?.category, filters?.conditionGrade, filters?.greenSpaceRef, filters?.ward],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Geometry, ParkFacilityAsset>>(`/park-facilities${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useParkFacility(id: string | null) {
+  return useQuery({
+    queryKey: ['park-facility', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: ParkFacilityAsset; geometry: Geometry }>(`/park-facilities/${id}`),
+    enabled: !!id,
+  });
+}
+
+// ============================================
+// Pavement Sections hooks
+// ============================================
+
+export function usePavementSectionsInBbox(
+  bbox: string | null,
+  filters?: Omit<PavementSectionFilters, 'bbox'>,
+  options?: { enabled?: boolean; zoom?: number }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (options?.zoom) params.append('zoom', String(Math.floor(options.zoom)));
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['pavement-sections', bbox, options?.zoom, filters?.pavementType, filters?.priorityRank, filters?.roadRef, filters?.ward],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Geometry, PavementSectionAsset>>(`/pavement-sections${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function usePavementSection(id: string | null) {
+  return useQuery({
+    queryKey: ['pavement-section', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: PavementSectionAsset; geometry: Geometry }>(`/pavement-sections/${id}`),
+    enabled: !!id,
+  });
+}
+
+// ============================================
+// Pump Stations hooks
+// ============================================
+
+export function usePumpStationsInBbox(
+  bbox: string | null,
+  filters?: Omit<PumpStationFilters, 'bbox'>,
+  options?: { enabled?: boolean }
+) {
+  const params = new URLSearchParams();
+  if (bbox) params.append('bbox', bbox);
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['pump-stations', bbox, filters?.category, filters?.equipmentStatus, filters?.conditionGrade, filters?.ward],
+    queryFn: () =>
+      fetchApi<FeatureCollection<Geometry, PumpStationAsset>>(`/pump-stations${queryString}`),
+    enabled: (options?.enabled ?? true) && !!bbox,
+    staleTime: 60000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function usePumpStation(id: string | null) {
+  return useQuery({
+    queryKey: ['pump-station', id],
+    queryFn: () =>
+      fetchApi<{ type: 'Feature'; properties: PumpStationAsset; geometry: Geometry }>(`/pump-stations/${id}`),
+    enabled: !!id,
+  });
+}
+
+// ============================================
+// Lifecycle Plans hooks (no bbox)
+// ============================================
+
+export function useLifecyclePlans(filters?: LifecyclePlanFilters) {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  return useQuery({
+    queryKey: ['lifecycle-plans', filters?.assetType, filters?.planStatus, filters?.assetRef],
+    queryFn: () =>
+      fetchApi<{ data: LifecyclePlan[]; meta: { total: number | null; limit: number; offset: number } }>(`/lifecycle-plans${queryString}`),
+    staleTime: 60000,
+  });
+}
+
+export function useLifecyclePlan(id: string | null) {
+  return useQuery({
+    queryKey: ['lifecycle-plan', id],
+    queryFn: () =>
+      fetchApi<{ data: LifecyclePlan }>(`/lifecycle-plans/${id}`),
+    enabled: !!id,
+  });
+}
+
+// ============================================
 // WorkOrders hooks (Phase 1)
 // ============================================
 
