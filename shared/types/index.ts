@@ -516,8 +516,11 @@ export type WorkOrderStatus = 'draft' | 'assigned' | 'in_progress' | 'completed'
 // Evidence types
 export type EvidenceType = 'photo' | 'document' | 'report' | 'cad' | 'other';
 
-// Evidence review status
-export type EvidenceReviewStatus = 'pending' | 'approved' | 'rejected';
+// Evidence review status (workflow: pending -> approved/rejected -> accepted_by_authority)
+export type EvidenceReviewStatus = 'pending' | 'approved' | 'rejected' | 'accepted_by_authority';
+
+// Evidence submitter role
+export type EvidenceSubmitterRole = 'partner' | 'gov_inspector';
 
 // Partner roles in work orders
 export type PartnerRole = 'contractor' | 'inspector' | 'reviewer';
@@ -582,12 +585,20 @@ export interface Evidence {
   description?: string;
   captureDate?: string;     // ISO 8601 timestamp
   geometry?: Point;         // Geotagged location
+  // Submission
   submittedBy: string;
   submittedAt: string;      // ISO 8601 timestamp
+  submitterPartnerId?: string | null;  // Partner ID who submitted
+  submitterRole?: EvidenceSubmitterRole | null;  // 'partner' | 'gov_inspector'
+  // First-level review
   reviewedBy?: string;
   reviewedAt?: string;      // ISO 8601 timestamp
   reviewStatus: EvidenceReviewStatus;
   reviewNotes?: string;
+  // Government decision
+  decisionBy?: string | null;    // Gov role who made final decision
+  decisionAt?: string | null;    // ISO 8601 timestamp
+  decisionNotes?: string | null; // Decision notes/reason
 }
 
 // GeoJSON Feature types for map rendering
@@ -739,10 +750,16 @@ export interface CreateEvidenceRequest {
   geometry?: Point;           // Geotagged location
 }
 
-// Review evidence
+// Review evidence (first-level review by department)
 export interface ReviewEvidenceRequest {
   reviewStatus: 'approved' | 'rejected';
   reviewNotes?: string;
+}
+
+// Make government decision on evidence (final verification)
+export interface MakeEvidenceDecisionRequest {
+  decision: 'accepted_by_authority' | 'rejected';
+  decisionNotes?: string;
 }
 
 // Event status change (updated for Phase 1)

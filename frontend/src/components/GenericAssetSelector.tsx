@@ -39,7 +39,7 @@ interface GenericAssetSelectorProps {
 }
 
 // Helper to format asset label based on type
-function formatAssetLabel(asset: any, assetType: AssetTypeRef): string {
+function formatAssetLabel(asset: any, _assetType: AssetTypeRef): string {
   const name = asset.name || asset.displayName || asset.id;
   const ward = asset.ward ? ` (${asset.ward})` : '';
   return `${name}${ward}`;
@@ -68,40 +68,47 @@ export function GenericAssetSelector({
     } : { limit: 0 } // Disabled if not road
   );
 
-  const riversQuery = useRiversInBbox({
-    bbox: assetType === 'river' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'river',
-  });
+  const riversQuery = useRiversInBbox(
+    assetType === 'river' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'river' }
+  );
 
-  const streetlightsQuery = useStreetLightsInBbox({
-    bbox: assetType === 'streetlight' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'streetlight',
-  });
+  const streetlightsQuery = useStreetLightsInBbox(
+    assetType === 'streetlight' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'streetlight' }
+  );
 
-  const greenspacesQuery = useGreenSpacesInBbox({
-    bbox: assetType === 'greenspace' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'greenspace',
-  });
+  const greenspacesQuery = useGreenSpacesInBbox(
+    assetType === 'greenspace' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'greenspace' }
+  );
 
-  const streetTreesQuery = useStreetTreesInBbox({
-    bbox: assetType === 'street_tree' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'street_tree',
-  });
+  const streetTreesQuery = useStreetTreesInBbox(
+    assetType === 'street_tree' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'street_tree' }
+  );
 
-  const parkFacilitiesQuery = useParkFacilitiesInBbox({
-    bbox: assetType === 'park_facility' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'park_facility',
-  });
+  const parkFacilitiesQuery = useParkFacilitiesInBbox(
+    assetType === 'park_facility' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'park_facility' }
+  );
 
-  const pavementSectionsQuery = usePavementSectionsInBbox({
-    bbox: assetType === 'pavement_section' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'pavement_section',
-  });
+  const pavementSectionsQuery = usePavementSectionsInBbox(
+    assetType === 'pavement_section' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'pavement_section' }
+  );
 
-  const pumpStationsQuery = usePumpStationsInBbox({
-    bbox: assetType === 'pump_station' && mapBbox ? mapBbox : undefined,
-    enabled: assetType === 'pump_station',
-  });
+  const pumpStationsQuery = usePumpStationsInBbox(
+    assetType === 'pump_station' && mapBbox ? mapBbox : null,
+    undefined,
+    { enabled: assetType === 'pump_station' }
+  );
 
   // Get the right query based on asset type
   const query = useMemo(() => {
@@ -144,12 +151,13 @@ export function GenericAssetSelector({
     if ('data' in query.data && Array.isArray(query.data.data)) {
       return query.data.data;
     }
-    // Others have direct array or { features: [...] }
+    // Others have direct array or { features: [...] } (GeoJSON)
     if (Array.isArray(query.data)) {
       return query.data;
     }
     if ('features' in query.data && Array.isArray(query.data.features)) {
-      return query.data.features;
+      // Extract properties from GeoJSON features
+      return query.data.features.map((f: any) => f.properties);
     }
     return [];
   }, [query.data]);

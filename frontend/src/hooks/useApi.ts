@@ -982,6 +982,37 @@ export function useDeleteEvidence() {
   });
 }
 
+// Make government decision on evidence (final verification)
+export function useMakeEvidenceDecision() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      evidenceId,
+      decision,
+      decisionNotes,
+      userRole,
+    }: {
+      evidenceId: string;
+      decision: 'accepted_by_authority' | 'rejected';
+      decisionNotes?: string;
+      userRole: string;
+    }) =>
+      fetchApi<{ data: Evidence }>(`/workorders/evidence/${evidenceId}/decision`, {
+        method: 'POST',
+        body: JSON.stringify({ decision, decisionNotes }),
+        headers: {
+          'X-User-Role': userRole,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evidence'] });
+      queryClient.invalidateQueries({ queryKey: ['workorders'] });
+      queryClient.invalidateQueries({ queryKey: ['workorder'] });
+    },
+  });
+}
+
 // ============================================
 // Event Close hook (Phase 1 - Gov only)
 // ============================================

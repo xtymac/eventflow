@@ -712,10 +712,18 @@ export const evidence = pgTable('evidence', {
   geometry: pointColumn('geometry'),  // Location where photo was taken (geotagged)
   submittedBy: varchar('submitted_by', { length: 100 }).notNull(),
   submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+  // Submitter identity tracking
+  submitterPartnerId: varchar('submitter_partner_id', { length: 50 }),
+  submitterRole: varchar('submitter_role', { length: 20 }),  // 'partner' | 'gov_inspector'
+  // First-level review
   reviewedBy: varchar('reviewed_by', { length: 100 }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
-  reviewStatus: varchar('review_status', { length: 20 }).notNull().default('pending'),  // 'pending' | 'approved' | 'rejected'
+  reviewStatus: varchar('review_status', { length: 30 }).notNull().default('pending'),  // 'pending' | 'approved' | 'rejected' | 'accepted_by_authority'
   reviewNotes: text('review_notes'),
+  // Government decision tracking
+  decisionBy: varchar('decision_by', { length: 100 }),
+  decisionAt: timestamp('decision_at', { withTimezone: true }),
+  decisionNotes: text('decision_notes'),
 }, (table) => ({
   workOrderIdIdx: index('idx_evidence_workorder_id').on(table.workOrderId),
   typeIdx: index('idx_evidence_type').on(table.type),

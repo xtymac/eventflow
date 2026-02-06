@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
-import { constructionEvents, eventRoadAssets, roadAssets, workOrders } from '../db/schema.js';
+import { constructionEvents, eventRoadAssets, roadAssets, workOrders, evidence } from '../db/schema.js';
 import { eq, and, or, gte, lte, like, ilike, inArray, sql, isNotNull, isNull, asc, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { syncEventToOrion } from '../services/ngsi-sync.js';
@@ -835,6 +835,142 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     };
   });
 
+  // Evidence schema for event-level evidence query
+  const EvidenceReviewStatusSchema = Type.Union([
+    Type.Literal('pending'),
+    Type.Literal('approved'),
+    Type.Literal('rejected'),
+    Type.Literal('accepted_by_authority'),
+  ]);
+
+  const EvidenceSchema = Type.Object({
+    id: Type.String(),
+    workOrderId: Type.String(),
+    type: Type.String(),
+    fileName: Type.String(),
+    filePath: Type.String(),
+    fileSizeBytes: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    mimeType: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    title: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    description: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    captureDate: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
+    submittedBy: Type.String(),
+    submittedAt: Type.String({ format: 'date-time' }),
+    submitterPartnerId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    submitterRole: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    reviewedBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    reviewedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
+    reviewStatus: EvidenceReviewStatusSchema,
+    reviewNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    decisionBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    decisionAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
+    decisionNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    // Additional info from work order join
+    workOrderTitle: Type.String(),
+    workOrderType: Type.String(),
+  });
+
+  // GET /events/:id/evidence - Get all evidence for an event (across all work orders)
+  app.get('/:id/evidence', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      querystring: Type.Object({
+        reviewStatus: Type.Optional(Type.String()),
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 50 })),
+        offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
+      }),
+      response: {
+        200: Type.Object({
+          data: Type.Array(EvidenceSchema),
+          meta: Type.Object({
+            total: Type.Number(),
+            limit: Type.Number(),
+            offset: Type.Number(),
+          }),
+        }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id: eventId } = request.params;
+    const { reviewStatus, limit = 50, offset = 0 } = request.query;
+
+    // Verify event exists
+    const existingEvent = await db
+      .select({ id: constructionEvents.id })
+      .from(constructionEvents)
+      .where(eq(constructionEvents.id, eventId))
+      .limit(1);
+
+    if (existingEvent.length === 0) {
+      return reply.status(404).send({ error: 'Event not found' });
+    }
+
+    // Build filter conditions
+    const conditions = [eq(workOrders.eventId, eventId)];
+
+    if (reviewStatus) {
+      const statuses = reviewStatus.split(',').map(s => s.trim());
+      conditions.push(inArray(evidence.reviewStatus, statuses));
+    }
+
+    // Count total
+    const countResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(evidence)
+      .innerJoin(workOrders, eq(evidence.workOrderId, workOrders.id))
+      .where(and(...conditions));
+
+    const total = countResult[0]?.count ?? 0;
+
+    // Fetch evidence with work order info
+    const results = await db
+      .select({
+        id: evidence.id,
+        workOrderId: evidence.workOrderId,
+        type: evidence.type,
+        fileName: evidence.fileName,
+        filePath: evidence.filePath,
+        fileSizeBytes: evidence.fileSizeBytes,
+        mimeType: evidence.mimeType,
+        title: evidence.title,
+        description: evidence.description,
+        captureDate: evidence.captureDate,
+        submittedBy: evidence.submittedBy,
+        submittedAt: evidence.submittedAt,
+        submitterPartnerId: evidence.submitterPartnerId,
+        submitterRole: evidence.submitterRole,
+        reviewedBy: evidence.reviewedBy,
+        reviewedAt: evidence.reviewedAt,
+        reviewStatus: evidence.reviewStatus,
+        reviewNotes: evidence.reviewNotes,
+        decisionBy: evidence.decisionBy,
+        decisionAt: evidence.decisionAt,
+        decisionNotes: evidence.decisionNotes,
+        workOrderTitle: workOrders.title,
+        workOrderType: workOrders.type,
+      })
+      .from(evidence)
+      .innerJoin(workOrders, eq(evidence.workOrderId, workOrders.id))
+      .where(and(...conditions))
+      .orderBy(desc(evidence.submittedAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: results.map(ev => ({
+        ...ev,
+        captureDate: ev.captureDate?.toISOString() ?? null,
+        submittedAt: ev.submittedAt.toISOString(),
+        reviewedAt: ev.reviewedAt?.toISOString() ?? null,
+        decisionAt: ev.decisionAt?.toISOString() ?? null,
+      })),
+      meta: { total, limit, offset },
+    };
+  });
+
   // DELETE /events/:id - Cancel event (soft delete)
   app.delete('/:id', {
     schema: {
@@ -1253,6 +1389,22 @@ export async function eventsRoutes(fastify: FastifyInstance) {
     if (pendingWorkOrders.length > 0) {
       return reply.status(400).send({
         error: `Cannot close event: ${pendingWorkOrders.length} work order(s) are not completed. Complete or cancel all work orders first.`
+      });
+    }
+
+    // Check all evidence has been accepted by authority (pending/approved blocks closure, rejected does not)
+    const pendingEvidence = await db
+      .select({ id: evidence.id })
+      .from(evidence)
+      .innerJoin(workOrders, eq(evidence.workOrderId, workOrders.id))
+      .where(and(
+        eq(workOrders.eventId, id),
+        inArray(evidence.reviewStatus, ['pending', 'approved'])  // rejected does not block
+      ));
+
+    if (pendingEvidence.length > 0) {
+      return reply.status(400).send({
+        error: `Cannot close event: ${pendingEvidence.length} evidence item(s) pending final decision. All evidence must be accepted by authority before closing.`
       });
     }
 

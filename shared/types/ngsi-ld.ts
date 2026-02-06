@@ -267,13 +267,21 @@ export const EvidenceMediaType = {
 } as const;
 export type EvidenceMediaTypeValue = typeof EvidenceMediaType[keyof typeof EvidenceMediaType];
 
-/** Evidence review status */
+/** Evidence review status (workflow: pending -> approved/rejected -> accepted_by_authority) */
 export const EvidenceReviewStatus = {
   Pending: 'pending',
   Approved: 'approved',
   Rejected: 'rejected',
+  AcceptedByAuthority: 'accepted_by_authority',
 } as const;
 export type EvidenceReviewStatusType = typeof EvidenceReviewStatus[keyof typeof EvidenceReviewStatus];
+
+/** Evidence submitter role */
+export const EvidenceSubmitterRole = {
+  Partner: 'partner',
+  GovInspector: 'gov_inspector',
+} as const;
+export type EvidenceSubmitterRoleType = typeof EvidenceSubmitterRole[keyof typeof EvidenceSubmitterRole];
 
 /** Partner (contractor) role in a WorkOrder */
 export const PartnerRole = {
@@ -939,8 +947,12 @@ export interface Evidence extends NgsiLdEntity {
   submittedBy: Property<string>;
   /** Submission timestamp */
   submittedAt: Property<DateTime>;
+  /** Partner ID who submitted (from X-Partner-Id header) */
+  submitterPartnerId?: Property<string>;
+  /** Role of submitter: partner or gov_inspector */
+  submitterRole?: Property<EvidenceSubmitterRoleType>;
 
-  // --- Review gate ---
+  // --- Review gate (first-level review) ---
   /** Current review status */
   reviewStatus: Property<EvidenceReviewStatusType>;
   /** Reviewer identity */
@@ -949,6 +961,14 @@ export interface Evidence extends NgsiLdEntity {
   reviewedAt?: Property<DateTime>;
   /** Review notes / rejection reason */
   reviewNotes?: Property<string>;
+
+  // --- Government decision (final verification) ---
+  /** Government role who made final decision */
+  decisionBy?: Property<string>;
+  /** Decision timestamp */
+  decisionAt?: Property<DateTime>;
+  /** Decision notes / reason */
+  decisionNotes?: Property<string>;
 
   // --- Relationships ---
   /** Parent WorkOrder */

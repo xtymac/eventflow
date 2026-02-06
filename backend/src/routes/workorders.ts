@@ -13,6 +13,15 @@ import { workOrders, workOrderLocations, workOrderPartners, evidence, constructi
 import { eq, and, or, gte, lte, inArray, sql, desc, asc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { toGeomSql, fromGeomSql } from '../db/geometry.js';
+import { createWriteStream, mkdirSync, existsSync } from 'fs';
+import { pipeline } from 'stream/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get directory for file uploads
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const UPLOADS_DIR = join(__dirname, '../../uploads/evidence');
 
 // TypeBox schemas
 const GeometrySchema = Type.Object({
@@ -770,6 +779,12 @@ export async function workordersRoutes(fastify: FastifyInstance) {
     Type.Literal('pending'),
     Type.Literal('approved'),
     Type.Literal('rejected'),
+    Type.Literal('accepted_by_authority'),
+  ]);
+
+  const EvidenceSubmitterRoleSchema = Type.Union([
+    Type.Literal('partner'),
+    Type.Literal('gov_inspector'),
   ]);
 
   const EvidenceSchema = Type.Object({
@@ -784,18 +799,35 @@ export async function workordersRoutes(fastify: FastifyInstance) {
     description: Type.Optional(Type.Union([Type.String(), Type.Null()])),
     captureDate: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
     geometry: Type.Optional(Type.Union([GeometrySchema, Type.Null()])),
+    // Submission
     submittedBy: Type.String(),
     submittedAt: Type.String({ format: 'date-time' }),
+    submitterPartnerId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    submitterRole: Type.Optional(Type.Union([EvidenceSubmitterRoleSchema, Type.Null()])),
+    // First-level review
     reviewedBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
     reviewedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
     reviewStatus: EvidenceReviewStatusSchema,
     reviewNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    // Government decision
+    decisionBy: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    decisionAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
+    decisionNotes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   });
 
   const ReviewEvidenceSchema = Type.Object({
     reviewStatus: Type.Union([Type.Literal('approved'), Type.Literal('rejected')]),
     reviewNotes: Type.Optional(Type.String()),
   });
+
+  const MakeDecisionSchema = Type.Object({
+    decision: Type.Union([Type.Literal('accepted_by_authority'), Type.Literal('rejected')]),
+    decisionNotes: Type.Optional(Type.String()),
+  });
+
+  // Role constants for permission checks
+  const GOV_DECISION_ROLES = ['gov_admin', 'gov_event_ops'];
+  const GOV_REVIEW_ROLES = ['gov_admin', 'gov_event_ops', 'gov_inspector'];
 
   // Helper to format Evidence for response
   function formatEvidence(ev: typeof evidence.$inferSelect) {
@@ -804,6 +836,7 @@ export async function workordersRoutes(fastify: FastifyInstance) {
       captureDate: ev.captureDate?.toISOString() ?? null,
       submittedAt: ev.submittedAt.toISOString(),
       reviewedAt: ev.reviewedAt?.toISOString() ?? null,
+      decisionAt: ev.decisionAt?.toISOString() ?? null,
     };
   }
 
@@ -897,32 +930,21 @@ export async function workordersRoutes(fastify: FastifyInstance) {
     };
   });
 
-  // POST /workorders/:id/evidence - Upload evidence (metadata only - actual file upload handled separately)
+  // POST /workorders/:id/evidence - Upload evidence file (multipart form data)
   app.post('/:id/evidence', {
     schema: {
       params: Type.Object({
         id: Type.String(),
       }),
-      body: Type.Object({
-        type: EvidenceTypeSchema,
-        fileName: Type.String(),
-        filePath: Type.String(),
-        fileSizeBytes: Type.Optional(Type.Number()),
-        mimeType: Type.Optional(Type.String()),
-        title: Type.Optional(Type.String()),
-        description: Type.Optional(Type.String()),
-        captureDate: Type.Optional(Type.String({ format: 'date-time' })),
-        geometry: Type.Optional(GeometrySchema),
-        submittedBy: Type.String(),
-      }),
       response: {
         201: Type.Object({ data: EvidenceSchema }),
+        400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String() }),
         404: Type.Object({ error: Type.String() }),
       },
     },
   }, async (request, reply) => {
     const { id: workOrderId } = request.params;
-    const { type: evidenceType, fileName, filePath, fileSizeBytes, mimeType, title, description, captureDate, geometry, submittedBy } = request.body;
 
     // Verify work order exists
     const wo = await db.select({ id: workOrders.id }).from(workOrders).where(eq(workOrders.id, workOrderId)).limit(1);
@@ -930,32 +952,113 @@ export async function workordersRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Work order not found' });
     }
 
-    const id = `EV-${nanoid(12)}`;
+    // Parse multipart form data
+    const parts = request.parts();
+    let file: { filename: string; mimetype: string; file: NodeJS.ReadableStream } | null = null;
+    const fields: Record<string, string> = {};
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        file = {
+          filename: part.filename,
+          mimetype: part.mimetype,
+          file: part.file,
+        };
+        // Read file to buffer and save
+        const id = `EV-${nanoid(12)}`;
+        const ext = part.filename.split('.').pop() || '';
+        const savedFileName = `${id}.${ext}`;
+
+        // Ensure uploads directory exists
+        if (!existsSync(UPLOADS_DIR)) {
+          mkdirSync(UPLOADS_DIR, { recursive: true });
+        }
+
+        const filePath = join(UPLOADS_DIR, savedFileName);
+        const writeStream = createWriteStream(filePath);
+        await pipeline(part.file, writeStream);
+
+        // Store file info for later
+        fields._savedId = id;
+        fields._savedFileName = savedFileName;
+        fields._savedFilePath = `/uploads/evidence/${savedFileName}`;
+        fields._originalFileName = part.filename;
+        fields._mimeType = part.mimetype;
+      } else {
+        fields[part.fieldname] = (part as unknown as { value: string }).value;
+      }
+    }
+
+    if (!fields._savedId) {
+      return reply.status(400).send({ error: 'No file uploaded' });
+    }
+
+    const evidenceType = fields.type as 'photo' | 'document' | 'report' | 'cad' | 'other';
+    if (!evidenceType) {
+      return reply.status(400).send({ error: 'Evidence type is required' });
+    }
+
+    // Determine submitter identity from headers
+    const userRole = request.headers['x-user-role'] as string | undefined;
+    const partnerId = request.headers['x-partner-id'] as string | undefined;
+
+    let submitterPartnerId: string | null = null;
+    let submitterRole: 'partner' | 'gov_inspector' | null = null;
+
+    // If user is a partner, validate they are assigned to this work order
+    if (userRole === 'partner') {
+      if (!partnerId) {
+        return reply.status(403).send({ error: 'Partner ID required. Set X-Partner-Id header.' });
+      }
+
+      // Verify partner is assigned to this work order
+      const partnerAssignment = await db
+        .select({ partnerId: workOrderPartners.partnerId })
+        .from(workOrderPartners)
+        .where(and(
+          eq(workOrderPartners.workOrderId, workOrderId),
+          eq(workOrderPartners.partnerId, partnerId)
+        ))
+        .limit(1);
+
+      if (partnerAssignment.length === 0) {
+        return reply.status(403).send({ error: 'Partner not assigned to this work order' });
+      }
+
+      submitterPartnerId = partnerId;
+      submitterRole = 'partner';
+    } else if (userRole && GOV_REVIEW_ROLES.includes(userRole)) {
+      // Government inspector/admin submitting evidence
+      submitterRole = 'gov_inspector';
+    }
+    // If no role header, still allow submission (backward compatibility)
+
+    const id = fields._savedId;
+    const fileName = fields._originalFileName;
+    const filePath = fields._savedFilePath;
+    const mimeType = fields._mimeType;
+    const title = fields.title || null;
+    const description = fields.description || null;
+    const submittedBy = fields.submittedBy || 'current_user';
     const now = new Date();
 
-    // Insert with or without geometry
-    if (geometry) {
-      await db.execute(sql`
-        INSERT INTO evidence (id, work_order_id, type, file_name, file_path, file_size_bytes, mime_type, title, description, capture_date, geometry, submitted_by, submitted_at, review_status)
-        VALUES (${id}, ${workOrderId}, ${evidenceType}, ${fileName}, ${filePath}, ${fileSizeBytes ?? null}, ${mimeType ?? null}, ${title ?? null}, ${description ?? null}, ${captureDate ? new Date(captureDate) : null}, ${toGeomSql(geometry)}, ${submittedBy}, ${now}, 'pending')
-      `);
-    } else {
-      await db.insert(evidence).values({
-        id,
-        workOrderId,
-        type: evidenceType,
-        fileName,
-        filePath,
-        fileSizeBytes: fileSizeBytes ?? null,
-        mimeType: mimeType ?? null,
-        title: title ?? null,
-        description: description ?? null,
-        captureDate: captureDate ? new Date(captureDate) : null,
-        submittedBy,
-        submittedAt: now,
-        reviewStatus: 'pending',
-      });
-    }
+    await db.insert(evidence).values({
+      id,
+      workOrderId,
+      type: evidenceType,
+      fileName,
+      filePath,
+      fileSizeBytes: null, // Could calculate from file if needed
+      mimeType,
+      title,
+      description,
+      captureDate: null,
+      submittedBy,
+      submittedAt: now,
+      submitterPartnerId,
+      submitterRole,
+      reviewStatus: 'pending',
+    });
 
     return reply.status(201).send({
       data: {
@@ -964,18 +1067,23 @@ export async function workordersRoutes(fastify: FastifyInstance) {
         type: evidenceType,
         fileName,
         filePath,
-        fileSizeBytes: fileSizeBytes ?? null,
-        mimeType: mimeType ?? null,
-        title: title ?? null,
-        description: description ?? null,
-        captureDate: captureDate ?? null,
-        geometry: geometry ?? null,
+        fileSizeBytes: null,
+        mimeType,
+        title,
+        description,
+        captureDate: null,
+        geometry: null,
         submittedBy,
         submittedAt: now.toISOString(),
+        submitterPartnerId,
+        submitterRole,
         reviewedBy: null,
         reviewedAt: null,
         reviewStatus: 'pending' as const,
         reviewNotes: null,
+        decisionBy: null,
+        decisionAt: null,
+        decisionNotes: null,
       },
     });
   });
@@ -1096,6 +1204,107 @@ export async function workordersRoutes(fastify: FastifyInstance) {
         captureDate: ev.captureDate?.toISOString() ?? null,
         submittedAt: ev.submittedAt.toISOString(),
         reviewedAt: ev.reviewedAt?.toISOString() ?? null,
+      },
+    };
+  });
+
+  // POST /workorders/evidence/:evidenceId/decision - Government decision (final verification)
+  app.post('/evidence/:evidenceId/decision', {
+    schema: {
+      params: Type.Object({
+        evidenceId: Type.String(),
+      }),
+      body: MakeDecisionSchema,
+      response: {
+        200: Type.Object({ data: EvidenceSchema }),
+        400: Type.Object({ error: Type.String() }),
+        403: Type.Object({ error: Type.String(), hint: Type.Optional(Type.String()) }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { evidenceId } = request.params;
+    const { decision, decisionNotes } = request.body;
+
+    // Gov role check - only gov_admin and gov_event_ops can make decisions
+    const userRole = request.headers['x-user-role'] as string;
+    if (!userRole || !GOV_DECISION_ROLES.includes(userRole)) {
+      return reply.status(403).send({
+        error: 'Government role required to make decisions',
+        hint: 'Set X-User-Role header to gov_admin or gov_event_ops',
+      });
+    }
+
+    // Fetch existing evidence
+    const existing = await db.select().from(evidence).where(eq(evidence.id, evidenceId)).limit(1);
+    if (existing.length === 0) {
+      return reply.status(404).send({ error: 'Evidence not found' });
+    }
+
+    const existingEv = existing[0];
+
+    // Check if already decided (decision is irreversible)
+    if (existingEv.reviewStatus === 'accepted_by_authority') {
+      return reply.status(400).send({
+        error: 'Evidence has already been accepted. Decision is irreversible.',
+      });
+    }
+
+    // Evidence must be in 'approved' status before government can make decision
+    if (existingEv.reviewStatus !== 'approved') {
+      return reply.status(400).send({
+        error: `Evidence must be in 'approved' status before government decision. Current status: ${existingEv.reviewStatus}`,
+      });
+    }
+
+    const now = new Date();
+
+    // Update evidence with decision
+    await db.update(evidence).set({
+      reviewStatus: decision,
+      decisionBy: userRole,
+      decisionAt: now,
+      decisionNotes: decisionNotes ?? null,
+    }).where(eq(evidence.id, evidenceId));
+
+    // Fetch updated record with all fields
+    const results = await db
+      .select({
+        id: evidence.id,
+        workOrderId: evidence.workOrderId,
+        type: evidence.type,
+        fileName: evidence.fileName,
+        filePath: evidence.filePath,
+        fileSizeBytes: evidence.fileSizeBytes,
+        mimeType: evidence.mimeType,
+        title: evidence.title,
+        description: evidence.description,
+        captureDate: evidence.captureDate,
+        geometry: fromGeomSql(evidence.geometry),
+        submittedBy: evidence.submittedBy,
+        submittedAt: evidence.submittedAt,
+        submitterPartnerId: evidence.submitterPartnerId,
+        submitterRole: evidence.submitterRole,
+        reviewedBy: evidence.reviewedBy,
+        reviewedAt: evidence.reviewedAt,
+        reviewStatus: evidence.reviewStatus,
+        reviewNotes: evidence.reviewNotes,
+        decisionBy: evidence.decisionBy,
+        decisionAt: evidence.decisionAt,
+        decisionNotes: evidence.decisionNotes,
+      })
+      .from(evidence)
+      .where(eq(evidence.id, evidenceId))
+      .limit(1);
+
+    const ev = results[0];
+    return {
+      data: {
+        ...ev,
+        captureDate: ev.captureDate?.toISOString() ?? null,
+        submittedAt: ev.submittedAt.toISOString(),
+        reviewedAt: ev.reviewedAt?.toISOString() ?? null,
+        decisionAt: ev.decisionAt?.toISOString() ?? null,
       },
     };
   });

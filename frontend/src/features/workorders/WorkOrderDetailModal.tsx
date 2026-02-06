@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Modal, Stack, Text, Badge, Group, Button, Divider, Alert, Loader, Center, Paper, FileInput, TextInput, Select, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconAlertCircle, IconUpload, IconFile } from '@tabler/icons-react';
-import { useWorkOrder, useUpdateWorkOrderStatus, useEvidence, useUploadEvidence } from '../../hooks/useApi';
-import type { WorkOrderStatus } from '@nagoya/shared';
+import { IconAlertCircle, IconUpload, IconFile, IconCheck, IconX } from '@tabler/icons-react';
+import { useWorkOrder, useUpdateWorkOrderStatus, useEvidence, useUploadEvidence, useMakeEvidenceDecision } from '../../hooks/useApi';
+import type { WorkOrderStatus, EvidenceReviewStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
 
 interface WorkOrderDetailModalProps {
@@ -51,11 +51,29 @@ const EVIDENCE_TYPE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
+// Evidence review status configuration
+const EVIDENCE_STATUS_CONFIG: Record<EvidenceReviewStatus, { color: string; label: string }> = {
+  pending: { color: 'yellow', label: '待審査' },
+  approved: { color: 'blue', label: '審査済' },
+  rejected: { color: 'red', label: '却下' },
+  accepted_by_authority: { color: 'green', label: '政府承認' },
+};
+
+// Government roles that can make final decisions
+const GOV_DECISION_ROLES = ['gov_admin', 'gov_event_ops'];
+
+// Role options for government decision making
+const GOV_ROLE_OPTIONS = [
+  { value: 'gov_admin', label: 'Gov Admin' },
+  { value: 'gov_event_ops', label: 'Gov Event Ops' },
+];
+
 export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailModalProps) {
   const { data, isLoading, error } = useWorkOrder(workOrderId);
   const { data: evidenceData, isLoading: evidenceLoading } = useEvidence(workOrderId);
   const updateStatus = useUpdateWorkOrderStatus();
   const uploadEvidence = useUploadEvidence();
+  const makeDecision = useMakeEvidenceDecision();
 
   // Evidence upload form state
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -64,9 +82,18 @@ export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailMo
   const [evidenceTitle, setEvidenceTitle] = useState('');
   const [evidenceDescription, setEvidenceDescription] = useState('');
 
+  // Government role state for decision making (temporary until proper auth)
+  const [selectedRole, setSelectedRole] = useState<string | null>('gov_admin');
+
   const workOrder = data?.data;
-  const evidence = evidenceData?.data || [];
+  const evidenceList = evidenceData?.data || [];
   const availableTransitions = workOrder ? VALID_TRANSITIONS[workOrder.status] || [] : [];
+
+  // Check if user can make government decisions (always true when role is selected)
+  const canMakeDecision = selectedRole && GOV_DECISION_ROLES.includes(selectedRole);
+
+  // Check if there are any evidence items that need decision
+  const hasApprovedEvidence = evidenceList.some(ev => ev.reviewStatus === 'approved');
 
   const handleStatusChange = (newStatus: WorkOrderStatus) => {
     if (!workOrderId) return;
@@ -121,6 +148,30 @@ export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailMo
           notifications.show({
             title: 'Upload Failed',
             message: err instanceof Error ? err.message : 'Failed to upload evidence',
+            color: 'red',
+          });
+        },
+      }
+    );
+  };
+
+  const handleMakeDecision = (evidenceId: string, decision: 'accepted_by_authority' | 'rejected') => {
+    if (!selectedRole) return;
+
+    makeDecision.mutate(
+      { evidenceId, decision, userRole: selectedRole },
+      {
+        onSuccess: () => {
+          notifications.show({
+            title: decision === 'accepted_by_authority' ? '承認完了' : '却下完了',
+            message: decision === 'accepted_by_authority' ? 'Evidence has been accepted.' : 'Evidence has been rejected.',
+            color: decision === 'accepted_by_authority' ? 'green' : 'red',
+          });
+        },
+        onError: (err) => {
+          notifications.show({
+            title: 'Decision Failed',
+            message: err instanceof Error ? err.message : 'Failed to make decision',
             color: 'red',
           });
         },
@@ -221,7 +272,7 @@ export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailMo
           {/* Evidence Section */}
           <Stack gap="xs">
             <Group justify="space-between">
-              <Text size="sm" fw={600}>Evidence ({evidence.length})</Text>
+              <Text size="sm" fw={600}>Evidence ({evidenceList.length})</Text>
               <Button
                 size="compact-xs"
                 variant="light"
@@ -231,6 +282,19 @@ export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailMo
                 Upload
               </Button>
             </Group>
+
+            {/* Gov Role Selector (shown when there are evidence items needing approval) */}
+            {hasApprovedEvidence && (
+              <Select
+                label="政府ロール（仮）"
+                description="Evidence 承認用のロールを選択"
+                placeholder="Select role"
+                size="xs"
+                data={GOV_ROLE_OPTIONS}
+                value={selectedRole}
+                onChange={setSelectedRole}
+              />
+            )}
 
             {/* Upload Form */}
             {showUploadForm && (
@@ -291,33 +355,62 @@ export function WorkOrderDetailModal({ workOrderId, onClose }: WorkOrderDetailMo
               <Center h={60}>
                 <Loader size="xs" />
               </Center>
-            ) : evidence.length === 0 ? (
+            ) : evidenceList.length === 0 ? (
               <Text size="xs" c="dimmed">No evidence uploaded yet.</Text>
             ) : (
               <Stack gap={4}>
-                {evidence.map((ev) => (
-                  <Paper key={ev.id} p="xs" withBorder>
-                    <Group justify="space-between" wrap="nowrap">
-                      <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                        <IconFile size={14} />
-                        <Stack gap={0} style={{ minWidth: 0 }}>
-                          <Text size="xs" fw={500} truncate>
-                            {ev.title || ev.fileName}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {ev.type} - {dayjs(ev.submittedAt).format('MM/DD HH:mm')}
-                          </Text>
-                        </Stack>
-                      </Group>
-                      <Badge
-                        size="xs"
-                        color={ev.reviewStatus === 'approved' ? 'green' : ev.reviewStatus === 'rejected' ? 'red' : 'yellow'}
-                      >
-                        {ev.reviewStatus}
-                      </Badge>
-                    </Group>
-                  </Paper>
-                ))}
+                {evidenceList.map((ev) => {
+                  const statusConfig = EVIDENCE_STATUS_CONFIG[ev.reviewStatus as EvidenceReviewStatus] || { color: 'gray', label: ev.reviewStatus };
+                  const showDecisionButtons = canMakeDecision && ev.reviewStatus === 'approved';
+
+                  return (
+                    <Paper key={ev.id} p="xs" withBorder>
+                      <Stack gap="xs">
+                        <Group justify="space-between" wrap="nowrap">
+                          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                            <IconFile size={14} />
+                            <Stack gap={0} style={{ minWidth: 0 }}>
+                              <Text size="xs" fw={500} truncate>
+                                {ev.title || ev.fileName}
+                              </Text>
+                              <Text size="xs" c="dimmed">
+                                {ev.type} - {dayjs(ev.submittedAt).format('MM/DD HH:mm')}
+                              </Text>
+                            </Stack>
+                          </Group>
+                          <Badge size="xs" color={statusConfig.color}>
+                            {statusConfig.label}
+                          </Badge>
+                        </Group>
+
+                        {/* Government Decision Buttons */}
+                        {showDecisionButtons && (
+                          <Group gap="xs" justify="flex-end">
+                            <Button
+                              size="compact-xs"
+                              color="green"
+                              leftSection={<IconCheck size={12} />}
+                              onClick={() => handleMakeDecision(ev.id, 'accepted_by_authority')}
+                              loading={makeDecision.isPending}
+                            >
+                              承認
+                            </Button>
+                            <Button
+                              size="compact-xs"
+                              color="red"
+                              variant="light"
+                              leftSection={<IconX size={12} />}
+                              onClick={() => handleMakeDecision(ev.id, 'rejected')}
+                              loading={makeDecision.isPending}
+                            >
+                              却下
+                            </Button>
+                          </Group>
+                        )}
+                      </Stack>
+                    </Paper>
+                  );
+                })}
               </Stack>
             )}
           </Stack>

@@ -1312,10 +1312,48 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
+      // WorkOrder fill layer (for Polygon geometries like work areas)
+      map.current.addLayer({
+        id: 'workorder-locations-fill',
+        type: 'fill',
+        source: 'workorder-locations',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: {
+          'fill-color': [
+            'match', ['get', 'workOrderType'],
+            'inspection', WORKORDER_TYPE_COLORS.inspection,
+            'repair', WORKORDER_TYPE_COLORS.repair,
+            'update', WORKORDER_TYPE_COLORS.update,
+            '#6B7280' // default gray
+          ],
+          'fill-opacity': 0.3,
+        },
+      });
+
+      // WorkOrder outline layer (for Polygon geometries)
+      map.current.addLayer({
+        id: 'workorder-locations-outline',
+        type: 'line',
+        source: 'workorder-locations',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: {
+          'line-color': [
+            'match', ['get', 'workOrderType'],
+            'inspection', WORKORDER_TYPE_COLORS.inspection,
+            'repair', WORKORDER_TYPE_COLORS.repair,
+            'update', WORKORDER_TYPE_COLORS.update,
+            '#6B7280' // default gray
+          ],
+          'line-width': 2,
+        },
+      });
+
+      // WorkOrder point layer (for Point geometries)
       map.current.addLayer({
         id: 'workorder-locations-point',
         type: 'circle',
         source: 'workorder-locations',
+        filter: ['==', ['geometry-type'], 'Point'],
         paint: {
           'circle-radius': 10,
           'circle-color': [
@@ -2848,6 +2886,8 @@ export function MapView() {
 
     // WorkOrder layer is always visible when there's data (no toggle yet)
     const hasData = data.features && data.features.length > 0;
+    map.current.setLayoutProperty('workorder-locations-fill', 'visibility', hasData ? 'visible' : 'none');
+    map.current.setLayoutProperty('workorder-locations-outline', 'visibility', hasData ? 'visible' : 'none');
     map.current.setLayoutProperty('workorder-locations-point', 'visibility', hasData ? 'visible' : 'none');
     map.current.setLayoutProperty('workorder-locations-label', 'visibility', hasData ? 'visible' : 'none');
   }, [workOrderLocationsData, mapLoaded]);

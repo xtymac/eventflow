@@ -25,12 +25,11 @@ const ASSET_TYPE_LABELS: Record<AssetTypeRef, string> = {
   pavement_section: '舗装区間',
   pump_station: 'ポンプ場',
 };
-import { useUIStore } from '../../stores/uiStore';
+import { useUIStore, type AssetType } from '../../stores/uiStore';
 import type { EventStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
 import { EventActionButtons } from './EventActionButtons';
 import { AffectedAssetsList } from './AffectedAssetsList';
-import { InspectionsListSection } from '../inspections/InspectionsListSection';
 import { WorkOrdersListSection } from '../workorders/WorkOrdersListSection';
 import { WorkOrderDetailModal } from '../workorders/WorkOrderDetailModal';
 import { WorkOrderCreateModal } from '../workorders/WorkOrderCreateModal';
@@ -195,7 +194,7 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
                   variant="light"
                   color="blue"
                   style={{ cursor: 'pointer', maxWidth: 'fit-content' }}
-                  onClick={() => selectAsset(event.refAssetId!, event.refAssetType!)}
+                  onClick={() => selectAsset(event.refAssetId!, event.refAssetType as AssetType | null)}
                   rightSection={<IconExternalLink size={12} />}
                 >
                   {ASSET_TYPE_LABELS[event.refAssetType as AssetTypeRef]}: {event.refAssetId}
@@ -225,11 +224,6 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
           onCreateWorkOrder={() => setIsCreateWorkOrderOpen(true)}
           onSelectWorkOrder={(id) => setSelectedWorkOrderId(id)}
         />
-      </Paper>
-
-      {/* Inspections */}
-      <Paper p="sm" withBorder radius="sm">
-        <InspectionsListSection eventId={eventId} />
       </Paper>
 
       {/* WorkOrder Modals */}
