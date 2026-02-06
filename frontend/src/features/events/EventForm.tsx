@@ -792,14 +792,14 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               <Text size="xs" c="dimmed">
                 任意: このイベントに関連する資産を選択
               </Text>
-              <Group grow>
+              <Group grow align="flex-end">
                 <Controller
                   name="refAssetType"
                   control={control}
                   render={({ field }) => (
                     <Select
-                      label="資産タイプ"
-                      placeholder="任意"
+                      label="タイプで絞り込み"
+                      placeholder="全て"
                       data={ASSET_TYPE_OPTIONS}
                       clearable
                       size="xs"
@@ -818,7 +818,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                     assetType={watch('refAssetType')!}
                     value={watch('refAssetId')}
                     onChange={(val) => setValue('refAssetId', val)}
-                    label="資産を選択"
+                    label="資産"
                     placeholder="検索..."
                   />
                 )}
@@ -979,10 +979,6 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               )}
             />
             */}
-
-            <Alert color="blue" variant="light" title="Phase 0: Road Selection Disabled">
-              Road-Event linking is currently disabled. Draw the event area directly on the map using the polygon or line tools above.
-            </Alert>
           </Stack>
         </div>
 

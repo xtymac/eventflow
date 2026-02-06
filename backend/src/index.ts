@@ -36,6 +36,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const TILES_DIR = join(__dirname, '../../frontend/public/tiles');
+const UPLOADS_DIR = join(__dirname, '../uploads');
 
 async function main() {
   const fastify = Fastify({
@@ -74,6 +75,15 @@ async function main() {
     cacheControl: true,
     maxAge: '1d',
     immutable: false,
+  });
+
+  // Static file serving for uploads (evidence files)
+  await fastify.register(fastifyStatic, {
+    root: UPLOADS_DIR,
+    prefix: '/uploads/',
+    decorateReply: false,
+    cacheControl: true,
+    maxAge: '1h',
   });
 
   // Health check endpoint

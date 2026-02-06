@@ -118,10 +118,11 @@ export function AssetList() {
     return wideBboxFromCenter(mapCenter) ?? mapBbox ?? null;
   }, [mapCenter, mapBbox]);
 
-  // Fetch green spaces for park grouping headers
+  // Fetch green spaces for park grouping headers (need high limit to find all parks by ID)
+  // There are ~1300 parks in the typical bbox, so we need limit > that to ensure all are fetched
   const { data: greenSpacesData } = useGreenSpacesInBbox(
     listBbox,
-    undefined,
+    { greenSpaceType: 'park', limit: 2000 },
     { enabled: !!listBbox }
   );
 

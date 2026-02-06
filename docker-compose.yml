@@ -6,7 +6,8 @@ services:
     environment:
       POSTGRES_DB: nagoya_construction
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}
+    # Port exposed for local development (drizzle-kit, etc.)
     ports:
       - "5433:5432"
     volumes:
@@ -21,8 +22,9 @@ services:
     image: mongo:4.4
     container_name: nagoya-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    # Port NOT exposed to host - only accessible within Docker network
+    # ports:
+    #   - "27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -39,8 +41,9 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
-    ports:
-      - "1026:1026"
+    # Port NOT exposed to host - only accessible within Docker network
+    # ports:
+    #   - "1026:1026"
     environment:
       ORIONLD_MONGO_HOST: mongo
       ORIONLD_MONGO_DB: orionld
@@ -67,7 +70,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}@db:5432/nagoya_construction
       ORION_LD_URL: http://orion-ld:1026
       PORT: 3000
       TZ: Asia/Tokyo
@@ -75,6 +78,7 @@ services:
     volumes:
       - ./backend/src:/app/src:ro
       - ./backend/uploads:/app/uploads
+      - ./shared:/shared:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
@@ -108,7 +112,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/nagoya_construction
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}@db:5432/nagoya_construction
     command: --auto-bounds calc
 
   caddy:

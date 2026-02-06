@@ -68,7 +68,7 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
         dataSource: Type.Optional(Type.String()),
         minArea: Type.Optional(Type.Number()), // Filter by minimum area in m²
         q: Type.Optional(Type.String()),
-        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),
+        limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 5000 })),
         offset: Type.Optional(Type.Integer({ minimum: 0 })),
         includeTotal: Type.Optional(Type.Boolean()),
       }),
@@ -91,7 +91,7 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { bbox, zoom, status, greenSpaceType, ward, dataSource, minArea, q } = request.query;
-    const limit = Math.min(request.query.limit ?? 200, 1000);
+    const limit = Math.min(request.query.limit ?? 200, 5000);
     const offset = request.query.offset ?? 0;
     const includeTotal = request.query.includeTotal !== false;
 
