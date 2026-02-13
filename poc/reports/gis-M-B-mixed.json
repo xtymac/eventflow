@@ -1,0 +1,68 @@
+{
+  "env": "local-mongo-gis",
+  "tier": "M",
+  "timestamp": "2026-02-09T05:47:29.666Z",
+  "summary": {
+    "totalQueries": 4,
+    "passed": 1,
+    "failed": 2,
+    "skipped": 1,
+    "verdict": "FAIL"
+  },
+  "results": [
+    {
+      "name": "G1",
+      "label": "Mixed-read G1",
+      "samples": 41,
+      "min": 0.9903750000000855,
+      "p50": 3.1463329999999132,
+      "p95": 77.685833,
+      "p99": 87.8988330000002,
+      "max": 87.8988330000002,
+      "avgRowCount": 16,
+      "threshold": 50,
+      "pass": false
+    },
+    {
+      "name": "G9",
+      "label": "Mixed-read G9",
+      "samples": 17,
+      "min": 0.7259999999998854,
+      "p50": 3.3892499999999472,
+      "p95": 88.19608300000004,
+      "p99": 88.19608300000004,
+      "max": 88.19608300000004,
+      "avgRowCount": 3,
+      "threshold": 100,
+      "pass": true
+    },
+    {
+      "name": "G5",
+      "label": "Mixed-read G5",
+      "samples": 42,
+      "min": 16.63579199999981,
+      "p50": 97.23545899999999,
+      "p95": 181.74262499999986,
+      "p99": 184.633916,
+      "max": 184.633916,
+      "avgRowCount": 51,
+      "threshold": 100,
+      "pass": false
+    },
+    {
+      "name": "WRITE",
+      "label": "Mixed-write insert",
+      "samples": 50,
+      "min": 1.9930420000000595,
+      "p50": 15.083082999999988,
+      "p95": 96.21479199999999,
+      "p99": 96.88300000000004,
+      "max": 96.88300000000004,
+      "avgRowCount": 1,
+      "threshold": null,
+      "pass": null
+    }
+  ],
+  "indexConfig": "B",
+  "mode": "mixed"
+}

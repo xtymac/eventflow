@@ -1,0 +1,56 @@
+{
+  "env": "local-mongo-gis",
+  "tier": "L",
+  "timestamp": "2026-02-09T05:53:19.320Z",
+  "summary": {
+    "totalQueries": 3,
+    "passed": 1,
+    "failed": 2,
+    "skipped": 0,
+    "verdict": "FAIL"
+  },
+  "results": [
+    {
+      "name": "G9",
+      "label": "Concurrent $geoIntersects",
+      "samples": 23,
+      "min": 1.09429099999943,
+      "p50": 4.7391670000001795,
+      "p95": 84.21462499999961,
+      "p99": 102.59841700000015,
+      "max": 102.59841700000015,
+      "avgRowCount": 14,
+      "threshold": 100,
+      "pass": true
+    },
+    {
+      "name": "G1",
+      "label": "Concurrent $nearSphere 500m",
+      "samples": 32,
+      "min": 2.6027079999994385,
+      "p50": 9.289957999999842,
+      "p95": 97.0340000000001,
+      "p99": 98.77899999999954,
+      "max": 98.77899999999954,
+      "avgRowCount": 96,
+      "threshold": 50,
+      "pass": false
+    },
+    {
+      "name": "G5",
+      "label": "Concurrent $geoWithin $box",
+      "samples": 45,
+      "min": 187.47933299999931,
+      "p50": 317.5938329999999,
+      "p95": 508.27858400000014,
+      "p99": 514.1568750000006,
+      "max": 514.1568750000006,
+      "avgRowCount": 241,
+      "threshold": 100,
+      "pass": false
+    }
+  ],
+  "indexConfig": "B",
+  "mode": "concurrent",
+  "concurrency": 10
+}

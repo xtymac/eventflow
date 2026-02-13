@@ -149,6 +149,37 @@ async function main() {
   // OGC API routes (Features, Tiles)
   await fastify.register(ogcRoutes, { prefix: '/ogc' });
 
+  // PoC routes (conditional: set POC_ENABLED=true to activate)
+  // Uses @ts-ignore because poc/ is outside backend rootDir — runtime-only import via tsx
+  if (process.env.POC_ENABLED === 'true') {
+    try {
+      // @ts-ignore: poc/ is outside rootDir, but tsx handles runtime imports fine
+      const { pocDecisionsRoutes } = await import('../../poc/routes/decisions.js');
+      // @ts-ignore
+      const { pocAuditLogsRoutes } = await import('../../poc/routes/audit-logs.js');
+      await fastify.register(pocDecisionsRoutes, { prefix: '/poc/decisions' });
+      await fastify.register(pocAuditLogsRoutes, { prefix: '/poc/audit-logs' });
+      fastify.log.info('PoC routes registered: /poc/decisions, /poc/audit-logs');
+    } catch (err) {
+      fastify.log.warn('PoC routes not loaded (poc/ directory may not exist)');
+    }
+  }
+
+  // MongoDB PoC routes (conditional: set POC_MONGO_ENABLED=true to activate)
+  if (process.env.POC_MONGO_ENABLED === 'true') {
+    try {
+      // @ts-ignore: poc-mongo/ is outside rootDir, but tsx handles runtime imports fine
+      const { mongoDecisionsRoutes } = await import('../../poc-mongo/routes/mongo-decisions.js');
+      // @ts-ignore
+      const { mongoAuditLogsRoutes } = await import('../../poc-mongo/routes/mongo-audit-logs.js');
+      await fastify.register(mongoDecisionsRoutes, { prefix: '/poc-mongo/decisions' });
+      await fastify.register(mongoAuditLogsRoutes, { prefix: '/poc-mongo/audit-logs' });
+      fastify.log.info('MongoDB PoC routes registered: /poc-mongo/decisions, /poc-mongo/audit-logs');
+    } catch (err) {
+      fastify.log.warn('MongoDB PoC routes not loaded (poc-mongo/ directory may not exist)');
+    }
+  }
+
   // Initialize background job scheduler
   initScheduler();
 

@@ -1025,3 +1025,65 @@ export type NewPumpStation = typeof pumpStations.$inferInsert;
 
 export type LifecyclePlanRow = typeof lifecyclePlans.$inferSelect;
 export type NewLifecyclePlan = typeof lifecyclePlans.$inferInsert;
+
+// ============================================
+// PoC: Decisions + Audit Logs (same-DB multi-table validation)
+// ============================================
+
+// Decisions table — standalone decision records for event closure, evidence finalization, etc.
+export const decisions = pgTable('decisions', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  entityType: varchar('entity_type', { length: 30 }).notNull(),
+  entityId: varchar('entity_id', { length: 50 }).notNull(),
+  decisionType: varchar('decision_type', { length: 50 }).notNull(),
+  outcome: varchar('outcome', { length: 30 }).notNull(),
+  rationale: text('rationale'),
+  conditions: text('conditions'),
+  previousStatus: varchar('previous_status', { length: 30 }),
+  newStatus: varchar('new_status', { length: 30 }),
+  decidedBy: varchar('decided_by', { length: 100 }).notNull(),
+  decidedByRole: varchar('decided_by_role', { length: 30 }).notNull(),
+  decidedAt: timestamp('decided_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  entityIdx: index('idx_decisions_entity').on(table.entityType, table.entityId),
+  entityIdIdx: index('idx_decisions_entity_id').on(table.entityId),
+  typeIdx: index('idx_decisions_type').on(table.decisionType),
+  outcomeIdx: index('idx_decisions_outcome').on(table.outcome),
+  decidedByIdx: index('idx_decisions_decided_by').on(table.decidedBy),
+  decidedAtIdx: index('idx_decisions_decided_at').on(table.decidedAt),
+}));
+
+// Audit logs table — unified audit trail (append-only)
+export const auditLogs = pgTable('audit_logs', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  entityType: varchar('entity_type', { length: 30 }).notNull(),
+  entityId: varchar('entity_id', { length: 50 }).notNull(),
+  action: varchar('action', { length: 30 }).notNull(),
+  description: text('description'),
+  beforeSnapshot: jsonbColumn('before_snapshot'),
+  afterSnapshot: jsonbColumn('after_snapshot'),
+  changedFields: jsonbColumn('changed_fields'),
+  actor: varchar('actor', { length: 100 }).notNull(),
+  actorRole: varchar('actor_role', { length: 30 }),
+  actorPartnerId: varchar('actor_partner_id', { length: 50 }),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  requestId: varchar('request_id', { length: 50 }),
+  decisionId: varchar('decision_id', { length: 50 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  entityIdx: index('idx_audit_entity').on(table.entityType, table.entityId),
+  entityIdIdx: index('idx_audit_entity_id').on(table.entityId),
+  actionIdx: index('idx_audit_action').on(table.action),
+  actorIdx: index('idx_audit_actor').on(table.actor),
+  createdAtIdx: index('idx_audit_created_at').on(table.createdAt),
+  decisionIdIdx: index('idx_audit_decision_id').on(table.decisionId),
+  entityTypeCreatedIdx: index('idx_audit_entity_type_created').on(table.entityType, table.createdAt),
+}));
+
+export type Decision = typeof decisions.$inferSelect;
+export type NewDecision = typeof decisions.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;

@@ -1,0 +1,29 @@
+# Docker Compose override for MongoDB benchmark container.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.poc-bench.yml up -d mongo-bench
+#   docker exec nagoya-mongo-bench mongosh --eval "rs.initiate()"
+
+services:
+  mongo-bench:
+    image: mongo:7.0
+    container_name: nagoya-mongo-bench
+    restart: unless-stopped
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo_bench_data:/data/db
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_bench_data:

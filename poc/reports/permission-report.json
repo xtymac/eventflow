@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-02-09T03:59:04.620Z",
+  "server": "http://localhost:3000",
+  "total": 15,
+  "passed": 0,
+  "failed": 15,
+  "verdict": "FAIL",
+  "results": [
+    {
+      "description": "gov_event_ops can list decisions",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "decisions",
+      "action": "list"
+    },
+    {
+      "description": "gov_event_ops can view decisions (404 for missing is OK, not 403)",
+      "pass": false,
+      "expectedStatus": 404,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "decisions",
+      "action": "view"
+    },
+    {
+      "description": "gov_event_ops can create decisions",
+      "pass": false,
+      "expectedStatus": 201,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "decisions",
+      "action": "create"
+    },
+    {
+      "description": "gov_master_data can list decisions",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "gov_master_data",
+      "resource": "decisions",
+      "action": "list"
+    },
+    {
+      "description": "gov_master_data can create decisions",
+      "pass": false,
+      "expectedStatus": 201,
+      "actualStatus": 0,
+      "role": "gov_master_data",
+      "resource": "decisions",
+      "action": "create"
+    },
+    {
+      "description": "partner can list decisions (scoped)",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "partner",
+      "resource": "decisions",
+      "action": "list"
+    },
+    {
+      "description": "public cannot list decisions",
+      "pass": false,
+      "expectedStatus": 403,
+      "actualStatus": 0,
+      "role": "public",
+      "resource": "decisions",
+      "action": "list"
+    },
+    {
+      "description": "public cannot create decisions",
+      "pass": false,
+      "expectedStatus": 403,
+      "actualStatus": 0,
+      "role": "public",
+      "resource": "decisions",
+      "action": "create"
+    },
+    {
+      "description": "gov_event_ops can list audit logs",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "audit_logs",
+      "action": "list"
+    },
+    {
+      "description": "gov_event_ops can view audit logs (404 OK, not 403)",
+      "pass": false,
+      "expectedStatus": 404,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "audit_logs",
+      "action": "view"
+    },
+    {
+      "description": "gov_event_ops can view audit report",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "gov_event_ops",
+      "resource": "audit_logs",
+      "action": "report"
+    },
+    {
+      "description": "partner can list audit logs (scoped to own)",
+      "pass": false,
+      "expectedStatus": 200,
+      "actualStatus": 0,
+      "role": "partner",
+      "resource": "audit_logs",
+      "action": "list"
+    },
+    {
+      "description": "public cannot list audit logs",
+      "pass": false,
+      "expectedStatus": 403,
+      "actualStatus": 0,
+      "role": "public",
+      "resource": "audit_logs",
+      "action": "list"
+    },
+    {
+      "description": "missing role header defaults to public (403)",
+      "pass": false,
+      "expectedStatus": 403,
+      "actualStatus": 0,
+      "role": "(none)",
+      "resource": "decisions",
+      "action": "list"
+    },
+    {
+      "description": "missing role header defaults to public (403)",
+      "pass": false,
+      "expectedStatus": 403,
+      "actualStatus": 0,
+      "role": "(none)",
+      "resource": "audit_logs",
+      "action": "list"
+    }
+  ]
+}

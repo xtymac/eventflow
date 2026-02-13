@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@nagoya/shared": ["../shared/types/index.ts"]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../backend/src/db/index.ts",
+    "../backend/src/db/schema.ts",
+    "../backend/src/db/geometry.ts",
+    "../poc/benchmark/reporter.ts",
+    "../poc/benchmark/gis-pg-queries.ts",
+    "../poc/middleware/permission-guard.ts"
+  ],
+  "exclude": ["node_modules"]
+}
