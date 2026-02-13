@@ -104,3 +104,17 @@ v1.eventflow.uixai.org {
         format console
     }
 }
+
+# Urban Infrastructure DX Platform (demo)
+demo.eventflow.uixai.org {
+    handle {
+        reverse_proxy uidx-server:8080
+    }
+
+    encode gzip
+
+    log {
+        output stdout
+        format console
+    }
+}
