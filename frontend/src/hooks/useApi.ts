@@ -1035,3 +1035,25 @@ export function useCloseEvent() {
     },
   });
 }
+
+// ============================================
+// List-page hooks (non-map, Nagoya-wide bbox)
+// ============================================
+
+const NAGOYA_BBOX = '136.7,35.0,137.2,35.4';
+
+export function useAllGreenSpaces(filters?: Omit<GreenSpaceFilters, 'bbox'>) {
+  return useGreenSpacesInBbox(NAGOYA_BBOX, { ...filters, limit: 5000 } as Omit<GreenSpaceFilters, 'bbox'>, { enabled: true });
+}
+
+export function useAllParkFacilities(filters?: Omit<ParkFacilityFilters, 'bbox'>) {
+  return useParkFacilitiesInBbox(NAGOYA_BBOX, { ...filters, limit: 1000 } as Omit<ParkFacilityFilters, 'bbox'>, { enabled: true });
+}
+
+export function useParkFacilitiesByPark(greenSpaceId: string | null) {
+  return useParkFacilitiesInBbox(
+    greenSpaceId ? NAGOYA_BBOX : null,
+    greenSpaceId ? { greenSpaceRef: greenSpaceId } : undefined,
+    { enabled: !!greenSpaceId }
+  );
+}
