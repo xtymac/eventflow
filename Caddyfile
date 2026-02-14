@@ -105,14 +105,58 @@ v1.eventflow.uixai.org {
     }
 }
 
-# Urban Infrastructure DX Platform (demo)
+# Auth Role System Demo (feature/auth-role-system-demo branch)
 demo.eventflow.uixai.org {
-    handle {
-        reverse_proxy uidx-server:8080
+    # Static PMTiles files - serve from demo web container (long cache)
+    handle /tiles/*.pmtiles {
+        header Cache-Control "public, max-age=86400"
+        reverse_proxy demo-web:5173
     }
 
+    # Dynamic vector tiles from Martin (short cache for real-time data)
+    handle /tiles/* {
+        header Cache-Control "public, max-age=300"
+        uri strip_prefix /tiles
+        reverse_proxy demo-martin:3000
+    }
+
+    # API endpoints
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy demo-api:3000
+    }
+
+    # OGC API endpoints (no prefix strip - routes are /ogc/...)
+    @ogc path /ogc /ogc/*
+    handle @ogc {
+        reverse_proxy demo-api:3000
+    }
+
+    # SSE endpoints (no buffering)
+    handle /sse/* {
+        uri strip_prefix /sse
+        reverse_proxy demo-api:3000 {
+            flush_interval -1
+        }
+    }
+
+    # Frontend (Vite dev server in Docker)
+    # Catch-all for frontend - explicitly excludes API/backend paths
+    @frontend {
+        not path /api/*
+        not path /ogc /ogc/*
+        not path /sse/*
+        not path /tiles/*
+        not path /.well-known/*
+    }
+    handle @frontend {
+        reverse_proxy demo-web:5173
+    }
+
+    # Enable compression
     encode gzip
 
+    # Logging
     log {
         output stdout
         format console

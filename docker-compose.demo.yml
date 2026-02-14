@@ -1,0 +1,123 @@
+# Docker Compose for Auth Role System Demo (demo.eventflow.uixai.org)
+# This config uses the feature/auth-role-system-demo branch
+services:
+  demo-db:
+    image: postgis/postgis:16-3.4
+    container_name: nagoya-demo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nagoya_construction_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}
+    volumes:
+      - demo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nagoya_construction_demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-mongo:
+    image: mongo:4.4
+    container_name: nagoya-demo-mongo
+    restart: unless-stopped
+    volumes:
+      - demo_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-orion-ld:
+    image: fiware/orion-ld:1.5.1
+    platform: linux/amd64
+    container_name: nagoya-demo-orion-ld
+    restart: unless-stopped
+    depends_on:
+      demo-mongo:
+        condition: service_healthy
+    environment:
+      ORIONLD_MONGO_HOST: demo-mongo
+      ORIONLD_MONGO_DB: orionld_demo
+      ORIONLD_LOG_LEVEL: DEBUG
+    command: -dbhost demo-mongo -logLevel DEBUG
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:1026/version > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nagoya-demo-api
+    restart: unless-stopped
+    depends_on:
+      demo-db:
+        condition: service_healthy
+      demo-orion-ld:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}@demo-db:5432/nagoya_construction_demo
+      ORION_LD_URL: http://demo-orion-ld:1026
+      PORT: 3000
+      TZ: Asia/Tokyo
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/uploads:/app/uploads
+      - ./shared:/app/shared:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nagoya-demo-web
+    restart: unless-stopped
+    depends_on:
+      demo-api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      VITE_API_BASE_URL: /api
+      VITE_TILES_BASE_URL: /tiles
+      VITE_PMTILES_BASE_URL: /tiles
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./shared:/app/shared:ro
+      - ./frontend/public:/app/public:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5173 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  demo-martin:
+    image: ghcr.io/maplibre/martin:latest
+    container_name: nagoya-demo-martin
+    restart: unless-stopped
+    depends_on:
+      demo-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-jQ6eerv0s1pCxy6EMwI7h7g6}@demo-db:5432/nagoya_construction_demo
+      MARTIN_KEEP_ALIVE: 75
+      MARTIN_MAX_FEATURE_COUNT: 10000
+    command: --listen-addresses 0.0.0.0:3000
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  demo_postgres_data:
+  demo_mongo_data:
