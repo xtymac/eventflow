@@ -3,6 +3,9 @@ import { Burger, Group, SegmentedControl, ActionIcon, Tooltip, ScrollArea, Text,
 import { useDisclosure } from '@mantine/hooks';
 import { IconBell, IconX, IconFileImport } from '@tabler/icons-react';
 import { useShallow } from 'zustand/shallow';
+import { isDemoEnvironment, isAdminNavEnabled } from '../utils/environment';
+import { useAuth } from '../contexts/AuthContext';
+import { AdminDataNavigationPanel } from '../features/admin-demo/AdminDataNavigationPanel';
 import { EventList } from '../features/events/EventList';
 import { AssetList } from '../features/assets/AssetList';
 import { InspectionList } from '../features/inspections/InspectionList';
@@ -144,6 +147,16 @@ export function MapPage() {
   const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
   const isFullScreenMap = isEditing || isHistoricalPreviewMode;
 
+  // Demo layout guard: feature flag + demo environment (all roles)
+  const isDemoMode = isAdminNavEnabled() && isDemoEnvironment();
+  const { user } = useAuth();
+  const isDemoFixedSidebar = isDemoMode && (user?.role === 'user' || user?.role === 'admin');
+
+  // Demo admin uses store-based sidebar toggle (controlled by DemoHeader hamburger)
+  // 利用者 role: sidebar always visible (no hamburger)
+  const demoSidebarOpen = useUIStore((s) => s.demoSidebarOpen);
+  const effectiveSidebarOpen = isDemoFixedSidebar ? true : isDemoMode ? demoSidebarOpen : sidebarOpen;
+
   const prevDetailModalEventId = useRef(detailModalEventId);
   const prevSelectedAssetId = useRef(selectedAssetId);
 
@@ -161,7 +174,7 @@ export function MapPage() {
     prevSelectedAssetId.current = selectedAssetId;
   }, [selectedAssetId, openSidebar]);
 
-  const showLeftSidebar = !isFullScreenMap && sidebarOpen;
+  const showLeftSidebar = !isFullScreenMap && effectiveSidebarOpen;
   const showRightAside = detailModalEventId || selectedAssetId || isHistoricalPreviewMode;
 
   const renderSidebarContent = () => {
@@ -179,7 +192,7 @@ export function MapPage() {
       {showLeftSidebar && (
         <Box
           style={{
-            width: sidebarWidth,
+            width: isDemoFixedSidebar ? 300 : sidebarWidth,
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -188,43 +201,56 @@ export function MapPage() {
             overflow: 'hidden',
           }}
         >
-          {/* Sidebar Header */}
-          <Box p="md" pb="xs">
-            <Group justify="space-between" mb="xs">
-              <MapSearch />
-              <Group gap="xs">
-                <Tooltip label="Import / Export">
-                  <ActionIcon variant="subtle" onClick={toggleImportExportSidebar}>
-                    <IconFileImport size={20} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label="Notifications">
-                  <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
-                    <ActionIcon variant="subtle" onClick={toggleNotifications}>
-                      <IconBell size={20} />
-                    </ActionIcon>
-                  </Indicator>
-                </Tooltip>
-              </Group>
-            </Group>
-            <SegmentedControl
-              value={currentView}
-              onChange={(value) => setCurrentView(value as View)}
-              data={VIEW_OPTIONS}
-              fullWidth
-              size="xs"
-            />
-          </Box>
-          <ScrollArea style={{ flex: 1 }} type="hover" scrollbarSize={10} offsetScrollbars>
-            <Box p="md" pt="xs">
-              {renderSidebarContent()}
-            </Box>
-          </ScrollArea>
+          {isDemoMode ? (
+            /* Demo admin sidebar: Search + layer navigation only */
+            <ScrollArea style={{ flex: 1 }} type="hover" scrollbarSize={10} offsetScrollbars>
+              <Box p="md">
+                <MapSearch />
+                <AdminDataNavigationPanel />
+              </Box>
+            </ScrollArea>
+          ) : (
+            /* Standard sidebar: Search + toolbar + SegmentedControl + content list */
+            <>
+              <Box p="md" pb="xs">
+                <Group justify="space-between" mb="xs">
+                  <MapSearch />
+                  <Group gap="xs">
+                    <Tooltip label="Import / Export">
+                      <ActionIcon variant="subtle" onClick={toggleImportExportSidebar}>
+                        <IconFileImport size={20} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Notifications">
+                      <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
+                        <ActionIcon variant="subtle" onClick={toggleNotifications}>
+                          <IconBell size={20} />
+                        </ActionIcon>
+                      </Indicator>
+                    </Tooltip>
+                  </Group>
+                </Group>
+
+                <SegmentedControl
+                  value={currentView}
+                  onChange={(value) => setCurrentView(value as View)}
+                  data={VIEW_OPTIONS}
+                  fullWidth
+                  size="xs"
+                />
+              </Box>
+              <ScrollArea style={{ flex: 1 }} type="hover" scrollbarSize={10} offsetScrollbars>
+                <Box p="md" pt="xs">
+                  {renderSidebarContent()}
+                </Box>
+              </ScrollArea>
+            </>
+          )}
         </Box>
       )}
 
-      {/* Resize Handle */}
-      {showLeftSidebar && (
+      {/* Resize Handle (hidden for 利用者 — fixed-width sidebar) */}
+      {showLeftSidebar && !isDemoFixedSidebar && (
         <Box
           className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
           onMouseDown={handleResizeStart}
@@ -244,8 +270,8 @@ export function MapPage() {
         />
       )}
 
-      {/* Sidebar toggle when collapsed */}
-      {!showLeftSidebar && !isFullScreenMap && (
+      {/* Sidebar toggle when collapsed (non-demo only - demo uses header hamburger) */}
+      {!showLeftSidebar && !isFullScreenMap && !isDemoMode && (
         <Box
           style={{
             position: 'absolute',

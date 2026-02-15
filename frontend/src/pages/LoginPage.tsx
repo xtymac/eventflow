@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Container, Paper, Stack, Title, TextInput, PasswordInput, Button, Text, Divider, Radio, Group } from '@mantine/core';
+import { Box, Container, Paper, Stack, Title, TextInput, PasswordInput, Button, Text, Divider, Radio } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type UserRole } from '../contexts/AuthContext';
 

@@ -273,6 +273,11 @@ interface UIState {
   // Historical preview mode actions (persistent full-screen map with sidebar)
   enterHistoricalPreview: (versionId: string, displayNumber: number, features: Feature[]) => void;
   exitHistoricalPreview: () => void;
+
+  // Demo admin sidebar toggle (shared between DemoHeader and MapPage)
+  demoSidebarOpen: boolean;
+  toggleDemoSidebar: () => void;
+  setDemoSidebarOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -895,4 +900,9 @@ export const useUIStore = create<UIState>((set, get) => ({
     historicalPreviewVersionId: null,
     historicalPreviewDisplayNumber: 0,
   })),
+
+  // Demo admin sidebar
+  demoSidebarOpen: true,
+  toggleDemoSidebar: () => set((s) => ({ demoSidebarOpen: !s.demoSidebarOpen })),
+  setDemoSidebarOpen: (open) => set({ demoSidebarOpen: open }),
 }));

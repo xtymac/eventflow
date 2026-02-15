@@ -44,14 +44,8 @@ const ROLE_CONFIG: Record<UserRole, { roleLabel: string; department: string; all
 
 const AUTH_STORAGE_KEY = 'eventflow-auth';
 
-// Mock user database - maps username to role
-// In production, this would be determined by backend authentication
-const MOCK_USERS: Record<string, UserRole> = {
-  'admin': 'admin',
-  'park': 'park_manager',
-  'tree': 'tree_manager',
-  'user': 'user',
-};
+// Mock authentication: Login accepts any username with the selected role
+// In production, user database would be managed by backend API
 
 function loadUser(): AuthUser | null {
   try {
@@ -66,8 +60,9 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadUser);
 
-  const login = useCallback((username: string, password: string, role: UserRole) => {
+  const login = useCallback((username: string, _password: string, role: UserRole) => {
     // Mock authentication - in production, this would call backend API
+    // Password is intentionally unused (prefixed with _) - will be validated by backend in production
     // Use the provided role directly
     const u: AuthUser = { name: username, role, ...ROLE_CONFIG[role] };
     setUser(u);

@@ -22,6 +22,7 @@ interface MapState {
   showGreenSpaces: boolean;
   showStreetLights: boolean;
   showStreetTrees: boolean;
+  showParkTrees: boolean;
   showParkFacilities: boolean;
   showPavementSections: boolean;
   showPumpStations: boolean;
@@ -45,6 +46,7 @@ interface MapState {
   toggleGreenSpaces: () => void;
   toggleStreetLights: () => void;
   toggleStreetTrees: () => void;
+  toggleParkTrees: () => void;
   toggleParkFacilities: () => void;
   togglePavementSections: () => void;
   togglePumpStations: () => void;
@@ -75,6 +77,7 @@ export const useMapStore = create<MapState>()(
       showGreenSpaces: true,
       showStreetLights: false, // Off by default (large quantity)
       showStreetTrees: false, // Off by default (large quantity, zoom 16+)
+      showParkTrees: false, // Off by default (placeholder - no data yet)
       showParkFacilities: true,
       showPavementSections: false, // Off by default (line geometry, zoom 13+)
       showPumpStations: true,
@@ -97,6 +100,7 @@ export const useMapStore = create<MapState>()(
       toggleGreenSpaces: () => set((state) => ({ showGreenSpaces: !state.showGreenSpaces })),
       toggleStreetLights: () => set((state) => ({ showStreetLights: !state.showStreetLights })),
       toggleStreetTrees: () => set((state) => ({ showStreetTrees: !state.showStreetTrees })),
+      toggleParkTrees: () => set((state) => ({ showParkTrees: !state.showParkTrees })),
       toggleParkFacilities: () => set((state) => ({ showParkFacilities: !state.showParkFacilities })),
       togglePavementSections: () => set((state) => ({ showPavementSections: !state.showPavementSections })),
       togglePumpStations: () => set((state) => ({ showPumpStations: !state.showPumpStations })),
