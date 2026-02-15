@@ -18,7 +18,7 @@ const DEPARTMENTS = [
  *
  * Unified layout (admin + user):
  *   [公園管理 ▽ / static]  ──  [地図] [資産台帳] [案件管理] [業者管理]  ──  [○]
- *   - admin: 公園管理 dropdown, all tabs clickable, 資産台帳 department-aware
+ *   - admin: 公園管理 static, 資産台帳/案件管理/業者管理 disabled (placeholder)
  *   - user:  公園管理 static, 資産台帳/業者管理 disabled (RBAC)
  *
  * Legacy layout (park_manager, tree_manager):
@@ -34,58 +34,22 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
 
   // ── Unified layout for admin + user ─────────────────────────────
   if (isAdmin || isUser) {
-    // Department state (admin can switch, user always park)
-    const department = pathname.startsWith('/tree-mgmt') ? 'tree' : 'park';
-    const currentDept = DEPARTMENTS.find((d) => d.value === department)!;
-
-    // Build tabs — admin gets department-aware 資産台帳
+    // Build tabs — admin: only 地図 clickable; user: 資産台帳/業者管理 disabled
     const tabs: { label: string; to?: string; matchPaths: string[] }[] = [
       { label: '地図', to: '/map', matchPaths: ['/map'] },
+      { label: '資産台帳', matchPaths: [] },
       isAdmin
-        ? { label: '資産台帳', to: currentDept.route, matchPaths: ['/park-mgmt', '/tree-mgmt'] }
-        : { label: '資産台帳', matchPaths: [] },
-      { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
+        ? { label: '案件管理', matchPaths: [] }
+        : { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
       isAdmin
-        ? { label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] }
+        ? { label: '業者管理', matchPaths: [] }
         : { label: '業者管理', matchPaths: ['/vendors'] },
     ];
 
     return (
       <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
-        {/* Left: 公園管理 dropdown (admin) or static label (user) */}
-        {isAdmin ? (
-          <Menu shadow="md" width={180}>
-            <Menu.Target>
-              <UnstyledButton
-                px="sm"
-                py={6}
-                style={{
-                  border: '1px solid #dee2e6',
-                  borderRadius: 4,
-                }}
-              >
-                <Group gap={6}>
-                  <Text size="sm" fw={500}>{currentDept.label}</Text>
-                  <IconChevronDown size={14} color="#868e96" />
-                </Group>
-              </UnstyledButton>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {DEPARTMENTS.map((dept) => (
-                <Menu.Item
-                  key={dept.value}
-                  onClick={() => navigate(dept.route)}
-                  fw={department === dept.value ? 600 : 400}
-                  bg={department === dept.value ? 'var(--mantine-color-blue-0)' : undefined}
-                >
-                  {dept.label}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
-        ) : (
-          <Text size="sm" fw={500} px="sm" c="#333">公園管理</Text>
-        )}
+        {/* Left: 公園管理 static label (both admin and user) */}
+        <Text size="sm" fw={500} px="sm" c="#333">公園管理</Text>
 
         {/* Center: 4 tabs */}
         <Group gap={0}>
