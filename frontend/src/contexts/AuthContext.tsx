@@ -38,7 +38,7 @@ const ROLE_CONFIG: Record<UserRole, { roleLabel: string; department: string; all
   user: {
     roleLabel: '利用者',
     department: '緑地部・公園緑地課',
-    allowedSections: ['map', 'cases'],
+    allowedSections: ['map', 'cases', 'park-mgmt'],
   },
 };
 

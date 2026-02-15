@@ -37,7 +37,9 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
     // Build tabs — admin: only 地図 clickable; user: 資産台帳/業者管理 disabled
     const tabs: { label: string; to?: string; matchPaths: string[] }[] = [
       { label: '地図', to: '/map', matchPaths: ['/map'] },
-      { label: '資産台帳', matchPaths: [] },
+      isUser
+        ? { label: '資産台帳', to: '/park-mgmt/parks', matchPaths: ['/park-mgmt'] }
+        : { label: '資産台帳', to: pathname.startsWith('/tree-mgmt') ? '/tree-mgmt' : '/park-mgmt/parks', matchPaths: ['/park-mgmt', '/tree-mgmt'] },
       isAdmin
         ? { label: '案件管理', matchPaths: [] }
         : { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
@@ -48,8 +50,38 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
 
     return (
       <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
-        {/* Left: 公園管理 static label (both admin and user) */}
-        <Text size="sm" fw={500} px="sm" c="#333">公園管理</Text>
+        {/* Left: Department dropdown (admin and user) */}
+        <Menu shadow="md" width={180}>
+          <Menu.Target>
+            <UnstyledButton
+              px="sm"
+              py={6}
+              style={{ border: '1px solid #dee2e6', borderRadius: 4 }}
+            >
+              <Group gap={6}>
+                <Text size="sm" fw={500}>
+                  {pathname.startsWith('/tree-mgmt') ? '樹木管理' : '公園管理'}
+                </Text>
+                <IconChevronDown size={14} color="#868e96" />
+              </Group>
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown>
+            {DEPARTMENTS.map((dept) => {
+              const isActive = pathname.startsWith(dept.route);
+              return (
+                <Menu.Item
+                  key={dept.value}
+                  onClick={() => navigate(dept.route)}
+                  fw={isActive ? 600 : 400}
+                  bg={isActive ? 'var(--mantine-color-blue-0)' : undefined}
+                >
+                  {dept.label}
+                </Menu.Item>
+              );
+            })}
+          </Menu.Dropdown>
+        </Menu>
 
         {/* Center: 4 tabs */}
         <Group gap={0}>
