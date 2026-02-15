@@ -113,22 +113,75 @@ nagoya-construction-lifecycle/
 
 ## EC2 Production Deployment
 
+### Deployment Architecture
+
+Three versions are deployed on the same EC2 server with isolated services:
+
+| Domain | Version | Branch | Purpose | Container Prefix | Database |
+|--------|---------|--------|---------|------------------|----------|
+| **v1.eventflow.uixai.org** | V1 (Frozen) | `main` (tag: v1.0.0) | Stable production baseline | `nagoya-*-v1` | `nagoya_construction_v1` |
+| **eventflow.uixai.org** | Current | `main` | Active development | `nagoya-*` | `nagoya_construction` |
+| **demo.eventflow.uixai.org** | Auth Demo | `feature/auth-role-system-demo` | Role-based access control demo | `nagoya-demo-*` | `nagoya_construction_demo` |
+
+**Key Features by Version:**
+- **V1**: Original feature set (frozen)
+- **Current**: Latest features + bug fixes
+- **Demo**: Showcase for department-scoped authentication system
+
 ### Server Details
-- **URL**: https://eventflow.uixai.org
 - **Host**: EC2 (ubuntu@18.177.72.233)
 - **SSH**: `ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233`
+- **Reverse Proxy**: Caddy (handles all three domains)
 
 ### Deployment Commands
 
-```bash
-# Sync code to EC2
-rsync -avz --exclude 'node_modules' --exclude '.git' \
-  -e "ssh -i ~/.ssh/eventflow-prod-key.pem" \
-  ./ ubuntu@18.177.72.233:/home/ubuntu/nagoya-construction-lifecycle/
+#### Deploy Main Application (eventflow.uixai.org)
 
-# Rebuild and restart
-ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233 \
-  "cd /home/ubuntu/nagoya-construction-lifecycle && docker compose up -d --build"
+```bash
+# SSH to server
+ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233
+
+# Navigate to project
+cd ~/eventflow
+
+# Update code
+git pull origin main
+
+# Rebuild and restart main services
+docker compose up -d --build
+
+# Restart Caddy to pick up config changes
+docker restart nagoya-caddy
+```
+
+#### Deploy Demo (demo.eventflow.uixai.org)
+
+See detailed guide: [docs/DEMO_DEPLOYMENT.md](docs/DEMO_DEPLOYMENT.md)
+
+```bash
+# SSH to server
+ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233
+cd ~/eventflow
+
+# Checkout demo branch
+git fetch origin
+git checkout feature/auth-role-system-demo
+git pull origin feature/auth-role-system-demo
+
+# Build and start demo services
+docker compose -f docker-compose.demo.yml up -d --build
+
+# Restart Caddy
+docker restart nagoya-caddy
+```
+
+#### Deploy V1 (v1.eventflow.uixai.org)
+
+V1 is frozen and should not be updated unless critical security fixes are needed.
+
+```bash
+# Use docker-compose.v1.yml if updates are necessary
+docker compose -f docker-compose.v1.yml up -d --build
 ```
 
 ### Important Configuration Notes
@@ -147,12 +200,32 @@ ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233 \
      - ./backend/uploads:/app/uploads
    ```
 
-3. **Services**:
-   - `nagoya-api`: Backend API (port 3000)
-   - `nagoya-web`: Frontend (port 5173)
+3. **Services by Version**:
+
+   **Main (eventflow.uixai.org)**:
+   - `nagoya-api`: Backend API
+   - `nagoya-web`: Frontend
    - `nagoya-db`: PostgreSQL + PostGIS
    - `nagoya-martin`: MVT tile server
-   - `nagoya-caddy`: Reverse proxy with HTTPS
+   - `nagoya-mongo`: MongoDB for NGSI-LD
+   - `nagoya-orion-ld`: FIWARE Orion-LD
+
+   **V1 (v1.eventflow.uixai.org)**:
+   - `nagoya-api-v1`: Backend API (frozen)
+   - `nagoya-web-v1`: Frontend (frozen)
+   - `nagoya-db-v1`: PostgreSQL + PostGIS
+   - `nagoya-martin-v1`: MVT tile server
+
+   **Demo (demo.eventflow.uixai.org)**:
+   - `nagoya-demo-api`: Backend API
+   - `nagoya-demo-web`: Frontend with auth system
+   - `nagoya-demo-db`: PostgreSQL + PostGIS
+   - `nagoya-demo-martin`: MVT tile server
+   - `nagoya-demo-mongo`: MongoDB for NGSI-LD
+   - `nagoya-demo-orion-ld`: FIWARE Orion-LD
+
+   **Shared**:
+   - `nagoya-caddy`: Reverse proxy with HTTPS (serves all three domains)
 
 ### Troubleshooting
 
