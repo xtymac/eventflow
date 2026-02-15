@@ -50,7 +50,9 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
 
     return (
       <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
-        {/* Left: Department dropdown (admin and user) */}
+        {/* Left: Logo + Department dropdown */}
+        <Group gap="sm">
+        <div style={{ width: 32, height: 32, backgroundColor: '#adb5bd', borderRadius: 4 }} />
         <Menu shadow="md" width={180}>
           <Menu.Target>
             <UnstyledButton
@@ -82,6 +84,7 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
             })}
           </Menu.Dropdown>
         </Menu>
+        </Group>
 
         {/* Center: 4 tabs */}
         <Group gap={0}>
