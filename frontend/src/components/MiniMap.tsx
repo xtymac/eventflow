@@ -9,11 +9,25 @@ interface MiniMapProps {
   height?: number;
   center?: [number, number];
   zoom?: number;
+  fillColor?: string;
 }
 
-const BASEMAP = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+// Same raster basemap as main MapView (CARTO Voyager @2x for HiDPI)
+const MAP_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'],
+      tileSize: 512,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+};
 
-export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniMapProps) {
+export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6' }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -22,7 +36,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniM
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: BASEMAP,
+      style: MAP_STYLE,
       center: center || [136.933, 35.14],
       zoom: zoom || 14,
       attributionControl: false,
@@ -45,7 +59,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniM
             source: 'geometry',
             paint: {
               'circle-radius': 8,
-              'circle-color': '#228be6',
+              'circle-color': fillColor,
               'circle-stroke-width': 2,
               'circle-stroke-color': '#fff',
             },
@@ -56,7 +70,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniM
             type: 'fill',
             source: 'geometry',
             paint: {
-              'fill-color': '#228be6',
+              'fill-color': fillColor,
               'fill-opacity': 0.15,
             },
           });
@@ -65,7 +79,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniM
             type: 'line',
             source: 'geometry',
             paint: {
-              'line-color': '#228be6',
+              'line-color': fillColor,
               'line-width': 2,
             },
           });
@@ -75,7 +89,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom }: MiniM
             type: 'line',
             source: 'geometry',
             paint: {
-              'line-color': '#228be6',
+              'line-color': fillColor,
               'line-width': 3,
             },
           });
