@@ -1619,7 +1619,6 @@ export function MapView() {
           'icon-ignore-placement': true,
         },
       });
-
       // Pavement Sections - line layer colored by conditionGrade
       map.current.addSource('pavement-sections', {
         type: 'geojson',

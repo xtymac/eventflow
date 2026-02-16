@@ -91,6 +91,15 @@ export function ParkDetailPage() {
 
   const facilities = facilitiesData?.features || [];
 
+  // Build markers from facility point geometries for MiniMap
+  const facilityMarkers = facilities
+    .filter((f: any) => f.geometry?.type === 'Point')
+    .map((f: any) => ({
+      lng: f.geometry.coordinates[0],
+      lat: f.geometry.coordinates[1],
+      color: '#e03131',
+    }));
+
   return (
     <ScrollArea h="calc(100vh - 60px)">
       <Box p="lg">
@@ -105,11 +114,11 @@ export function ParkDetailPage() {
             <Stack gap="lg">
               {/* 公園マップ */}
               {geometry ? (
-                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}`} geometry={geometry} height={250} fillColor="#22C55E" />
+                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`} geometry={geometry} markers={facilityMarkers} height={250} fillColor="#22C55E" />
               ) : park.center ? (
                 <MiniMap
                   center={park.center as [number, number]}
-                  markers={[{ lng: park.center[0], lat: park.center[1], color: '#22C55E' }]}
+                  markers={[{ lng: park.center[0], lat: park.center[1], color: '#22C55E' }, ...facilityMarkers]}
                   zoom={15}
                   height={250}
                 />

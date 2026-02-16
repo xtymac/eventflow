@@ -52,7 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: nagoya-demo-api
+    container_name: demo-api
     restart: unless-stopped
     depends_on:
       demo-db:
@@ -71,6 +71,9 @@ services:
       - ./backend/uploads:/app/uploads
       - ./shared:/shared:ro
       - ./sample-data:/sample-data:ro
+    networks:
+      - default
+      - eventflow-net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
@@ -81,7 +84,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: nagoya-demo-web
+    container_name: demo-web
     restart: unless-stopped
     depends_on:
       demo-api:
@@ -95,6 +98,9 @@ services:
       - ./frontend/src:/app/src:ro
       - ./shared:/shared:ro
       - ./frontend/public:/app/public:ro
+    networks:
+      - default
+      - eventflow-net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173 || exit 1"]
       interval: 10s
@@ -103,7 +109,7 @@ services:
 
   demo-martin:
     image: ghcr.io/maplibre/martin:latest
-    container_name: nagoya-demo-martin
+    container_name: demo-martin
     restart: unless-stopped
     depends_on:
       demo-db:
@@ -113,6 +119,9 @@ services:
       MARTIN_KEEP_ALIVE: 75
       MARTIN_MAX_FEATURE_COUNT: 10000
     command: --listen-addresses 0.0.0.0:3000
+    networks:
+      - default
+      - eventflow-net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
@@ -122,3 +131,7 @@ services:
 volumes:
   demo_postgres_data:
   demo_mongo_data:
+
+networks:
+  eventflow-net:
+    external: true

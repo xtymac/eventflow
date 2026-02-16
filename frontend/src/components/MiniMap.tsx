@@ -95,11 +95,21 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
           });
         }
 
-        // Fit to geometry bounds
+        // Compute geometry bbox
         try {
-          const bbox = turf.bbox({ type: 'Feature', properties: {}, geometry });
+          const geoBbox = turf.bbox({ type: 'Feature', properties: {}, geometry });
+          // Extend bbox to include marker positions
+          let [minLng, minLat, maxLng, maxLat] = geoBbox;
+          if (markers) {
+            for (const m of markers) {
+              if (m.lng < minLng) minLng = m.lng;
+              if (m.lat < minLat) minLat = m.lat;
+              if (m.lng > maxLng) maxLng = m.lng;
+              if (m.lat > maxLat) maxLat = m.lat;
+            }
+          }
           map.fitBounds(
-            [[bbox[0], bbox[1]], [bbox[2], bbox[3]]],
+            [[minLng, minLat], [maxLng, maxLat]],
             { padding: 40, maxZoom: 17, duration: 0 }
           );
         } catch { /* ignore invalid geometry */ }
