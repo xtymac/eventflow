@@ -6,27 +6,26 @@ import { useAllGreenSpaces } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
 
 // Dummy data for demo when API returns no results
+// IDs match real DB records (greenspace_assets) so detail pages can fetch actual polygon geometry
 const DUMMY_PARKS = [
-  { id: 'park-0001', displayName: '鶴舞公園', ward: '昭和区', greenSpaceType: 'park', areaM2: 23800, status: 'active' },
-  { id: 'park-0002', displayName: '名城公園', ward: '北区', greenSpaceType: 'park', areaM2: 801000, status: 'active' },
-  { id: 'park-0003', displayName: '東山公園', ward: '千種区', greenSpaceType: 'park', areaM2: 598000, status: 'active' },
-  { id: 'park-0004', displayName: '白川公園', ward: '中区', greenSpaceType: 'park', areaM2: 36200, status: 'active' },
-  { id: 'park-0005', displayName: '庄内緑地公園', ward: '西区', greenSpaceType: 'park', areaM2: 441000, status: 'active' },
-  { id: 'park-0006', displayName: '大高緑地', ward: '緑区', greenSpaceType: 'forest', areaM2: 1216000, status: 'active' },
-  { id: 'park-0007', displayName: '荒子川公園', ward: '港区', greenSpaceType: 'park', areaM2: 291000, status: 'active' },
-  { id: 'park-0008', displayName: '戸田川緑地', ward: '港区', greenSpaceType: 'park', areaM2: 375000, status: 'active' },
-  { id: 'park-0009', displayName: '久屋大通公園', ward: '中区', greenSpaceType: 'park', areaM2: 56100, status: 'active' },
-  { id: 'park-0010', displayName: '徳川園', ward: '東区', greenSpaceType: 'garden', areaM2: 25500, status: 'active' },
-  { id: 'park-0011', displayName: '猪高緑地', ward: '名東区', greenSpaceType: 'forest', areaM2: 660000, status: 'active' },
-  { id: 'park-0012', displayName: '相生山緑地', ward: '天白区', greenSpaceType: 'forest', areaM2: 520000, status: 'active' },
-  { id: 'park-0013', displayName: '牧野ヶ池緑地', ward: '名東区', greenSpaceType: 'park', areaM2: 1478000, status: 'active' },
-  { id: 'park-0014', displayName: '小幡緑地', ward: '守山区', greenSpaceType: 'park', areaM2: 1520000, status: 'active' },
-  { id: 'park-0015', displayName: '笠寺公園', ward: '南区', greenSpaceType: 'park', areaM2: 48500, status: 'active' },
-  { id: 'park-0016', displayName: '志賀公園', ward: '北区', greenSpaceType: 'park', areaM2: 37800, status: 'inactive' },
-  { id: 'park-0017', displayName: '瑞穂公園', ward: '瑞穂区', greenSpaceType: 'park', areaM2: 342000, status: 'active' },
-  { id: 'park-0018', displayName: '熱田神宮公園', ward: '熱田区', greenSpaceType: 'park', areaM2: 195000, status: 'active' },
-  { id: 'park-0019', displayName: '中川公園', ward: '中川区', greenSpaceType: 'park', areaM2: 28900, status: 'under_construction' },
-  { id: 'park-0020', displayName: '千種公園', ward: '千種区', greenSpaceType: 'park', areaM2: 52000, status: 'active' },
+  { id: 'GS-zxpnkee2', displayName: '鶴舞公園', ward: '昭和区', greenSpaceType: 'park', areaM2: 236537, status: 'active' },
+  { id: 'GS-nliigh01', displayName: '名城公園', ward: '北区', greenSpaceType: 'park', areaM2: 205208, status: 'active' },
+  { id: 'GS-4g77l6x7', displayName: '東山公園', ward: '千種区', greenSpaceType: 'park', areaM2: 894903, status: 'active' },
+  { id: 'GS-es1u7z8r', displayName: '白川公園', ward: '中区', greenSpaceType: 'park', areaM2: 89299, status: 'active' },
+  { id: 'GS-9ego0pvp', displayName: '庄内緑地公園', ward: '西区', greenSpaceType: 'park', areaM2: 426621, status: 'active' },
+  { id: 'GS-auy42b1p', displayName: '大高緑地', ward: '緑区', greenSpaceType: 'park', areaM2: 1102426, status: 'active' },
+  { id: 'GS-gs3xyhbw', displayName: '荒子川公園', ward: '港区', greenSpaceType: 'park', areaM2: 237208, status: 'active' },
+  { id: 'GS-3d67hwf5', displayName: '戸田川緑地', ward: '港区', greenSpaceType: 'park', areaM2: 364075, status: 'active' },
+  { id: 'GS-byrogagk', displayName: '久屋大通公園', ward: '中区', greenSpaceType: 'park', areaM2: 105736, status: 'active' },
+  { id: 'GS-ful7d9lw', displayName: '徳川園', ward: '東区', greenSpaceType: 'garden', areaM2: 55029, status: 'active' },
+  { id: 'GS-7f2voyoy', displayName: '猪高緑地', ward: '名東区', greenSpaceType: 'park', areaM2: 631296, status: 'active' },
+  { id: 'GS-x1q5e2te', displayName: '牧野ヶ池緑地', ward: '名東区', greenSpaceType: 'park', areaM2: 1351901, status: 'active' },
+  { id: 'GS-ldnfwyur', displayName: '小幡緑地', ward: '守山区', greenSpaceType: 'park', areaM2: 131662, status: 'active' },
+  { id: 'GS-9exy95g1', displayName: '笠寺公園', ward: '南区', greenSpaceType: 'park', areaM2: 65235, status: 'active' },
+  { id: 'GS-xk4kyf2q', displayName: '志賀公園', ward: '北区', greenSpaceType: 'park', areaM2: 51705, status: 'active' },
+  { id: 'GS-cfam78i3', displayName: '瑞穂公園', ward: '瑞穂区', greenSpaceType: 'park', areaM2: 239836, status: 'active' },
+  { id: 'GS-gul3d3ul', displayName: '熱田神宮公園', ward: '熱田区', greenSpaceType: 'park', areaM2: 78109, status: 'active' },
+  { id: 'GS-rtljov09', displayName: '千種公園', ward: '千種区', greenSpaceType: 'park', areaM2: 58659, status: 'active' },
 ].map((p) => ({ type: 'Feature' as const, geometry: { type: 'Polygon' as const, coordinates: [] }, properties: p }));
 
 export function ParkListPage() {
