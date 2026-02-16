@@ -1,15 +1,24 @@
-import { Box, Breadcrumbs, Anchor, Text, Group, Paper, SimpleGrid, Badge, Table, ScrollArea, Collapse, Stack } from '@mantine/core';
+import { Box, Breadcrumbs, Anchor, Text, Group, Paper, SimpleGrid, Badge, Table, ScrollArea, Collapse, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconChevronDown, IconChevronRight, IconPhoto } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconPhoto, IconPencil } from '@tabler/icons-react';
 import { useParams, Link } from 'react-router-dom';
-import { useParkFacility, useLifecyclePlans } from '../../hooks/useApi';
+import { useParkFacility, useGreenSpace, useLifecyclePlans, useInspectionsByAsset, useRepairsByAsset } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
 
 const CATEGORY_LABELS: Record<string, string> = {
   playground: '遊具', bench: 'ベンチ', shelter: '東屋', toilet: 'トイレ',
-  fence: 'フェンス', lighting: '照明', water_feature: '水景', sports: 'スポーツ',
-  other: 'その他',
+  fence: 'フェンス', gate: '門', lighting: '照明', drainage: '排水設備',
+  waterFountain: '水飲み場', signBoard: '案内板', pavement: '園路',
+  sportsFacility: 'スポーツ施設', building: '建物', other: 'その他',
+};
+
+const INSPECTION_TYPE_LABELS: Record<string, string> = {
+  routine: '定期', detailed: '詳細', emergency: '緊急', diagnostic: '診断',
+};
+
+const CONDITION_COLORS: Record<string, string> = {
+  A: 'green', B: 'yellow', C: 'orange', D: 'red', S: 'red',
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -39,15 +48,27 @@ export function FacilityDetailPage() {
   const [lifecycleOpen, { toggle: toggleLifecycle }] = useDisclosure(true);
 
   const { data, isLoading, isError } = useParkFacility(id ?? null);
-  const { data: lifecycleData } = useLifecyclePlans({ assetRef: id ?? undefined });
-
   const facility = data?.properties;
-  const geometry = data?.geometry;
+  const facilityGeometry = data?.geometry;
 
-  const markers = geometry?.type === 'Point' ? [{
-    lng: (geometry as GeoJSON.Point).coordinates[0],
-    lat: (geometry as GeoJSON.Point).coordinates[1],
+  // Fetch parent park geometry for polygon display on MiniMap
+  const { data: parkData } = useGreenSpace(facility?.greenSpaceRef ?? null);
+  const parkGeometry = parkData?.geometry;
+
+  const { data: lifecycleData } = useLifecyclePlans({ assetRef: id ?? undefined });
+  const { data: inspectionData } = useInspectionsByAsset('park-facility', id ?? null);
+  const { data: repairData } = useRepairsByAsset('park-facility', id ?? null);
+
+  // Show park polygon as geometry, facility point as marker
+  const miniMapGeometry = parkGeometry || facilityGeometry;
+  const markers = facilityGeometry?.type === 'Point' ? [{
+    lng: (facilityGeometry as GeoJSON.Point).coordinates[0],
+    lat: (facilityGeometry as GeoJSON.Point).coordinates[1],
+    color: '#e03131',
   }] : [];
+
+  const inspections = inspectionData?.data ?? [];
+  const repairs = repairData?.data ?? [];
 
   return (
     <ScrollArea h="calc(100vh - 60px)">
@@ -61,20 +82,39 @@ export function FacilityDetailPage() {
         <PageState loading={isLoading} error={isError} empty={!facility} emptyMessage="施設が見つかりません">
           {facility && (
             <Stack gap="lg">
-              {/* Photo / Map Section */}
+              {/* Map / Photo Section */}
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                <Box pos="relative">
+                  <MiniMap key={`${id}-${parkGeometry ? 'park' : 'fac'}`} geometry={miniMapGeometry} markers={markers} height={250} fillColor="#22C55E" />
+                  <Tooltip label="編集機能は今後実装予定" position="left">
+                    <ActionIcon
+                      variant="white"
+                      size="md"
+                      disabled
+                      style={{ position: 'absolute', top: 8, right: 8, cursor: 'not-allowed' }}
+                    >
+                      <IconPencil size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Box>
                 <Paper withBorder radius="md" p="md" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 250 }}>
                   <Stack align="center" gap="xs">
                     <IconPhoto size={48} color="var(--mantine-color-gray-4)" />
                     <Text c="dimmed" size="sm">写真なし</Text>
                   </Stack>
                 </Paper>
-                <MiniMap geometry={geometry} markers={markers} height={250} />
               </SimpleGrid>
 
               {/* Basic Info */}
               <Paper withBorder p="md" radius="md">
-                <SectionHeader title="基本情報" opened={infoOpen} toggle={toggleInfo} />
+                <Group justify="space-between">
+                  <SectionHeader title="基本情報" opened={infoOpen} toggle={toggleInfo} />
+                  <Tooltip label="編集機能は今後実装予定">
+                    <ActionIcon variant="subtle" color="gray" size="sm" disabled style={{ cursor: 'not-allowed' }}>
+                      <IconPencil size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
                 <Collapse in={infoOpen}>
                   <SimpleGrid cols={{ base: 1, md: 2 }} mt="sm">
                     <div>
@@ -94,7 +134,7 @@ export function FacilityDetailPage() {
                         label="評価"
                         value={facility.conditionGrade ? (
                           <Badge
-                            color={facility.conditionGrade === 'A' ? 'green' : facility.conditionGrade === 'B' ? 'yellow' : 'red'}
+                            color={CONDITION_COLORS[facility.conditionGrade] || 'gray'}
                             variant="filled"
                             size="sm"
                           >
@@ -119,9 +159,32 @@ export function FacilityDetailPage() {
               <Paper withBorder p="md" radius="md">
                 <SectionHeader title="補修履歴" opened={repairOpen} toggle={toggleRepair} />
                 <Collapse in={repairOpen}>
-                  <Text c="dimmed" size="sm" ta="center" py="xl">
-                    補修履歴データは準備中です
-                  </Text>
+                  {repairs.length > 0 ? (
+                    <Table striped withTableBorder mt="sm">
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>補修日</Table.Th>
+                          <Table.Th>種別</Table.Th>
+                          <Table.Th>内容</Table.Th>
+                          <Table.Th w={80}>状態</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {repairs.map((r) => (
+                          <Table.Tr key={r.id}>
+                            <Table.Td>{r.date}</Table.Td>
+                            <Table.Td>{r.type}</Table.Td>
+                            <Table.Td>{r.description}</Table.Td>
+                            <Table.Td><Badge variant="light" size="sm">{r.status}</Badge></Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  ) : (
+                    <Text c="dimmed" size="sm" ta="center" py="xl">
+                      補修履歴データはありません
+                    </Text>
+                  )}
                 </Collapse>
               </Paper>
 
@@ -133,9 +196,47 @@ export function FacilityDetailPage() {
                     <InfoRow label="最終点検" value={facility.lastInspectionDate ? new Date(facility.lastInspectionDate).toLocaleDateString('ja-JP') : '未実施'} />
                     <InfoRow label="次回点検" value={facility.nextInspectionDate ? new Date(facility.nextInspectionDate).toLocaleDateString('ja-JP') : '未定'} />
                   </SimpleGrid>
-                  <Text c="dimmed" size="sm" ta="center" py="md">
-                    詳細な点検履歴は準備中です
-                  </Text>
+                  {inspections.length > 0 ? (
+                    <>
+                      <Table striped withTableBorder mt="sm">
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>点検日</Table.Th>
+                            <Table.Th>種別</Table.Th>
+                            <Table.Th>結果</Table.Th>
+                            <Table.Th w={60}>評価</Table.Th>
+                            <Table.Th>点検者</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {inspections.map((insp) => (
+                            <Table.Tr key={insp.id}>
+                              <Table.Td>{new Date(insp.inspectionDate).toLocaleDateString('ja-JP')}</Table.Td>
+                              <Table.Td>{insp.inspectionType ? (INSPECTION_TYPE_LABELS[insp.inspectionType] || insp.inspectionType) : '—'}</Table.Td>
+                              <Table.Td>{insp.result}</Table.Td>
+                              <Table.Td>
+                                {insp.conditionGrade ? (
+                                  <Badge color={CONDITION_COLORS[insp.conditionGrade] || 'gray'} variant="filled" size="sm">
+                                    {insp.conditionGrade}
+                                  </Badge>
+                                ) : '—'}
+                              </Table.Td>
+                              <Table.Td>{insp.inspector || '—'}</Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                      {inspectionData?.meta && inspectionData.meta.total > inspections.length && (
+                        <Text c="blue" size="sm" ta="center" py="xs" style={{ cursor: 'pointer' }}>
+                          もっと見る（全{inspectionData.meta.total}件）
+                        </Text>
+                      )}
+                    </>
+                  ) : (
+                    <Text c="dimmed" size="sm" ta="center" py="md">
+                      点検履歴データはありません
+                    </Text>
+                  )}
                 </Collapse>
               </Paper>
 

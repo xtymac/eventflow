@@ -1569,7 +1569,7 @@ export function MapView() {
         toilet: '\u{1F6BB}', playground: '\u{1F6DD}', bench: '\u{1FA91}', shelter: '\u26E9\uFE0F',
         fence: '\u{1F6A7}', gate: '\u{1F6AA}', drainage: '\u{1F30A}', lighting: '\u{1F4A1}',
         waterFountain: '\u26F2', signBoard: '\u{1FAA7}', sportsFacility: '\u26BD',
-        building: '\u{1F3E2}', other: '\u{1F4E6}',
+        building: '\u{1F3E2}', pavement: '\u{1F6B6}', other: '\u{1F4E6}',
       };
       for (const [cat, emoji] of Object.entries(facilityEmojis)) {
         const size = 40;
@@ -1611,6 +1611,7 @@ export function MapView() {
             'signBoard', 'pf-signBoard',
             'sportsFacility', 'pf-sportsFacility',
             'building', 'pf-building',
+            'pavement', 'pf-pavement',
             'pf-other'
           ],
           'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.8, 16, 1.2, 18, 1.8],
@@ -2228,6 +2229,19 @@ export function MapView() {
 
       // Mark map as loaded
       setMapLoaded(true);
+
+      // Set initial bbox so data hooks can start fetching immediately (moveend may not fire on initial load)
+      {
+        const initZoom = map.current.getZoom();
+        if (initZoom >= 12) {
+          const initBounds = map.current.getBounds();
+          const initShrunk = shrinkBbox(initBounds, initZoom);
+          const initBboxString = truncateBbox(initShrunk);
+          setMapBbox(initBboxString);
+          useUIStore.getState().setMapBbox(initBboxString);
+        }
+        setCurrentZoom(initZoom);
+      }
 
       // Setup moveend handler for viewport-based asset loading
       const handleMoveend = () => {

@@ -8,6 +8,30 @@ import {
   type MapToggleActions,
 } from './adminDataLayers';
 
+/** Map toggleKey -> show* state key */
+const TOGGLE_TO_SHOW: Record<keyof MapToggleActions, string> = {
+  toggleGreenSpaces: 'showGreenSpaces',
+  toggleParkFacilities: 'showParkFacilities',
+  toggleParkTrees: 'showParkTrees',
+  toggleStreetTrees: 'showStreetTrees',
+  toggleInspections: 'showInspections',
+  toggleEvents: 'showEvents',
+  toggleNagoyaBuildingZones: 'showNagoyaBuildingZones',
+  toggleNagoyaRoads: 'showNagoyaRoads',
+};
+
+/** Check if a layer (or any of its descendants) is currently visible */
+function isLayerActive(layer: DataLayer, visibilityMap: Record<string, boolean>): boolean {
+  if (layer.toggleKey) {
+    const showKey = TOGGLE_TO_SHOW[layer.toggleKey];
+    if (showKey && visibilityMap[showKey]) return true;
+  }
+  if (layer.children) {
+    return layer.children.some((child) => isLayerActive(child, visibilityMap));
+  }
+  return false;
+}
+
 /**
  * Admin navigation panel for demo environment (Phase 2 - screenshot-matching design)
  *
@@ -31,14 +55,29 @@ export function AdminDataNavigationPanel() {
     toggleNagoyaRoads: mapStore.toggleNagoyaRoads,
   };
 
+  // Build a visibility map from mapStore state
+  const visibilityMap: Record<string, boolean> = {
+    showGreenSpaces: mapStore.showGreenSpaces,
+    showParkFacilities: mapStore.showParkFacilities,
+    showParkTrees: mapStore.showParkTrees,
+    showStreetTrees: mapStore.showStreetTrees,
+    showInspections: mapStore.showInspections,
+    showEvents: mapStore.showEvents,
+    showNagoyaBuildingZones: mapStore.showNagoyaBuildingZones,
+    showNagoyaRoads: mapStore.showNagoyaRoads,
+  };
+
   /** Recursively render layer and all children (always expanded) */
   const renderLayer = (layer: DataLayer, depth: number = 0): JSX.Element[] => {
+    const active = isLayerActive(layer, visibilityMap);
+
     const result: JSX.Element[] = [
       <LayerMenuItem
         key={layer.id}
         layer={layer}
         onToggle={layer.toggleKey ? toggleActions[layer.toggleKey] : undefined}
         depth={depth}
+        isActive={active}
       />,
     ];
 

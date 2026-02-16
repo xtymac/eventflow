@@ -17,9 +17,15 @@ const InspectionSchema = Type.Object({
   id: Type.String(),
   eventId: Type.Union([Type.String(), Type.Null()]),
   roadAssetId: Type.Union([Type.String(), Type.Null()]),
+  assetType: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  assetId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   inspectionDate: Type.String({ format: 'date' }),
+  inspectionType: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   result: Type.String(),
+  conditionGrade: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  findings: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   notes: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  inspector: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   geometry: PointGeometrySchema,
   createdAt: Type.String({ format: 'date-time' }),
 });
@@ -53,6 +59,8 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       querystring: Type.Object({
         eventId: Type.Optional(Type.String()),
         roadAssetId: Type.Optional(Type.String()),
+        assetType: Type.Optional(Type.String()),
+        assetId: Type.Optional(Type.String()),
       }),
       response: {
         200: Type.Object({
@@ -61,10 +69,18 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
             total: Type.Number(),
           }),
         }),
+        400: Type.Object({ error: Type.String() }),
       },
     },
-  }, async (request) => {
-    const { eventId, roadAssetId } = request.query;
+  }, async (request, reply) => {
+    const { eventId, roadAssetId, assetType, assetId } = request.query;
+
+    // Pair validation: assetType and assetId must be provided together
+    if ((assetType && !assetId) || (!assetType && assetId)) {
+      return reply.status(400).send({
+        error: 'assetType and assetId must be provided together',
+      });
+    }
 
     const conditions = [];
 
@@ -74,15 +90,25 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
     if (roadAssetId) {
       conditions.push(eq(inspectionRecords.roadAssetId, roadAssetId));
     }
+    if (assetType && assetId) {
+      conditions.push(eq(inspectionRecords.assetType, assetType));
+      conditions.push(eq(inspectionRecords.assetId, assetId));
+    }
 
     // Select with explicit geometry conversion
     const inspectionSelect = {
       id: inspectionRecords.id,
       eventId: inspectionRecords.eventId,
       roadAssetId: inspectionRecords.roadAssetId,
+      assetType: inspectionRecords.assetType,
+      assetId: inspectionRecords.assetId,
       inspectionDate: inspectionRecords.inspectionDate,
+      inspectionType: inspectionRecords.inspectionType,
       result: inspectionRecords.result,
+      conditionGrade: inspectionRecords.conditionGrade,
+      findings: inspectionRecords.findings,
       notes: inspectionRecords.notes,
+      inspector: inspectionRecords.inspector,
       geometry: fromGeomSql(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };
@@ -121,9 +147,15 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       id: inspectionRecords.id,
       eventId: inspectionRecords.eventId,
       roadAssetId: inspectionRecords.roadAssetId,
+      assetType: inspectionRecords.assetType,
+      assetId: inspectionRecords.assetId,
       inspectionDate: inspectionRecords.inspectionDate,
+      inspectionType: inspectionRecords.inspectionType,
       result: inspectionRecords.result,
+      conditionGrade: inspectionRecords.conditionGrade,
+      findings: inspectionRecords.findings,
       notes: inspectionRecords.notes,
+      inspector: inspectionRecords.inspector,
       geometry: fromGeomSql(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };
@@ -260,9 +292,15 @@ export async function inspectionsRoutes(fastify: FastifyInstance) {
       id: inspectionRecords.id,
       eventId: inspectionRecords.eventId,
       roadAssetId: inspectionRecords.roadAssetId,
+      assetType: inspectionRecords.assetType,
+      assetId: inspectionRecords.assetId,
       inspectionDate: inspectionRecords.inspectionDate,
+      inspectionType: inspectionRecords.inspectionType,
       result: inspectionRecords.result,
+      conditionGrade: inspectionRecords.conditionGrade,
+      findings: inspectionRecords.findings,
       notes: inspectionRecords.notes,
+      inspector: inspectionRecords.inspector,
       geometry: fromGeomSql(inspectionRecords.geometry),
       createdAt: inspectionRecords.createdAt,
     };

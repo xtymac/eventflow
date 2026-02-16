@@ -17,6 +17,7 @@ import type {
   UpdateEventRequest,
 } from '@nagoya/shared';
 import type { FeatureCollection, Geometry, Point } from 'geojson';
+import { DUMMY_PARK_FACILITIES, getDummyParkFacilities } from '../data/dummyParkFacilities';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -393,6 +394,26 @@ export function useDeleteInspection() {
   });
 }
 
+// Inspection by asset hooks
+export function useInspectionsByAsset(assetType: string | null, assetId: string | null) {
+  return useQuery({
+    queryKey: ['inspections', 'byAsset', assetType, assetId],
+    queryFn: () => fetchApi<{ data: InspectionRecord[]; meta: { total: number } }>(
+      `/inspections?assetType=${assetType}&assetId=${assetId}`
+    ),
+    enabled: !!assetType && !!assetId,
+  });
+}
+
+// Stub hook for repair history - returns empty data until API is implemented
+export function useRepairsByAsset(_assetType: string | null, _assetId: string | null) {
+  return {
+    data: { data: [] as Array<{ id: string; date: string; type: string; description: string; status: string }>, meta: { total: 0 } },
+    isLoading: false,
+    isError: false,
+  };
+}
+
 // Recent edits types and hooks
 export interface RecentEdit {
   id: string;
@@ -731,8 +752,23 @@ export function useParkFacilitiesInBbox(
 
   return useQuery({
     queryKey: ['park-facilities', bbox, filters?.category, filters?.conditionGrade, filters?.greenSpaceRef, filters?.ward],
-    queryFn: () =>
-      fetchApi<FeatureCollection<Geometry, ParkFacilityAsset>>(`/park-facilities${queryString}`),
+    queryFn: async () => {
+      let apiData: FeatureCollection<Geometry, ParkFacilityAsset>;
+      try {
+        apiData = await fetchApi<FeatureCollection<Geometry, ParkFacilityAsset>>(`/park-facilities${queryString}`);
+      } catch {
+        apiData = { type: 'FeatureCollection' as const, features: [] } as FeatureCollection<Geometry, ParkFacilityAsset>;
+      }
+      // Merge dummy facilities directly in queryFn
+      const dummyFeatures = getDummyParkFacilities(filters as Partial<ParkFacilityFilters> | undefined);
+      const apiFeatures = apiData.features ?? [];
+      const apiIds = new Set(apiFeatures.map((f) => f.properties.id));
+      const newDummy = dummyFeatures.filter((f) => !apiIds.has(f.properties.id));
+      return {
+        ...apiData,
+        features: [...apiFeatures, ...newDummy],
+      };
+    },
     enabled: (options?.enabled ?? true) && !!bbox,
     staleTime: 60000,
     placeholderData: keepPreviousData,
@@ -740,10 +776,17 @@ export function useParkFacilitiesInBbox(
 }
 
 export function useParkFacility(id: string | null) {
+  const isDummy = id?.startsWith('PF-demo-') ?? false;
   return useQuery({
     queryKey: ['park-facility', id],
-    queryFn: () =>
-      fetchApi<{ type: 'Feature'; properties: ParkFacilityAsset; geometry: Geometry }>(`/park-facilities/${id}`),
+    queryFn: () => {
+      if (isDummy) {
+        const feature = DUMMY_PARK_FACILITIES.find((f) => f.properties.id === id);
+        if (feature) return feature as { type: 'Feature'; properties: ParkFacilityAsset; geometry: Geometry };
+        throw new Error('Facility not found');
+      }
+      return fetchApi<{ type: 'Feature'; properties: ParkFacilityAsset; geometry: Geometry }>(`/park-facilities/${id}`);
+    },
     enabled: !!id,
   });
 }

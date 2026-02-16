@@ -43,27 +43,6 @@ const DUMMY_PARKS: Record<string, any> = {
   'GS-rtljov09': { id: 'GS-rtljov09', displayName: '千種公園', ward: '千種区', greenSpaceType: 'park', areaM2: 58659, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9430, 35.1710] },
 };
 
-const DUMMY_FACILITIES: Record<string, any[]> = {
-  'GS-zxpnkee2': [
-    { id: 'fac-001', name: '鶴舞公園 トイレA', category: 'toilet', status: 'active' },
-    { id: 'fac-002', name: '鶴舞公園 遊具広場', category: 'playground', status: 'active' },
-    { id: 'fac-003', name: '鶴舞公園 ベンチ群A', category: 'bench', status: 'active' },
-    { id: 'fac-004', name: '鶴舞公園 東屋', category: 'shelter', status: 'active' },
-    { id: 'fac-005', name: '鶴舞公園 照明設備A', category: 'lighting', status: 'active' },
-  ],
-  'GS-nliigh01': [
-    { id: 'fac-011', name: '名城公園 トイレA', category: 'toilet', status: 'active' },
-    { id: 'fac-012', name: '名城公園 遊具広場', category: 'playground', status: 'active' },
-    { id: 'fac-013', name: '名城公園 フェンスA', category: 'fence', status: 'active' },
-    { id: 'fac-014', name: '名城公園 水飲み場', category: 'waterFountain', status: 'active' },
-  ],
-  'GS-4g77l6x7': [
-    { id: 'fac-021', name: '東山動植物園 トイレA', category: 'toilet', status: 'active' },
-    { id: 'fac-022', name: '東山動植物園 ベンチ群A', category: 'bench', status: 'active' },
-    { id: 'fac-023', name: '東山動植物園 案内板', category: 'signBoard', status: 'active' },
-  ],
-};
-
 /** Generate an approximate polygon from center [lng, lat] and area in m². */
 function makeApproxPolygon(center: [number, number], areaM2: number) {
   const side = Math.sqrt(areaM2);
@@ -110,9 +89,7 @@ export function ParkDetailPage() {
       ? makeApproxPolygon(dummyPark.center, dummyPark.areaM2)
       : undefined);
 
-  const apiFacilities = facilitiesData?.features || [];
-  const dummyFacilities = id && DUMMY_FACILITIES[id] ? DUMMY_FACILITIES[id].map((f) => ({ properties: f })) : [];
-  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
+  const facilities = facilitiesData?.features || [];
 
   return (
     <ScrollArea h="calc(100vh - 60px)">

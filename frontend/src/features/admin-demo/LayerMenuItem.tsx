@@ -5,6 +5,8 @@ interface LayerMenuItemProps {
   layer: DataLayer;
   onToggle?: () => void;
   depth: number;
+  /** Whether this layer (or any child) is currently visible on the map */
+  isActive?: boolean;
 }
 
 /**
@@ -17,15 +19,22 @@ export function LayerMenuItem({
   layer,
   onToggle,
   depth,
+  isActive,
 }: LayerMenuItemProps) {
   const hasChildren = layer.children && layer.children.length > 0;
+
+  // Small checkmark indicator for active layers (right-aligned)
+  const checkmark = isActive ? (
+    <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 'auto', fontWeight: 700 }}>&#10003;</span>
+  ) : null;
 
   // Category headers: gray box with bold text (公園, 樹木)
   if (hasChildren) {
     return (
       <div
         style={{
-          display: 'block',
+          display: 'flex',
+          alignItems: 'center',
           width: `calc(100% - ${depth * 20 + 12}px)`,
           marginLeft: depth * 20 + 12,
           marginBottom: 4,
@@ -38,6 +47,7 @@ export function LayerMenuItem({
         }}
       >
         {layer.label}
+        {checkmark}
       </div>
     );
   }
@@ -51,7 +61,8 @@ export function LayerMenuItem({
       tabIndex={layer.isPlaceholder ? -1 : 0}
       aria-disabled={layer.isPlaceholder}
       style={{
-        display: 'block',
+        display: 'flex',
+        alignItems: 'center',
         width: `calc(100% - ${depth * 20 + 12}px)`,
         marginLeft: depth * 20 + 12,
         marginBottom: 4,
@@ -67,6 +78,7 @@ export function LayerMenuItem({
       }}
     >
       {layer.label}
+      {!layer.isPlaceholder && checkmark}
     </button>
   );
 
