@@ -9,11 +9,11 @@ export default defineConfig({
     allowedHosts: ['eventflow.uixai.org', 'v1.eventflow.uixai.org', 'demo.eventflow.uixai.org', 'localhost'],
     proxy: {
       '/api': {
-        // Use API_PROXY_TARGET for server-side proxy (Docker: http://api:3000)
-        // VITE_API_URL is for browser-side and should be /api to use proxy
-        target: process.env.API_PROXY_TARGET || 'http://localhost:3000',
+        // API_PROXY_TARGET: Docker uses http://api:3000, local dev uses demo API
+        target: process.env.API_PROXY_TARGET || 'https://demo.eventflow.uixai.org',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        secure: false,
       },
     },
   },

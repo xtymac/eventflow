@@ -10,22 +10,32 @@ const GREEN_SPACE_TYPE_LABELS: Record<string, string> = {
   nature_reserve: '自然保護区', recreation_ground: 'レクリエーション',
 };
 
+/** Map English ward names (from DB) to Japanese */
+const WARD_JA: Record<string, string> = {
+  'Atsuta-ku': '熱田区', 'Chikusa-ku': '千種区', 'Higashi-ku': '東区',
+  'Kita-ku': '北区', 'Meito-ku': '名東区', 'Midori-ku': '緑区',
+  'Minami-ku': '南区', 'Minato-ku': '港区', 'Mizuho-ku': '瑞穂区',
+  'Moriyama-ku': '守山区', 'Naka-ku': '中区', 'Nakagawa-ku': '中川区',
+  'Nakamura-ku': '中村区', 'Nishi-ku': '西区', 'Showa-ku': '昭和区',
+  'Tempaku-ku': '天白区',
+};
+
 // Dummy data for demo when API is unavailable
 // IDs match real DB records (greenspace_assets) so API can fetch actual polygon geometry
 const DUMMY_PARKS: Record<string, any> = {
   'GS-zxpnkee2': { id: 'GS-zxpnkee2', displayName: '鶴舞公園', ward: '昭和区', greenSpaceType: 'park', areaM2: 236537, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9213, 35.1575] },
   'GS-nliigh01': { id: 'GS-nliigh01', displayName: '名城公園', ward: '北区', greenSpaceType: 'park', areaM2: 205208, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9050, 35.1860] },
-  'GS-4g77l6x7': { id: 'GS-4g77l6x7', displayName: '東山公園', ward: '千種区', greenSpaceType: 'park', areaM2: 894903, status: 'active', operator: '名古屋市', vegetationType: '広葉樹', center: [136.9740, 35.1570] },
+  'GS-4g77l6x7': { id: 'GS-4g77l6x7', displayName: '東山動植物園', ward: '千種区', greenSpaceType: 'park', areaM2: 894903, status: 'active', operator: '名古屋市', vegetationType: '広葉樹', center: [136.9740, 35.1570] },
   'GS-es1u7z8r': { id: 'GS-es1u7z8r', displayName: '白川公園', ward: '中区', greenSpaceType: 'park', areaM2: 89299, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.8980, 35.1650] },
   'GS-9ego0pvp': { id: 'GS-9ego0pvp', displayName: '庄内緑地公園', ward: '西区', greenSpaceType: 'park', areaM2: 426621, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.8780, 35.2010] },
-  'GS-auy42b1p': { id: 'GS-auy42b1p', displayName: '大高緑地', ward: '緑区', greenSpaceType: 'park', areaM2: 1102426, status: 'active', operator: '愛知県', vegetationType: '広葉樹', center: [136.9410, 35.0780] },
+  'GS-auy42b1p': { id: 'GS-auy42b1p', displayName: '大高緑地公園', ward: '緑区', greenSpaceType: 'park', areaM2: 1102426, status: 'active', operator: '愛知県', vegetationType: '広葉樹', center: [136.9410, 35.0780] },
   'GS-gs3xyhbw': { id: 'GS-gs3xyhbw', displayName: '荒子川公園', ward: '港区', greenSpaceType: 'park', areaM2: 237208, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.8640, 35.1170] },
-  'GS-3d67hwf5': { id: 'GS-3d67hwf5', displayName: '戸田川緑地', ward: '港区', greenSpaceType: 'park', areaM2: 364075, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.8350, 35.0970] },
+  'GS-3d67hwf5': { id: 'GS-3d67hwf5', displayName: '戸田川緑地', ward: '中川区', greenSpaceType: 'park', areaM2: 364075, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.8350, 35.0970] },
   'GS-byrogagk': { id: 'GS-byrogagk', displayName: '久屋大通公園', ward: '中区', greenSpaceType: 'park', areaM2: 105736, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9110, 35.1720] },
   'GS-ful7d9lw': { id: 'GS-ful7d9lw', displayName: '徳川園', ward: '東区', greenSpaceType: 'garden', areaM2: 55029, status: 'active', operator: '名古屋市', vegetationType: '日本庭園', center: [136.9340, 35.1870] },
   'GS-7f2voyoy': { id: 'GS-7f2voyoy', displayName: '猪高緑地', ward: '名東区', greenSpaceType: 'park', areaM2: 631296, status: 'active', operator: '名古屋市', vegetationType: '広葉樹', center: [137.0100, 35.1780] },
   'GS-x1q5e2te': { id: 'GS-x1q5e2te', displayName: '牧野ヶ池緑地', ward: '名東区', greenSpaceType: 'park', areaM2: 1351901, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [137.0200, 35.1650] },
-  'GS-ldnfwyur': { id: 'GS-ldnfwyur', displayName: '小幡緑地', ward: '守山区', greenSpaceType: 'park', areaM2: 131662, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9780, 35.2050] },
+  'GS-ldnfwyur': { id: 'GS-ldnfwyur', displayName: '小幡緑地公園', ward: '守山区', greenSpaceType: 'park', areaM2: 131662, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9780, 35.2050] },
   'GS-9exy95g1': { id: 'GS-9exy95g1', displayName: '笠寺公園', ward: '南区', greenSpaceType: 'park', areaM2: 65235, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9370, 35.1060] },
   'GS-xk4kyf2q': { id: 'GS-xk4kyf2q', displayName: '志賀公園', ward: '北区', greenSpaceType: 'park', areaM2: 51705, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9100, 35.2020] },
   'GS-cfam78i3': { id: 'GS-cfam78i3', displayName: '瑞穂公園', ward: '瑞穂区', greenSpaceType: 'park', areaM2: 239836, status: 'active', operator: '名古屋市', vegetationType: '混合林', center: [136.9370, 35.1350] },
@@ -48,9 +58,9 @@ const DUMMY_FACILITIES: Record<string, any[]> = {
     { id: 'fac-014', name: '名城公園 水飲み場', category: 'waterFountain', status: 'active' },
   ],
   'GS-4g77l6x7': [
-    { id: 'fac-021', name: '東山公園 トイレA', category: 'toilet', status: 'active' },
-    { id: 'fac-022', name: '東山公園 ベンチ群A', category: 'bench', status: 'active' },
-    { id: 'fac-023', name: '東山公園 案内板', category: 'signBoard', status: 'active' },
+    { id: 'fac-021', name: '東山動植物園 トイレA', category: 'toilet', status: 'active' },
+    { id: 'fac-022', name: '東山動植物園 ベンチ群A', category: 'bench', status: 'active' },
+    { id: 'fac-023', name: '東山動植物園 案内板', category: 'signBoard', status: 'active' },
   ],
 };
 
@@ -94,8 +104,9 @@ export function ParkDetailPage() {
   const dummyPark = id ? DUMMY_PARKS[id] : null;
   const park = apiPark || dummyPark;
   const usingDummy = !apiPark && !!dummyPark;
+  // Only fall back to approximate polygon after API has finished (not while loading)
   const geometry = parkData?.geometry
-    || (usingDummy && dummyPark?.center && dummyPark?.areaM2
+    || (!isLoading && usingDummy && dummyPark?.center && dummyPark?.areaM2
       ? makeApproxPolygon(dummyPark.center, dummyPark.areaM2)
       : undefined);
 
@@ -117,7 +128,7 @@ export function ParkDetailPage() {
             <Stack gap="lg">
               {/* 公園マップ */}
               {geometry ? (
-                <MiniMap geometry={geometry} height={250} fillColor="#22C55E" />
+                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}`} geometry={geometry} height={250} fillColor="#22C55E" />
               ) : park.center ? (
                 <MiniMap
                   center={park.center as [number, number]}
@@ -144,7 +155,7 @@ export function ParkDetailPage() {
                   </div>
                   <div>
                     <InfoRow label="管理者" value={park.operator} />
-                    <InfoRow label="区" value={park.ward} />
+                    <InfoRow label="区" value={WARD_JA[park.ward] || park.ward} />
                     <InfoRow
                       label="状態"
                       value={<Badge color={park.status === 'active' ? 'green' : 'gray'} variant="light" size="sm">{park.status}</Badge>}
