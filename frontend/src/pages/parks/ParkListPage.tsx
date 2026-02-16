@@ -2,22 +2,10 @@ import { useState, useMemo } from 'react';
 import { Box, TextInput, Text, Group, Stack, ScrollArea } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
-import { useAllGreenSpaces } from '../../hooks/useApi';
-import { PageState } from '../../components/PageState';
 
-/** Map English ward names (from DB) to Japanese */
-const WARD_JA: Record<string, string> = {
-  'Atsuta-ku': '熱田区', 'Chikusa-ku': '千種区', 'Higashi-ku': '東区',
-  'Kita-ku': '北区', 'Meito-ku': '名東区', 'Midori-ku': '緑区',
-  'Minami-ku': '南区', 'Minato-ku': '港区', 'Mizuho-ku': '瑞穂区',
-  'Moriyama-ku': '守山区', 'Naka-ku': '中区', 'Nakagawa-ku': '中川区',
-  'Nakamura-ku': '中村区', 'Nishi-ku': '西区', 'Showa-ku': '昭和区',
-  'Tempaku-ku': '天白区',
-};
-
-// Dummy data for demo when API returns no results
-// IDs match real DB records (greenspace_assets) so detail pages can fetch actual polygon geometry
-const DUMMY_PARKS = [
+// Curated list of 18 major parks for the demo
+// IDs match real DB records (greenspace_assets) — detail pages fetch actual polygon geometry from API
+const CURATED_PARKS = [
   { id: 'GS-zxpnkee2', displayName: '鶴舞公園', ward: '昭和区', greenSpaceType: 'park', areaM2: 236537, status: 'active' },
   { id: 'GS-nliigh01', displayName: '名城公園', ward: '北区', greenSpaceType: 'park', areaM2: 205208, status: 'active' },
   { id: 'GS-4g77l6x7', displayName: '東山動植物園', ward: '千種区', greenSpaceType: 'park', areaM2: 894903, status: 'active' },
@@ -36,33 +24,24 @@ const DUMMY_PARKS = [
   { id: 'GS-cfam78i3', displayName: '瑞穂公園', ward: '瑞穂区', greenSpaceType: 'park', areaM2: 239836, status: 'active' },
   { id: 'GS-gul3d3ul', displayName: '熱田神宮公園', ward: '熱田区', greenSpaceType: 'park', areaM2: 78109, status: 'active' },
   { id: 'GS-rtljov09', displayName: '千種公園', ward: '千種区', greenSpaceType: 'park', areaM2: 58659, status: 'active' },
-].map((p) => ({ type: 'Feature' as const, geometry: { type: 'Polygon' as const, coordinates: [] }, properties: p }));
+];
 
 export function ParkListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
-  const { data, isLoading, isError } = useAllGreenSpaces();
-
-  // Use API data if available, otherwise fall back to dummy data for demo
-  const usingDummy = !data?.features?.length;
-  const features = usingDummy ? DUMMY_PARKS : data.features;
-
   const parks = useMemo(() => {
-    const filtered = features.filter((f: any) => {
+    const filtered = CURATED_PARKS.filter((p) => {
       if (!search) return true;
       const s = search.toLowerCase();
-      const p = f.properties;
       return (
-        p.name?.toLowerCase().includes(s) ||
-        p.nameJa?.toLowerCase().includes(s) ||
-        p.displayName?.toLowerCase().includes(s) ||
-        p.id?.toLowerCase().includes(s) ||
-        p.ward?.toLowerCase().includes(s)
+        p.displayName.toLowerCase().includes(s) ||
+        p.id.toLowerCase().includes(s) ||
+        p.ward.toLowerCase().includes(s)
       );
     });
-    return filtered.sort((a: any, b: any) => (a.properties.displayName || a.properties.name || '').localeCompare(b.properties.displayName || b.properties.name || '', 'ja'));
-  }, [features, search]);
+    return filtered.sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja'));
+  }, [search]);
 
   return (
     <Box p="lg" h="100%">
@@ -76,34 +55,29 @@ export function ParkListPage() {
 
       <Text size="lg" fw={600} mb="sm">公園 List</Text>
 
-      <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={parks.length === 0} emptyMessage="公園データがありません">
-        <ScrollArea h="calc(100vh - 240px)">
-          <Stack gap={0}>
-            {parks.map((f: any) => {
-              const p = f.properties;
-              return (
-                <Box
-                  key={p.id}
-                  py="md"
-                  px="lg"
-                  onClick={() => navigate(`/park-mgmt/parks/${p.id}`)}
-                  style={{
-                    backgroundColor: '#f1f3f5',
-                    marginBottom: 4,
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Group justify="space-between">
-                    <Text fw={500} size="sm">{p.displayName || p.nameJa || p.name || '（無名）'}</Text>
-                    <Text size="xs" c="dimmed">{WARD_JA[p.ward] || p.ward || ''}</Text>
-                  </Group>
-                </Box>
-              );
-            })}
-          </Stack>
-        </ScrollArea>
-      </PageState>
+      <ScrollArea h="calc(100vh - 240px)">
+        <Stack gap={0}>
+          {parks.map((p) => (
+            <Box
+              key={p.id}
+              py="md"
+              px="lg"
+              onClick={() => navigate(`/park-mgmt/parks/${p.id}`)}
+              style={{
+                backgroundColor: '#f1f3f5',
+                marginBottom: 4,
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              <Group justify="space-between">
+                <Text fw={500} size="sm">{p.displayName}</Text>
+                <Text size="xs" c="dimmed">{p.ward}</Text>
+              </Group>
+            </Box>
+          ))}
+        </Stack>
+      </ScrollArea>
     </Box>
   );
 }
