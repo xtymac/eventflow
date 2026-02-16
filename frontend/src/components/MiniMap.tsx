@@ -10,6 +10,8 @@ interface MiniMapProps {
   center?: [number, number];
   zoom?: number;
   fillColor?: string;
+  /** Index of marker to highlight (pulse + scale up) */
+  highlightedMarkerIndex?: number | null;
 }
 
 // Same raster basemap as main MapView (CARTO Voyager @2x for HiDPI)
@@ -27,9 +29,10 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6' }: MiniMapProps) {
+export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', highlightedMarkerIndex }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const markerEls = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -116,11 +119,13 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
       }
 
       // Add markers
+      markerEls.current = [];
       if (markers) {
         markers.forEach((m) => {
-          new maplibregl.Marker({ color: m.color || '#e03131' })
+          const marker = new maplibregl.Marker({ color: m.color || '#e03131' })
             .setLngLat([m.lng, m.lat])
             .addTo(map);
+          markerEls.current.push(marker.getElement());
         });
       }
     });
@@ -128,6 +133,26 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
     mapRef.current = map;
     return () => { map.remove(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Highlight marker on hover — target inner SVG to avoid conflicting with
+  // MapLibre's position transform on the outer container element.
+  useEffect(() => {
+    markerEls.current.forEach((el, i) => {
+      const svg = el.querySelector('svg');
+      if (!svg) return;
+      if (i === highlightedMarkerIndex) {
+        svg.style.transform = 'scale(1.5)';
+        svg.style.filter = 'drop-shadow(0 0 6px rgba(255,180,0,0.9))';
+        svg.style.transition = 'transform 0.15s ease, filter 0.15s ease';
+        el.style.zIndex = '10';
+      } else {
+        svg.style.transform = '';
+        svg.style.filter = '';
+        svg.style.transition = 'transform 0.15s ease, filter 0.15s ease';
+        el.style.zIndex = '';
+      }
+    });
+  }, [highlightedMarkerIndex]);
 
   return (
     <div

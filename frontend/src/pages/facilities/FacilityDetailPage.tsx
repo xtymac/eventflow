@@ -1,10 +1,12 @@
 import { Box, Breadcrumbs, Anchor, Text, Group, Paper, SimpleGrid, Badge, Table, ScrollArea, Collapse, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconChevronDown, IconChevronRight, IconPhoto, IconPencil } from '@tabler/icons-react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import * as turf from '@turf/turf';
 import { useParkFacility, useGreenSpace, useLifecyclePlans, useInspectionsByAsset, useRepairsByAsset } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
+import { getDummyFacility } from '../../data/dummyFacilities';
 
 const CATEGORY_LABELS: Record<string, string> = {
   playground: '遊具', bench: 'ベンチ', shelter: '東屋', toilet: 'トイレ',
@@ -19,6 +21,13 @@ const INSPECTION_TYPE_LABELS: Record<string, string> = {
 
 const CONDITION_COLORS: Record<string, string> = {
   A: 'green', B: 'yellow', C: 'orange', D: 'red', S: 'red',
+};
+
+type FacilityDetailLocationState = {
+  breadcrumbFrom?: {
+    to?: string;
+    label?: string;
+  };
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -42,13 +51,17 @@ function SectionHeader({ title, opened, toggle }: { title: string; opened: boole
 
 export function FacilityDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [infoOpen, { toggle: toggleInfo }] = useDisclosure(true);
   const [repairOpen, { toggle: toggleRepair }] = useDisclosure(true);
   const [inspectionOpen, { toggle: toggleInspection }] = useDisclosure(true);
   const [lifecycleOpen, { toggle: toggleLifecycle }] = useDisclosure(true);
 
   const { data, isLoading, isError } = useParkFacility(id ?? null);
-  const facility = data?.properties;
+  const apiFacility = data?.properties;
+  const dummyFacility = id ? getDummyFacility(id) : null;
+  const facility = apiFacility || dummyFacility;
+  const usingDummy = !apiFacility && !!dummyFacility;
   const facilityGeometry = data?.geometry;
 
   // Fetch parent park geometry for polygon display on MiniMap
@@ -61,25 +74,39 @@ export function FacilityDetailPage() {
 
   // Show park polygon as geometry, facility point as marker
   const miniMapGeometry = parkGeometry || facilityGeometry;
-  const markers = facilityGeometry?.type === 'Point' ? [{
-    lng: (facilityGeometry as GeoJSON.Point).coordinates[0],
-    lat: (facilityGeometry as GeoJSON.Point).coordinates[1],
-    color: '#e03131',
-  }] : [];
+  const isDummyFacility = id?.startsWith('PF-demo-') ?? false;
+  // For dummy facilities, place marker at park polygon centroid instead of hardcoded coords
+  const markers = (() => {
+    if (isDummyFacility && parkGeometry) {
+      const c = turf.centroid({ type: 'Feature', properties: {}, geometry: parkGeometry } as turf.helpers.Feature).geometry.coordinates;
+      return [{ lng: c[0], lat: c[1], color: '#e03131' }];
+    }
+    if (facilityGeometry?.type === 'Point') {
+      return [{
+        lng: (facilityGeometry as GeoJSON.Point).coordinates[0],
+        lat: (facilityGeometry as GeoJSON.Point).coordinates[1],
+        color: '#e03131',
+      }];
+    }
+    return [];
+  })();
 
   const inspections = inspectionData?.data ?? [];
   const repairs = repairData?.data ?? [];
+  const locationState = location.state as FacilityDetailLocationState | null;
+  const breadcrumbTo = locationState?.breadcrumbFrom?.to || '/park-mgmt/facilities';
+  const breadcrumbLabel = locationState?.breadcrumbFrom?.label || '施設';
 
   return (
     <ScrollArea h="calc(100vh - 60px)">
       <Box p="lg">
         {/* Breadcrumb */}
         <Breadcrumbs mb="md">
-          <Anchor component={Link} to="/park-mgmt/facilities" size="sm">施設</Anchor>
+          <Anchor component={Link} to={breadcrumbTo} size="sm">{breadcrumbLabel}</Anchor>
           <Text size="sm">{facility?.name || '読み込み中...'}</Text>
         </Breadcrumbs>
 
-        <PageState loading={isLoading} error={isError} empty={!facility} emptyMessage="施設が見つかりません">
+        <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={!facility} emptyMessage="施設が見つかりません">
           {facility && (
             <Stack gap="lg">
               {/* Map / Photo Section */}

@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Box, Breadcrumbs, Anchor, Text, Group, Paper, SimpleGrid, Badge, ActionIcon, ScrollArea, Stack } from '@mantine/core';
 import { IconPencil } from '@tabler/icons-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import * as turf from '@turf/turf';
 import { useGreenSpace, useParkFacilitiesByPark } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
+import { getDummyFacilitiesByPark } from '../../data/dummyFacilities';
 
 const GREEN_SPACE_TYPE_LABELS: Record<string, string> = {
   park: '公園', garden: '庭園', forest: '森林', meadow: '草地',
@@ -89,16 +92,42 @@ export function ParkDetailPage() {
       ? makeApproxPolygon(dummyPark.center, dummyPark.areaM2)
       : undefined);
 
-  const facilities = facilitiesData?.features || [];
+  const apiFacilities = facilitiesData?.features || [];
+  const dummyFacilities = id ? getDummyFacilitiesByPark(id).map((f) => ({ properties: f, geometry: { type: 'Point' as const, coordinates: dummyPark?.center || [136.9, 35.15] } })) : [];
+  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
+  const parkName = park?.displayName || park?.nameJa || park?.name || '読み込み中...';
+  const parkBackTo = id ? `/park-mgmt/parks/${id}` : '/park-mgmt/parks';
+
+  // Compute real polygon centroid so dummy facilities can be repositioned
+  const centroid = geometry
+    ? turf.centroid({ type: 'Feature', properties: {}, geometry } as turf.helpers.Feature).geometry.coordinates
+    : null;
+
+  // Small deterministic offsets for dummy facility markers (~30-50m spread)
+  const MARKER_OFFSETS: Array<[number, number]> = [
+    [0.0003, 0.0002], [-0.0002, 0.0003], [0.0002, -0.0002],
+    [-0.0003, -0.0002], [0.0004, 0.0001], [-0.0001, 0.0004],
+    [0.0003, -0.0003], [-0.0004, 0.0003],
+  ];
+
+  const [hoveredFacilityIndex, setHoveredFacilityIndex] = useState<number | null>(null);
 
   // Build markers from facility point geometries for MiniMap
-  const facilityMarkers = facilities
-    .filter((f: any) => f.geometry?.type === 'Point')
-    .map((f: any) => ({
-      lng: f.geometry.coordinates[0],
-      lat: f.geometry.coordinates[1],
-      color: '#e03131',
-    }));
+  // Also build a map from facility list index -> marker array index for hover highlight
+  const facilityMarkers: Array<{ lng: number; lat: number; color: string }> = [];
+  const facilityToMarkerIdx = new Map<number, number>();
+  facilities.forEach((f: any, listIdx: number) => {
+    if (f.geometry?.type !== 'Point') return;
+    const markerIdx = facilityMarkers.length;
+    const isDummy = f.properties.id?.startsWith('PF-demo-');
+    if (isDummy && centroid) {
+      const offset = MARKER_OFFSETS[markerIdx % MARKER_OFFSETS.length];
+      facilityMarkers.push({ lng: centroid[0] + offset[0], lat: centroid[1] + offset[1], color: '#e03131' });
+    } else {
+      facilityMarkers.push({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], color: '#e03131' });
+    }
+    facilityToMarkerIdx.set(listIdx, markerIdx);
+  });
 
   return (
     <ScrollArea h="calc(100vh - 60px)">
@@ -106,7 +135,7 @@ export function ParkDetailPage() {
         {/* Breadcrumb */}
         <Breadcrumbs mb="md">
           <Anchor component={Link} to="/park-mgmt/parks" size="sm">公園</Anchor>
-          <Text size="sm">{park?.displayName || park?.nameJa || park?.name || '読み込み中...'}</Text>
+          <Text size="sm">{parkName}</Text>
         </Breadcrumbs>
 
         <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={!park} emptyMessage="公園が見つかりません">
@@ -114,13 +143,14 @@ export function ParkDetailPage() {
             <Stack gap="lg">
               {/* 公園マップ */}
               {geometry ? (
-                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`} geometry={geometry} markers={facilityMarkers} height={250} fillColor="#22C55E" />
+                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`} geometry={geometry} markers={facilityMarkers} height={250} fillColor="#22C55E" highlightedMarkerIndex={hoveredFacilityIndex != null ? facilityToMarkerIdx.get(hoveredFacilityIndex) ?? null : null} />
               ) : park.center ? (
                 <MiniMap
                   center={park.center as [number, number]}
                   markers={[{ lng: park.center[0], lat: park.center[1], color: '#22C55E' }, ...facilityMarkers]}
                   zoom={15}
                   height={250}
+                  highlightedMarkerIndex={hoveredFacilityIndex != null ? (facilityToMarkerIdx.get(hoveredFacilityIndex) ?? -1) + 1 : null}
                 />
               ) : null}
 
@@ -163,19 +193,29 @@ export function ParkDetailPage() {
 
                 <PageState loading={!usingDummy && facilitiesLoading} empty={facilities.length === 0} emptyMessage="この公園に施設はありません">
                   <Stack gap={0}>
-                    {facilities.map((f: any) => {
+                    {facilities.map((f: any, i: number) => {
                       const p = f.properties;
                       return (
                         <Box
                           key={p.id}
                           py="sm"
                           px="md"
-                          onClick={() => navigate(`/park-mgmt/facilities/${p.id}`)}
+                          onClick={() => navigate(`/park-mgmt/facilities/${p.id}`, {
+                            state: {
+                              breadcrumbFrom: {
+                                to: parkBackTo,
+                                label: parkName,
+                              },
+                            },
+                          })}
+                          onMouseEnter={() => setHoveredFacilityIndex(i)}
+                          onMouseLeave={() => setHoveredFacilityIndex(null)}
                           style={{
-                            backgroundColor: '#f1f3f5',
+                            backgroundColor: hoveredFacilityIndex === i ? '#dbe4ff' : '#f1f3f5',
                             marginBottom: 4,
                             borderRadius: 4,
                             cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
                           }}
                         >
                           <Text size="sm" fw={500}>{p.name}</Text>

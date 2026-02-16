@@ -4,6 +4,7 @@ import { IconSearch, IconInfoCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllParkFacilities } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
+import { getAllDummyFacilities, FACILITY_CATEGORY_LABELS } from '../../data/dummyFacilities';
 import type { ParkFacilityCategory } from '@nagoya/shared';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -26,13 +27,18 @@ export function FacilityListPage() {
     categoryFilter ? { category: categoryFilter as ParkFacilityCategory } : undefined
   );
 
+  // Use API data if available, otherwise fall back to dummy data for demo
+  const usingDummy = !data?.features?.length;
+  const dummyFeatures = useMemo(() => getAllDummyFacilities().map((f) => ({ properties: f })), []);
+
   const facilities = useMemo(() => {
-    if (!data?.features) return [];
-    return data.features
-      .filter((f) => {
+    const features = usingDummy ? dummyFeatures : data!.features;
+    return (features as any[])
+      .filter((f: any) => {
+        const p = f.properties;
+        if (categoryFilter && p.category !== categoryFilter) return false;
         if (!search) return true;
         const s = search.toLowerCase();
-        const p = f.properties;
         return (
           p.name?.toLowerCase().includes(s) ||
           p.description?.toLowerCase().includes(s) ||
@@ -40,8 +46,8 @@ export function FacilityListPage() {
           p.facilityId?.toLowerCase().includes(s)
         );
       })
-      .sort((a, b) => a.properties.name.localeCompare(b.properties.name, 'ja'));
-  }, [data, search]);
+      .sort((a: any, b: any) => a.properties.name.localeCompare(b.properties.name, 'ja'));
+  }, [data, dummyFeatures, usingDummy, search, categoryFilter]);
 
   return (
     <Box p="lg" h="100%">
@@ -74,7 +80,7 @@ export function FacilityListPage() {
         </Alert>
       )}
 
-      <PageState loading={isLoading} error={isError} empty={facilities.length === 0} emptyMessage="施設データがありません">
+      <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={facilities.length === 0} emptyMessage="施設データがありません">
         <ScrollArea h="calc(100vh - 260px)">
           <Table striped highlightOnHover withTableBorder withColumnBorders>
             <Table.Thead>
@@ -93,7 +99,14 @@ export function FacilityListPage() {
                 return (
                   <Table.Tr
                     key={p.id}
-                    onClick={() => navigate(`/park-mgmt/facilities/${p.id}`)}
+                    onClick={() => navigate(`/park-mgmt/facilities/${p.id}`, {
+                      state: {
+                        breadcrumbFrom: {
+                          to: '/park-mgmt/facilities',
+                          label: '施設',
+                        },
+                      },
+                    })}
                     style={{ cursor: 'pointer' }}
                   >
                     <Table.Td>
