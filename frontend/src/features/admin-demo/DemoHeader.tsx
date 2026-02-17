@@ -40,11 +40,9 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
       isUser
         ? { label: '資産台帳', to: '/park-mgmt/parks', matchPaths: ['/park-mgmt'] }
         : { label: '資産台帳', to: pathname.startsWith('/tree-mgmt') ? '/tree-mgmt' : '/park-mgmt/parks', matchPaths: ['/park-mgmt', '/tree-mgmt'] },
+      { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
       isAdmin
-        ? { label: '案件管理', matchPaths: [] }
-        : { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
-      isAdmin
-        ? { label: '業者管理', matchPaths: [] }
+        ? { label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] }
         : { label: '業者管理', matchPaths: ['/vendors'] },
     ];
 
