@@ -11,6 +11,8 @@ import { FacilityListPage } from './pages/facilities/FacilityListPage';
 import { FacilityDetailPage } from './pages/facilities/FacilityDetailPage';
 import { CaseListPage } from './pages/cases/CaseListPage';
 import { CaseDetailPage } from './pages/cases/CaseDetailPage';
+import { InspectionListPage } from './pages/inspections/InspectionListPage';
+import { InspectionDetailPage } from './pages/inspections/InspectionDetailPage';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
 import { StubPage } from './components/StubPage';
@@ -44,7 +46,8 @@ export const router = createBrowserRouter([
       },
       { path: 'cases', element: <CaseListPage /> },
       { path: 'cases/:id', element: <CaseDetailPage /> },
-      { path: 'inspections', element: <Navigate to="/cases" replace /> },
+      { path: 'inspections', element: <InspectionListPage /> },
+      { path: 'inspections/:id', element: <InspectionDetailPage /> },
       {
         path: 'tree-mgmt/*',
         element: (

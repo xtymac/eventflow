@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Box, TextInput, Table, Badge, Text, Group, NavLink as MantineNavLink, ScrollArea, Stack } from '@mantine/core';
+import { Box, TextInput, Badge, Text, Group, NavLink as MantineNavLink, ScrollArea, Stack, Select } from '@mantine/core';
 import { IconSearch, IconAlertCircle, IconArrowBack, IconCircleCheck } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useEvents } from '../../hooks/useApi';
@@ -7,19 +7,31 @@ import { PageState } from '../../components/PageState';
 
 type StatusFilter = 'all' | 'pending_review' | 'planned' | 'closed';
 
-const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending_review: { label: '提出済', color: 'blue', icon: null },
-  planned: { label: '差戻', color: 'orange', icon: null },
-  active: { label: '対応中', color: 'cyan', icon: null },
-  closed: { label: '確認済', color: 'green', icon: null },
-  archived: { label: 'アーカイブ', color: 'gray', icon: null },
-  cancelled: { label: 'キャンセル', color: 'red', icon: null },
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  pending_review: { label: '提出済', color: 'blue' },
+  planned: { label: '差戻', color: 'orange' },
+  active: { label: '対応中', color: 'cyan' },
+  closed: { label: '確認済', color: 'green' },
+  archived: { label: 'アーカイブ', color: 'gray' },
+  cancelled: { label: 'キャンセル', color: 'red' },
 };
+
+const RESTRICTION_TYPE_LABELS: Record<string, string> = {
+  full: '全面通行止め',
+  partial: '片側通行',
+  workzone: '工事区間',
+};
+
+const RESTRICTION_TYPE_OPTIONS = Object.entries(RESTRICTION_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const SIDEBAR_WIDTH = 220;
 
 export function CaseListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
@@ -42,14 +54,23 @@ export function CaseListPage() {
 
   const cases = useMemo(() => {
     if (!data?.data) return [];
-    if (!search) return data.data;
-    const s = search.toLowerCase();
-    return data.data.filter((e) =>
-      e.name?.toLowerCase().includes(s) ||
-      e.id?.toLowerCase().includes(s) ||
-      e.department?.toLowerCase().includes(s)
-    );
-  }, [data, search]);
+    let filtered = data.data;
+    if (typeFilter) {
+      filtered = filtered.filter((e) => e.restrictionType === typeFilter);
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter(
+        (e) =>
+          e.name?.toLowerCase().includes(s) ||
+          e.id?.toLowerCase().includes(s) ||
+          e.department?.toLowerCase().includes(s) ||
+          e.ward?.toLowerCase().includes(s) ||
+          e.restrictionType?.toLowerCase().includes(s),
+      );
+    }
+    return filtered;
+  }, [data, search, typeFilter]);
 
   return (
     <Box style={{ display: 'flex', height: '100%' }}>
@@ -62,14 +83,7 @@ export function CaseListPage() {
         }}
         p="sm"
       >
-        <Text fw={600} mb="sm" size="sm">ステータス</Text>
         <Stack gap={2}>
-          <MantineNavLink
-            label={`すべて (${counts.all})`}
-            active={statusFilter === 'all'}
-            onClick={() => setStatusFilter('all')}
-            variant="filled"
-          />
           <MantineNavLink
             label={`未確認 (${counts.pending_review})`}
             leftSection={<IconAlertCircle size={16} />}
@@ -99,70 +113,63 @@ export function CaseListPage() {
 
       {/* Main Area */}
       <Box style={{ flex: 1, overflow: 'hidden' }} p="lg">
-        <Group justify="space-between" mb="md">
-          <Text size="xl" fw={700}>案件管理</Text>
-          <Badge size="lg" variant="light">{cases.length} 件</Badge>
-        </Group>
-
-        <Group mb="md">
+        <Group mb="md" gap="sm">
+          <Select
+            placeholder="種別"
+            data={RESTRICTION_TYPE_OPTIONS}
+            value={typeFilter}
+            onChange={setTypeFilter}
+            clearable
+            w={180}
+            label="種別"
+          />
           <TextInput
-            placeholder="ID・名称・部署で検索..."
+            placeholder="検索（ID, ParkName, type, 市区町村）"
             leftSection={<IconSearch size={16} />}
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
-            style={{ flex: 1, maxWidth: 500 }}
+            style={{ flex: 1 }}
+            mt={24}
           />
         </Group>
 
         <PageState loading={isLoading} error={isError} empty={cases.length === 0} emptyMessage="案件データがありません">
-          <ScrollArea h="calc(100vh - 240px)">
-            <Table striped highlightOnHover withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={100}>ID</Table.Th>
-                  <Table.Th>案件名</Table.Th>
-                  <Table.Th w={100}>部署</Table.Th>
-                  <Table.Th w={100}>区</Table.Th>
-                  <Table.Th w={120}>開始日</Table.Th>
-                  <Table.Th w={100}>状態</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {cases.map((c) => {
-                  const statusInfo = STATUS_MAP[c.status] || { label: c.status, color: 'gray' };
-                  return (
-                    <Table.Tr
-                      key={c.id}
-                      onClick={() => navigate(`/cases/${c.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <Table.Td>
-                        <Text size="xs" c="dimmed" truncate>{c.id.slice(0, 8)}...</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text fw={500} size="sm">{c.name}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs">{c.department || '—'}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs">{c.ward || '—'}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs" c="dimmed">
-                          {c.startDate ? new Date(c.startDate).toLocaleDateString('ja-JP') : '—'}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={statusInfo.color} variant="light" size="sm">
-                          {statusInfo.label}
-                        </Badge>
-                      </Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-            </Table>
+          <ScrollArea h="calc(100vh - 200px)">
+            <Stack gap="xs">
+              {cases.map((c) => {
+                const statusInfo = STATUS_MAP[c.status] || { label: c.status, color: 'gray' };
+                return (
+                  <Group
+                    key={c.id}
+                    onClick={() => navigate(`/cases/${c.id}`)}
+                    justify="space-between"
+                    p="md"
+                    style={{
+                      cursor: 'pointer',
+                      backgroundColor: 'var(--mantine-color-gray-1)',
+                      borderRadius: 'var(--mantine-radius-sm)',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text fw={500} size="sm" truncate>{c.name}</Text>
+                      <Group gap="xs" mt={4}>
+                        <Text size="xs" c="dimmed">{c.id.slice(0, 8)}...</Text>
+                        {c.ward && <Text size="xs" c="dimmed">{c.ward}</Text>}
+                        {c.department && <Text size="xs" c="dimmed">{c.department}</Text>}
+                        {c.startDate && (
+                          <Text size="xs" c="dimmed">
+                            {new Date(c.startDate).toLocaleDateString('ja-JP')}
+                          </Text>
+                        )}
+                      </Group>
+                    </div>
+                    <Badge color={statusInfo.color} variant="light" size="sm">
+                      {statusInfo.label}
+                    </Badge>
+                  </Group>
+                );
+              })}
+            </Stack>
           </ScrollArea>
         </PageState>
       </Box>

@@ -18,6 +18,8 @@ import type {
 } from '@nagoya/shared';
 import type { FeatureCollection, Geometry, Point } from 'geojson';
 import { DUMMY_PARK_FACILITIES, getDummyParkFacilities } from '../data/dummyParkFacilities';
+import { getDummyRepairsByFacility, type DummyRepair } from '../data/dummyRepairs';
+import { DUMMY_EVENTS, getDummyEvent } from '../data/dummyEvents';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -67,15 +69,41 @@ export function useEvents(filters?: EventFilters, options?: { enabled?: boolean 
 
   return useQuery({
     queryKey: ['events', filters],
-    queryFn: () => fetchApi<{ data: ConstructionEvent[]; meta: { total: number; archivedCount: number } }>(`/events${queryString}`),
+    queryFn: async () => {
+      let apiData: { data: ConstructionEvent[]; meta: { total: number; archivedCount: number } };
+      try {
+        apiData = await fetchApi<{ data: ConstructionEvent[]; meta: { total: number; archivedCount: number } }>(`/events${queryString}`);
+      } catch {
+        apiData = { data: [], meta: { total: 0, archivedCount: 0 } };
+      }
+      // Merge dummy events
+      let dummyFiltered = DUMMY_EVENTS;
+      if (filters?.status) {
+        dummyFiltered = dummyFiltered.filter((e) => e.status === filters.status);
+      }
+      const apiIds = new Set(apiData.data.map((e) => e.id));
+      const newDummy = dummyFiltered.filter((e) => !apiIds.has(e.id));
+      return {
+        data: [...apiData.data, ...newDummy],
+        meta: { total: apiData.meta.total + newDummy.length, archivedCount: apiData.meta.archivedCount },
+      };
+    },
     enabled: options?.enabled ?? true,
   });
 }
 
 export function useEvent(id: string | null) {
+  const isDummy = id?.startsWith('EVT-demo-') ?? false;
   return useQuery({
     queryKey: ['event', id],
-    queryFn: () => fetchApi<{ data: ConstructionEvent }>(`/events/${id}`),
+    queryFn: () => {
+      if (isDummy) {
+        const event = getDummyEvent(id!);
+        if (event) return { data: event };
+        throw new Error('Event not found');
+      }
+      return fetchApi<{ data: ConstructionEvent }>(`/events/${id}`);
+    },
     enabled: !!id,
   });
 }
@@ -405,10 +433,11 @@ export function useInspectionsByAsset(assetType: string | null, assetId: string 
   });
 }
 
-// Stub hook for repair history - returns empty data until API is implemented
-export function useRepairsByAsset(_assetType: string | null, _assetId: string | null) {
+// Repair history hook - returns dummy data for park-facility, empty for others
+export function useRepairsByAsset(_assetType: string | null, assetId: string | null) {
+  const repairs: DummyRepair[] = assetId ? getDummyRepairsByFacility(assetId) : [];
   return {
-    data: { data: [] as Array<{ id: string; date: string; type: string; description: string; status: string }>, meta: { total: 0 } },
+    data: { data: repairs, meta: { total: repairs.length } },
     isLoading: false,
     isError: false,
   };

@@ -1,5 +1,5 @@
 import { AppShell, Group, Title, UnstyledButton, Menu, Avatar, Text, Badge } from '@mantine/core';
-import { IconChevronDown, IconMap, IconBuilding, IconClipboardList, IconUsers, IconLogout, IconTree } from '@tabler/icons-react';
+import { IconChevronDown, IconMap, IconBuilding, IconClipboardList, IconUsers, IconLogout, IconTree, IconListDetails } from '@tabler/icons-react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoEnvironment, isAdminNavEnabled } from '../utils/environment';
@@ -121,7 +121,8 @@ export function RootLayout() {
                 )}
 
                 <NavItem label="地図" to="/map" icon={<IconMap size={18} />} />
-                <NavItem label="案件管理" to="/cases" icon={<IconClipboardList size={18} />} />
+                <NavItem label="資産台帳" to="/park-mgmt/parks" icon={<IconListDetails size={18} />} matchPaths={['/park-mgmt', '/tree-mgmt']} />
+                <NavItem label="案件管理" to="/cases" icon={<IconClipboardList size={18} />} matchPaths={['/cases', '/inspections']} />
 
                 {hasRole(['admin']) && (
                   <NavItem label="業者管理" to="/vendors" icon={<IconUsers size={18} />} />

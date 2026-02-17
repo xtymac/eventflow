@@ -1,7 +1,7 @@
 import { Box, Breadcrumbs, Anchor, Text, Group, Paper, SimpleGrid, Badge, Table, ScrollArea, Collapse, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconChevronDown, IconChevronRight, IconPhoto, IconPencil } from '@tabler/icons-react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import { useParkFacility, useGreenSpace, useLifecyclePlans, useInspectionsByAsset, useRepairsByAsset } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
@@ -52,6 +52,7 @@ function SectionHeader({ title, opened, toggle }: { title: string; opened: boole
 export function FacilityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [infoOpen, { toggle: toggleInfo }] = useDisclosure(true);
   const [repairOpen, { toggle: toggleRepair }] = useDisclosure(true);
   const [inspectionOpen, { toggle: toggleInspection }] = useDisclosure(true);
@@ -102,7 +103,19 @@ export function FacilityDetailPage() {
       <Box p="lg">
         {/* Breadcrumb */}
         <Breadcrumbs mb="md">
-          <Anchor component={Link} to={breadcrumbTo} size="sm">{breadcrumbLabel}</Anchor>
+          <Anchor
+            size="sm"
+            onClick={() => {
+              if (location.key !== 'default') {
+                navigate(-1);
+              } else {
+                navigate(breadcrumbTo);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {breadcrumbLabel}
+          </Anchor>
           <Text size="sm">{facility?.name || '読み込み中...'}</Text>
         </Breadcrumbs>
 
@@ -112,7 +125,7 @@ export function FacilityDetailPage() {
               {/* Map / Photo Section */}
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
                 <Box pos="relative">
-                  <MiniMap key={`${id}-${parkGeometry ? 'park' : 'fac'}`} geometry={miniMapGeometry} markers={markers} height={250} fillColor="#22C55E" />
+                  <MiniMap key={`${id}-${parkGeometry ? 'park' : 'fac'}`} geometry={miniMapGeometry} markers={markers} height={250} fillColor="#22C55E" focusOnMarkers={markers.length > 0} />
                   <Tooltip label="編集機能は今後実装予定" position="left">
                     <ActionIcon
                       variant="white"
@@ -198,8 +211,12 @@ export function FacilityDetailPage() {
                       </Table.Thead>
                       <Table.Tbody>
                         {repairs.map((r) => (
-                          <Table.Tr key={r.id}>
-                            <Table.Td>{r.date}</Table.Td>
+                          <Table.Tr
+                            key={r.id}
+                            onClick={r.caseId ? () => navigate(`/cases/${r.caseId}`) : undefined}
+                            style={r.caseId ? { cursor: 'pointer' } : undefined}
+                          >
+                            <Table.Td>{new Date(r.date).toLocaleDateString('ja-JP')}</Table.Td>
                             <Table.Td>{r.type}</Table.Td>
                             <Table.Td>{r.description}</Table.Td>
                             <Table.Td><Badge variant="light" size="sm">{r.status}</Badge></Table.Td>
@@ -237,7 +254,11 @@ export function FacilityDetailPage() {
                         </Table.Thead>
                         <Table.Tbody>
                           {inspections.map((insp) => (
-                            <Table.Tr key={insp.id}>
+                            <Table.Tr
+                              key={insp.id}
+                              onClick={() => navigate(`/inspections/${insp.id}`)}
+                              style={{ cursor: 'pointer' }}
+                            >
                               <Table.Td>{new Date(insp.inspectionDate).toLocaleDateString('ja-JP')}</Table.Td>
                               <Table.Td>{insp.inspectionType ? (INSPECTION_TYPE_LABELS[insp.inspectionType] || insp.inspectionType) : '—'}</Table.Td>
                               <Table.Td>{insp.result}</Table.Td>

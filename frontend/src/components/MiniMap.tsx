@@ -12,6 +12,8 @@ interface MiniMapProps {
   fillColor?: string;
   /** Index of marker to highlight (pulse + scale up) */
   highlightedMarkerIndex?: number | null;
+  /** When true, center/zoom on markers instead of fitting full geometry bounds */
+  focusOnMarkers?: boolean;
 }
 
 // Same raster basemap as main MapView (CARTO Voyager @2x for HiDPI)
@@ -29,7 +31,7 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', highlightedMarkerIndex }: MiniMapProps) {
+export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', highlightedMarkerIndex, focusOnMarkers }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerEls = useRef<HTMLElement[]>([]);
@@ -100,21 +102,27 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
 
         // Compute geometry bbox
         try {
-          const geoBbox = turf.bbox({ type: 'Feature', properties: {}, geometry });
-          // Extend bbox to include marker positions
-          let [minLng, minLat, maxLng, maxLat] = geoBbox;
-          if (markers) {
-            for (const m of markers) {
-              if (m.lng < minLng) minLng = m.lng;
-              if (m.lat < minLat) minLat = m.lat;
-              if (m.lng > maxLng) maxLng = m.lng;
-              if (m.lat > maxLat) maxLat = m.lat;
+          if (focusOnMarkers && markers && markers.length > 0) {
+            // Center on the first marker; use zoom prop or default 16
+            map.setCenter([markers[0].lng, markers[0].lat]);
+            map.setZoom(zoom || 16);
+          } else {
+            const geoBbox = turf.bbox({ type: 'Feature', properties: {}, geometry });
+            // Extend bbox to include marker positions
+            let [minLng, minLat, maxLng, maxLat] = geoBbox;
+            if (markers) {
+              for (const m of markers) {
+                if (m.lng < minLng) minLng = m.lng;
+                if (m.lat < minLat) minLat = m.lat;
+                if (m.lng > maxLng) maxLng = m.lng;
+                if (m.lat > maxLat) maxLat = m.lat;
+              }
             }
+            map.fitBounds(
+              [[minLng, minLat], [maxLng, maxLat]],
+              { padding: 40, maxZoom: 17, duration: 0 }
+            );
           }
-          map.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
-            { padding: 40, maxZoom: 17, duration: 0 }
-          );
         } catch { /* ignore invalid geometry */ }
       }
 
