@@ -70,22 +70,14 @@ export function useEvents(filters?: EventFilters, options?: { enabled?: boolean 
   return useQuery({
     queryKey: ['events', filters],
     queryFn: async () => {
-      let apiData: { data: ConstructionEvent[]; meta: { total: number; archivedCount: number } };
-      try {
-        apiData = await fetchApi<{ data: ConstructionEvent[]; meta: { total: number; archivedCount: number } }>(`/events${queryString}`);
-      } catch {
-        apiData = { data: [], meta: { total: 0, archivedCount: 0 } };
-      }
-      // Merge dummy events
+      // Only show dummy events (real API events hidden for demo)
       let dummyFiltered = DUMMY_EVENTS;
       if (filters?.status) {
         dummyFiltered = dummyFiltered.filter((e) => e.status === filters.status);
       }
-      const apiIds = new Set(apiData.data.map((e) => e.id));
-      const newDummy = dummyFiltered.filter((e) => !apiIds.has(e.id));
       return {
-        data: [...apiData.data, ...newDummy],
-        meta: { total: apiData.meta.total + newDummy.length, archivedCount: apiData.meta.archivedCount },
+        data: dummyFiltered,
+        meta: { total: dummyFiltered.length, archivedCount: 0 },
       };
     },
     enabled: options?.enabled ?? true,

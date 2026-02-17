@@ -14,7 +14,7 @@ import {
   Image,
 } from '@mantine/core';
 import { IconPhoto, IconCheck, IconArrowBack } from '@tabler/icons-react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import { useEvent, useInspections, useGreenSpace } from '../../hooks/useApi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,10 +53,21 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+type CaseDetailLocationState = {
+  breadcrumbFrom?: {
+    to?: string;
+    label?: string;
+  };
+};
+
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { hasRole } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const locationState = location.state as CaseDetailLocationState | null;
+  const breadcrumbTo = locationState?.breadcrumbFrom?.to || '/cases';
+  const breadcrumbLabel = locationState?.breadcrumbFrom?.label || '案件管理';
 
   const { data: eventData, isLoading, isError } = useEvent(id ?? null);
   const { data: inspectionsData } = useInspections(id ?? undefined);
@@ -91,7 +102,19 @@ export function CaseDetailPage() {
       <Box p="lg" maw={1200} mx="auto">
         {/* Breadcrumb */}
         <Breadcrumbs mb="md">
-          <Anchor component={Link} to="/cases" size="sm">案件管理</Anchor>
+          <Anchor
+            size="sm"
+            onClick={() => {
+              if (location.key !== 'default') {
+                navigate(-1);
+              } else {
+                navigate(breadcrumbTo);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {breadcrumbLabel}
+          </Anchor>
           <Text size="sm">{event?.name || id?.slice(0, 8) || '読み込み中...'}</Text>
         </Breadcrumbs>
 

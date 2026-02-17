@@ -213,7 +213,9 @@ export function FacilityDetailPage() {
                         {repairs.map((r) => (
                           <Table.Tr
                             key={r.id}
-                            onClick={r.caseId ? () => navigate(`/cases/${r.caseId}`) : undefined}
+                            onClick={r.caseId ? () => navigate(`/park-mgmt/cases/${r.caseId}`, {
+                              state: { breadcrumbFrom: { to: location.pathname, label: facility?.name || '施設' } },
+                            }) : undefined}
                             style={r.caseId ? { cursor: 'pointer' } : undefined}
                           >
                             <Table.Td>{new Date(r.date).toLocaleDateString('ja-JP')}</Table.Td>
