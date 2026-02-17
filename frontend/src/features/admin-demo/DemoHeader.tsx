@@ -52,7 +52,9 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
       <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
         {/* Left: Logo + Department dropdown */}
         <Group gap="sm">
-        <div style={{ width: 32, height: 32, backgroundColor: '#adb5bd', borderRadius: 4 }} />
+        <UnstyledButton onClick={() => navigate('/map')}>
+          <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
+        </UnstyledButton>
         <Menu shadow="md" width={180}>
           <Menu.Target>
             <UnstyledButton
@@ -168,6 +170,9 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
         {sidebarOpen !== undefined && onToggleSidebar && (
           <Burger opened={sidebarOpen} onClick={onToggleSidebar} size="sm" />
         )}
+        <UnstyledButton onClick={() => navigate('/map')}>
+          <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
+        </UnstyledButton>
 
         {canAssets && (
           canSwitchDept ? (

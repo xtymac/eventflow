@@ -200,7 +200,7 @@ export function FacilityDetailPage() {
                 <SectionHeader title="補修履歴" opened={repairOpen} toggle={toggleRepair} />
                 <Collapse in={repairOpen}>
                   {repairs.length > 0 ? (
-                    <Table striped withTableBorder mt="sm">
+                    <Table striped highlightOnHover withTableBorder mt="sm">
                       <Table.Thead>
                         <Table.Tr>
                           <Table.Th>補修日</Table.Th>
@@ -213,7 +213,7 @@ export function FacilityDetailPage() {
                         {repairs.map((r) => (
                           <Table.Tr
                             key={r.id}
-                            onClick={r.caseId ? () => navigate(`/park-mgmt/cases/${r.caseId}`, {
+                            onClick={r.caseId ? () => navigate(`/cases/${r.caseId}`, {
                               state: { breadcrumbFrom: { to: location.pathname, label: facility?.name || '施設' } },
                             }) : undefined}
                             style={r.caseId ? { cursor: 'pointer' } : undefined}

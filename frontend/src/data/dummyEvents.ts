@@ -247,6 +247,111 @@ export const DUMMY_EVENTS: ConstructionEvent[] = [
     createdBy: 'demo',
     updatedAt: '2025-11-20T00:00:00Z',
   },
+  // 笠寺公園 — PF-demo-052 転落防止柵設置
+  {
+    id: 'EVT-demo-017',
+    name: '笠寺公園 複合遊具転落防止柵設置工事',
+    status: 'closed',
+    startDate: '2025-01-10T00:00:00Z',
+    endDate: '2025-02-10T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.940803, 35.100019] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '南区',
+    createdBy: 'demo',
+    updatedAt: '2025-02-10T00:00:00Z',
+  },
+  // 鶴舞公園 — PF-demo-002 ベンチ再塗装
+  {
+    id: 'EVT-demo-018',
+    name: '鶴舞公園 ベンチ表面再塗装工事',
+    status: 'closed',
+    startDate: '2025-05-15T00:00:00Z',
+    endDate: '2025-06-20T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.920015, 35.155446] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '昭和区',
+    createdBy: 'demo',
+    updatedAt: '2025-06-20T00:00:00Z',
+  },
+  // 名城公園 — PF-demo-007 シェルター防錆塗装
+  {
+    id: 'EVT-demo-019',
+    name: '名城公園 シェルター防錆塗装工事',
+    status: 'closed',
+    startDate: '2025-06-01T00:00:00Z',
+    endDate: '2025-07-03T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.901305, 35.188403] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '北区',
+    createdBy: 'demo',
+    updatedAt: '2025-07-03T00:00:00Z',
+  },
+  // 東山動植物園 — PF-demo-012 ベンチ脚部防錆塗装
+  {
+    id: 'EVT-demo-020',
+    name: '東山公園 ベンチ脚部防錆塗装工事',
+    status: 'closed',
+    startDate: '2024-10-10T00:00:00Z',
+    endDate: '2024-11-15T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.982120, 35.156727] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '千種区',
+    createdBy: 'demo',
+    updatedAt: '2024-11-15T00:00:00Z',
+  },
+  // 大高緑地 — PF-demo-022 すべり台防錆塗装
+  {
+    id: 'EVT-demo-021',
+    name: '大高緑地 すべり台防錆塗装工事',
+    status: 'closed',
+    startDate: '2024-05-01T00:00:00Z',
+    endDate: '2024-06-10T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.954563, 35.064570] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '緑区',
+    createdBy: 'demo',
+    updatedAt: '2024-06-10T00:00:00Z',
+  },
+  // 荒子川公園 — PF-demo-028 鉄棒溶接補修
+  {
+    id: 'EVT-demo-022',
+    name: '荒子川公園 鉄棒溶接補修工事',
+    status: 'closed',
+    startDate: '2025-05-10T00:00:00Z',
+    endDate: '2025-06-10T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.876500, 35.114200] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '港区',
+    createdBy: 'demo',
+    updatedAt: '2025-06-10T00:00:00Z',
+  },
+  // 久屋大通公園 — PF-demo-035 ベンチ木材交換
+  {
+    id: 'EVT-demo-023',
+    name: '久屋大通公園 ベンチ座面木材交換工事',
+    status: 'closed',
+    startDate: '2025-09-01T00:00:00Z',
+    endDate: '2025-10-10T00:00:00Z',
+    restrictionType: 'workzone',
+    geometry: { type: 'Point', coordinates: [136.909200, 35.172300] },
+    postEndDecision: 'no-change',
+    department: '緑政土木局',
+    ward: '中区',
+    createdBy: 'demo',
+    updatedAt: '2025-10-10T00:00:00Z',
+  },
 ];
 
 export function getDummyEvent(id: string): ConstructionEvent | undefined {
@@ -271,6 +376,13 @@ const EVENT_PARK_MAP: Record<string, string> = {
   'EVT-demo-014': 'GS-auy42b1p',
   'EVT-demo-015': 'GS-9exy95g1', // 笠寺公園
   'EVT-demo-016': 'GS-xk4kyf2q', // 志賀公園
+  'EVT-demo-017': 'GS-9exy95g1', // 笠寺公園
+  'EVT-demo-018': 'GS-zxpnkee2', // 鶴舞公園
+  'EVT-demo-019': 'GS-nliigh01', // 名城公園
+  'EVT-demo-020': 'GS-4g77l6x7', // 東山動植物園
+  'EVT-demo-021': 'GS-auy42b1p', // 大高緑地
+  'EVT-demo-022': 'GS-gs3xyhbw', // 荒子川公園
+  'EVT-demo-023': 'GS-byrogagk', // 久屋大通公園
 };
 
 export function getDummyEventParkId(eventId: string): string | null {

@@ -70,17 +70,17 @@ export const useMapStore = create<MapState>()(
       zoom: DEFAULT_ZOOM,
       bounds: null,
       mapTheme: 'voyager',
-      showEvents: true,
-      showAssets: true,
-      showInspections: true,
-      showRivers: true,
+      showEvents: false,
+      showAssets: false,
+      showInspections: false,
+      showRivers: false,
       showGreenSpaces: true,
-      showStreetLights: false, // Off by default (large quantity)
-      showStreetTrees: false, // Off by default (large quantity, zoom 16+)
-      showParkTrees: false, // Off by default (placeholder - no data yet)
+      showStreetLights: false,
+      showStreetTrees: false,
+      showParkTrees: false,
       showParkFacilities: true,
-      showPavementSections: false, // Off by default (line geometry, zoom 13+)
-      showPumpStations: true,
+      showPavementSections: false,
+      showPumpStations: false,
       showInspectionRecords: false, // Off by default (opt-in)
       showNagoyaRoads: false, // Off by default (official designated roads overlay)
       showNagoyaBuildingZones: false, // Off by default (building regulation zones)
@@ -114,6 +114,7 @@ export const useMapStore = create<MapState>()(
     }),
     {
       name: 'map-store',
+      version: 2, // Bump to discard old localStorage with stale show* values
       partialize: (state) => ({
         center: state.center,
         zoom: state.zoom,

@@ -15,6 +15,7 @@ import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from
 import type { ConstructionEvent, RoadAsset, InspectionRecord, EventStatus, RoadType, AssetStatus } from '@nagoya/shared';
 import type { Geometry } from 'geojson';
 import { EventMapTooltip } from './EventMapTooltip';
+import { CURATED_PARK_IDS } from '../data/curatedParks';
 
 // Register PMTiles protocol once (avoid duplicate registration on hot reload)
 let pmtilesProtocolRegistered = false;
@@ -369,11 +370,11 @@ export function MapView() {
     { enabled: showRivers && !!mapBbox && currentZoom >= 13, zoom: currentZoom }
   );
 
-  // Green spaces data - load for map display and sidebar hover support
+  // Green spaces data - fetch all Nagoya greenspaces so curated parks are always available
   const { data: greenSpacesData } = useGreenSpacesInBbox(
-    mapBbox ?? null,
-    undefined,
-    { enabled: !!mapBbox, zoom: currentZoom }
+    '136.7,35.0,137.2,35.4', // NAGOYA_BBOX - full city coverage
+    { limit: 5000 } as Parameters<typeof useGreenSpacesInBbox>[1],
+    { enabled: true }
   );
 
   // Street lights data - load for map display and sidebar hover support
@@ -1563,28 +1564,17 @@ export function MapView() {
         },
       });
 
-      // Park Facilities - emoji icon layer by category
-      // Render emoji to canvas images (MapLibre glyph servers don't support emoji)
-      const facilityEmojis: Record<string, string> = {
-        toilet: '\u{1F6BB}', playground: '\u{1F6DD}', bench: '\u{1FA91}', shelter: '\u26E9\uFE0F',
-        fence: '\u{1F6A7}', gate: '\u{1F6AA}', drainage: '\u{1F30A}', lighting: '\u{1F4A1}',
-        waterFountain: '\u26F2', signBoard: '\u{1FAA7}', sportsFacility: '\u26BD',
-        building: '\u{1F3E2}', pavement: '\u{1F6B6}', other: '\u{1F4E6}',
-      };
-      for (const [cat, emoji] of Object.entries(facilityEmojis)) {
-        const size = 40;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d')!;
-        ctx.font = '30px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(emoji, size / 2, size / 2);
-        const imgName = `pf-${cat}`;
-        if (!map.current.hasImage(imgName)) {
-          map.current.addImage(imgName, ctx.getImageData(0, 0, size, size), { pixelRatio: 2 });
-        }
+      // Park Facilities - pin marker using MapLibre's built-in Marker SVG
+      {
+        const pinColor = '#e03131';
+        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="27" height="41" viewBox="0 0 27 41"><g fill-rule="nonzero"><g fill="${pinColor}"><path d="M27,13.5C27,19.07 20.25,27 14.75,34.5C14.02,35.5 12.98,35.5 12.25,34.5C6.75,27 0,19.22 0,13.5C0,6.04 6.04,0 13.5,0C20.96,0 27,6.04 27,13.5Z"/></g><g transform="translate(6,7)" fill="#fff"><circle cx="7.5" cy="6.5" r="3"/></g></g></svg>`;
+        const img = new Image();
+        img.onload = () => {
+          if (map.current && !map.current.hasImage('pf-pin')) {
+            map.current.addImage('pf-pin', img, { pixelRatio: 1 });
+          }
+        };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
       }
 
       map.current.addSource('park-facilities', {
@@ -1597,24 +1587,9 @@ export function MapView() {
         source: 'park-facilities',
         minzoom: 14,
         layout: {
-          'icon-image': [
-            'match', ['get', 'category'],
-            'toilet', 'pf-toilet',
-            'playground', 'pf-playground',
-            'bench', 'pf-bench',
-            'shelter', 'pf-shelter',
-            'fence', 'pf-fence',
-            'gate', 'pf-gate',
-            'drainage', 'pf-drainage',
-            'lighting', 'pf-lighting',
-            'waterFountain', 'pf-waterFountain',
-            'signBoard', 'pf-signBoard',
-            'sportsFacility', 'pf-sportsFacility',
-            'building', 'pf-building',
-            'pavement', 'pf-pavement',
-            'pf-other'
-          ],
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.8, 16, 1.2, 18, 1.8],
+          'icon-image': 'pf-pin',
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 16, 0.9, 18, 1.3],
+          'icon-anchor': 'bottom',
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
         },
@@ -2549,7 +2524,9 @@ export function MapView() {
 
     // Load data for hover support even when layer is hidden
     // Validate features array to prevent "Input data is not a valid GeoJSON object" errors
-    const features = Array.isArray(greenSpacesData?.features) ? greenSpacesData.features : [];
+    const features = Array.isArray(greenSpacesData?.features)
+      ? greenSpacesData.features.filter(f => CURATED_PARK_IDS.has(f.properties?.id))
+      : [];
     source.setData({ type: 'FeatureCollection', features });
 
     // Toggle layer visibility based on showGreenSpaces setting
@@ -2604,7 +2581,9 @@ export function MapView() {
       return;
     }
 
-    const features = Array.isArray(parkFacilitiesData?.features) ? parkFacilitiesData.features : [];
+    const features = Array.isArray(parkFacilitiesData?.features)
+      ? parkFacilitiesData.features.filter(f => CURATED_PARK_IDS.has(f.properties?.greenSpaceRef))
+      : [];
     source.setData({ type: 'FeatureCollection', features });
   }, [parkFacilitiesData, showParkFacilities, mapLoaded, currentZoom]);
 
@@ -2754,12 +2733,11 @@ export function MapView() {
 
     const z = Math.floor(currentZoom);
 
-    // Hide PMTiles preview when:
-    // 1. showAssets is off, OR
-    // 2. Any filters are active (PMTiles cannot be filtered, so hide it entirely)
-    const shouldHidePreview = !showAssets || hasActiveAssetFilters;
+    // Hide PMTiles preview only when filters are active (PMTiles cannot be filtered)
+    // Road preview is always visible as background context
+    const shouldHidePreview = hasActiveAssetFilters;
 
-    // Opacity: reduce when API data is visible (zoom >= 14) to avoid visual clutter
+    // Opacity: reduce when API asset data is visible (zoom >= 14) to avoid visual clutter
     const previewOpacity = z >= 14 && showAssets ? 0.25 : 0.35;
 
     try {
@@ -2897,13 +2875,13 @@ export function MapView() {
     const data = workOrderLocationsData || { type: 'FeatureCollection' as const, features: [] };
     source.setData(data);
 
-    // WorkOrder layer is always visible when there's data (no toggle yet)
-    const hasData = data.features && data.features.length > 0;
-    map.current.setLayoutProperty('workorder-locations-fill', 'visibility', hasData ? 'visible' : 'none');
-    map.current.setLayoutProperty('workorder-locations-outline', 'visibility', hasData ? 'visible' : 'none');
-    map.current.setLayoutProperty('workorder-locations-point', 'visibility', hasData ? 'visible' : 'none');
-    map.current.setLayoutProperty('workorder-locations-label', 'visibility', hasData ? 'visible' : 'none');
-  }, [workOrderLocationsData, mapLoaded]);
+    // WorkOrder layer visibility tied to showEvents (same category as construction events)
+    const visible = showEvents && data.features && data.features.length > 0;
+    map.current.setLayoutProperty('workorder-locations-fill', 'visibility', visible ? 'visible' : 'none');
+    map.current.setLayoutProperty('workorder-locations-outline', 'visibility', visible ? 'visible' : 'none');
+    map.current.setLayoutProperty('workorder-locations-point', 'visibility', visible ? 'visible' : 'none');
+    map.current.setLayoutProperty('workorder-locations-label', 'visibility', visible ? 'visible' : 'none');
+  }, [workOrderLocationsData, showEvents, mapLoaded]);
 
   // Highlight and fly to selected event
   useEffect(() => {

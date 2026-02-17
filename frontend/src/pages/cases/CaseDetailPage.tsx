@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -12,11 +13,12 @@ import {
   Stack,
   Table,
   Image,
+  NavLink as MantineNavLink,
 } from '@mantine/core';
-import { IconPhoto, IconCheck, IconArrowBack } from '@tabler/icons-react';
+import { IconPhoto, IconCheck, IconArrowBack, IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
-import { useEvent, useInspections, useGreenSpace } from '../../hooks/useApi';
+import { useEvent, useEvents, useInspections, useGreenSpace } from '../../hooks/useApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
@@ -71,6 +73,16 @@ export function CaseDetailPage() {
 
   const { data: eventData, isLoading, isError } = useEvent(id ?? null);
   const { data: inspectionsData } = useInspections(id ?? undefined);
+  const { data: allData } = useEvents(undefined, { enabled: true });
+
+  const counts = useMemo(() => {
+    const events = allData?.data || [];
+    return {
+      pending_review: events.filter((e) => e.status === 'pending_review').length,
+      planned: events.filter((e) => e.status === 'planned').length,
+      closed: events.filter((e) => e.status === 'closed').length,
+    };
+  }, [allData]);
 
   const event = eventData?.data;
   const statusInfo = event ? STATUS_MAP[event.status] || { label: event.status, color: 'gray' } : null;
@@ -98,7 +110,37 @@ export function CaseDetailPage() {
   const allPhotos = inspections.flatMap((insp) => insp.mediaUrls || []);
 
   return (
-    <ScrollArea h="calc(100vh - 60px)">
+    <Box style={{ display: 'flex', height: '100%' }}>
+      <Box
+        w={220}
+        style={{ borderRight: '1px solid var(--mantine-color-gray-3)', flexShrink: 0 }}
+        p="sm"
+      >
+        <Stack gap={2}>
+          <MantineNavLink
+            label={`未確認 (${counts.pending_review})`}
+            leftSection={<IconAlertCircle size={16} />}
+            onClick={() => navigate('/cases')}
+            variant="filled"
+            color="blue"
+          />
+          <MantineNavLink
+            label={`差戻 (${counts.planned})`}
+            leftSection={<IconArrowBack size={16} />}
+            onClick={() => navigate('/cases')}
+            variant="filled"
+            color="orange"
+          />
+          <MantineNavLink
+            label={`確認済 (${counts.closed})`}
+            leftSection={<IconCircleCheck size={16} />}
+            onClick={() => navigate('/cases')}
+            variant="filled"
+            color="green"
+          />
+        </Stack>
+      </Box>
+      <ScrollArea style={{ flex: 1 }} h="calc(100vh - 60px)">
       <Box p="lg" maw={1200} mx="auto">
         {/* Breadcrumb */}
         <Breadcrumbs mb="md">
@@ -288,5 +330,6 @@ export function CaseDetailPage() {
         </PageState>
       </Box>
     </ScrollArea>
+    </Box>
   );
 }
