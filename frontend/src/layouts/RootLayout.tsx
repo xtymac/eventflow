@@ -1,4 +1,14 @@
-import { AppShell, Group, Title, UnstyledButton, Menu, Avatar, Text, Badge } from '@mantine/core';
+import { Text, Title } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { IconChevronDown, IconMap, IconBuilding, IconClipboardList, IconUsers, IconLogout, IconTree, IconListDetails } from '@tabler/icons-react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,158 +33,144 @@ function NavItem({ label, to, icon, matchPaths }: NavItemProps) {
     : pathname.startsWith(to);
 
   return (
-    <UnstyledButton
+    <button
+      type="button"
       onClick={() => navigate(to)}
-      px="md"
-      py="xs"
+      className="flex items-center gap-1.5 rounded-sm px-4 py-1.5 text-sm"
       style={{
-        borderRadius: 'var(--mantine-radius-sm)',
-        backgroundColor: isActive ? 'var(--mantine-color-blue-0)' : undefined,
-        color: isActive ? 'var(--mantine-color-blue-7)' : undefined,
+        backgroundColor: isActive ? '#e7f5ff' : undefined,
+        color: isActive ? '#1c7ed6' : undefined,
         fontWeight: isActive ? 600 : 400,
       }}
     >
-      <Group gap="xs">
-        {icon}
-        <Text size="sm">{label}</Text>
-      </Group>
-    </UnstyledButton>
+      {icon}
+      {label}
+    </button>
   );
 }
 
 export function RootLayout() {
-  const { user, isAuthenticated, logout, hasRole, canAccessSection } = useAuth();
+  const { user, isAuthenticated, logout, hasRole, canAccessScope } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  // Demo layout guard: feature flag + demo environment (all roles)
   const isDemoMode = isAdminNavEnabled() && isDemoEnvironment();
   const isUnifiedLayout = user?.role === 'user' || user?.role === 'admin';
   const demoSidebarOpen = useUIStore((s) => s.demoSidebarOpen);
   const toggleDemoSidebar = useUIStore((s) => s.toggleDemoSidebar);
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const next = pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';
+    return <Navigate to={`/login${next}`} replace />;
   }
 
-  const parkMgmtActive = pathname.startsWith('/park-mgmt') || pathname.startsWith('/tree-mgmt');
+  const assetsActive = pathname.startsWith('/assets');
 
   return (
-    <AppShell header={{ height: NAV_HEIGHT }} padding={0}>
-      <AppShell.Header>
+    <div className="flex h-screen flex-col">
+      <header className="flex-none border-b" style={{ height: NAV_HEIGHT }}>
         {isDemoMode ? (
           isUnifiedLayout
             ? <DemoHeader />
             : <DemoHeader sidebarOpen={demoSidebarOpen} onToggleSidebar={toggleDemoSidebar} />
         ) : (
-          <Group h="100%" px="md" justify="space-between">
+          <div className="flex h-full items-center justify-between px-4">
             {/* Left: Logo + Nav */}
-            <Group gap="sm">
-              <UnstyledButton onClick={() => navigate('/map')}>
-                <Group gap="xs">
-                  <img src="/favicon.svg" alt="" width={36} height={36} />
-                  <Title order={4} visibleFrom="md">EventFlow</Title>
-                </Group>
-              </UnstyledButton>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => navigate('/map')} className="flex items-center gap-1.5 cursor-pointer">
+                <img src="/favicon.svg" alt="" width={36} height={36} />
+                <Title order={4} className="hidden md:block">EventFlow</Title>
+              </button>
 
-              <Group gap={4} ml="md">
-                {/* 公園管理 dropdown - show if user can access either park-mgmt or tree-mgmt */}
-                {(canAccessSection('park-mgmt') || canAccessSection('tree-mgmt')) && (
-                  <Menu shadow="md" width={200} trigger="hover" openDelay={100} closeDelay={200}>
-                    <Menu.Target>
-                      <UnstyledButton
-                        px="md"
-                        py="xs"
+              <div className="flex items-center gap-1 ml-4">
+                {(canAccessScope('parks') || canAccessScope('park-trees')) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 rounded-sm px-4 py-1.5 text-sm cursor-pointer"
                         style={{
-                          borderRadius: 'var(--mantine-radius-sm)',
-                          backgroundColor: parkMgmtActive ? 'var(--mantine-color-blue-0)' : undefined,
-                          color: parkMgmtActive ? 'var(--mantine-color-blue-7)' : undefined,
-                          fontWeight: parkMgmtActive ? 600 : 400,
+                          backgroundColor: assetsActive ? '#e7f5ff' : undefined,
+                          color: assetsActive ? '#1c7ed6' : undefined,
+                          fontWeight: assetsActive ? 600 : 400,
                         }}
                       >
-                        <Group gap="xs">
-                          <IconBuilding size={18} />
-                          <Text size="sm">公園管理</Text>
-                          <IconChevronDown size={14} />
-                        </Group>
-                      </UnstyledButton>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      {canAccessSection('park-mgmt') && (
-                        <Menu.Item
-                          leftSection={<IconBuilding size={16} />}
-                          onClick={() => navigate('/park-mgmt/parks')}
-                        >
+                        <IconBuilding size={18} />
+                        公園管理
+                        <IconChevronDown size={14} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[200px]">
+                      {canAccessScope('parks') && (
+                        <DropdownMenuItem onClick={() => navigate('/assets/parks')}>
+                          <IconBuilding size={16} className="mr-2" />
                           公園管理
-                        </Menu.Item>
+                        </DropdownMenuItem>
                       )}
-                      {canAccessSection('tree-mgmt') && (
-                        <Menu.Item
-                          leftSection={<IconTree size={16} />}
-                          onClick={() => navigate('/tree-mgmt/park-trees')}
-                        >
+                      {canAccessScope('park-trees') && (
+                        <DropdownMenuItem onClick={() => navigate('/assets/park-trees')}>
+                          <IconTree size={16} className="mr-2" />
                           樹木管理
-                        </Menu.Item>
+                        </DropdownMenuItem>
                       )}
-                    </Menu.Dropdown>
-                  </Menu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
 
                 <NavItem label="地図" to="/map" icon={<IconMap size={18} />} />
-                <NavItem label="資産台帳" to="/park-mgmt/parks" icon={<IconListDetails size={18} />} matchPaths={['/park-mgmt', '/tree-mgmt']} />
+                <NavItem label="資産台帳" to="/assets/parks" icon={<IconListDetails size={18} />} matchPaths={['/assets']} />
                 <NavItem label="案件管理" to="/cases" icon={<IconClipboardList size={18} />} matchPaths={['/cases', '/inspections']} />
 
                 {hasRole(['admin']) && (
                   <NavItem label="業者管理" to="/vendors" icon={<IconUsers size={18} />} />
                 )}
-              </Group>
-            </Group>
+              </div>
+            </div>
 
             {/* Right: User */}
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <UnstyledButton>
-                  <Group gap="xs">
-                    <Avatar size="sm" radius="xl" color="blue">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="flex items-center gap-1.5 cursor-pointer">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
                       {user?.name?.charAt(0) || 'U'}
-                    </Avatar>
-                    <div style={{ lineHeight: 1 }}>
-                      <Text size="sm" fw={500} visibleFrom="sm">{user?.name}</Text>
-                      <Badge
-                        size="xs"
-                        variant="light"
-                        color={
-                          user?.role === 'admin' ? 'red' :
-                          user?.role === 'park_manager' ? 'green' :
-                          user?.role === 'tree_manager' ? 'teal' :
-                          'blue'
-                        }
-                      >
-                        {user?.roleLabel}
-                      </Badge>
-                    </div>
-                  </Group>
-                </UnstyledButton>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>{user?.department}</Menu.Label>
-                <Menu.Divider />
-                <Menu.Item
-                  color="red"
-                  leftSection={<IconLogout size={16} />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div style={{ lineHeight: 1 }}>
+                    <Text size="sm" fw={500} className="hidden sm:block">{user?.name}</Text>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        user?.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        user?.role === 'park_manager' ? 'bg-green-100 text-green-700' :
+                        user?.role === 'tree_manager' ? 'bg-teal-100 text-teal-700' :
+                        'bg-blue-100 text-blue-700'
+                      }
+                    >
+                      {user?.roleLabel}
+                    </Badge>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[200px]" align="end">
+                <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600"
                   onClick={() => { logout(); navigate('/login'); }}
                 >
+                  <IconLogout size={16} className="mr-2" />
                   ログアウト
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
-      </AppShell.Header>
+      </header>
 
-      <AppShell.Main style={{ height: `calc(100vh - ${NAV_HEIGHT}px)` }}>
+      <main className="flex-1 overflow-hidden" style={{ height: `calc(100vh - ${NAV_HEIGHT}px)` }}>
         <Outlet />
-      </AppShell.Main>
-    </AppShell>
+      </main>
+    </div>
   );
 }

@@ -1,7 +1,20 @@
-import { Group, UnstyledButton, Text, Menu, Avatar, Burger } from '@mantine/core';
+import { Text } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { IconChevronDown, IconLogout } from '@tabler/icons-react';
+import { Menu as MenuIcon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { scopeToDepartment } from '../../contexts/AuthContext';
+import type { Scope } from '../../contexts/AuthContext';
 
 interface DemoHeaderProps {
   sidebarOpen?: boolean;
@@ -9,21 +22,20 @@ interface DemoHeaderProps {
 }
 
 const DEPARTMENTS = [
-  { label: '公園管理', value: 'park', route: '/park-mgmt' },
-  { label: '樹木管理', value: 'tree', route: '/tree-mgmt' },
+  { label: '公園管理', value: 'park' as const, route: '/assets/parks' },
+  { label: '樹木管理', value: 'tree' as const, route: '/assets/park-trees' },
 ];
 
-/**
- * Demo-specific header for all demo users.
- *
- * Unified layout (admin + user):
- *   [公園管理 ▽ / static]  ──  [地図] [資産台帳] [案件管理] [業者管理]  ──  [○]
- *   - admin: 公園管理 static, 資産台帳/案件管理/業者管理 disabled (placeholder)
- *   - user:  公園管理 static, 資産台帳/業者管理 disabled (RBAC)
- *
- * Legacy layout (park_manager, tree_manager):
- *   [☰] [dept label]  ──  [tabs]  ──  [avatar]
- */
+/** Detect current department from URL path */
+function detectDepartment(pathname: string): 'park' | 'tree' {
+  const match = pathname.match(/^\/assets\/([^/]+)/);
+  if (match) {
+    const scope = match[1] as Scope;
+    return scopeToDepartment(scope);
+  }
+  return 'park';
+}
+
 export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
   const { user, logout, hasRole, canAccessSection } = useAuth();
   const navigate = useNavigate();
@@ -32,110 +44,107 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
   const isAdmin = user?.role === 'admin';
   const isUser = user?.role === 'user';
 
+  const currentDept = detectDepartment(pathname);
+
   // ── Unified layout for admin + user ─────────────────────────────
   if (isAdmin || isUser) {
-    // Build tabs — admin: only 地図 clickable; user: 資産台帳/業者管理 disabled
     const tabs: { label: string; to?: string; matchPaths: string[] }[] = [
       { label: '地図', to: '/map', matchPaths: ['/map'] },
-      isUser
-        ? { label: '資産台帳', to: '/park-mgmt/parks', matchPaths: ['/park-mgmt'] }
-        : { label: '資産台帳', to: pathname.startsWith('/tree-mgmt') ? '/tree-mgmt' : '/park-mgmt/parks', matchPaths: ['/park-mgmt', '/tree-mgmt'] },
-      { label: '案件管理', to: '/cases', matchPaths: ['/cases'] },
+      { label: '資産台帳', to: currentDept === 'tree' ? '/assets/park-trees' : '/assets/parks', matchPaths: ['/assets'] },
+      { label: '案件管理', to: '/cases', matchPaths: ['/cases', '/inspections'] },
       isAdmin
         ? { label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] }
         : { label: '業者管理', matchPaths: ['/vendors'] },
     ];
 
     return (
-      <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
+      <div className="flex h-full items-center justify-between border-b border-gray-200 bg-white px-4">
         {/* Left: Logo + Department dropdown */}
-        <Group gap="sm">
-        <UnstyledButton onClick={() => navigate('/map')}>
-          <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
-        </UnstyledButton>
-        <Menu shadow="md" width={180}>
-          <Menu.Target>
-            <UnstyledButton
-              px="sm"
-              py={6}
-              style={{ border: '1px solid #dee2e6', borderRadius: 4 }}
-            >
-              <Group gap={6}>
-                <Text size="sm" fw={500}>
-                  {pathname.startsWith('/tree-mgmt') ? '樹木管理' : '公園管理'}
-                </Text>
-                <IconChevronDown size={14} color="#868e96" />
-              </Group>
-            </UnstyledButton>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {DEPARTMENTS.map((dept) => {
-              const isActive = pathname.startsWith(dept.route);
-              return (
-                <Menu.Item
-                  key={dept.value}
-                  onClick={() => navigate(dept.route)}
-                  fw={isActive ? 600 : 400}
-                  bg={isActive ? 'var(--mantine-color-blue-0)' : undefined}
-                >
-                  {dept.label}
-                </Menu.Item>
-              );
-            })}
-          </Menu.Dropdown>
-        </Menu>
-        </Group>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => navigate('/map')} className="border-0 appearance-none bg-transparent cursor-pointer">
+            <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+              >
+                {currentDept === 'tree' ? '樹木管理' : '公園管理'}
+                <IconChevronDown size={14} className="text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[180px]">
+              {DEPARTMENTS.map((dept) => {
+                const isActive = currentDept === dept.value;
+                return (
+                  <DropdownMenuItem
+                    key={dept.value}
+                    onClick={() => navigate(dept.route)}
+                    className={isActive ? 'font-semibold bg-blue-50' : ''}
+                  >
+                    {dept.label}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-        {/* Center: 4 tabs */}
-        <Group gap={0}>
+        {/* Center: segmented tab bar */}
+        <nav
+          className="inline-flex items-center gap-0.5 rounded-lg p-1"
+          style={{ backgroundColor: '#e9ecef', border: '1px solid #dee2e6' }}
+        >
           {tabs.map((tab) => {
             const isActive = tab.matchPaths.some((p) => pathname.startsWith(p));
             const isDisabled = !tab.to;
 
             return (
-              <UnstyledButton
+              <button
                 key={tab.label}
+                type="button"
+                disabled={isDisabled}
                 onClick={isDisabled ? undefined : () => navigate(tab.to!)}
-                px="lg"
-                py="xs"
+                className="border-0 appearance-none rounded-md px-5 py-1.5 text-sm transition-all duration-150"
                 style={{
-                  border: '1px solid #dee2e6',
-                  backgroundColor: isActive ? 'var(--mantine-color-blue-6)' : 'white',
-                  color: isDisabled ? '#adb5bd' : isActive ? 'white' : '#333',
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: 14,
-                  marginLeft: -1,
+                  backgroundColor: isActive ? '#fff' : 'transparent',
+                  color: isDisabled ? '#adb5bd' : isActive ? '#1a1a1a' : '#495057',
+                  fontWeight: isActive ? 600 : 500,
+                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)' : 'none',
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  opacity: isDisabled ? 0.7 : 1,
+                  opacity: isDisabled ? 0.5 : 1,
                 }}
               >
                 {tab.label}
-              </UnstyledButton>
+              </button>
             );
           })}
-        </Group>
+        </nav>
 
         {/* Right: Avatar + logout */}
-        <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <UnstyledButton>
-              <Avatar size="md" radius="xl" color="gray" />
-            </UnstyledButton>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Label>{user?.department}</Menu.Label>
-            <Menu.Label>{user?.roleLabel}</Menu.Label>
-            <Menu.Divider />
-            <Menu.Item
-              color="red"
-              leftSection={<IconLogout size={16} />}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="border-0 appearance-none bg-transparent cursor-pointer">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[200px]" align="end">
+            <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.roleLabel}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-600"
               onClick={() => { logout(); navigate('/login'); }}
             >
+              <IconLogout size={16} className="mr-2" />
               ログアウト
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </Group>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   }
 
@@ -145,114 +154,112 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
   const canAssets = canPark || canTree;
   const canSwitchDept = canPark && canTree;
 
-  const department = pathname.startsWith('/tree-mgmt') ? 'tree'
-    : pathname.startsWith('/park-mgmt') ? 'park'
+  const department = currentDept === 'tree' ? 'tree'
     : canTree && !canPark ? 'tree' : 'park';
-  const currentDept = DEPARTMENTS.find((d) => d.value === department)!;
+  const currentDeptObj = DEPARTMENTS.find((d) => d.value === department)!;
 
   const demoTabs: { label: string; to: string; matchPaths: string[] }[] = [
     { label: '地図', to: '/map', matchPaths: ['/map'] },
   ];
   if (canAssets) {
-    demoTabs.push({ label: '資産台帳', to: currentDept.route, matchPaths: ['/park-mgmt', '/tree-mgmt'] });
+    demoTabs.push({ label: '資産台帳', to: currentDeptObj.route, matchPaths: ['/assets'] });
   }
-  demoTabs.push({ label: '案件管理', to: '/cases', matchPaths: ['/cases'] });
+  demoTabs.push({ label: '案件管理', to: '/cases', matchPaths: ['/cases', '/inspections'] });
   if (hasRole(['admin'])) {
     demoTabs.push({ label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] });
   }
 
   return (
-    <Group h="100%" px="md" justify="space-between" style={{ borderBottom: '1px solid #dee2e6' }}>
+    <div className="flex h-full items-center justify-between border-b border-gray-200 bg-white px-4">
       {/* Left: Hamburger + Department selector */}
-      <Group gap="md">
+      <div className="flex items-center gap-4">
         {sidebarOpen !== undefined && onToggleSidebar && (
-          <Burger opened={sidebarOpen} onClick={onToggleSidebar} size="sm" />
+          <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
+            <MenuIcon className="h-5 w-5" />
+          </Button>
         )}
-        <UnstyledButton onClick={() => navigate('/map')}>
+        <button type="button" onClick={() => navigate('/map')} className="border-0 appearance-none bg-transparent cursor-pointer">
           <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
-        </UnstyledButton>
+        </button>
 
         {canAssets && (
           canSwitchDept ? (
-            <Menu shadow="md" width={180}>
-              <Menu.Target>
-                <UnstyledButton
-                  px="sm"
-                  py={6}
-                  style={{ border: '1px solid #dee2e6', borderRadius: 4 }}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
                 >
-                  <Group gap={6}>
-                    <Text size="sm" fw={500}>{currentDept.label}</Text>
-                    <IconChevronDown size={14} color="#868e96" />
-                  </Group>
-                </UnstyledButton>
-              </Menu.Target>
-              <Menu.Dropdown>
+                  {currentDeptObj.label}
+                  <IconChevronDown size={14} className="text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[180px]">
                 {DEPARTMENTS.map((dept) => (
-                  <Menu.Item
+                  <DropdownMenuItem
                     key={dept.value}
                     onClick={() => navigate(dept.route)}
-                    fw={department === dept.value ? 600 : 400}
-                    bg={department === dept.value ? 'var(--mantine-color-blue-0)' : undefined}
+                    className={department === dept.value ? 'font-semibold bg-blue-50' : ''}
                   >
                     {dept.label}
-                  </Menu.Item>
+                  </DropdownMenuItem>
                 ))}
-              </Menu.Dropdown>
-            </Menu>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Text size="sm" fw={500} px="sm">{currentDept.label}</Text>
+            <Text size="sm" fw={500} px="sm">{currentDeptObj.label}</Text>
           )
         )}
-      </Group>
+      </div>
 
-      {/* Center: Tab bar */}
-      <Group gap={0}>
+      {/* Center: segmented tab bar */}
+      <nav
+        className="inline-flex items-center gap-0.5 rounded-lg p-1"
+        style={{ backgroundColor: '#e9ecef', border: '1px solid #dee2e6' }}
+      >
         {demoTabs.map((tab) => {
           const isActive = tab.matchPaths.some((p) => pathname.startsWith(p));
           return (
-            <UnstyledButton
+            <button
               key={tab.label}
+              type="button"
               onClick={() => navigate(tab.to)}
-              px="lg"
-              py="xs"
+              className="border-0 appearance-none rounded-md px-5 py-1.5 text-sm transition-all duration-150 cursor-pointer"
               style={{
-                border: '1px solid #dee2e6',
-                backgroundColor: isActive ? 'var(--mantine-color-blue-6)' : 'white',
-                color: isActive ? 'white' : '#333',
-                fontWeight: isActive ? 600 : 400,
-                fontSize: 14,
-                marginLeft: -1,
+                backgroundColor: isActive ? '#fff' : 'transparent',
+                color: isActive ? '#1a1a1a' : '#495057',
+                fontWeight: isActive ? 600 : 500,
+                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)' : 'none',
               }}
             >
               {tab.label}
-            </UnstyledButton>
+            </button>
           );
         })}
-      </Group>
+      </nav>
 
       {/* Right: Avatar + logout */}
-      <Menu shadow="md" width={200}>
-        <Menu.Target>
-          <UnstyledButton>
-            <Avatar size="sm" radius="xl" color="gray">
-              {user?.name?.charAt(0) || 'U'}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className="border-0 appearance-none bg-transparent cursor-pointer">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="text-xs">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
-          </UnstyledButton>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Label>{user?.department}</Menu.Label>
-          <Menu.Label>{user?.roleLabel}</Menu.Label>
-          <Menu.Divider />
-          <Menu.Item
-            color="red"
-            leftSection={<IconLogout size={16} />}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[200px]" align="end">
+          <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
+          <DropdownMenuLabel>{user?.roleLabel}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-red-600"
             onClick={() => { logout(); navigate('/login'); }}
           >
+            <IconLogout size={16} className="mr-2" />
             ログアウト
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
-    </Group>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

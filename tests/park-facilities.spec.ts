@@ -24,7 +24,7 @@ test.describe('Park Facilities', () => {
 
   test('1 - Facility list page shows dummy facilities', async ({ page }) => {
     await waitForApp(page);
-    await page.goto('/park-mgmt/facilities', { waitUntil: 'domcontentloaded' });
+    await page.goto('/assets/facilities', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     // Page title
@@ -46,7 +46,7 @@ test.describe('Park Facilities', () => {
   test('2 - Facility detail page renders with MiniMap', async ({ page }) => {
     await waitForApp(page);
     // Navigate to a specific dummy facility (PF-demo-001)
-    await page.goto('/park-mgmt/facilities/PF-demo-001', { waitUntil: 'domcontentloaded' });
+    await page.goto('/assets/facilities/PF-demo-001', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     // Breadcrumb should show facility link
@@ -69,7 +69,7 @@ test.describe('Park Facilities', () => {
   test('3 - Park detail page shows facilities list', async ({ page }) => {
     await waitForApp(page);
     // Navigate to 笠寺公園 (the park the user mentioned)
-    await page.goto('/park-mgmt/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
+    await page.goto('/assets/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     // Park name should show (in breadcrumb or info section)
@@ -91,7 +91,7 @@ test.describe('Park Facilities', () => {
 
   test('4 - Park detail MiniMap has marker elements', async ({ page }) => {
     await waitForApp(page);
-    await page.goto('/park-mgmt/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
+    await page.goto('/assets/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(4000);
 
     // MapLibre markers render as elements with class maplibregl-marker
@@ -105,7 +105,7 @@ test.describe('Park Facilities', () => {
 
   test('5 - Facility detail MiniMap shows park polygon', async ({ page }) => {
     await waitForApp(page);
-    await page.goto('/park-mgmt/facilities/PF-demo-001', { waitUntil: 'domcontentloaded' });
+    await page.goto('/assets/facilities/PF-demo-001', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(4000);
 
     // Should have a MiniMap canvas

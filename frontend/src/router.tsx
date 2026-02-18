@@ -1,20 +1,18 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
-import { ParkMgmtLayout } from './layouts/ParkMgmtLayout';
+import { AssetLayout } from './layouts/AssetLayout';
+import { ScopeGuard } from './layouts/ScopeGuard';
 import { RoleGuard } from './layouts/RoleGuard';
-import { SectionGuard } from './layouts/SectionGuard';
 import { LoginPage } from './pages/LoginPage';
 import { MapPage } from './pages/MapPage';
-import { ParkListPage } from './pages/parks/ParkListPage';
-import { ParkDetailPage } from './pages/parks/ParkDetailPage';
-import { FacilityListPage } from './pages/facilities/FacilityListPage';
-import { FacilityDetailPage } from './pages/facilities/FacilityDetailPage';
+import { AssetScopeRouter } from './pages/assets/AssetScopeRouter';
 import { CaseListPage } from './pages/cases/CaseListPage';
 import { CaseDetailPage } from './pages/cases/CaseDetailPage';
 import { InspectionListPage } from './pages/inspections/InspectionListPage';
 import { InspectionDetailPage } from './pages/inspections/InspectionDetailPage';
 import { NotFoundPage } from './pages/errors/NotFoundPage';
 import { ForbiddenPage } from './pages/errors/ForbiddenPage';
+import { ServerErrorPage } from './pages/errors/ServerErrorPage';
 import { StubPage } from './components/StubPage';
 
 export const router = createBrowserRouter([
@@ -29,33 +27,22 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/map" replace /> },
       { path: 'map', element: <MapPage /> },
       {
-        path: 'park-mgmt',
+        path: 'assets/:scope',
         element: (
-          <SectionGuard section="park-mgmt">
-            <ParkMgmtLayout />
-          </SectionGuard>
+          <ScopeGuard>
+            <AssetLayout />
+          </ScopeGuard>
         ),
         children: [
-          { index: true, element: <Navigate to="parks" replace /> },
-          { path: 'parks', element: <ParkListPage /> },
-          { path: 'parks/:id', element: <ParkDetailPage /> },
-          { path: 'parks/:id/geometry', element: <StubPage title="Geometry Editor" /> },
-          { path: 'facilities', element: <FacilityListPage /> },
-          { path: 'facilities/:id', element: <FacilityDetailPage /> },
+          { index: true, element: <AssetScopeRouter /> },
+          { path: ':id', element: <AssetScopeRouter /> },
+          { path: ':id/geometry', element: <StubPage title="Geometry Editor" /> },
         ],
       },
       { path: 'cases', element: <CaseListPage /> },
       { path: 'cases/:id', element: <CaseDetailPage /> },
       { path: 'inspections', element: <InspectionListPage /> },
       { path: 'inspections/:id', element: <InspectionDetailPage /> },
-      {
-        path: 'tree-mgmt/*',
-        element: (
-          <SectionGuard section="tree-mgmt">
-            <StubPage title="樹木管理" />
-          </SectionGuard>
-        ),
-      },
       {
         path: 'vendors',
         element: (
@@ -73,6 +60,7 @@ export const router = createBrowserRouter([
         ),
       },
       { path: '403', element: <ForbiddenPage /> },
+      { path: '500', element: <ServerErrorPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

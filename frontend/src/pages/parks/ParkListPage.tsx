@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Box, TextInput, Text, Group, Stack, ScrollArea } from '@mantine/core';
+import { Box, Text, Group, Stack } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { CURATED_PARKS } from '../../data/curatedParks';
@@ -22,30 +24,30 @@ export function ParkListPage() {
   }, [search]);
 
   return (
-    <Box p="lg" h="100%">
-      <TextInput
-        placeholder="Search (ID, Name, 市区町村)"
-        leftSection={<IconSearch size={16} />}
-        value={search}
-        onChange={(e) => setSearch(e.currentTarget.value)}
-        mb="lg"
-      />
+    <Box p="lg" style={{ height: '100%' }}>
+      <div className="relative mb-6">
+        <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search (ID, Name, 市区町村)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
       <Text size="lg" fw={600} mb="sm">公園 List</Text>
 
-      <ScrollArea h="calc(100vh - 240px)">
+      <ScrollArea style={{ height: 'calc(100vh - 240px)' }}>
         <Stack gap={0}>
           {parks.map((p) => (
             <Box
               key={p.id}
               py="md"
               px="lg"
-              onClick={() => navigate(`/park-mgmt/parks/${p.id}`)}
+              className="cursor-pointer rounded mb-1"
+              onClick={() => navigate(`/assets/parks/${p.id}`)}
               style={{
                 backgroundColor: '#f1f3f5',
-                marginBottom: 4,
-                borderRadius: 4,
-                cursor: 'pointer',
               }}
             >
               <Group justify="space-between">

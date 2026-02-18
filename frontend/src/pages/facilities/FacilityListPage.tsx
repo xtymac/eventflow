@@ -1,10 +1,29 @@
 import { useState, useMemo } from 'react';
-import { Box, TextInput, Select, Table, Badge, Text, Group, Alert, ScrollArea } from '@mantine/core';
+import { Box, Text, Group } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { IconSearch, IconInfoCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllParkFacilities } from '../../hooks/useApi';
 import { PageState } from '../../components/PageState';
-import { getAllDummyFacilities, FACILITY_CATEGORY_LABELS } from '../../data/dummyFacilities';
+import { getAllDummyFacilities } from '../../data/dummyFacilities';
 import type { ParkFacilityCategory } from '@nagoya/shared';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -50,106 +69,120 @@ export function FacilityListPage() {
   }, [data, dummyFeatures, usingDummy, search, categoryFilter]);
 
   return (
-    <Box p="lg" h="100%">
+    <Box p="lg" style={{ height: '100%' }}>
       <Group justify="space-between" mb="md">
         <Text size="xl" fw={700}>施設一覧</Text>
-        <Badge size="lg" variant="light">{facilities.length} 件</Badge>
+        <Badge variant="outline">{facilities.length} 件</Badge>
       </Group>
 
       <Group mb="md" gap="sm">
-        <TextInput
-          placeholder="名称・IDで検索..."
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: 1, maxWidth: 400 }}
-        />
-        <Select
-          placeholder="種別で絞り込み"
-          data={CATEGORY_OPTIONS}
-          value={categoryFilter}
-          onChange={setCategoryFilter}
-          clearable
-          w={200}
-        />
+        <div className="relative" style={{ flex: 1, maxWidth: 400 }}>
+          <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="名称・IDで検索..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div style={{ width: 200 }}>
+          <Select
+            value={categoryFilter ?? ''}
+            onValueChange={(v) => setCategoryFilter(v || null)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="種別で絞り込み" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORY_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Group>
 
       {facilities.length >= LIST_LIMIT && (
-        <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />} mb="md">
-          表示件数が上限（{LIST_LIMIT}件）に達しています。検索条件を絞り込んでください。
+        <Alert className="mb-4">
+          <IconInfoCircle size={18} />
+          <AlertDescription>
+            表示件数が上限（{LIST_LIMIT}件）に達しています。検索条件を絞り込んでください。
+          </AlertDescription>
         </Alert>
       )}
 
       <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={facilities.length === 0} emptyMessage="施設データがありません">
-        <ScrollArea h="calc(100vh - 260px)">
-          <Table striped highlightOnHover withTableBorder withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={80}>管理番号</Table.Th>
-                <Table.Th>名称</Table.Th>
-                <Table.Th w={100}>種別</Table.Th>
-                <Table.Th w={100}>状態</Table.Th>
-                <Table.Th w={80}>評価</Table.Th>
-                <Table.Th w={120}>最終点検</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+        <ScrollArea style={{ height: 'calc(100vh - 260px)' }}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead style={{ width: 80 }}>管理番号</TableHead>
+                <TableHead>名称</TableHead>
+                <TableHead style={{ width: 100 }}>種別</TableHead>
+                <TableHead style={{ width: 100 }}>状態</TableHead>
+                <TableHead style={{ width: 80 }}>評価</TableHead>
+                <TableHead style={{ width: 120 }}>最終点検</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {facilities.map((f) => {
                 const p = f.properties;
                 return (
-                  <Table.Tr
+                  <TableRow
                     key={p.id}
-                    onClick={() => navigate(`/park-mgmt/facilities/${p.id}`, {
+                    onClick={() => navigate(`/assets/facilities/${p.id}`, {
                       state: {
                         breadcrumbFrom: {
-                          to: '/park-mgmt/facilities',
+                          to: '/assets/facilities',
                           label: '施設',
                         },
                       },
                     })}
                     style={{ cursor: 'pointer' }}
                   >
-                    <Table.Td>
+                    <TableCell>
                       <Text size="xs" c="dimmed">{p.facilityId || '—'}</Text>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Text fw={500} size="sm">{p.name}</Text>
-                      {p.description && <Text size="xs" c="dimmed" lineClamp={1}>{p.description}</Text>}
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge variant="light" size="sm">
+                      {p.description && <Text size="xs" c="dimmed" className="line-clamp-1">{p.description}</Text>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
                         {CATEGORY_LABELS[p.category] || p.category}
                       </Badge>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Badge
-                        color={p.status === 'active' ? 'green' : 'gray'}
-                        variant="light"
-                        size="sm"
+                        variant="secondary"
+                        className={p.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                       >
                         {p.status}
                       </Badge>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       {p.conditionGrade ? (
                         <Badge
-                          color={p.conditionGrade === 'A' ? 'green' : p.conditionGrade === 'B' ? 'yellow' : 'red'}
-                          variant="filled"
-                          size="sm"
+                          variant="secondary"
+                          className={
+                            p.conditionGrade === 'A' ? 'bg-green-600 text-white' :
+                            p.conditionGrade === 'B' ? 'bg-yellow-500 text-white' :
+                            'bg-red-600 text-white'
+                          }
                         >
                           {p.conditionGrade}
                         </Badge>
                       ) : '—'}
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Text size="xs" c="dimmed">
                         {p.lastInspectionDate ? new Date(p.lastInspectionDate).toLocaleDateString('ja-JP') : '—'}
                       </Text>
-                    </Table.Td>
-                  </Table.Tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </Table.Tbody>
+            </TableBody>
           </Table>
         </ScrollArea>
       </PageState>

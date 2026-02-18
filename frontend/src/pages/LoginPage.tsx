@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { Box, Container, Paper, Stack, Title, TextInput, PasswordInput, Button, Text, Divider, Radio } from '@mantine/core';
-import { useNavigate } from 'react-router-dom';
+import { Box, Stack, Text, Title, Divider } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { PasswordInput } from '@/components/ui/password-input';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, type UserRole } from '../contexts/AuthContext';
 
 export function LoginPage() {
@@ -9,12 +14,14 @@ export function LoginPage() {
   const [role, setRole] = useState<UserRole>('admin');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const u = username || 'テストユーザー';
+    const u = username || '\u30C6\u30B9\u30C8\u30E6\u30FC\u30B6\u30FC';
     login(u, password, role);
-    navigate('/map');
+    const next = searchParams.get('next');
+    navigate(next && next.startsWith('/') ? next : '/map');
   };
 
   return (
@@ -27,16 +34,15 @@ export function LoginPage() {
       }}
     >
       {/* Header */}
-      <Box
-        py="md"
-        px="xl"
+      <div
+        className="py-4 px-8"
         style={{
           backgroundColor: 'white',
           borderBottom: '1px solid #dee2e6',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
         }}
       >
-        <Container size="lg">
+        <div className="max-w-5xl mx-auto">
           <Stack gap={4}>
             <Title order={4} fw={600} c="gray.8">
               名古屋市緑生土木局
@@ -45,12 +51,12 @@ export function LoginPage() {
               Nagoya City Green Civil Engineering Bureau
             </Text>
           </Stack>
-        </Container>
-      </Box>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <Container
-        size="xs"
+      <div
+        className="max-w-sm mx-auto w-full"
         style={{
           flex: 1,
           display: 'flex',
@@ -60,14 +66,11 @@ export function LoginPage() {
           paddingBottom: '3rem',
         }}
       >
-        <Paper
-          shadow="sm"
-          p="xl"
-          radius="md"
-          w="100%"
+        <div
+          className="w-full rounded-md bg-white p-8"
           style={{
             border: '1px solid #dee2e6',
-            backgroundColor: 'white',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
           }}
         >
           <form onSubmit={handleSubmit}>
@@ -86,87 +89,68 @@ export function LoginPage() {
 
               {/* Form Fields */}
               <Stack gap="md">
-                <TextInput
-                  label="ユーザー名"
-                  placeholder="ユーザー名を入力"
-                  value={username}
-                  onChange={(e) => setUsername(e.currentTarget.value)}
-                  size="md"
-                  styles={{
-                    label: { fontWeight: 500, marginBottom: 8 },
-                    input: { borderRadius: 4 },
-                  }}
-                />
+                <div>
+                  <Label htmlFor="username" className="font-medium mb-2 block">ユーザー名</Label>
+                  <Input
+                    id="username"
+                    placeholder="ユーザー名を入力"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="rounded"
+                  />
+                </div>
 
                 <PasswordInput
                   label="パスワード"
                   placeholder="パスワードを入力"
                   value={password}
-                  onChange={(e) => setPassword(e.currentTarget.value)}
-                  size="md"
-                  styles={{
-                    label: { fontWeight: 500, marginBottom: 8 },
-                    input: { borderRadius: 4 },
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
 
                 {/* Role Selection */}
-                <Stack gap="xs">
-                  <Text size="sm" fw={500}>
+                <div>
+                  <Text size="sm" fw={500} className="mb-1.5">
                     ロール
                   </Text>
-                  <Radio.Group value={role} onChange={(v) => setRole(v as UserRole)}>
-                    <Stack gap="xs">
-                      <Radio
-                        value="admin"
-                        label="管理者（技術指導課）"
-                        styles={{
-                          label: { fontSize: 14 },
-                        }}
-                      />
-                      <Radio
-                        value="user"
-                        label="利用者（緑地部／公園緑地課、各土木事務所）"
-                        styles={{
-                          label: { fontSize: 14 },
-                        }}
-                      />
-                    </Stack>
-                  </Radio.Group>
-                </Stack>
+                  <RadioGroup value={role} onValueChange={(v) => setRole(v as UserRole)}>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="admin" id="role-admin" />
+                      <Label htmlFor="role-admin" className="text-sm">管理者（技術指導課）</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="user" id="role-user" />
+                      <Label htmlFor="role-user" className="text-sm">利用者（緑地部／公園緑地課、各土木事務所）</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </Stack>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                fullWidth
-                size="md"
-                style={{
-                  marginTop: '0.5rem',
-                  borderRadius: 4,
-                }}
+                className="w-full mt-2 rounded"
               >
                 ログイン
               </Button>
             </Stack>
           </form>
-        </Paper>
-      </Container>
+        </div>
+      </div>
 
       {/* Footer */}
-      <Box
-        py="sm"
+      <div
+        className="py-2"
         style={{
           backgroundColor: 'white',
           borderTop: '1px solid #dee2e6',
         }}
       >
-        <Container size="lg">
+        <div className="max-w-5xl mx-auto">
           <Text size="xs" c="dimmed" ta="center">
-            © 2026 Nagoya City. All rights reserved.
+            &copy; 2026 Nagoya City. All rights reserved.
           </Text>
-        </Container>
-      </Box>
+        </div>
+      </div>
     </Box>
   );
 }
