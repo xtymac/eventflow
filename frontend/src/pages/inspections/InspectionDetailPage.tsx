@@ -1,16 +1,14 @@
+import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Box,
-  Breadcrumbs,
-  Anchor,
-  Text,
-  Group,
-  Paper,
-  SimpleGrid,
-  Badge,
-  ScrollArea,
-  Stack,
-  Image,
-} from '@mantine/core';
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { IconPhoto } from '@tabler/icons-react';
 import { useParams, Link } from 'react-router-dom';
 import { useInspection, useEvent } from '../../hooks/useApi';
@@ -22,7 +20,7 @@ const INSPECTION_TYPE_LABELS: Record<string, string> = {
 };
 
 const CONDITION_COLORS: Record<string, string> = {
-  A: 'green', B: 'yellow', C: 'orange', D: 'red', S: 'red',
+  A: 'bg-green-600 text-white', B: 'bg-yellow-500 text-white', C: 'bg-orange-500 text-white', D: 'bg-red-600 text-white', S: 'bg-red-600 text-white',
 };
 
 const RESULT_LABELS: Record<string, string> = {
@@ -51,22 +49,31 @@ export function InspectionDetailPage() {
   const photos = insp?.mediaUrls || [];
 
   return (
-    <ScrollArea h="calc(100vh - 60px)">
-      <Box p="lg" maw={1000} mx="auto">
-        <Breadcrumbs mb="md">
-          <Anchor component={Link} to="/inspections" size="sm">点検一覧</Anchor>
-          <Text size="sm">
-            {insp?.inspectionDate
-              ? new Date(insp.inspectionDate).toLocaleDateString('ja-JP')
-              : id?.slice(0, 8) || '...'}
-          </Text>
-        </Breadcrumbs>
+    <ScrollArea style={{ height: 'calc(100vh - 60px)' }}>
+      <Box p="lg" style={{ maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/inspections">点検一覧</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                {insp?.inspectionDate
+                  ? new Date(insp.inspectionDate).toLocaleDateString('ja-JP')
+                  : id?.slice(0, 8) || '...'}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <PageState loading={isLoading} error={isError} empty={!insp} emptyMessage="点検が見つかりません">
           {insp && (
             <Stack gap="lg">
               {/* 点検情報 */}
-              <Paper withBorder p="md" radius="md">
+              <Paper>
                 <Text fw={600} mb="sm">点検情報</Text>
                 <SimpleGrid cols={{ base: 1, md: 2 }}>
                   <div>
@@ -89,9 +96,12 @@ export function InspectionDetailPage() {
                       label="結果"
                       value={
                         <Badge
-                          color={insp.result === 'pass' ? 'green' : insp.result === 'fail' ? 'red' : 'gray'}
-                          variant="light"
-                          size="sm"
+                          variant="secondary"
+                          className={
+                            insp.result === 'pass' ? 'bg-green-100 text-green-800' :
+                            insp.result === 'fail' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }
                         >
                           {RESULT_LABELS[insp.result] || insp.result}
                         </Badge>
@@ -102,9 +112,8 @@ export function InspectionDetailPage() {
                       value={
                         insp.conditionGrade ? (
                           <Badge
-                            color={CONDITION_COLORS[insp.conditionGrade] || 'gray'}
-                            variant="filled"
-                            size="sm"
+                            variant="secondary"
+                            className={CONDITION_COLORS[insp.conditionGrade] || 'bg-gray-100 text-gray-800'}
                           >
                             {insp.conditionGrade}
                           </Badge>
@@ -117,9 +126,9 @@ export function InspectionDetailPage() {
                       label="関連案件"
                       value={
                         parentEvent ? (
-                          <Anchor component={Link} to={`/cases/${parentEvent.id}`} size="sm">
+                          <Link to={`/cases/${parentEvent.id}`} className="text-sm text-blue-600 hover:underline">
                             {parentEvent.name}
-                          </Anchor>
+                          </Link>
                         ) : insp.eventId
                           ? insp.eventId.slice(0, 8) + '...'
                           : null
@@ -132,19 +141,25 @@ export function InspectionDetailPage() {
               </Paper>
 
               {/* 写真 */}
-              <Paper withBorder p="md" radius="md">
+              <Paper>
                 <Text fw={600} mb="sm">写真</Text>
                 {photos.length > 0 ? (
                   <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
                     {photos.map((url, i) => (
-                      <Image key={i} src={url} radius="md" h={150} fit="cover" />
+                      <img
+                        key={i}
+                        src={url}
+                        className="rounded-md object-cover"
+                        style={{ height: 150, width: '100%' }}
+                        alt=""
+                      />
                     ))}
                   </SimpleGrid>
                 ) : (
-                  <Group gap="md" py="xl" justify="center">
-                    <Paper withBorder p="xl" radius="md" style={{ textAlign: 'center' }}>
-                      <IconPhoto size={48} color="var(--mantine-color-gray-4)" />
-                      <Text c="dimmed" size="sm" mt="xs">写真なし</Text>
+                  <Group gap="md" className="py-6" justify="center">
+                    <Paper className="text-center p-6">
+                      <IconPhoto size={48} color="#adb5bd" />
+                      <Text c="dimmed" size="sm" className="mt-2">写真なし</Text>
                     </Paper>
                   </Group>
                 )}

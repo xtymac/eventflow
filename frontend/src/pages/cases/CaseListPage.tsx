@@ -1,5 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Box, TextInput, Badge, Text, Group, NavLink as MantineNavLink, ScrollArea, Stack, Select } from '@mantine/core';
+import { Box, Text, Group, Stack } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { IconSearch, IconAlertCircle, IconArrowBack, IconCircleCheck } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useEvents } from '../../hooks/useApi';
@@ -7,13 +19,13 @@ import { PageState } from '../../components/PageState';
 
 type StatusFilter = 'all' | 'pending_review' | 'planned' | 'closed';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  pending_review: { label: '提出済', color: 'blue' },
-  planned: { label: '差戻', color: 'orange' },
-  active: { label: '対応中', color: 'cyan' },
-  closed: { label: '確認済', color: 'green' },
-  archived: { label: 'アーカイブ', color: 'gray' },
-  cancelled: { label: 'キャンセル', color: 'red' },
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  pending_review: { label: '提出済', className: 'bg-blue-100 text-blue-800' },
+  planned: { label: '差戻', className: 'bg-orange-100 text-orange-800' },
+  active: { label: '対応中', className: 'bg-cyan-100 text-cyan-800' },
+  closed: { label: '確認済', className: 'bg-green-100 text-green-800' },
+  archived: { label: 'アーカイブ', className: 'bg-gray-100 text-gray-800' },
+  cancelled: { label: 'キャンセル', className: 'bg-red-100 text-red-800' },
 };
 
 const RESTRICTION_TYPE_LABELS: Record<string, string> = {
@@ -76,68 +88,76 @@ export function CaseListPage() {
     <Box style={{ display: 'flex', height: '100%' }}>
       {/* Left Sidebar - Status Filters */}
       <Box
-        w={SIDEBAR_WIDTH}
         style={{
-          borderRight: '1px solid var(--mantine-color-gray-3)',
+          width: SIDEBAR_WIDTH,
+          borderRight: '1px solid #dee2e6',
           flexShrink: 0,
         }}
         p="sm"
       >
         <Stack gap={2}>
-          <MantineNavLink
-            label={`未確認 (${counts.pending_review})`}
-            leftSection={<IconAlertCircle size={16} />}
-            active={statusFilter === 'pending_review'}
+          <Button
+            variant={statusFilter === 'pending_review' ? 'default' : 'ghost'}
+            className="justify-start w-full"
             onClick={() => setStatusFilter('pending_review')}
-            variant="filled"
-            color="blue"
-          />
-          <MantineNavLink
-            label={`差戻 (${counts.planned})`}
-            leftSection={<IconArrowBack size={16} />}
-            active={statusFilter === 'planned'}
+          >
+            <IconAlertCircle size={16} className="mr-2" />
+            未確認 ({counts.pending_review})
+          </Button>
+          <Button
+            variant={statusFilter === 'planned' ? 'default' : 'ghost'}
+            className="justify-start w-full"
             onClick={() => setStatusFilter('planned')}
-            variant="filled"
-            color="orange"
-          />
-          <MantineNavLink
-            label={`確認済 (${counts.closed})`}
-            leftSection={<IconCircleCheck size={16} />}
-            active={statusFilter === 'closed'}
+          >
+            <IconArrowBack size={16} className="mr-2" />
+            差戻 ({counts.planned})
+          </Button>
+          <Button
+            variant={statusFilter === 'closed' ? 'default' : 'ghost'}
+            className="justify-start w-full"
             onClick={() => setStatusFilter('closed')}
-            variant="filled"
-            color="green"
-          />
+          >
+            <IconCircleCheck size={16} className="mr-2" />
+            確認済 ({counts.closed})
+          </Button>
         </Stack>
       </Box>
 
       {/* Main Area */}
       <Box style={{ flex: 1, overflow: 'hidden' }} p="lg">
         <Group mb="md" gap="sm">
-          <Select
-            placeholder="種別"
-            data={RESTRICTION_TYPE_OPTIONS}
-            value={typeFilter}
-            onChange={setTypeFilter}
-            clearable
-            w={180}
-            label="種別"
-          />
-          <TextInput
-            placeholder="検索（ID, ParkName, type, 市区町村）"
-            leftSection={<IconSearch size={16} />}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-            style={{ flex: 1 }}
-            mt={24}
-          />
+          <div style={{ width: 180 }}>
+            <Label className="mb-1.5 block text-sm font-medium">種別</Label>
+            <Select
+              value={typeFilter ?? ''}
+              onValueChange={(v) => setTypeFilter(v || null)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="種別" />
+              </SelectTrigger>
+              <SelectContent>
+                {RESTRICTION_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="relative flex-1" style={{ marginTop: 24 }}>
+            <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="検索（ID, ParkName, type, 市区町村）"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </Group>
 
         <PageState loading={isLoading} error={isError} empty={cases.length === 0} emptyMessage="案件データがありません">
-          <ScrollArea h="calc(100vh - 200px)">
+          <ScrollArea style={{ height: 'calc(100vh - 200px)' }}>
             <Stack gap="xs">
               {cases.map((c) => {
-                const statusInfo = STATUS_MAP[c.status] || { label: c.status, color: 'gray' };
+                const statusInfo = STATUS_MAP[c.status] || { label: c.status, className: 'bg-gray-100 text-gray-800' };
                 return (
                   <Group
                     key={c.id}
@@ -146,13 +166,13 @@ export function CaseListPage() {
                     p="md"
                     style={{
                       cursor: 'pointer',
-                      backgroundColor: 'var(--mantine-color-gray-1)',
-                      borderRadius: 'var(--mantine-radius-sm)',
+                      backgroundColor: '#f1f3f5',
+                      borderRadius: '0.25rem',
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <Text fw={500} size="sm" truncate>{c.name}</Text>
-                      <Group gap="xs" mt={4}>
+                      <Text fw={500} size="sm" className="truncate">{c.name}</Text>
+                      <Group gap="xs" className="mt-1">
                         <Text size="xs" c="dimmed">{c.id.slice(0, 8)}...</Text>
                         {c.ward && <Text size="xs" c="dimmed">{c.ward}</Text>}
                         {c.department && <Text size="xs" c="dimmed">{c.department}</Text>}
@@ -163,7 +183,7 @@ export function CaseListPage() {
                         )}
                       </Group>
                     </div>
-                    <Badge color={statusInfo.color} variant="light" size="sm">
+                    <Badge variant="secondary" className={statusInfo.className}>
                       {statusInfo.label}
                     </Badge>
                   </Group>

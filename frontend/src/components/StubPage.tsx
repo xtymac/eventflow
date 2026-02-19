@@ -1,4 +1,5 @@
-import { Center, Stack, Text, Badge, Paper } from '@mantine/core';
+import { Center, Stack, Text, Paper } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
 import { IconTools } from '@tabler/icons-react';
 
 interface StubPageProps {
@@ -8,11 +9,11 @@ interface StubPageProps {
 export function StubPage({ title }: StubPageProps) {
   return (
     <Center h="calc(100vh - 120px)">
-      <Paper p="xl" radius="md" withBorder>
+      <Paper p="xl" withBorder>
         <Stack align="center" gap="md">
-          <IconTools size={64} color="var(--mantine-color-gray-5)" />
+          <IconTools size={64} className="text-muted-foreground" />
           <Text size="xl" fw={600}>{title}</Text>
-          <Badge color="blue" variant="light" size="lg">Coming Soon</Badge>
+          <Badge variant="secondary">Coming Soon</Badge>
           <Text c="dimmed" size="sm">このページは開発中です</Text>
         </Stack>
       </Paper>

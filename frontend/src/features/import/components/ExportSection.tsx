@@ -5,16 +5,18 @@
  */
 
 import { useState } from 'react';
+import { Stack, Text, Group } from '@/components/shims';
+import { Button } from '@/components/ui/button';
 import {
-  Stack,
-  Radio,
-  Group,
   Select,
-  Button,
-  Text,
-  ActionIcon,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { showNotification } from '@/lib/toast';
 import { IconDownload, IconMap, IconX } from '@tabler/icons-react';
 import { useWards } from '../../../hooks/useApi';
 import { useUIStore } from '../../../stores/uiStore';
@@ -76,13 +78,13 @@ export function ExportSection() {
       a.click();
       URL.revokeObjectURL(downloadUrl);
 
-      notifications.show({
+      showNotification({
         title: 'Export successful',
         message: `Downloaded ${filename} (${(blob.size / 1024).toFixed(1)} KB)`,
         color: 'green',
       });
     } catch (error) {
-      notifications.show({
+      showNotification({
         title: 'Export failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -92,68 +94,87 @@ export function ExportSection() {
     }
   };
 
-  // Transform ward data for Mantine Select (string[] -> {value, label}[])
+  // Transform ward data for Select
   const wardOptions =
     wardsData?.data?.map((w: string) => ({ value: w, label: w })) || [];
 
   return (
     <Stack gap="md">
       {/* Format selection with descriptions */}
-      <Radio.Group
-        value={format}
-        onChange={(v) => setFormat(v as ExportFormat)}
-        label="Format"
-      >
-        <Stack gap="xs" mt="xs">
-          <Radio
-            value="geojson"
-            label="GeoJSON"
-            description="Recommended for web use. Smaller files, easy to inspect and edit."
-          />
-          <Radio
-            value="geopackage"
-            label="GeoPackage"
-            description="Recommended for GIS software (QGIS). Supports large datasets with full attributes."
-          />
-        </Stack>
-      </Radio.Group>
+      <div>
+        <Label className="mb-2 block">Format</Label>
+        <RadioGroup value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
+          <Stack gap="xs">
+            <div className="flex items-start gap-2">
+              <RadioGroupItem value="geojson" id="format-geojson" className="mt-1" />
+              <div>
+                <Label htmlFor="format-geojson" className="cursor-pointer">GeoJSON</Label>
+                <p className="text-xs text-muted-foreground">Recommended for web use. Smaller files, easy to inspect and edit.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <RadioGroupItem value="geopackage" id="format-geopackage" className="mt-1" />
+              <div>
+                <Label htmlFor="format-geopackage" className="cursor-pointer">GeoPackage</Label>
+                <p className="text-xs text-muted-foreground">Recommended for GIS software (QGIS). Supports large datasets with full attributes.</p>
+              </div>
+            </div>
+          </Stack>
+        </RadioGroup>
+      </div>
 
       {/* Scope selection */}
       <Text size="sm" fw={500}>
         Scope
       </Text>
-      <Radio.Group
+      <RadioGroup
         value={scopeType}
-        onChange={(v) => setExportScopeType(v as 'full' | 'ward' | 'bbox')}
+        onValueChange={(v) => setExportScopeType(v as 'full' | 'ward' | 'bbox')}
       >
         <Stack gap="xs">
-          <Radio value="full" label="All Roads" />
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="full" id="scope-full" />
+            <Label htmlFor="scope-full" className="cursor-pointer">All Roads</Label>
+          </div>
           <Group>
-            <Radio value="ward" label="By Ward" />
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="ward" id="scope-ward" />
+              <Label htmlFor="scope-ward" className="cursor-pointer">By Ward</Label>
+            </div>
             {scopeType === 'ward' && (
               <Select
-                data={wardOptions}
-                value={selectedWard}
-                onChange={setSelectedWard}
-                placeholder="Select ward"
-                size="xs"
-                style={{ width: 150 }}
-              />
+                value={selectedWard || ''}
+                onValueChange={setSelectedWard}
+              >
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="Select ward" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wardOptions.map((opt: { value: string; label: string }) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </Group>
-          <Radio value="bbox" label="By Map Extent" />
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="bbox" id="scope-bbox" />
+            <Label htmlFor="scope-bbox" className="cursor-pointer">By Map Extent</Label>
+          </div>
         </Stack>
-      </Radio.Group>
+      </RadioGroup>
 
       {/* Bbox selection UI - only show when scope is bbox */}
       {scopeType === 'bbox' && (
-        <Stack gap="xs" pl="md">
+        <Stack gap="xs" style={{ paddingLeft: 16 }}>
           <Button
-            size="xs"
-            variant="light"
+            size="sm"
+            variant="outline"
             onClick={startExportBboxConfirmation}
-            leftSection={<IconMap size={14} />}
           >
+            <IconMap size={14} className="mr-1" />
             Use Map View
           </Button>
           {exportBbox && (
@@ -161,9 +182,9 @@ export function ExportSection() {
               <Text size="xs" c="dimmed">
                 {exportBbox.substring(0, 35)}...
               </Text>
-              <ActionIcon size="xs" variant="subtle" onClick={clearExportBbox}>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={clearExportBbox}>
                 <IconX size={12} />
-              </ActionIcon>
+              </Button>
             </Group>
           )}
         </Stack>
@@ -171,11 +192,10 @@ export function ExportSection() {
 
       <Button
         onClick={handleDownload}
-        leftSection={<IconDownload size={16} />}
-        disabled={!canDownload}
-        loading={isDownloading}
+        disabled={!canDownload || isDownloading}
       >
-        Download Export
+        <IconDownload size={16} className="mr-1" />
+        {isDownloading ? 'Downloading...' : 'Download Export'}
       </Button>
     </Stack>
   );

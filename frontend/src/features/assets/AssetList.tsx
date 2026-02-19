@@ -1,16 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  Stack,
-  Card,
-  Text,
-  Badge,
-  Group,
-  Loader,
-  Center,
-  ActionIcon,
-  Tabs,
-  Box,
-} from '@mantine/core';
+import { Stack, Group, Text, Center, Box, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { IconChevronLeft, IconChevronRight, IconTree, IconLeaf, IconRuler2, IconDroplet } from '@tabler/icons-react';
 import * as turf from '@turf/turf';
 import { useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox, useGreenSpacesInBbox } from '../../hooks/useApi';
@@ -19,58 +11,58 @@ import type { StreetTreeAsset, ParkFacilityAsset, PavementSectionAsset, PumpStat
 import type { Feature } from 'geojson';
 
 const TREE_CATEGORY_COLORS: Record<string, string> = {
-  deciduous: 'green',
-  evergreen: 'teal',
-  conifer: 'lime',
-  palmLike: 'orange',
-  shrub: 'yellow',
+  deciduous: 'bg-green-100 text-green-800',
+  evergreen: 'bg-teal-100 text-teal-800',
+  conifer: 'bg-lime-100 text-lime-800',
+  palmLike: 'bg-orange-100 text-orange-800',
+  shrub: 'bg-yellow-100 text-yellow-800',
 };
 
 const TREE_CATEGORY_LABELS: Record<string, string> = {
-  deciduous: '落葉樹',
-  evergreen: '常緑樹',
-  conifer: '針葉樹',
-  palmLike: 'ヤシ類',
-  shrub: '低木',
+  deciduous: '\u843D\u8449\u6A39',
+  evergreen: '\u5E38\u7DD1\u6A39',
+  conifer: '\u91DD\u8449\u6A39',
+  palmLike: '\u30E4\u30B7\u985E',
+  shrub: '\u4F4E\u6728',
 };
 
 const PARK_FACILITY_COLORS: Record<string, string> = {
-  toilet: 'blue',
-  playground: 'orange',
-  bench: 'gray',
-  shelter: 'teal',
-  fence: 'dark',
-  gate: 'dark',
-  drainage: 'cyan',
-  lighting: 'yellow',
-  waterFountain: 'blue',
-  signBoard: 'indigo',
-  pavement: 'gray',
-  sportsFacility: 'lime',
-  building: 'violet',
-  other: 'gray',
+  toilet: 'bg-blue-100 text-blue-800',
+  playground: 'bg-orange-100 text-orange-800',
+  bench: 'bg-gray-100 text-gray-800',
+  shelter: 'bg-teal-100 text-teal-800',
+  fence: 'bg-gray-200 text-gray-800',
+  gate: 'bg-gray-200 text-gray-800',
+  drainage: 'bg-cyan-100 text-cyan-800',
+  lighting: 'bg-yellow-100 text-yellow-800',
+  waterFountain: 'bg-blue-100 text-blue-800',
+  signBoard: 'bg-indigo-100 text-indigo-800',
+  pavement: 'bg-gray-100 text-gray-800',
+  sportsFacility: 'bg-lime-100 text-lime-800',
+  building: 'bg-violet-100 text-violet-800',
+  other: 'bg-gray-100 text-gray-800',
 };
 
 const PAVEMENT_TYPE_COLORS: Record<string, string> = {
-  asphalt: 'dark',
-  concrete: 'gray',
-  interlocking: 'orange',
-  gravel: 'yellow',
-  other: 'gray',
+  asphalt: 'bg-gray-200 text-gray-800',
+  concrete: 'bg-gray-100 text-gray-800',
+  interlocking: 'bg-orange-100 text-orange-800',
+  gravel: 'bg-yellow-100 text-yellow-800',
+  other: 'bg-gray-100 text-gray-800',
 };
 
 const PUMP_CATEGORY_COLORS: Record<string, string> = {
-  stormwater: 'blue',
-  sewage: 'violet',
-  irrigation: 'green',
-  combined: 'cyan',
+  stormwater: 'bg-blue-100 text-blue-800',
+  sewage: 'bg-violet-100 text-violet-800',
+  irrigation: 'bg-green-100 text-green-800',
+  combined: 'bg-cyan-100 text-cyan-800',
 };
 
 const PUMP_CATEGORY_LABELS: Record<string, string> = {
-  stormwater: '雨水',
-  sewage: '汚水',
-  irrigation: '灌漑',
-  combined: '合流',
+  stormwater: '\u96E8\u6C34',
+  sewage: '\u6C5A\u6C34',
+  irrigation: '\u704C\u6F51',
+  combined: '\u5408\u6D41',
 };
 
 // Semantic emoji for visual distinction from workorder cards
@@ -225,7 +217,7 @@ export function AssetList() {
       const ref = pf.greenSpaceRef || '__unknown__';
       if (!groups.has(ref)) {
         const gs = greenSpaceMap.get(ref);
-        const parkName = gs?.asset.displayName || gs?.asset.nameJa || gs?.asset.name || '公園';
+        const parkName = gs?.asset.displayName || gs?.asset.nameJa || gs?.asset.name || '\u516C\u5712';
         groups.set(ref, { parkName, feature: gs?.feature ?? null, facilities: [] });
       }
       groups.get(ref)!.facilities.push(f);
@@ -235,7 +227,7 @@ export function AssetList() {
 
   // Strip park name prefix from facility name for cleaner display
   const stripParkPrefix = (facilityName: string, parkName: string): string => {
-    // Try removing "ParkName " or "ParkName　" prefix
+    // Try removing "ParkName " or "ParkName\u3000" prefix
     if (facilityName.startsWith(parkName + ' ')) return facilityName.slice(parkName.length + 1);
     if (facilityName.startsWith(parkName + '\u3000')) return facilityName.slice(parkName.length + 1);
     return facilityName;
@@ -312,78 +304,73 @@ export function AssetList() {
 
   return (
     <Tabs defaultValue="park-facilities">
-      <Group gap={4} mb="md" wrap="nowrap" align="center">
+      <Group gap={4} mb="md" className="flex-nowrap">
         {canScrollLeft && (
-          <ActionIcon
-            variant="subtle"
-            size="sm"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
             onClick={handleScrollLeft}
-            style={{ flexShrink: 0 }}
             aria-label="Scroll tabs left"
           >
             <IconChevronLeft size={16} />
-          </ActionIcon>
+          </Button>
         )}
-        <Box
+        <div
           ref={tabsScrollRef}
-          className="tabs-scroll-container"
-          style={{
-            flex: 1,
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            scrollbarWidth: 'none', // Firefox
-          }}
+          className="tabs-scroll-container flex-1 overflow-x-auto overflow-y-hidden"
+          style={{ scrollbarWidth: 'none' }}
           onScroll={updateScrollState}
         >
-          <Tabs.List style={{ flexWrap: 'nowrap', minWidth: 'max-content' }}>
-            <Tabs.Tab
+          <TabsList className="flex-nowrap min-w-max">
+            <TabsTrigger
               value="park-facilities"
-              leftSection={<IconTree size={14} />}
               ref={(el) => { tabRefs.current['park-facilities'] = el; }}
               onClick={() => handleTabClick('park-facilities')}
             >
+              <IconTree size={14} />
               公園 ({sortedParkFacilities.length})
-            </Tabs.Tab>
-            <Tabs.Tab
+            </TabsTrigger>
+            <TabsTrigger
               value="street-trees"
-              leftSection={<IconLeaf size={14} />}
               ref={(el) => { tabRefs.current['street-trees'] = el; }}
               onClick={() => handleTabClick('street-trees')}
             >
+              <IconLeaf size={14} />
               街路樹 ({sortedStreetTrees.length})
-            </Tabs.Tab>
-            <Tabs.Tab
+            </TabsTrigger>
+            <TabsTrigger
               value="pavement-sections"
-              leftSection={<IconRuler2 size={14} />}
               ref={(el) => { tabRefs.current['pavement-sections'] = el; }}
               onClick={() => handleTabClick('pavement-sections')}
             >
+              <IconRuler2 size={14} />
               道路舗装 ({sortedPavementSections.length})
-            </Tabs.Tab>
-            <Tabs.Tab
+            </TabsTrigger>
+            <TabsTrigger
               value="pump-stations"
-              leftSection={<IconDroplet size={14} />}
               ref={(el) => { tabRefs.current['pump-stations'] = el; }}
               onClick={() => handleTabClick('pump-stations')}
             >
+              <IconDroplet size={14} />
               ポンプ施設 ({sortedPumpStations.length})
-            </Tabs.Tab>
-          </Tabs.List>
-        </Box>
+            </TabsTrigger>
+          </TabsList>
+        </div>
         {canScrollRight && (
-          <ActionIcon
-            variant="subtle"
-            size="sm"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
             onClick={handleScrollRight}
-            style={{ flexShrink: 0 }}
             aria-label="Scroll tabs right"
           >
             <IconChevronRight size={16} />
-          </ActionIcon>
+          </Button>
         )}
       </Group>
 
-      <Tabs.Panel value="park-facilities">
+      <TabsContent value="park-facilities">
         <Stack gap="xs">
           {isLoadingParkFacilities ? (
             <Center py="xl">
@@ -397,17 +384,12 @@ export function AssetList() {
             parkGroups.map((group) => (
               <Box key={group.parkId}>
                 {/* Park header */}
-                <Group
-                  gap="xs"
-                  mb={6}
-                  mt="xs"
-                  px="xs"
-                  py={4}
+                <div
+                  className="flex items-center gap-1.5 mb-1.5 mt-1.5 px-1.5 py-1 rounded-sm cursor-pointer"
                   style={{
                     cursor: group.feature ? 'pointer' : 'default',
-                    borderRadius: 'var(--mantine-radius-sm)',
-                    backgroundColor: selectedAssetId === group.parkId ? 'var(--mantine-color-teal-0)' : undefined,
-                    border: selectedAssetId === group.parkId ? '1px solid var(--mantine-color-teal-5)' : '1px solid transparent',
+                    backgroundColor: selectedAssetId === group.parkId ? 'hsl(var(--accent))' : undefined,
+                    border: selectedAssetId === group.parkId ? '1px solid hsl(var(--ring))' : '1px solid transparent',
                   }}
                   onClick={() => {
                     if (group.feature?.geometry) {
@@ -419,51 +401,46 @@ export function AssetList() {
                   <Text fw={700} size="sm">
                     {'\u{1F3DE}\uFE0F'} {group.parkName}
                   </Text>
-                  <Badge size="xs" variant="light" color="green">
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
                     {group.facilities.length}
                   </Badge>
-                </Group>
+                </div>
 
                 {/* Facility cards under this park */}
-                <Stack gap={4} ml="md">
+                <Stack gap={4} className="ml-4">
                   {group.facilities.map((feature) => {
                     const pf = feature.properties as ParkFacilityAsset;
-                    const rawName = pf.name || pf.facilityId || '施設';
+                    const rawName = pf.name || pf.facilityId || '\u65BD\u8A2D';
                     const shortName = stripParkPrefix(rawName, group.parkName);
                     const emoji = FACILITY_EMOJI[pf.category] || '\u{1F4E6}';
 
                     return (
-                      <Card
+                      <div
                         key={pf.id}
-                        padding="xs"
-                        radius="sm"
-                        withBorder
+                        className="border rounded-sm p-1.5 cursor-pointer transition-colors asset-card-hover hover:bg-accent"
                         style={{
-                          cursor: 'pointer',
-                          transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-                          borderColor: selectedAssetId === pf.id ? 'var(--mantine-color-violet-5)' : undefined,
-                          backgroundColor: selectedAssetId === pf.id ? 'var(--mantine-color-violet-0)' : undefined,
+                          borderColor: selectedAssetId === pf.id ? 'hsl(270 50% 60%)' : undefined,
+                          backgroundColor: selectedAssetId === pf.id ? 'hsl(270 50% 95%)' : undefined,
                         }}
-                        className="asset-card-hover"
                         onClick={() => {
                           selectAsset(pf.id, 'park-facility', feature.geometry);
                           if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                         }}
                       >
-                        <Group gap="xs" wrap="nowrap" align="center">
-                          <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                        <Group gap="xs" className="flex-nowrap">
+                          <Text size="md" className="shrink-0 leading-none">
                             {emoji}
                           </Text>
-                          <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="flex-1 min-w-0">
                             <Text fw={500} size="sm" lineClamp={1}>
                               {shortName}
                             </Text>
-                            <Badge color={PARK_FACILITY_COLORS[pf.category] || 'gray'} size="xs" mt={2}>
+                            <Badge variant="secondary" className={`text-xs mt-0.5 ${PARK_FACILITY_COLORS[pf.category] || 'bg-gray-100 text-gray-800'}`}>
                               {pf.category}
                             </Badge>
                           </div>
                         </Group>
-                      </Card>
+                      </div>
                     );
                   })}
                 </Stack>
@@ -471,9 +448,9 @@ export function AssetList() {
             ))
           )}
         </Stack>
-      </Tabs.Panel>
+      </TabsContent>
 
-      <Tabs.Panel value="street-trees">
+      <TabsContent value="street-trees">
         <Stack gap="xs">
           {isLoadingStreetTrees ? (
             <Center py="xl">
@@ -486,57 +463,51 @@ export function AssetList() {
           ) : (
             sortedStreetTrees.map((feature) => {
               const tree = feature.properties as StreetTreeAsset;
-              const displayName = tree.displayName || tree.speciesName || tree.ledgerId || '街路樹';
+              const displayName = tree.displayName || tree.speciesName || tree.ledgerId || '\u8857\u8DEF\u6A39';
               const treeEmoji = TREE_EMOJI[tree.category] || '\u{1F333}';
 
               return (
-                <Card
+                <div
                   key={tree.id}
-                  padding="xs"
-                  radius="sm"
-                  withBorder
+                  className="border rounded-sm p-1.5 cursor-pointer transition-colors asset-card-hover hover:bg-accent"
                   style={{
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-                    borderColor: selectedAssetId === tree.id ? 'var(--mantine-color-green-5)' : undefined,
-                    backgroundColor: selectedAssetId === tree.id ? 'var(--mantine-color-green-0)' : undefined,
+                    borderColor: selectedAssetId === tree.id ? 'hsl(142 70% 45%)' : undefined,
+                    backgroundColor: selectedAssetId === tree.id ? 'hsl(142 70% 95%)' : undefined,
                   }}
-                  className="asset-card-hover"
                   onClick={() => {
                     selectAsset(tree.id, 'street-tree', feature.geometry);
                     if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                   }}
                 >
-                  <Group gap="xs" wrap="nowrap" align="center">
-                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                  <Group gap="xs" className="flex-nowrap">
+                    <Text size="md" className="shrink-0 leading-none">
                       {treeEmoji}
                     </Text>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Group justify="space-between" wrap="nowrap" gap="xs">
-                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex-1 min-w-0">
+                      <Group justify="space-between" className="flex-nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} className="flex-1 min-w-0">
                           {displayName}
                         </Text>
-                        <Badge color={TREE_CATEGORY_COLORS[tree.category] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                        <Badge variant="secondary" className={`text-xs shrink-0 ${TREE_CATEGORY_COLORS[tree.category] || 'bg-gray-100 text-gray-800'}`}>
                           {TREE_CATEGORY_LABELS[tree.category] || tree.category}
                         </Badge>
                       </Group>
 
-
                       {tree.height && (
                         <Text size="xs" c="dimmed" mt={2}>
-                          {tree.height}m{tree.trunkDiameter ? ` · ${tree.trunkDiameter}cm` : ''}
+                          {tree.height}m{tree.trunkDiameter ? ` \u00B7 ${tree.trunkDiameter}cm` : ''}
                         </Text>
                       )}
                     </div>
                   </Group>
-                </Card>
+                </div>
               );
             })
           )}
         </Stack>
-      </Tabs.Panel>
+      </TabsContent>
 
-      <Tabs.Panel value="pavement-sections">
+      <TabsContent value="pavement-sections">
         <Stack gap="xs">
           {isLoadingPavementSections ? (
             <Center py="xl">
@@ -549,72 +520,63 @@ export function AssetList() {
           ) : (
             sortedPavementSections.map((feature) => {
               const ps = feature.properties as PavementSectionAsset;
-              const displayName = ps.name || ps.sectionId || ps.routeNumber || '舗装区間';
+              const displayName = ps.name || ps.sectionId || ps.routeNumber || '\u8217\u88C5\u533A\u9593';
 
               return (
-                <Card
+                <div
                   key={ps.id}
-                  padding="xs"
-                  radius="sm"
-                  withBorder
+                  className="border rounded-sm p-1.5 cursor-pointer transition-colors asset-card-hover hover:bg-accent"
                   style={{
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-                    borderColor: selectedAssetId === ps.id ? 'var(--mantine-color-orange-5)' : undefined,
-                    backgroundColor: selectedAssetId === ps.id ? 'var(--mantine-color-orange-0)' : undefined,
+                    borderColor: selectedAssetId === ps.id ? 'hsl(25 95% 53%)' : undefined,
+                    backgroundColor: selectedAssetId === ps.id ? 'hsl(25 95% 95%)' : undefined,
                   }}
-                  className="asset-card-hover"
                   onClick={() => {
                     selectAsset(ps.id, 'pavement-section', feature.geometry);
                     if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                   }}
                 >
-                  <Group gap="xs" wrap="nowrap" align="center">
-                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                  <Group gap="xs" className="flex-nowrap">
+                    <Text size="md" className="shrink-0 leading-none">
                       {'\u{1F6E3}\uFE0F'}
                     </Text>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Group justify="space-between" wrap="nowrap" gap="xs">
-                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex-1 min-w-0">
+                      <Group justify="space-between" className="flex-nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} className="flex-1 min-w-0">
                           {displayName}
                         </Text>
-                        <Badge color={PAVEMENT_TYPE_COLORS[ps.pavementType] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                        <Badge variant="secondary" className={`text-xs shrink-0 ${PAVEMENT_TYPE_COLORS[ps.pavementType] || 'bg-gray-100 text-gray-800'}`}>
                           {ps.pavementType}
                         </Badge>
                       </Group>
 
-                      <Group gap={4} mt={2}>
+                      <div className="flex items-center gap-1 mt-0.5">
                         {ps.mci != null && (
-                          <Badge
-                            variant="outline"
-                            size="xs"
-                            color={ps.mci >= 7 ? 'green' : ps.mci >= 4 ? 'yellow' : 'red'}
-                          >
+                          <Badge variant="outline" className={`text-xs ${ps.mci >= 7 ? 'border-green-500 text-green-700' : ps.mci >= 4 ? 'border-yellow-500 text-yellow-700' : 'border-red-500 text-red-700'}`}>
                             MCI {ps.mci.toFixed(1)}
                           </Badge>
                         )}
                         {ps.priorityRank != null && (
-                          <Badge variant="outline" size="xs" color="orange">
+                          <Badge variant="outline" className="text-xs border-orange-500 text-orange-700">
                             #{ps.priorityRank}
                           </Badge>
                         )}
-                      </Group>
+                      </div>
 
                       {(ps.length || ps.width) && (
                         <Text size="xs" c="dimmed" mt={2}>
-                          {ps.length ? `${ps.length}m` : ''}{ps.length && ps.width ? ' × ' : ''}{ps.width ? `${ps.width}m` : ''}
+                          {ps.length ? `${ps.length}m` : ''}{ps.length && ps.width ? ' \u00D7 ' : ''}{ps.width ? `${ps.width}m` : ''}
                         </Text>
                       )}
                     </div>
                   </Group>
-                </Card>
+                </div>
               );
             })
           )}
         </Stack>
-      </Tabs.Panel>
+      </TabsContent>
 
-      <Tabs.Panel value="pump-stations">
+      <TabsContent value="pump-stations">
         <Stack gap="xs">
           {isLoadingPumpStations ? (
             <Center py="xl">
@@ -627,55 +589,49 @@ export function AssetList() {
           ) : (
             sortedPumpStations.map((feature) => {
               const pump = feature.properties as PumpStationAsset;
-              const displayName = pump.name || pump.stationId || 'ポンプ施設';
+              const displayName = pump.name || pump.stationId || '\u30DD\u30F3\u30D7\u65BD\u8A2D';
               const pumpEmoji = PUMP_EMOJI[pump.category] || '\u{1F4A7}';
 
               return (
-                <Card
+                <div
                   key={pump.id}
-                  padding="xs"
-                  radius="sm"
-                  withBorder
+                  className="border rounded-sm p-1.5 cursor-pointer transition-colors asset-card-hover hover:bg-accent"
                   style={{
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-                    borderColor: selectedAssetId === pump.id ? 'var(--mantine-color-blue-5)' : undefined,
-                    backgroundColor: selectedAssetId === pump.id ? 'var(--mantine-color-blue-0)' : undefined,
+                    borderColor: selectedAssetId === pump.id ? 'hsl(217 91% 60%)' : undefined,
+                    backgroundColor: selectedAssetId === pump.id ? 'hsl(217 91% 95%)' : undefined,
                   }}
-                  className="asset-card-hover"
                   onClick={() => {
                     selectAsset(pump.id, 'pump-station', feature.geometry);
                     if (feature.geometry) setFlyToGeometry(feature.geometry, true);
                   }}
                 >
-                  <Group gap="xs" wrap="nowrap" align="center">
-                    <Text size="md" style={{ flexShrink: 0, lineHeight: 1 }}>
+                  <Group gap="xs" className="flex-nowrap">
+                    <Text size="md" className="shrink-0 leading-none">
                       {pumpEmoji}
                     </Text>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Group justify="space-between" wrap="nowrap" gap="xs">
-                        <Text fw={500} size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex-1 min-w-0">
+                      <Group justify="space-between" className="flex-nowrap" gap="xs">
+                        <Text fw={500} size="sm" lineClamp={1} className="flex-1 min-w-0">
                           {displayName}
                         </Text>
-                        <Badge color={PUMP_CATEGORY_COLORS[pump.category] || 'gray'} size="xs" style={{ flexShrink: 0 }}>
+                        <Badge variant="secondary" className={`text-xs shrink-0 ${PUMP_CATEGORY_COLORS[pump.category] || 'bg-blue-100 text-blue-800'}`}>
                           {PUMP_CATEGORY_LABELS[pump.category] || pump.category}
                         </Badge>
                       </Group>
 
-
                       {pump.designCapacity && (
                         <Text size="xs" c="dimmed" mt={2}>
-                          {pump.designCapacity} m³/min{pump.pumpCount ? ` · ${pump.pumpCount}台` : ''}
+                          {pump.designCapacity} m³/min{pump.pumpCount ? ` \u00B7 ${pump.pumpCount}\u53F0` : ''}
                         </Text>
                       )}
                     </div>
                   </Group>
-                </Card>
+                </div>
               );
             })
           )}
         </Stack>
-      </Tabs.Panel>
+      </TabsContent>
     </Tabs>
   );
 }

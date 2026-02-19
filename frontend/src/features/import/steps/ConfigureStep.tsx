@@ -6,19 +6,20 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Stack, Text, Group, Loader } from '@/components/shims';
+import { Label } from '@/components/ui/label';
 import {
-  Stack,
-  Text,
   Select,
-  Group,
-  Button,
-  Card,
-  Loader,
-  Alert,
-  Switch,
-  Tooltip,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { showNotification } from '@/lib/toast';
 import { IconInfoCircle, IconArrowRight, IconAlertTriangle } from '@tabler/icons-react';
 import {
   useImportVersion,
@@ -78,7 +79,7 @@ export function ConfigureStep() {
 
     // Validate form
     if (versionData?.data?.fileType === 'geopackage' && !selectedLayer) {
-      notifications.show({
+      showNotification({
         title: 'Layer required',
         message: 'Please select a layer from the GeoPackage file',
         color: 'red',
@@ -110,14 +111,14 @@ export function ConfigureStep() {
         setImportWizardStep('publish');
       }
 
-      notifications.show({
+      showNotification({
         title: 'Configuration saved',
         message: result.sourceExportId ? 'Starting validation...' : 'Validating...',
         color: 'blue',
       });
     } catch (error) {
       setImportHasReviewStep(true);
-      notifications.show({
+      showNotification({
         title: 'Configuration failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -127,7 +128,7 @@ export function ConfigureStep() {
 
   if (isLoadingVersion) {
     return (
-      <Stack align="center" justify="center" mih={200}>
+      <Stack align="center" justify="center" style={{ minHeight: 200 }}>
         <Loader />
         <Text c="dimmed">Loading version details...</Text>
       </Stack>
@@ -139,13 +140,16 @@ export function ConfigureStep() {
 
   return (
     <Stack gap="md">
-      <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-        Configure import settings. By default, only new and updated roads will be added.
-        Enable "Regional Refresh" to also deactivate roads not in the import file.
+      <Alert>
+        <IconInfoCircle size={16} />
+        <AlertDescription>
+          Configure import settings. By default, only new and updated roads will be added.
+          Enable "Regional Refresh" to also deactivate roads not in the import file.
+        </AlertDescription>
       </Alert>
 
       {/* File info */}
-      <Card withBorder padding="sm">
+      <div className="border rounded-md p-3">
         <Group justify="space-between">
           <Text size="sm" fw={500}>File:</Text>
           <Text size="sm">{version?.fileName}</Text>
@@ -160,121 +164,121 @@ export function ConfigureStep() {
             <Text size="sm">{version.featureCount.toLocaleString()}</Text>
           </Group>
         )}
-      </Card>
+      </div>
 
       {/* Layer selection (GeoPackage only) */}
       {isGeoPackage && (
-        <Select
-          label="Layer"
-          description="Select the layer containing road data"
-          placeholder={isLoadingLayers ? 'Loading layers...' : 'Select a layer'}
-          data={
-            layersData?.data?.map((l) => ({
-              value: l.name,
-              label: l.name,
-            })) ?? []
-          }
-          value={selectedLayer}
-          onChange={setSelectedLayer}
-          disabled={isLoadingLayers}
-          required
-        />
+        <div>
+          <Label className="mb-1 block">Layer *</Label>
+          <p className="text-xs text-muted-foreground mb-1">Select the layer containing road data</p>
+          <Select value={selectedLayer || ''} onValueChange={setSelectedLayer} disabled={isLoadingLayers}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={isLoadingLayers ? 'Loading layers...' : 'Select a layer'} />
+            </SelectTrigger>
+            <SelectContent>
+              {layersData?.data?.map((l) => (
+                <SelectItem key={l.name} value={l.name}>
+                  {l.name}
+                </SelectItem>
+              )) ?? []}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {/* Source CRS */}
-      <Select
-        label="Source Coordinate System"
-        description="Select the CRS of the import file. Will be transformed to EPSG:4326."
-        data={CRS_OPTIONS}
-        value={sourceCRS}
-        onChange={(v) => setSourceCRS(v || 'EPSG:4326')}
-      />
+      <div>
+        <Label className="mb-1 block">Source Coordinate System</Label>
+        <p className="text-xs text-muted-foreground mb-1">Select the CRS of the import file. Will be transformed to EPSG:4326.</p>
+        <Select value={sourceCRS} onValueChange={(v) => setSourceCRS(v || 'EPSG:4326')}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CRS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Default Data Source */}
-      <Select
-        label={
-          <Group gap={4}>
-            <Text size="sm" fw={500}>Default Data Source</Text>
-            <Tooltip
-              label={
-                <>
-                  <div style={{ marginBottom: 8 }}>
-                    Applied to features missing the dataSource property:
-                  </div>
-                  <div><strong>official_ledger</strong> - Official GIS data from government</div>
-                  <div><strong>manual</strong> - Data manually entered by users</div>
-                  <div><strong>osm_test</strong> - OpenStreetMap test data</div>
-                </>
-              }
-              multiline
-              w={300}
-              withArrow
-            >
-              <IconInfoCircle size={14} style={{ color: 'var(--mantine-color-dimmed)', cursor: 'help' }} />
-            </Tooltip>
-          </Group>
-        }
-        description="Applied to features missing the dataSource property"
-        data={DATA_SOURCE_OPTIONS}
-        value={defaultDataSource}
-        onChange={(v) => setDefaultDataSource(v || 'official_ledger')}
-      />
+      <div>
+        <div className="flex items-center gap-1 mb-1">
+          <Label>Default Data Source</Label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <IconInfoCircle size={14} className="text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[300px]">
+              <div className="mb-2">Applied to features missing the dataSource property:</div>
+              <div><strong>official_ledger</strong> - Official GIS data from government</div>
+              <div><strong>manual</strong> - Data manually entered by users</div>
+              <div><strong>osm_test</strong> - OpenStreetMap test data</div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <p className="text-xs text-muted-foreground mb-1">Applied to features missing the dataSource property</p>
+        <Select value={defaultDataSource} onValueChange={(v) => setDefaultDataSource(v || 'official_ledger')}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DATA_SOURCE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Regional Refresh Toggle */}
-      <Card withBorder padding="md">
-        <Group justify="space-between" align="flex-start">
+      <div className="border rounded-md p-4">
+        <Group justify="space-between" align="start">
           <div style={{ flex: 1 }}>
             <Text size="sm" fw={500}>Regional Refresh Mode</Text>
-            <Text size="xs" c="dimmed" mt={4}>
+            <Text size="xs" c="dimmed" mt="xs">
               Enable this only when your import file represents the complete source of truth
               for the geographic area it covers.
             </Text>
           </div>
           <Switch
             checked={regionalRefresh}
-            onChange={(e) => setRegionalRefresh(e.currentTarget.checked)}
-            size="md"
+            onCheckedChange={setRegionalRefresh}
           />
         </Group>
 
         {regionalRefresh ? (
-          <Alert
-            icon={<IconAlertTriangle size={16} />}
-            color="red"
-            variant="light"
-            mt="sm"
-          >
-            <Text size="xs" fw={500}>
-              Warning: Roads deleted from your import file will be REMOVED from database!
-            </Text>
-            <Text size="xs" mt={4}>
+          <Alert variant="destructive" className="mt-3">
+            <IconAlertTriangle size={16} />
+            <AlertTitle>Warning: Roads deleted from your import file will be REMOVED from database!</AlertTitle>
+            <AlertDescription>
               Any roads within the file's geographic area that are NOT in your import file will be
               marked as inactive. Make sure your import file contains ALL roads you want to keep.
-            </Text>
+            </AlertDescription>
           </Alert>
         ) : (
-          <Alert
-            icon={<IconInfoCircle size={16} />}
-            color="gray"
-            variant="light"
-            mt="sm"
-          >
-            <Text size="xs">
-              <Text span fw={500}>OFF:</Text> Only add new roads and update existing ones.
+          <Alert className="mt-3">
+            <IconInfoCircle size={16} />
+            <AlertDescription>
+              <span className="font-medium">OFF:</span> Only add new roads and update existing ones.
               Roads deleted from your import file will remain in database.
-            </Text>
+            </AlertDescription>
           </Alert>
         )}
-      </Card>
+      </div>
 
       {/* Continue button */}
       <Button
-        rightSection={<IconArrowRight size={16} />}
         onClick={handleConfigure}
-        loading={configureMutation.isPending || triggerValidationMutation.isPending}
-        fullWidth
+        disabled={configureMutation.isPending || triggerValidationMutation.isPending}
+        className="w-full"
       >
-        Validate Import
+        {configureMutation.isPending || triggerValidationMutation.isPending ? 'Configuring...' : 'Validate Import'}
+        <IconArrowRight size={16} className="ml-1" />
       </Button>
     </Stack>
   );

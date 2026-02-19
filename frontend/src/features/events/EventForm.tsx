@@ -1,19 +1,19 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Stack,
-  TextInput,
-  Select,
-  Button,
   Group,
   Text,
   Divider,
-  Alert,
-  ActionIcon,
-  Badge,
-} from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+} from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconAlertCircle, IconPolygon, IconLine, IconArrowBack, IconArrowForward, IconEraser, IconFocus2, IconRefresh } from '@tabler/icons-react';
-import { modals } from '@mantine/modals';
 import { useForm, Controller } from 'react-hook-form';
 import * as turf from '@turf/turf';
 // Phase 0: Road-Event linking disabled - Road editing is frozen
@@ -109,6 +109,8 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
     // Map navigation
     setFlyToGeometry,
   } = useUIStore();
+
+  const { openConfirmModal, openInfoModal } = useConfirmDialog();
 
   // Computed history state
   const canUndo = editHistory.length > 0;
@@ -230,7 +232,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
   // Handler for manual recalculation button
   const handleRecalculateGeometry = useCallback(() => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Recalculate Geometry',
       children: 'This will regenerate the event geometry based on the currently selected roads and find all roads that intersect with it. Continue?',
       labels: { confirm: 'Recalculate', cancel: 'Cancel' },
@@ -254,7 +256,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         }
       },
     });
-  }, [selectedAssetsWithGeometry, setDrawnFeatures, setCurrentDrawType, triggerDrawAction]);
+  }, [openConfirmModal, selectedAssetsWithGeometry, setDrawnFeatures, setCurrentDrawType, triggerDrawAction]);
 
   // Phase 1: Load event data immediately
   useEffect(() => {
@@ -710,7 +712,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
 
       // Phase 0: Geometry is required since road auto-generation is disabled
       if (!hasDrawnGeometry || !geometry) {
-        modals.open({
+        openInfoModal({
           title: 'Geometry Required',
           children: (
             <Text size="sm">
@@ -768,15 +770,13 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
             </Text>
             {eventId && eventData?.data?.geometrySource && (
               <Badge
-                size="xs"
-                color={eventData.data.geometrySource === 'manual' ? 'blue' : 'gray'}
-                variant="light"
+                variant={eventData.data.geometrySource === 'manual' ? 'default' : 'outline'}
+                className="text-[10px] cursor-help"
                 title={
                   eventData.data.geometrySource === 'manual'
                     ? 'This geometry was manually drawn'
                     : 'This geometry was auto-generated from roads. Roads will not auto-update unless you modify the geometry or click Recalculate.'
                 }
-                style={{ cursor: 'help' }}
               >
                 {eventData.data.geometrySource === 'manual' ? 'Manual' : 'Auto-generated'}
               </Badge>
@@ -792,25 +792,33 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               <Text size="xs" c="dimmed">
                 任意: このイベントに関連する資産を選択
               </Text>
-              <Group grow align="flex-end">
+              <Group grow align="end">
                 <Controller
                   name="refAssetType"
                   control={control}
                   render={({ field }) => (
-                    <Select
-                      label="タイプで絞り込み"
-                      placeholder="全て"
-                      data={ASSET_TYPE_OPTIONS}
-                      clearable
-                      size="xs"
-                      {...field}
-                      value={field.value ?? null}
-                      onChange={(val) => {
-                        field.onChange(val);
-                        // Clear asset selection when type changes
-                        setValue('refAssetId', null);
-                      }}
-                    />
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs">タイプで絞り込み</Label>
+                      <Select
+                        value={field.value ?? undefined}
+                        onValueChange={(val) => {
+                          field.onChange(val || null);
+                          // Clear asset selection when type changes
+                          setValue('refAssetId', null);
+                        }}
+                      >
+                        <SelectTrigger size="sm" className="w-full">
+                          <SelectValue placeholder="全て" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ASSET_TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 />
                 {watch('refAssetType') && (
@@ -825,42 +833,46 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               </Group>
             </Stack>
 
-            <Divider size="xs" />
+            <Divider />
 
             {/* Drawing controls row: Undo/Redo | Drawing tools | Clear All */}
-            <Group gap="xs" wrap="wrap" align="center">
+            <Group gap="xs" className="flex-wrap items-center">
               {/* Undo/Redo buttons - now unified for both drawing AND asset selection */}
-              <ActionIcon
-                variant="light"
-                size="sm"
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
                 disabled={!canUndo}
                 onClick={() => {
                   undoEdit();
                   triggerDrawAction('restore');
                 }}
                 title="Undo"
+                type="button"
               >
                 <IconArrowBack size={14} />
-              </ActionIcon>
-              <ActionIcon
-                variant="light"
-                size="sm"
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
                 disabled={!canRedo}
                 onClick={() => {
                   redoEdit();
                   triggerDrawAction('restore');
                 }}
                 title="Redo"
+                type="button"
               >
                 <IconArrowForward size={14} />
-              </ActionIcon>
+              </Button>
 
               {/* Drawing tool buttons */}
               <Button
-                variant={drawMode === 'polygon' ? 'filled' : 'light'}
-                color="cyan"
-                size="xs"
-                leftSection={<IconPolygon size={14} />}
+                variant={drawMode === 'polygon' ? 'default' : 'outline'}
+                size="sm"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white data-[active=false]:bg-transparent data-[active=false]:text-foreground data-[active=false]:border"
+                data-active={drawMode === 'polygon'}
                 onClick={() => {
                   // Force mode change even if already in polygon mode
                   // This allows switching from vertex editing (direct_select) to drawing new polygon
@@ -872,14 +884,16 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                   }
                 }}
                 disabled={isDrawingActive || currentDrawType === 'line'}
+                type="button"
               >
+                <IconPolygon size={14} />
                 Polygon
               </Button>
               <Button
-                variant={drawMode === 'line' ? 'filled' : 'light'}
-                color="cyan"
-                size="xs"
-                leftSection={<IconLine size={14} />}
+                variant={drawMode === 'line' ? 'default' : 'outline'}
+                size="sm"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white data-[active=false]:bg-transparent data-[active=false]:text-foreground data-[active=false]:border"
+                data-active={drawMode === 'line'}
                 onClick={() => {
                   // Force mode change even if already in line mode
                   // This allows switching from vertex editing (direct_select) to drawing new line
@@ -891,14 +905,17 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                   }
                 }}
                 disabled={isDrawingActive || currentDrawType === 'polygon'}
+                type="button"
               >
+                <IconLine size={14} />
                 Line
               </Button>
 
               {/* Zoom to geometry button */}
-              <ActionIcon
-                variant="light"
-                size="sm"
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
                 disabled={!drawnFeatures?.length}
                 onClick={() => {
                   if (drawnFeatures && drawnFeatures.length > 0) {
@@ -908,33 +925,34 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                     }
                   }
                 }}
-                title="定位到绘制区域"
+                title="Zoom to drawn area"
+                type="button"
               >
                 <IconFocus2 size={14} />
-              </ActionIcon>
+              </Button>
 
               {/* Recalculate button - show in EDIT mode for auto-generated geometry */}
               {eventId && eventData?.data?.geometrySource === 'auto' && (
                 <Button
-                  variant="light"
-                  color="blue"
-                  size="xs"
+                  variant="outline"
+                  size="sm"
                   onClick={handleRecalculateGeometry}
                   disabled={selectedRoadAssetIds.length === 0}
                   title="Regenerate geometry and selection from currently selected roads"
-                  leftSection={<IconRefresh size={14} />}
+                  type="button"
                 >
+                  <IconRefresh size={14} />
                   Recalculate
                 </Button>
               )}
 
               {/* Clear All button - clears geometry AND road assets */}
               <Button
-                variant="subtle"
-                color="red"
-                size="xs"
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
                 onClick={() => {
-                  modals.openConfirmModal({
+                  openConfirmModal({
                     title: 'Confirm Clear All',
                     children: (
                       <Text size="sm">
@@ -948,7 +966,7 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                 }}
                 disabled={!drawnFeatures?.length && selectedRoadAssetIds.length === 0}
                 title="Clear All"
-                px={8}
+                type="button"
               >
                 <IconEraser size={14} />
               </Button>
@@ -995,13 +1013,19 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               control={control}
               rules={{ required: 'Event name is required' }}
               render={({ field, fieldState }) => (
-                <TextInput
-                  label="Event Name"
-                  placeholder="Enter event name"
-                  required
-                  error={fieldState.error?.message}
-                  {...field}
-                />
+                <div className="flex flex-col gap-1">
+                  <Label>
+                    Event Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="Enter event name"
+                    {...field}
+                    className={fieldState.error ? 'border-destructive' : ''}
+                  />
+                  {fieldState.error && (
+                    <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                  )}
+                </div>
               )}
             />
 
@@ -1041,7 +1065,6 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
                     error={fieldState.error?.message}
                     value={field.value}
                     onChange={field.onChange}
-                    minDate={startDate || undefined}
                   />
                 )}
               />
@@ -1051,13 +1074,26 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               name="restrictionType"
               control={control}
               render={({ field }) => (
-                <Select
-                  label="Restriction Type"
-                  data={RESTRICTION_TYPES}
-                  value={field.value}
-                  onChange={(val) => field.onChange((val as RestrictionType) || 'partial')}
-                  required
-                />
+                <div className="flex flex-col gap-1">
+                  <Label>
+                    Restriction Type <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => field.onChange((val as RestrictionType) || 'partial')}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RESTRICTION_TYPES.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             />
 
@@ -1066,13 +1102,19 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               control={control}
               rules={{ required: 'Department is required' }}
               render={({ field, fieldState }) => (
-                <TextInput
-                  label="Department"
-                  placeholder="Enter department"
-                  required
-                  error={fieldState.error?.message}
-                  {...field}
-                />
+                <div className="flex flex-col gap-1">
+                  <Label>
+                    Department <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="Enter department"
+                    {...field}
+                    className={fieldState.error ? 'border-destructive' : ''}
+                  />
+                  {fieldState.error && (
+                    <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                  )}
+                </div>
               )}
             />
 
@@ -1080,11 +1122,13 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
               name="ward"
               control={control}
               render={({ field }) => (
-                <TextInput
-                  label="Ward"
-                  placeholder="Enter ward (optional)"
-                  {...field}
-                />
+                <div className="flex flex-col gap-1">
+                  <Label>Ward</Label>
+                  <Input
+                    placeholder="Enter ward (optional)"
+                    {...field}
+                  />
+                </div>
               )}
             />
           </Stack>
@@ -1093,16 +1137,19 @@ export function EventForm({ eventId, onClose }: EventFormProps) {
         <Divider />
 
         {(createEvent.error || updateEvent.error) && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red">
-            {(createEvent.error || updateEvent.error)?.message || 'An error occurred'}
+          <Alert variant="destructive">
+            <IconAlertCircle size={16} />
+            <AlertDescription>
+              {(createEvent.error || updateEvent.error)?.message || 'An error occurred'}
+            </AlertDescription>
           </Alert>
         )}
 
         <Group justify="flex-end">
-          <Button variant="default" onClick={onClose} disabled={isSubmitting} type="button">
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting} type="button">
             Cancel
           </Button>
-          <Button type="submit" loading={isSubmitting} disabled={!isValid}>
+          <Button type="submit" disabled={isSubmitting || !isValid}>
             {isEditing ? 'Update Event' : 'Create Event'}
           </Button>
         </Group>

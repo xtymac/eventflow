@@ -1,7 +1,11 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Stack, Text, Button, Group, Checkbox, Paper, Alert, Badge, Divider, Loader, Center } from '@mantine/core';
-import { modals } from '@mantine/modals';
-import { notifications } from '@mantine/notifications';
+import { Stack, Text, Group, Paper, Divider, Center, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { showNotification } from '@/lib/toast';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconPlus, IconEdit, IconTrashX, IconCheck, IconX, IconAlertCircle, IconClock } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useEvent, useEventIntersectingAssets, useCreateAsset, useUpdateAsset, useRetireAsset } from '../../hooks/useApi';
@@ -17,6 +21,8 @@ interface RoadUpdateModePanelProps {
 }
 
 export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelProps) {
+  const { openConfirmModal } = useConfirmDialog();
+
   const {
     roadUpdateSelectedAssetIds,
     toggleRoadUpdateAsset,
@@ -155,14 +161,14 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
     setIsSubmitting(true);
     try {
       await submitPendingChanges();
-      notifications.show({
+      showNotification({
         title: 'Changes Applied',
         message: `${pendingChanges.length} change${pendingChanges.length > 1 ? 's' : ''} applied successfully.`,
         color: 'green',
       });
       setPendingChanges([]); // Clear pending changes after successful submission
     } catch (error) {
-      notifications.show({
+      showNotification({
         title: 'Apply Failed',
         message: error instanceof Error ? error.message : 'Failed to apply changes',
         color: 'red',
@@ -173,7 +179,7 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
   };
 
   const handleCancel = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Exit Road Update Mode',
       children: (
         <Text size="sm">
@@ -221,18 +227,19 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
 
   if (!event) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red">
-        Event not found
+      <Alert variant="destructive">
+        <IconAlertCircle size={16} />
+        <AlertDescription>Event not found</AlertDescription>
       </Alert>
     );
   }
 
   const getRoadTypeBadgeColor = (roadType: string | null | undefined) => {
     switch (roadType) {
-      case 'arterial': return 'violet';
-      case 'collector': return 'cyan';
-      case 'local': return 'lime';
-      default: return 'gray';
+      case 'arterial': return 'bg-violet-100 text-violet-800';
+      case 'collector': return 'bg-cyan-100 text-cyan-800';
+      case 'local': return 'bg-lime-100 text-lime-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -247,27 +254,27 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
               Decision: {event.postEndDecision === 'permanent-change' ? 'Permanent Change' : event.postEndDecision}
             </Text>
           </div>
-          <Badge color="green" variant="light">Road Update Mode</Badge>
+          <Badge variant="secondary" className="bg-green-100 text-green-800">Road Update Mode</Badge>
         </Group>
       </Paper>
 
       {/* Create New Button */}
       <Button
-        fullWidth
-        variant="light"
-        color="teal"
-        leftSection={<IconPlus size={16} />}
+        variant="outline"
+        className="w-full"
         onClick={handleCreateNew}
       >
+        <IconPlus size={16} className="mr-2" />
         Create New Road Asset
       </Button>
 
-      <Divider label="Affected Assets" labelPosition="center" />
+      <Divider label="Affected Assets" />
 
       {/* Asset List */}
       {allAssets.length === 0 ? (
-        <Alert icon={<IconAlertCircle size={16} />} color="yellow">
-          No assets affected by this event.
+        <Alert>
+          <IconAlertCircle size={16} />
+          <AlertDescription>No assets affected by this event.</AlertDescription>
         </Alert>
       ) : (
         <Stack gap="xs">
@@ -280,27 +287,26 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
               }}
               p="xs"
               withBorder
+              className="cursor-pointer transition-colors"
               onMouseEnter={() => setHoveredAsset(asset.id)}
               onMouseLeave={() => setHoveredAsset(null)}
               style={{
-                cursor: 'pointer',
-                backgroundColor: hoveredAssetId === asset.id ? 'var(--mantine-color-cyan-0)' : undefined,
-                borderColor: hoveredAssetId === asset.id ? 'var(--mantine-color-cyan-5)' : undefined,
-                transition: 'background-color 0.15s, border-color 0.15s',
+                backgroundColor: hoveredAssetId === asset.id ? 'hsl(var(--accent))' : undefined,
+                borderColor: hoveredAssetId === asset.id ? 'hsl(var(--ring))' : undefined,
               }}
             >
-              <Group justify="space-between" wrap="nowrap">
-                <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+              <Group justify="space-between" className="flex-nowrap">
+                <Group gap="xs" className="flex-nowrap flex-1 min-w-0">
                   <Checkbox
                     checked={roadUpdateSelectedAssetIds.includes(asset.id)}
-                    onChange={() => toggleRoadUpdateAsset(asset.id)}
+                    onCheckedChange={() => toggleRoadUpdateAsset(asset.id)}
                   />
-                  <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="min-w-0 flex-1">
                     <Text size="sm" truncate>
                       {getRoadAssetLabel(asset)}
                     </Text>
                     <Group gap={4}>
-                      <Badge size="xs" color={getRoadTypeBadgeColor(asset.roadType)}>
+                      <Badge variant="secondary" className={`text-xs ${getRoadTypeBadgeColor(asset.roadType)}`}>
                         {asset.roadType || 'Unknown'}
                       </Badge>
                       {asset.lanes && (
@@ -309,22 +315,23 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
                     </Group>
                   </div>
                 </Group>
-                <Group gap={4} wrap="nowrap">
+                <Group gap={4} className="flex-nowrap">
                   <Button
-                    size="compact-xs"
-                    variant="light"
-                    leftSection={<IconEdit size={12} />}
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-xs px-2"
                     onClick={() => handleModify(asset.id)}
                   >
+                    <IconEdit size={12} className="mr-1" />
                     Modify
                   </Button>
                   <Button
-                    size="compact-xs"
-                    variant="light"
-                    color="red"
-                    leftSection={<IconTrashX size={12} />}
+                    size="sm"
+                    variant="destructive"
+                    className="h-6 text-xs px-2"
                     onClick={() => handleRetire(asset.id)}
                   >
+                    <IconTrashX size={12} className="mr-1" />
                     Retire
                   </Button>
                 </Group>
@@ -338,32 +345,30 @@ export function RoadUpdateModePanel({ eventId, onClose }: RoadUpdateModePanelPro
 
       {/* Pending Changes Summary */}
       {pendingChanges.length > 0 && (
-        <Alert icon={<IconClock size={16} />} color="blue" variant="light">
-          <Text size="sm">
+        <Alert>
+          <IconClock size={16} />
+          <AlertDescription>
             {pendingChanges.length} pending change{pendingChanges.length > 1 ? 's' : ''}
-          </Text>
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Action Buttons */}
       <Group justify="space-between">
         <Button
-          variant="subtle"
-          color="gray"
-          leftSection={<IconX size={16} />}
+          variant="ghost"
           onClick={handleCancel}
           disabled={isSubmitting}
         >
+          <IconX size={16} className="mr-2" />
           Cancel
         </Button>
         <Button
-          color="blue"
-          leftSection={<IconCheck size={16} />}
           onClick={handleApplyChanges}
-          loading={isSubmitting}
-          disabled={pendingChanges.length === 0}
+          disabled={pendingChanges.length === 0 || isSubmitting}
         >
-          Apply Changes
+          <IconCheck size={16} className="mr-2" />
+          {isSubmitting ? 'Applying...' : 'Apply Changes'}
         </Button>
       </Group>
 

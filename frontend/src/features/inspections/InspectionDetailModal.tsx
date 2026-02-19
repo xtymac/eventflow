@@ -1,18 +1,15 @@
+import { Stack, Text, Group, Paper, Center, Loader, Divider } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  Modal,
-  Stack,
-  Text,
-  Badge,
-  Group,
-  Button,
-  Paper,
-  Alert,
-  Loader,
-  Center,
-  Divider,
-} from '@mantine/core';
-import { modals } from '@mantine/modals';
-import { notifications } from '@mantine/notifications';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import { showNotification } from '@/lib/toast';
 import { IconEdit, IconTrash, IconAlertCircle, IconMapPin, IconCalendar } from '@tabler/icons-react';
 import { useInspection, useDeleteInspection, useEvent, useAsset } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
@@ -22,18 +19,11 @@ interface InspectionDetailModalProps {
   onClose: () => void;
 }
 
-function getResultBadgeColor(result: string) {
-  switch (result) {
-    case 'pass':
-      return 'green';
-    case 'fail':
-      return 'red';
-    case 'pending':
-      return 'yellow';
-    default:
-      return 'gray';
-  }
-}
+const resultBadgeColorMap: Record<string, string> = {
+  pass: 'bg-green-100 text-green-800',
+  fail: 'bg-red-100 text-red-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+};
 
 function getResultLabel(result: string) {
   switch (result) {
@@ -52,6 +42,7 @@ function getResultLabel(result: string) {
 
 export function InspectionDetailModal({ inspectionId, onClose }: InspectionDetailModalProps) {
   const { openInspectionForm } = useUIStore();
+  const { openConfirmModal } = useConfirmDialog();
 
   const { data: inspectionData, isLoading } = useInspection(inspectionId);
   const inspection = inspectionData?.data;
@@ -71,7 +62,7 @@ export function InspectionDetailModal({ inspectionId, onClose }: InspectionDetai
   };
 
   const handleDelete = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Delete Inspection',
       children: (
         <Text size="sm">
@@ -83,7 +74,7 @@ export function InspectionDetailModal({ inspectionId, onClose }: InspectionDetai
       onConfirm: () => {
         deleteInspection.mutate(inspectionId, {
           onSuccess: () => {
-            notifications.show({
+            showNotification({
               title: 'Inspection Deleted',
               message: 'Inspection record has been deleted.',
               color: 'green',
@@ -91,7 +82,7 @@ export function InspectionDetailModal({ inspectionId, onClose }: InspectionDetai
             onClose();
           },
           onError: (error) => {
-            notifications.show({
+            showNotification({
               title: 'Delete Failed',
               message: error instanceof Error ? error.message : 'Failed to delete inspection',
               color: 'red',
@@ -105,129 +96,138 @@ export function InspectionDetailModal({ inspectionId, onClose }: InspectionDetai
 
   if (isLoading) {
     return (
-      <Modal opened onClose={onClose} title="Inspection Details" centered zIndex={300}>
-        <Center h={200}>
-          <Loader size="lg" />
-        </Center>
-      </Modal>
+      <Dialog open onOpenChange={(v) => !v && onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inspection Details</DialogTitle>
+          </DialogHeader>
+          <Center h={200}>
+            <Loader size="lg" />
+          </Center>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   if (!inspection) {
     return (
-      <Modal opened onClose={onClose} title="Inspection Details" centered zIndex={300}>
-        <Alert icon={<IconAlertCircle size={16} />} color="red">
-          Inspection not found
-        </Alert>
-      </Modal>
+      <Dialog open onOpenChange={(v) => !v && onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inspection Details</DialogTitle>
+          </DialogHeader>
+          <Alert variant="destructive">
+            <IconAlertCircle size={16} />
+            <AlertDescription>Inspection not found</AlertDescription>
+          </Alert>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <Modal
-      opened
-      onClose={onClose}
-      title={
-        <Group gap="xs">
-          <Text fw={600}>Inspection Details</Text>
-          <Badge color={getResultBadgeColor(inspection.result)}>
-            {getResultLabel(inspection.result)}
-          </Badge>
-        </Group>
-      }
-      size="md"
-      centered
-      zIndex={300}
-    >
-      <Stack gap="md">
-        {/* Linked Entity */}
-        <Paper p="sm" withBorder>
-          <Text size="xs" c="dimmed" mb={4}>
-            Linked To
-          </Text>
-          {linkedEvent ? (
-            <div>
-              <Text size="sm" fw={500}>
-                Event: {linkedEvent.name}
-              </Text>
-              <Badge size="xs" mt={4}>
-                {linkedEvent.status}
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            <Group gap="xs">
+              <span>Inspection Details</span>
+              <Badge className={resultBadgeColorMap[inspection.result] || 'bg-gray-100 text-gray-800'}>
+                {getResultLabel(inspection.result)}
               </Badge>
-            </div>
-          ) : linkedAsset ? (
-            <div>
-              <Text size="sm" fw={500}>
-                Asset: {linkedAsset.displayName || linkedAsset.name || linkedAsset.ref || linkedAsset.id}
-              </Text>
-              <Badge size="xs" mt={4} color="violet">
-                {linkedAsset.roadType}
-              </Badge>
-            </div>
-          ) : (
-            <Text size="sm" c="dimmed">
-              No linked entity
-            </Text>
-          )}
-        </Paper>
-
-        <Divider />
-
-        {/* Date */}
-        <Group gap="xs">
-          <IconCalendar size={16} />
-          <Text size="sm">
-            <strong>Date:</strong> {new Date(inspection.inspectionDate).toLocaleDateString()}
-          </Text>
-        </Group>
-
-        {/* Location */}
-        <Group gap="xs">
-          <IconMapPin size={16} />
-          <Text size="sm">
-            <strong>Location:</strong>{' '}
-            {inspection.geometry
-              ? `${inspection.geometry.coordinates[0].toFixed(5)}, ${inspection.geometry.coordinates[1].toFixed(5)}`
-              : 'Not set'}
-          </Text>
-        </Group>
-
-        {/* Notes */}
-        {inspection.notes && (
+            </Group>
+          </DialogTitle>
+        </DialogHeader>
+        <Stack gap="md">
+          {/* Linked Entity */}
           <Paper p="sm" withBorder>
-            <Text size="xs" c="dimmed" mb={4}>
-              Notes
+            <Text size="xs" c="dimmed" mb="xs">
+              Linked To
             </Text>
-            <Text size="sm">{inspection.notes}</Text>
+            {linkedEvent ? (
+              <div>
+                <Text size="sm" fw={500}>
+                  Event: {linkedEvent.name}
+                </Text>
+                <Badge className="mt-1">
+                  {linkedEvent.status}
+                </Badge>
+              </div>
+            ) : linkedAsset ? (
+              <div>
+                <Text size="sm" fw={500}>
+                  Asset: {linkedAsset.displayName || linkedAsset.name || linkedAsset.ref || linkedAsset.id}
+                </Text>
+                <Badge variant="secondary" className="mt-1">
+                  {linkedAsset.roadType}
+                </Badge>
+              </div>
+            ) : (
+              <Text size="sm" c="dimmed">
+                No linked entity
+              </Text>
+            )}
           </Paper>
-        )}
 
-        {/* Created date */}
-        <Text size="xs" c="dimmed">
-          Created: {new Date(inspection.createdAt).toLocaleString()}
-        </Text>
+          <Divider />
 
-        <Divider />
+          {/* Date */}
+          <Group gap="xs">
+            <IconCalendar size={16} />
+            <Text size="sm">
+              <strong>Date:</strong> {new Date(inspection.inspectionDate).toLocaleDateString()}
+            </Text>
+          </Group>
 
-        {/* Action Buttons */}
-        <Group justify="flex-end">
-          <Button
-            variant="light"
-            leftSection={<IconEdit size={14} />}
-            onClick={handleEdit}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="light"
-            color="red"
-            leftSection={<IconTrash size={14} />}
-            onClick={handleDelete}
-            loading={deleteInspection.isPending}
-          >
-            Delete
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+          {/* Location */}
+          <Group gap="xs">
+            <IconMapPin size={16} />
+            <Text size="sm">
+              <strong>Location:</strong>{' '}
+              {inspection.geometry
+                ? `${inspection.geometry.coordinates[0].toFixed(5)}, ${inspection.geometry.coordinates[1].toFixed(5)}`
+                : 'Not set'}
+            </Text>
+          </Group>
+
+          {/* Notes */}
+          {inspection.notes && (
+            <Paper p="sm" withBorder>
+              <Text size="xs" c="dimmed" mb="xs">
+                Notes
+              </Text>
+              <Text size="sm">{inspection.notes}</Text>
+            </Paper>
+          )}
+
+          {/* Created date */}
+          <Text size="xs" c="dimmed">
+            Created: {new Date(inspection.createdAt).toLocaleString()}
+          </Text>
+
+          <Divider />
+
+          {/* Action Buttons */}
+          <Group justify="flex-end">
+            <Button
+              variant="outline"
+              onClick={handleEdit}
+            >
+              <IconEdit size={14} className="mr-1" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50"
+              onClick={handleDelete}
+              disabled={deleteInspection.isPending}
+            >
+              <IconTrash size={14} className="mr-1" />
+              {deleteInspection.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </Group>
+        </Stack>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,0 +1,182 @@
+/* Tailwind v4: selective imports to avoid preflight conflict with Mantine */
+/* Re-enable full @import "tailwindcss" in Phase 5 after Mantine removal */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn/ui base styles — border-border disabled during Mantine coexistence */
+@layer base {
+  /* Disabled: * { @apply border-border outline-ring/50; } */
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* shadcn/ui design tokens (oklch from CLI) */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #fdfdfd;
+  --sidebar-foreground: #404040;
+  --sidebar-primary: #215042;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #215042;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #d4d4d4;
+
+  /* Bridge variables: Mantine color tokens -> actual values */
+  /* These keep existing --mantine-color-* references working during migration */
+  --mantine-color-blue-0: #e7f5ff;
+  --mantine-color-blue-1: #d0ebff;
+  --mantine-color-blue-2: #a5d8ff;
+  --mantine-color-blue-3: #74c0fc;
+  --mantine-color-blue-4: #4dabf7;
+  --mantine-color-blue-5: #339af0;
+  --mantine-color-blue-6: #228be6;
+  --mantine-color-blue-7: #1c7ed6;
+  --mantine-color-blue-8: #1971c2;
+  --mantine-color-blue-9: #1864ab;
+  --mantine-color-blue-filled: #228be6;
+  --mantine-color-blue-light: rgba(34, 139, 230, 0.1);
+  --mantine-color-blue-light-color: #228be6;
+  --mantine-color-gray-0: #f8f9fa;
+  --mantine-color-gray-1: #f1f3f5;
+  --mantine-color-gray-2: #e9ecef;
+  --mantine-color-gray-3: #dee2e6;
+  --mantine-color-gray-4: #ced4da;
+  --mantine-color-gray-5: #adb5bd;
+  --mantine-color-gray-6: #868e96;
+  --mantine-color-gray-7: #495057;
+  --mantine-color-gray-8: #343a40;
+  --mantine-color-gray-9: #212529;
+  --mantine-color-red-6: #fa5252;
+  --mantine-color-red-7: #f03e3e;
+  --mantine-color-green-6: #40c057;
+  --mantine-color-green-7: #37b24d;
+  --mantine-color-orange-6: #fd7e14;
+  --mantine-color-yellow-6: #fab005;
+  --mantine-color-dark-0: #c1c2c5;
+  --mantine-color-dark-1: #a6a7ab;
+  --mantine-color-dark-2: #909296;
+  --mantine-color-dark-3: #5c5f66;
+  --mantine-color-dark-4: #373a40;
+  --mantine-color-dark-5: #2c2e33;
+  --mantine-color-dark-6: #25262b;
+  --mantine-color-dark-7: #1a1b1e;
+  --mantine-color-body: #ffffff;
+  --mantine-color-text: #000000;
+  --mantine-color-dimmed: #868e96;
+  --mantine-color-white: #ffffff;
+  --mantine-color-default-border: #dee2e6;
+  --mantine-radius-xs: 0.125rem;
+  --mantine-radius-sm: 0.25rem;
+  --mantine-radius-md: 0.5rem;
+  --mantine-radius-lg: 1rem;
+  --mantine-radius-xl: 2rem;
+  --mantine-spacing-xs: 0.625rem;
+  --mantine-spacing-sm: 0.75rem;
+  --mantine-spacing-md: 1rem;
+  --mantine-spacing-lg: 1.25rem;
+  --mantine-spacing-xl: 2rem;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}

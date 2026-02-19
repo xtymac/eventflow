@@ -3,18 +3,17 @@ import {
   Stack,
   Group,
   Text,
-  TextInput,
-  Select,
-  Checkbox,
-  Badge,
-  ActionIcon,
-  Loader,
   Box,
-  ScrollArea,
-  Collapse,
-  Button,
-} from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+  Loader,
+} from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useDebounce } from 'use-debounce';
 import { IconSearch, IconX, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useInfiniteAssets } from '../../hooks/useInfiniteAssets';
@@ -79,7 +78,7 @@ export function AdvancedRoadAssetSelector({
   const { ward, roadType, search } = assetSelectorFilters;
 
   // Debounced search
-  const [debouncedSearch] = useDebouncedValue(search, 300);
+  const [debouncedSearch] = useDebounce(search, 300);
 
   // Wards data
   const { data: wardsData, isLoading: wardsLoading } = useWards();
@@ -236,9 +235,9 @@ export function AdvancedRoadAssetSelector({
           {label}
           {required && <span style={{ color: 'red' }}> *</span>}
         </Text>
-        <Group justify="center" py="md">
+        <div className="flex items-center justify-center py-4">
           <Loader size="sm" />
-        </Group>
+        </div>
       </Stack>
     );
   }
@@ -247,7 +246,7 @@ export function AdvancedRoadAssetSelector({
     <Stack gap="xs">
       {/* Selected Assets Section */}
       <Box>
-        <Group justify="space-between" mb={4}>
+        <Group justify="space-between" mb="xs">
           <Group gap="xs">
             <Text size="sm" fw={500}>
               {label}
@@ -255,7 +254,7 @@ export function AdvancedRoadAssetSelector({
             </Text>
             {isLoadingIntersecting && (
               <Group gap={4}>
-                <Loader size={12} />
+                <Loader size="xs" />
                 <Text size="xs" c="dimmed">
                   Loading intersecting roads...
                 </Text>
@@ -264,9 +263,9 @@ export function AdvancedRoadAssetSelector({
           </Group>
           {value.length > 0 && (
             <Button
-              variant="subtle"
-              size="compact-xs"
-              c="red"
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-700 h-6 px-1.5 text-xs"
               onClick={handleClearAll}
             >
               Clear all
@@ -276,11 +275,10 @@ export function AdvancedRoadAssetSelector({
 
         {value.length > 0 && (
           <>
-            <Group
-              gap={4}
-              style={{ cursor: 'pointer' }}
+            <button
+              className="flex items-center gap-1 cursor-pointer mb-1"
               onClick={() => setSelectedExpanded((v) => !v)}
-              mb={4}
+              type="button"
             >
               {selectedExpanded ? (
                 <IconChevronUp size={14} />
@@ -290,96 +288,106 @@ export function AdvancedRoadAssetSelector({
               <Text size="xs" c="dimmed">
                 {selectedExpanded ? 'Hide' : 'Show'} selected
               </Text>
-            </Group>
-            <Collapse in={selectedExpanded}>
-              <Group gap={6} wrap="wrap" mb="xs" style={{ padding: '4px', margin: '-4px' }}>
-                {value.map((id) => (
-                  <Badge
-                    key={id}
-                    variant="light"
-                    color="blue"
-                    size="sm"
-                    rightSection={
-                      <ActionIcon
-                        size="xs"
-                        variant="transparent"
+            </button>
+            <Collapsible open={selectedExpanded}>
+              <CollapsibleContent>
+                <Group gap="xs" className="flex-wrap mb-1.5 p-1 -m-1">
+                  {value.map((id) => (
+                    <Badge
+                      key={id}
+                      variant="secondary"
+                      className="cursor-pointer pr-1 transition-all"
+                      style={{
+                        transform: hoveredBadgeId === id ? 'scale(1.03)' : 'scale(1)',
+                        boxShadow: hoveredBadgeId === id ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
+                      }}
+                      onClick={() => handleFlyToAsset(id)}
+                      onMouseEnter={() => {
+                        setHoveredBadgeId(id);
+                        setHoveredAsset(id);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredBadgeId(null);
+                        setHoveredAsset(null);
+                      }}
+                    >
+                      {getSelectedLabel(id)}
+                      <button
+                        className="ml-1 p-0 bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveSelected(id);
                         }}
+                        type="button"
                       >
                         <IconX size={12} />
-                      </ActionIcon>
-                    }
-                    style={{
-                      paddingRight: 4,
-                      cursor: 'pointer',
-                      transition: 'all 0.1s ease',
-                      transform: hoveredBadgeId === id ? 'scale(1.03)' : 'scale(1)',
-                      boxShadow: hoveredBadgeId === id ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
-                    }}
-                    onClick={() => handleFlyToAsset(id)}
-                    onMouseEnter={() => {
-                      setHoveredBadgeId(id);
-                      setHoveredAsset(id);
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredBadgeId(null);
-                      setHoveredAsset(null);
-                    }}
-                  >
-                    {getSelectedLabel(id)}
-                  </Badge>
-                ))}
-              </Group>
-            </Collapse>
+                      </button>
+                    </Badge>
+                  ))}
+                </Group>
+              </CollapsibleContent>
+            </Collapsible>
           </>
         )}
       </Box>
 
       {/* Filter Panel */}
       <Group grow gap="xs">
-        <Select
-          placeholder="All wards"
-          data={wardOptions}
-          value={ward}
-          onChange={(v) => setAssetSelectorFilter('ward', v)}
-          clearable
-          size="xs"
-          leftSection={<Text size="xs" c="dimmed">Ward:</Text>}
-          leftSectionWidth={45}
-        />
-        <Select
-          placeholder="All types"
-          data={ROAD_TYPE_OPTIONS}
-          value={roadType}
-          onChange={(v) => setAssetSelectorFilter('roadType', v)}
-          clearable
-          size="xs"
-          leftSection={<Text size="xs" c="dimmed">Type:</Text>}
-          leftSectionWidth={40}
-        />
+        <div className="flex flex-col gap-0.5">
+          <Select
+            value={ward || undefined}
+            onValueChange={(v) => setAssetSelectorFilter('ward', v || null)}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue placeholder="All wards" />
+            </SelectTrigger>
+            <SelectContent>
+              {wardOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <Select
+            value={roadType || undefined}
+            onValueChange={(v) => setAssetSelectorFilter('roadType', v || null)}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              {ROAD_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Group>
 
       {/* Search Input */}
-      <TextInput
-        placeholder="Search by name or ID..."
-        size="xs"
-        leftSection={<IconSearch size={14} />}
-        value={search}
-        onChange={(e) => setAssetSelectorFilter('search', e.currentTarget.value)}
-        rightSection={
-          search ? (
-            <ActionIcon
-              size="xs"
-              variant="transparent"
-              onClick={() => setAssetSelectorFilter('search', '')}
-            >
-              <IconX size={12} />
-            </ActionIcon>
-          ) : null
-        }
-      />
+      <div className="relative">
+        <IconSearch size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search by name or ID..."
+          className="h-8 text-xs pl-7 pr-7"
+          value={search}
+          onChange={(e) => setAssetSelectorFilter('search', e.currentTarget.value)}
+        />
+        {search && (
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer"
+            onClick={() => setAssetSelectorFilter('search', '')}
+            type="button"
+          >
+            <IconX size={12} />
+          </button>
+        )}
+      </div>
 
       {/* Error message */}
       {error && (
@@ -390,25 +398,46 @@ export function AdvancedRoadAssetSelector({
 
       {/* Virtual List */}
       <ScrollArea
-        h={250}
-        viewportRef={scrollRef}
-        type="auto"
-        style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 4 }}
+        className="h-[250px] border rounded"
       >
-        <Box
-          style={{
-            height: virtualizer.getTotalSize(),
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const isLoaderRow = virtualRow.index >= allAssets.length;
+        <div ref={scrollRef} className="h-full overflow-auto">
+          <div
+            style={{
+              height: virtualizer.getTotalSize(),
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const isLoaderRow = virtualRow.index >= allAssets.length;
 
-            if (isLoaderRow) {
+              if (isLoaderRow) {
+                return (
+                  <div
+                    key="loader"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: ROW_HEIGHT,
+                      transform: `translateY(${virtualRow.start}px)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Loader size="xs" />
+                  </div>
+                );
+              }
+
+              const asset = allAssets[virtualRow.index];
+              const isSelected = selectedSet.has(asset.id);
+
               return (
-                <Box
-                  key="loader"
+                <div
+                  key={asset.id}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -418,73 +447,38 @@ export function AdvancedRoadAssetSelector({
                     transform: `translateY(${virtualRow.start}px)`,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    padding: '0 8px',
+                    cursor: 'pointer',
+                    backgroundColor: isSelected
+                      ? 'hsl(var(--accent))'
+                      : 'transparent',
                   }}
+                  onClick={() => handleToggleAsset(asset)}
+                  onMouseEnter={() => setHoveredAsset(asset.id)}
+                  onMouseLeave={() => setHoveredAsset(null)}
                 >
-                  <Loader size="xs" />
-                </Box>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {}}
+                    className="mr-2 pointer-events-none"
+                  />
+                  <div className="flex-1 overflow-hidden">
+                    <p
+                      className="text-sm whitespace-nowrap overflow-hidden text-ellipsis"
+                    >
+                      {getRoadAssetLabel(asset)}
+                    </p>
+                    <p
+                      className="text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis"
+                    >
+                      {asset.ward || 'No ward'} &middot; {asset.roadType}
+                    </p>
+                  </div>
+                </div>
               );
-            }
-
-            const asset = allAssets[virtualRow.index];
-            const isSelected = selectedSet.has(asset.id);
-
-            return (
-              <Box
-                key={asset.id}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: ROW_HEIGHT,
-                  transform: `translateY(${virtualRow.start}px)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 8px',
-                  cursor: 'pointer',
-                  backgroundColor: isSelected
-                    ? 'var(--mantine-color-blue-0)'
-                    : 'transparent',
-                }}
-                onClick={() => handleToggleAsset(asset)}
-                onMouseEnter={() => setHoveredAsset(asset.id)}
-                onMouseLeave={() => setHoveredAsset(null)}
-              >
-                <Checkbox
-                  checked={isSelected}
-                  onChange={() => {}}
-                  size="xs"
-                  mr="xs"
-                  style={{ pointerEvents: 'none' }}
-                />
-                <Box style={{ flex: 1, overflow: 'hidden' }}>
-                  <Text
-                    size="sm"
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {getRoadAssetLabel(asset)}
-                  </Text>
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {asset.ward || 'No ward'} · {asset.roadType}
-                  </Text>
-                </Box>
-              </Box>
-            );
-          })}
-        </Box>
+            })}
+          </div>
+        </div>
       </ScrollArea>
 
       {/* Loading indicator */}

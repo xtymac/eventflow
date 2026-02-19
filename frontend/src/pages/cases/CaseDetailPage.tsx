@@ -1,20 +1,24 @@
 import { useMemo } from 'react';
+import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Box,
-  Breadcrumbs,
-  Anchor,
-  Text,
-  Group,
-  Paper,
-  SimpleGrid,
-  Badge,
-  Button,
-  ScrollArea,
-  Stack,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import {
   Table,
-  Image,
-  NavLink as MantineNavLink,
-} from '@mantine/core';
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { IconPhoto, IconCheck, IconArrowBack, IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
@@ -24,13 +28,13 @@ import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
 import { getDummyEventParkId } from '../../data/dummyEvents';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  pending_review: { label: '提出済', color: 'blue' },
-  planned: { label: '差戻', color: 'orange' },
-  active: { label: '対応中', color: 'cyan' },
-  closed: { label: '確認済', color: 'green' },
-  archived: { label: 'アーカイブ', color: 'gray' },
-  cancelled: { label: 'キャンセル', color: 'red' },
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  pending_review: { label: '提出済', className: 'bg-blue-100 text-blue-800' },
+  planned: { label: '差戻', className: 'bg-orange-100 text-orange-800' },
+  active: { label: '対応中', className: 'bg-cyan-100 text-cyan-800' },
+  closed: { label: '確認済', className: 'bg-green-100 text-green-800' },
+  archived: { label: 'アーカイブ', className: 'bg-gray-100 text-gray-800' },
+  cancelled: { label: 'キャンセル', className: 'bg-red-100 text-red-800' },
 };
 
 const INSPECTION_TYPE_LABELS: Record<string, string> = {
@@ -38,7 +42,7 @@ const INSPECTION_TYPE_LABELS: Record<string, string> = {
 };
 
 const CONDITION_COLORS: Record<string, string> = {
-  A: 'green', B: 'yellow', C: 'orange', D: 'red', S: 'red',
+  A: 'bg-green-600 text-white', B: 'bg-yellow-500 text-white', C: 'bg-orange-500 text-white', D: 'bg-red-600 text-white', S: 'bg-red-600 text-white',
 };
 
 const RESULT_LABELS: Record<string, string> = {
@@ -85,7 +89,7 @@ export function CaseDetailPage() {
   }, [allData]);
 
   const event = eventData?.data;
-  const statusInfo = event ? STATUS_MAP[event.status] || { label: event.status, color: 'gray' } : null;
+  const statusInfo = event ? STATUS_MAP[event.status] || { label: event.status, className: 'bg-gray-100 text-gray-800' } : null;
   const inspections = inspectionsData?.data || [];
 
   // Fetch parent park polygon for MiniMap (same approach as FacilityDetailPage)
@@ -96,7 +100,7 @@ export function CaseDetailPage() {
   // Single marker at park centroid (same as FacilityDetailPage for dummy facilities)
   const facilityMarker = (() => {
     if (parkGeometry) {
-      const c = turf.centroid({ type: 'Feature', properties: {}, geometry: parkGeometry } as turf.helpers.Feature).geometry.coordinates;
+      const c = turf.centroid({ type: 'Feature', properties: {}, geometry: parkGeometry } as any).geometry.coordinates;
       return [{ lng: c[0], lat: c[1], color: '#e03131' }];
     }
     if (event?.geometry?.type === 'Point') {
@@ -112,62 +116,70 @@ export function CaseDetailPage() {
   return (
     <Box style={{ display: 'flex', height: '100%' }}>
       <Box
-        w={220}
-        style={{ borderRight: '1px solid var(--mantine-color-gray-3)', flexShrink: 0 }}
+        style={{ width: 220, borderRight: '1px solid #dee2e6', flexShrink: 0 }}
         p="sm"
       >
         <Stack gap={2}>
-          <MantineNavLink
-            label={`未確認 (${counts.pending_review})`}
-            leftSection={<IconAlertCircle size={16} />}
+          <Button
+            variant="ghost"
+            className="justify-start w-full"
             onClick={() => navigate('/cases')}
-            variant="filled"
-            color="blue"
-          />
-          <MantineNavLink
-            label={`差戻 (${counts.planned})`}
-            leftSection={<IconArrowBack size={16} />}
+          >
+            <IconAlertCircle size={16} className="mr-2" />
+            未確認 ({counts.pending_review})
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start w-full"
             onClick={() => navigate('/cases')}
-            variant="filled"
-            color="orange"
-          />
-          <MantineNavLink
-            label={`確認済 (${counts.closed})`}
-            leftSection={<IconCircleCheck size={16} />}
+          >
+            <IconArrowBack size={16} className="mr-2" />
+            差戻 ({counts.planned})
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start w-full"
             onClick={() => navigate('/cases')}
-            variant="filled"
-            color="green"
-          />
+          >
+            <IconCircleCheck size={16} className="mr-2" />
+            確認済 ({counts.closed})
+          </Button>
         </Stack>
       </Box>
-      <ScrollArea style={{ flex: 1 }} h="calc(100vh - 60px)">
-      <Box p="lg" maw={1200} mx="auto">
+      <ScrollArea style={{ flex: 1, height: 'calc(100vh - 60px)' }}>
+      <Box p="lg" style={{ maxWidth: 1200, marginLeft: 'auto', marginRight: 'auto' }}>
         {/* Breadcrumb */}
-        <Breadcrumbs mb="md">
-          <Anchor
-            size="sm"
-            onClick={() => {
-              if (location.key !== 'default') {
-                navigate(-1);
-              } else {
-                navigate(breadcrumbTo);
-              }
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            {breadcrumbLabel}
-          </Anchor>
-          <Text size="sm">{event?.name || id?.slice(0, 8) || '読み込み中...'}</Text>
-        </Breadcrumbs>
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                onClick={() => {
+                  if (location.key !== 'default') {
+                    navigate(-1);
+                  } else {
+                    navigate(breadcrumbTo);
+                  }
+                }}
+                className="cursor-pointer"
+              >
+                {breadcrumbLabel}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{event?.name || id?.slice(0, 8) || '読み込み中...'}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <PageState loading={isLoading} error={isError} empty={!event} emptyMessage="案件が見つかりません">
           {event && statusInfo && (
             <Stack gap="lg">
               {/* 施設情報 - 3 column layout */}
-              <Paper withBorder p="md" radius="md">
+              <Paper>
                 <Text fw={600} mb="sm">施設情報</Text>
                 <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-                  {/* Col 1: Map — park polygon + facility marker (same as FacilityDetailPage) */}
+                  {/* Col 1: Map */}
                   <div>
                     <MiniMap
                       key={`${id}-${parkGeometry ? 'park' : 'evt'}`}
@@ -185,7 +197,7 @@ export function CaseDetailPage() {
                     <InfoRow
                       label="ステータス"
                       value={
-                        <Badge color={statusInfo.color} variant="light" size="sm">
+                        <Badge variant="secondary" className={statusInfo.className}>
                           {statusInfo.label}
                         </Badge>
                       }
@@ -205,122 +217,129 @@ export function CaseDetailPage() {
                   </div>
 
                   {/* Col 3: Action buttons */}
-                  <Stack gap="sm" justify="flex-start">
+                  <Stack gap="sm" style={{ justifyContent: 'flex-start' }}>
                     {hasRole(['admin']) && event.status === 'pending_review' && (
                       <>
                         <Button
-                          color="green"
-                          leftSection={<IconCheck size={16} />}
-                          variant="filled"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => {/* placeholder */}}
                         >
+                          <IconCheck size={16} className="mr-2" />
                           確認
                         </Button>
                         <Button
-                          color="orange"
-                          leftSection={<IconArrowBack size={16} />}
-                          variant="light"
+                          variant="outline"
+                          className="border-orange-400 text-orange-600 hover:bg-orange-50"
                           onClick={() => {/* placeholder */}}
                         >
+                          <IconArrowBack size={16} className="mr-2" />
                           差戻
                         </Button>
                       </>
                     )}
-                    <Button variant="default" disabled>Action</Button>
-                    <Button variant="default" disabled>Action</Button>
+                    <Button variant="outline" disabled>Action</Button>
+                    <Button variant="outline" disabled>Action</Button>
                   </Stack>
                 </SimpleGrid>
               </Paper>
 
               {/* 点検情報 - Table layout */}
-              <Paper withBorder p="md" radius="md">
+              <Paper>
                 <Group justify="space-between" mb="sm">
                   <Text fw={600}>点検情報</Text>
-                  <Badge variant="light">{inspections.length} 件</Badge>
+                  <Badge variant="outline">{inspections.length} 件</Badge>
                 </Group>
 
                 {inspections.length > 0 ? (
-                  <Table striped highlightOnHover withTableBorder>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th w={120}>点検日</Table.Th>
-                        <Table.Th w={80}>種別</Table.Th>
-                        <Table.Th w={80}>結果</Table.Th>
-                        <Table.Th w={60}>評価</Table.Th>
-                        <Table.Th>点検者</Table.Th>
-                        <Table.Th>所見</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead style={{ width: 120 }}>点検日</TableHead>
+                        <TableHead style={{ width: 80 }}>種別</TableHead>
+                        <TableHead style={{ width: 80 }}>結果</TableHead>
+                        <TableHead style={{ width: 60 }}>評価</TableHead>
+                        <TableHead>点検者</TableHead>
+                        <TableHead>所見</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {inspections.map((insp) => (
-                        <Table.Tr
+                        <TableRow
                           key={insp.id}
                           onClick={() => navigate(`/inspections/${insp.id}`)}
                           style={{ cursor: 'pointer' }}
                         >
-                          <Table.Td>
+                          <TableCell>
                             {insp.inspectionDate
                               ? new Date(insp.inspectionDate).toLocaleDateString('ja-JP')
                               : '—'}
-                          </Table.Td>
-                          <Table.Td>
+                          </TableCell>
+                          <TableCell>
                             {insp.inspectionType
                               ? INSPECTION_TYPE_LABELS[insp.inspectionType] || insp.inspectionType
                               : '—'}
-                          </Table.Td>
-                          <Table.Td>
+                          </TableCell>
+                          <TableCell>
                             <Badge
-                              color={insp.result === 'pass' ? 'green' : insp.result === 'fail' ? 'red' : 'gray'}
-                              variant="light"
-                              size="sm"
+                              variant="secondary"
+                              className={
+                                insp.result === 'pass' ? 'bg-green-100 text-green-800' :
+                                insp.result === 'fail' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }
                             >
                               {RESULT_LABELS[insp.result] || insp.result || '—'}
                             </Badge>
-                          </Table.Td>
-                          <Table.Td>
+                          </TableCell>
+                          <TableCell>
                             {insp.conditionGrade ? (
                               <Badge
-                                color={CONDITION_COLORS[insp.conditionGrade] || 'gray'}
-                                variant="filled"
-                                size="sm"
+                                variant="secondary"
+                                className={CONDITION_COLORS[insp.conditionGrade] || 'bg-gray-100 text-gray-800'}
                               >
                                 {insp.conditionGrade}
                               </Badge>
                             ) : (
                               '—'
                             )}
-                          </Table.Td>
-                          <Table.Td>{insp.inspector || '—'}</Table.Td>
-                          <Table.Td>
-                            <Text size="xs" lineClamp={1}>
+                          </TableCell>
+                          <TableCell>{insp.inspector || '—'}</TableCell>
+                          <TableCell>
+                            <Text size="xs" className="line-clamp-1">
                               {insp.notes || insp.findings || '—'}
                             </Text>
-                          </Table.Td>
-                        </Table.Tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </Table.Tbody>
+                    </TableBody>
                   </Table>
                 ) : (
-                  <Text c="dimmed" size="sm" ta="center" py="xl">
+                  <Text c="dimmed" size="sm" ta="center" className="py-6">
                     点検データはありません
                   </Text>
                 )}
               </Paper>
 
               {/* 写真 */}
-              <Paper withBorder p="md" radius="md">
+              <Paper>
                 <Text fw={600} mb="sm">写真</Text>
                 {allPhotos.length > 0 ? (
                   <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
                     {allPhotos.map((url, i) => (
-                      <Image key={i} src={url} radius="md" h={150} fit="cover" />
+                      <img
+                        key={i}
+                        src={url}
+                        className="rounded-md object-cover"
+                        style={{ height: 150, width: '100%' }}
+                        alt=""
+                      />
                     ))}
                   </SimpleGrid>
                 ) : (
-                  <Group gap="md" py="xl" justify="center">
-                    <Paper withBorder p="xl" radius="md" style={{ textAlign: 'center' }}>
-                      <IconPhoto size={48} color="var(--mantine-color-gray-4)" />
-                      <Text c="dimmed" size="sm" mt="xs">写真なし</Text>
+                  <Group gap="md" className="py-6" justify="center">
+                    <Paper className="text-center p-6">
+                      <IconPhoto size={48} color="#adb5bd" />
+                      <Text c="dimmed" size="sm" className="mt-2">写真なし</Text>
                     </Paper>
                   </Group>
                 )}

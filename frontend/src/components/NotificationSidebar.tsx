@@ -1,4 +1,8 @@
-import { Drawer, Stack, Group, Text, Badge, Button, ScrollArea, Paper, Loader } from '@mantine/core';
+import { Stack, Text, Group, Loader } from '@/components/shims';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { IconTrash, IconRoad } from '@tabler/icons-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -9,11 +13,17 @@ import type { Geometry } from 'geojson';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-const EDIT_TYPE_COLORS = {
-  create: 'green',
-  update: 'blue',
-  delete: 'red',
-} as const;
+const EDIT_TYPE_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  create: 'default',
+  update: 'secondary',
+  delete: 'destructive',
+};
+
+const EDIT_TYPE_BORDER_COLORS: Record<string, string> = {
+  create: '#16a34a',
+  update: '#2563eb',
+  delete: '#dc2626',
+};
 
 export function NotificationSidebar() {
   const { edits, isLoading } = useNotifications();
@@ -130,84 +140,78 @@ export function NotificationSidebar() {
   const unreadEdits = edits.filter((e) => !viewedEditIds.includes(e.id));
 
   return (
-    <Drawer
-      opened={isSidebarOpen}
-      onClose={closeSidebar}
-      position="right"
-      title={
-        <Group gap="xs">
-          <IconRoad size={20} />
-          <Text fw={600}>Road Edit Notifications</Text>
-          {isLoading && <Loader size="xs" />}
-        </Group>
-      }
-      size="md"
-    >
-      <Stack gap="sm">
-        {unreadEdits.length > 0 && (
-          <Button
-            variant="light"
-            color="gray"
-            size="xs"
-            leftSection={<IconTrash size={14} />}
-            onClick={() => markAllAsViewed(unreadEdits.map((e) => e.id))}
-          >
-            Clear all
-          </Button>
-        )}
+    <Sheet open={isSidebarOpen} onOpenChange={(open) => { if (!open) closeSidebar(); }}>
+      <SheetContent side="right" className="w-[400px] sm:w-[400px]">
+        <SheetHeader>
+          <SheetTitle>
+            <Group gap="xs">
+              <IconRoad size={20} />
+              <span>Road Edit Notifications</span>
+              {isLoading && <Loader size="xs" />}
+            </Group>
+          </SheetTitle>
+        </SheetHeader>
 
-        <ScrollArea.Autosize mah="calc(100vh - 150px)" offsetScrollbars>
-          <Stack gap="xs">
-            {unreadEdits.length === 0 ? (
-              <Text size="sm" c="dimmed" ta="center" py="xl">
-                No new notifications
-              </Text>
-            ) : (
-              unreadEdits.map((edit) => {
-                const color = EDIT_TYPE_COLORS[edit.editType as keyof typeof EDIT_TYPE_COLORS] || 'gray';
+        <Stack gap="sm" className="mt-4">
+          {unreadEdits.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllAsViewed(unreadEdits.map((e) => e.id))}
+            >
+              <IconTrash size={14} className="mr-2" />
+              Clear all
+            </Button>
+          )}
 
-                return (
-                  <Paper
-                    key={edit.id}
-                    p="sm"
-                    withBorder
-                    style={{
-                      cursor: 'pointer',
-                      borderLeftWidth: 3,
-                      borderLeftColor: `var(--mantine-color-${color}-6)`,
-                    }}
-                    onClick={() => void handleRoadClick(edit)}
-                  >
-                    <Group justify="space-between" wrap="nowrap">
-                      <Group gap="xs" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-                        <IconRoad size={16} style={{ flexShrink: 0 }} />
-                        <Text
-                          size="sm"
-                          fw={600}
-                          style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                        >
-                          {getDisplayName(edit)}
+          <ScrollArea className="h-[calc(100vh-150px)]">
+            <Stack gap="xs">
+              {unreadEdits.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No new notifications
+                </p>
+              ) : (
+                unreadEdits.map((edit) => {
+                  const borderColor = EDIT_TYPE_BORDER_COLORS[edit.editType] || '#6b7280';
+                  const badgeVariant = EDIT_TYPE_VARIANTS[edit.editType] || 'secondary';
+
+                  return (
+                    <div
+                      key={edit.id}
+                      className="cursor-pointer rounded-md border p-3"
+                      style={{
+                        borderLeftWidth: 3,
+                        borderLeftColor: borderColor,
+                      }}
+                      onClick={() => void handleRoadClick(edit)}
+                    >
+                      <Group justify="space-between" className="flex-nowrap">
+                        <Group gap="xs" className="min-w-0 flex-1 flex-nowrap">
+                          <IconRoad size={16} className="shrink-0" />
+                          <span className="truncate text-sm font-semibold">
+                            {getDisplayName(edit)}
+                          </span>
+                        </Group>
+                        <Badge variant={badgeVariant} className="text-xs">
+                          {getEditTypeLabel(edit.editType)}
+                        </Badge>
+                      </Group>
+                      <Group justify="space-between" className="mt-1">
+                        <Text size="xs" c="dimmed">
+                          {edit.roadWard || 'Unknown ward'}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {formatTime(edit.editedAt)}
                         </Text>
                       </Group>
-                      <Badge size="xs" color={color} variant="light">
-                        {getEditTypeLabel(edit.editType)}
-                      </Badge>
-                    </Group>
-                    <Group justify="space-between" mt={4}>
-                      <Text size="xs" c="dimmed">
-                        {edit.roadWard || 'Unknown ward'}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {formatTime(edit.editedAt)}
-                      </Text>
-                    </Group>
-                  </Paper>
-                );
-              })
-            )}
-          </Stack>
-        </ScrollArea.Autosize>
-      </Stack>
-    </Drawer>
+                    </div>
+                  );
+                })
+              )}
+            </Stack>
+          </ScrollArea>
+        </Stack>
+      </SheetContent>
+    </Sheet>
   );
 }

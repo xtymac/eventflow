@@ -1,4 +1,7 @@
-import { Box, Paper, Group, Text, ActionIcon, ScrollArea, Badge } from '@mantine/core';
+import { Box, Paper, Group, Text } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { IconX } from '@tabler/icons-react';
 import { RoadUpdateModePanel } from './RoadUpdateModePanel';
 
@@ -19,18 +22,8 @@ export function RoadUpdateModeOverlay({ eventId, onClose }: RoadUpdateModeOverla
     >
       <Paper
         shadow="md"
-        radius="md"
-        p="md"
-        style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          bottom: 16,
-          width: 420,
-          display: 'flex',
-          flexDirection: 'column',
-          pointerEvents: 'auto',
-        }}
+        className="absolute top-4 right-4 bottom-4 w-[420px] flex flex-col"
+        style={{ pointerEvents: 'auto' }}
       >
         <Group justify="space-between" mb="xs">
           <div>
@@ -38,18 +31,18 @@ export function RoadUpdateModeOverlay({ eventId, onClose }: RoadUpdateModeOverla
               <Text fw={600} size="lg">
                 Road Update Mode
               </Text>
-              <Badge color="teal" size="sm">Active</Badge>
+              <Badge variant="secondary" className="bg-teal-100 text-teal-800">Active</Badge>
             </Group>
             <Text size="xs" c="dimmed">
               Create, modify, or retire road assets affected by this event.
             </Text>
           </div>
-          <ActionIcon variant="subtle" onClick={onClose} aria-label="Close road update mode">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close road update mode">
             <IconX size={16} />
-          </ActionIcon>
+          </Button>
         </Group>
 
-        <ScrollArea offsetScrollbars scrollbarSize={8} style={{ flex: 1 }}>
+        <ScrollArea className="flex-1">
           <RoadUpdateModePanel eventId={eventId} onClose={onClose} />
         </ScrollArea>
       </Paper>

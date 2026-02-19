@@ -1,4 +1,6 @@
-import { Box, Paper, Group, Text, ActionIcon, ScrollArea } from '@mantine/core';
+import { Box, Paper, Group, Text } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { IconX } from '@tabler/icons-react';
 import { EventForm } from './EventForm';
 
@@ -43,12 +45,12 @@ export function EventEditorOverlay({ eventId, duplicateEventId, onClose }: Event
               Click road lines on the map to add or remove assets.
             </Text>
           </div>
-          <ActionIcon variant="subtle" onClick={onClose} aria-label="Close editor">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close editor">
             <IconX size={16} />
-          </ActionIcon>
+          </Button>
         </Group>
 
-        <ScrollArea offsetScrollbars scrollbarSize={8} style={{ flex: 1 }}>
+        <ScrollArea className="flex-1">
           <EventForm eventId={eventId} onClose={onClose} />
         </ScrollArea>
       </Paper>

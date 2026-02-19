@@ -1,7 +1,24 @@
 import { useState } from 'react';
-import { Modal, Stack, TextInput, Textarea, Select, Button, Group } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
-import { notifications } from '@mantine/notifications';
+import { Stack, Group } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { showNotification } from '@/lib/toast';
 import { IconCheck } from '@tabler/icons-react';
 import { useCreateWorkOrder } from '../../hooks/useApi';
 
@@ -40,7 +57,7 @@ export function WorkOrderCreateModal({ eventId, onClose }: WorkOrderCreateModalP
       },
       {
         onSuccess: () => {
-          notifications.show({
+          showNotification({
             title: 'Work Order Created',
             message: `"${title}" has been created.`,
             color: 'green',
@@ -48,7 +65,7 @@ export function WorkOrderCreateModal({ eventId, onClose }: WorkOrderCreateModalP
           handleClose();
         },
         onError: (err) => {
-          notifications.show({
+          showNotification({
             title: 'Creation Failed',
             message: err instanceof Error ? err.message : 'Failed to create work order',
             color: 'red',
@@ -68,67 +85,78 @@ export function WorkOrderCreateModal({ eventId, onClose }: WorkOrderCreateModalP
   };
 
   return (
-    <Modal
-      opened={!!eventId}
-      onClose={handleClose}
-      title="Create Work Order"
-      centered
-      zIndex={300}
-    >
-      <Stack gap="sm">
-        <TextInput
-          label="Title"
-          placeholder="Work order title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
+    <Dialog open={!!eventId} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Work Order</DialogTitle>
+        </DialogHeader>
+        <Stack gap="sm">
+          <div>
+            <Label className="mb-1 block">Title *</Label>
+            <Input
+              placeholder="Work order title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
 
-        <Select
-          label="Type"
-          data={TYPE_OPTIONS}
-          value={type}
-          onChange={setType}
-          required
-        />
+          <div>
+            <Label className="mb-1 block">Type *</Label>
+            <Select value={type || ''} onValueChange={setType}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <Textarea
-          label="Description"
-          placeholder="Optional description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          minRows={3}
-        />
+          <div>
+            <Label className="mb-1 block">Description</Label>
+            <Textarea
+              placeholder="Optional description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
 
-        <TextInput
-          label="Assigned Department"
-          placeholder="e.g. Infrastructure Maintenance"
-          value={assignedDept}
-          onChange={(e) => setAssignedDept(e.target.value)}
-        />
+          <div>
+            <Label className="mb-1 block">Assigned Department</Label>
+            <Input
+              placeholder="e.g. Infrastructure Maintenance"
+              value={assignedDept}
+              onChange={(e) => setAssignedDept(e.target.value)}
+            />
+          </div>
 
-        <DatePickerInput
-          label="Due Date"
-          placeholder="Optional due date"
-          value={dueDate}
-          onChange={setDueDate}
-          clearable
-        />
+          <DatePickerInput
+            label="Due Date"
+            placeholder="Optional due date"
+            value={dueDate}
+            onChange={setDueDate}
+            clearable
+          />
 
-        <Group justify="flex-end" mt="sm">
-          <Button variant="subtle" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={createWorkOrder.isPending}
-            disabled={!title || !type}
-            leftSection={<IconCheck size={16} />}
-          >
-            Create
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+          <Group justify="flex-end" mt="sm">
+            <Button variant="ghost" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!title || !type || createWorkOrder.isPending}
+            >
+              <IconCheck size={16} className="mr-1" />
+              {createWorkOrder.isPending ? 'Creating...' : 'Create'}
+            </Button>
+          </Group>
+        </Stack>
+      </DialogContent>
+    </Dialog>
   );
 }

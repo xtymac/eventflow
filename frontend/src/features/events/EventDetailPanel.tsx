@@ -3,13 +3,13 @@ import {
   Stack,
   Group,
   Text,
-  Badge,
   Divider,
-  ActionIcon,
   Loader,
   Center,
   Paper,
-} from '@mantine/core';
+} from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { IconArrowLeft, IconMapPin, IconAlertCircle, IconExternalLink } from '@tabler/icons-react';
 import { useEvent } from '../../hooks/useApi';
 import type { AssetTypeRef } from '@nagoya/shared';
@@ -34,13 +34,13 @@ import { WorkOrdersListSection } from '../workorders/WorkOrdersListSection';
 import { WorkOrderDetailModal } from '../workorders/WorkOrderDetailModal';
 import { WorkOrderCreateModal } from '../workorders/WorkOrderCreateModal';
 
-const STATUS_COLORS: Record<EventStatus, string> = {
-  planned: 'blue',
-  active: 'yellow',
-  pending_review: 'orange',
-  closed: 'gray',
-  archived: 'dark',
-  cancelled: 'red',
+const STATUS_VARIANT: Record<EventStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  planned: 'default',
+  active: 'secondary',
+  pending_review: 'secondary',
+  closed: 'outline',
+  archived: 'outline',
+  cancelled: 'destructive',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
@@ -96,14 +96,14 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
       {/* Header with back button */}
       {showBackButton && (
         <Group gap="xs">
-          <ActionIcon
-            variant="subtle"
-            color="gray"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => selectEvent(null)}
             aria-label="Back to list"
           >
             <IconArrowLeft size={18} />
-          </ActionIcon>
+          </Button>
           <Text fw={600} size="md">
             Event Details
           </Text>
@@ -112,22 +112,22 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
 
       <Paper p="sm" withBorder radius="sm">
         <Stack gap="xs">
-          <Group justify="space-between" align="flex-start">
+          <Group justify="space-between" align="start">
             <Stack gap="xs" style={{ flex: 1 }}>
               <Text fw={600} size="lg" lineClamp={2} style={{ lineHeight: 1.2 }}>
                 {event.name}
               </Text>
-              <Text size="xs" c="dimmed" ff="monospace">
+              <Text size="xs" c="dimmed" className="font-mono">
                 {event.id}
               </Text>
             </Stack>
             <Group gap={4}>
               {event.archivedAt && (
-                <Badge color="gray" size="md" variant="light">
+                <Badge variant="outline">
                   Archived
                 </Badge>
               )}
-              <Badge color={STATUS_COLORS[event.status]} size="md" variant="light">
+              <Badge variant={STATUS_VARIANT[event.status]}>
                 {STATUS_LABELS[event.status]}
               </Badge>
             </Group>
@@ -191,13 +191,12 @@ export function EventDetailPanel({ eventId, showBackButton = true }: EventDetail
               <Stack gap={4}>
                 <Text size="sm" c="dimmed">関連資産</Text>
                 <Badge
-                  variant="light"
-                  color="blue"
-                  style={{ cursor: 'pointer', maxWidth: 'fit-content' }}
+                  variant="secondary"
+                  className="cursor-pointer max-w-fit"
                   onClick={() => selectAsset(event.refAssetId!, event.refAssetType as AssetType | null)}
-                  rightSection={<IconExternalLink size={12} />}
                 >
                   {ASSET_TYPE_LABELS[event.refAssetType as AssetTypeRef]}: {event.refAssetId}
+                  <IconExternalLink size={12} />
                 </Badge>
               </Stack>
             )}

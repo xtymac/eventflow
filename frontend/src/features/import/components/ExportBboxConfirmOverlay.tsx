@@ -5,7 +5,8 @@
  * User can pan/zoom the map and then confirm or cancel.
  */
 
-import { Paper, Stack, Group, Text, Button } from '@mantine/core';
+import { Paper, Stack, Group, Text } from '@/components/shims';
+import { Button } from '@/components/ui/button';
 import { IconMap, IconCheck, IconX } from '@tabler/icons-react';
 import { useUIStore } from '../../../stores/uiStore';
 
@@ -40,16 +41,16 @@ export function ExportBboxConfirmOverlay() {
         </Text>
         <Group justify="flex-end" gap="sm">
           <Button
-            variant="subtle"
-            leftSection={<IconX size={14} />}
+            variant="ghost"
             onClick={cancelExportBboxConfirmation}
           >
+            <IconX size={14} className="mr-1" />
             Cancel
           </Button>
           <Button
-            leftSection={<IconCheck size={14} />}
             onClick={confirmExportBbox}
           >
+            <IconCheck size={14} className="mr-1" />
             Confirm
           </Button>
         </Group>

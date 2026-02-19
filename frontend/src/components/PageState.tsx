@@ -1,4 +1,5 @@
-import { Center, Loader, Text, Alert, Stack } from '@mantine/core';
+import { Center, Stack, Text, Loader } from '@/components/shims';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { IconAlertCircle, IconDatabaseOff } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 
@@ -24,8 +25,9 @@ export function PageState({ loading, error, empty, emptyMessage, children }: Pag
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={20} />} my="md">
-        データの取得に失敗しました。再読み込みしてください。
+      <Alert variant="destructive" className="my-4">
+        <IconAlertCircle className="h-4 w-4" />
+        <AlertDescription>データの取得に失敗しました。再読み込みしてください。</AlertDescription>
       </Alert>
     );
   }
@@ -34,7 +36,7 @@ export function PageState({ loading, error, empty, emptyMessage, children }: Pag
     return (
       <Center h={200}>
         <Stack align="center" gap="sm">
-          <IconDatabaseOff size={48} color="var(--mantine-color-gray-5)" />
+          <IconDatabaseOff size={48} className="text-muted-foreground" />
           <Text c="dimmed">{emptyMessage || 'データがありません'}</Text>
         </Stack>
       </Center>

@@ -5,21 +5,13 @@
  */
 
 import { useState } from 'react';
-import {
-  Stack,
-  Text,
-  Group,
-  Button,
-  Card,
-  Checkbox,
-  Progress,
-  Alert,
-  Loader,
-  ThemeIcon,
-  Anchor,
-  Tooltip,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Stack, Text, Group, Loader } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { showNotification } from '@/lib/toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   IconRocket,
@@ -41,9 +33,6 @@ import { useMapStore } from '../../../stores/mapStore';
 
 /**
  * Format scope string for user-friendly display
- * - "full" → "Full City"
- * - "ward:Nishi" → "Nishi Ward"
- * - "bbox:..." → "Import file area" with tooltip showing coords
  */
 function formatScopeDisplay(scope: string): { label: string; tooltip?: string } {
   if (scope === 'full') {
@@ -56,7 +45,6 @@ function formatScopeDisplay(scope: string): { label: string; tooltip?: string } 
   if (scope.startsWith('bbox:')) {
     const coords = scope.substring(5).split(',');
     if (coords.length === 4) {
-      // Format as multi-line with labels for readability
       const [minLng, minLat, maxLng, maxLat] = coords;
       return {
         label: 'Import file area',
@@ -113,13 +101,12 @@ export function PublishStep() {
 
   // Poll job status
   const { data: jobData } = useImportJobPolling(currentJobId, {
-    pollingInterval: 2000, // Poll every 2 seconds instead of 1
+    pollingInterval: 2000,
     onComplete: (job: ImportJob) => {
       setCurrentJobId(null);
       setPublishResult(job.resultSummary);
-      // Invalidate assets only after job completes successfully
       queryClient.invalidateQueries({ queryKey: ['assets'] });
-      notifications.show({
+      showNotification({
         title: 'Publish successful',
         message: 'Roads have been updated',
         color: 'green',
@@ -128,7 +115,7 @@ export function PublishStep() {
     onError: (job: ImportJob) => {
       setCurrentJobId(null);
       setPublishError(job.errorMessage || 'Unknown error');
-      notifications.show({
+      showNotification({
         title: 'Publish failed',
         message: job.errorMessage || 'Unknown error',
         color: 'red',
@@ -144,7 +131,7 @@ export function PublishStep() {
       setCurrentJobId(job.id);
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : 'Unknown error');
-      notifications.show({
+      showNotification({
         title: 'Publish failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -163,7 +150,6 @@ export function PublishStep() {
   const handleViewOnMap = (scope: string) => {
     const polygon = bboxToPolygon(scope);
     if (polygon) {
-      // Create a dummy feature for the preview system
       const bboxFeature = {
         type: 'Feature' as const,
         geometry: polygon,
@@ -172,12 +158,10 @@ export function PublishStep() {
           name: 'Import Scope Area',
         },
       };
-      // Set highlight to show bbox rectangle on map
       setImportAreaHighlight({
         geometry: polygon,
         label: 'Import Scope Area',
       });
-      // Use existing preview mode to temporarily hide wizard and show return button
       startImportPreview([bboxFeature], 0);
     }
   };
@@ -190,7 +174,7 @@ export function PublishStep() {
   // Validation loading state (only when Review step is skipped)
   if (!importHasReviewStep && isLoadingValidation) {
     return (
-      <Stack align="center" justify="center" mih={300} gap="md">
+      <Stack align="center" justify="center" style={{ minHeight: 300 }} gap="md">
         <Loader size="lg" />
         <Text fw={500}>Validating import data...</Text>
         <Text size="xs" c="dimmed">Checking for errors before publish</Text>
@@ -201,22 +185,24 @@ export function PublishStep() {
   // Validation failed state (only when Review step is skipped)
   if (!importHasReviewStep && validationData?.data && validationData.data.errors.length > 0) {
     return (
-      <Stack align="center" justify="center" mih={300} gap="lg">
-        <ThemeIcon size={80} radius="xl" color="red">
+      <Stack align="center" justify="center" style={{ minHeight: 300 }} gap="lg">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-red-100 text-red-600">
           <IconX size={48} />
-        </ThemeIcon>
+        </div>
         <Text size="xl" fw={600} c="red">
           Validation Failed
         </Text>
-        <Alert color="red" variant="light" w="100%">
-          {validationData.data.errors[0].error}
-          {validationData.data.errors.length > 1 && ` (+${validationData.data.errors.length - 1} more)`}
+        <Alert variant="destructive" className="w-full">
+          <AlertDescription>
+            {validationData.data.errors[0].error}
+            {validationData.data.errors.length > 1 && ` (+${validationData.data.errors.length - 1} more)`}
+          </AlertDescription>
         </Alert>
         <Group gap="md">
-          <Button variant="light" onClick={() => setImportWizardStep('configure')}>
+          <Button variant="outline" onClick={() => setImportWizardStep('configure')}>
             Back to Configure
           </Button>
-          <Button variant="subtle" color="gray" onClick={handleClose}>
+          <Button variant="ghost" onClick={handleClose}>
             Close
           </Button>
         </Group>
@@ -235,16 +221,16 @@ export function PublishStep() {
     };
 
     return (
-      <Stack align="center" justify="center" mih={300} gap="lg">
-        <ThemeIcon size={80} radius="xl" color="green">
+      <Stack align="center" justify="center" style={{ minHeight: 300 }} gap="lg">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600">
           <IconCheck size={48} />
-        </ThemeIcon>
+        </div>
 
         <Text size="xl" fw={600}>
           Import Published Successfully
         </Text>
 
-        <Card withBorder padding="md" w="100%">
+        <div className="border rounded-md p-4 w-full">
           <Stack gap="xs">
             <Group justify="space-between">
               <Text size="sm">Version:</Text>
@@ -273,9 +259,9 @@ export function PublishStep() {
               <Text size="sm" fw={500} c="dimmed">{result.unchanged ?? 0}</Text>
             </Group>
           </Stack>
-        </Card>
+        </div>
 
-        <Button onClick={handleClose} fullWidth>
+        <Button onClick={handleClose} className="w-full">
           Close Wizard
         </Button>
       </Stack>
@@ -285,24 +271,24 @@ export function PublishStep() {
   // Show error state
   if (publishError) {
     return (
-      <Stack align="center" justify="center" mih={300} gap="lg">
-        <ThemeIcon size={80} radius="xl" color="red">
+      <Stack align="center" justify="center" style={{ minHeight: 300 }} gap="lg">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-red-100 text-red-600">
           <IconX size={48} />
-        </ThemeIcon>
+        </div>
 
         <Text size="xl" fw={600} c="red">
           Publish Failed
         </Text>
 
-        <Alert color="red" variant="light" w="100%">
-          {publishError}
+        <Alert variant="destructive" className="w-full">
+          <AlertDescription>{publishError}</AlertDescription>
         </Alert>
 
         <Group gap="md">
-          <Button variant="light" onClick={() => setPublishError(null)}>
+          <Button variant="outline" onClick={() => setPublishError(null)}>
             Try Again
           </Button>
-          <Button variant="subtle" color="gray" onClick={handleClose}>
+          <Button variant="ghost" onClick={handleClose}>
             Close
           </Button>
         </Group>
@@ -321,15 +307,10 @@ export function PublishStep() {
       : 'Starting publish...';
 
     return (
-      <Stack align="center" justify="center" mih={300} gap="md">
+      <Stack align="center" justify="center" style={{ minHeight: 300 }} gap="md">
         <Loader size="lg" />
         <Text fw={500}>Publishing changes...</Text>
-        <Progress
-          value={progress}
-          size="xl"
-          w="80%"
-          animated
-        />
+        <Progress value={progress} className="w-4/5 h-3" />
         <Text size="sm" c="dimmed">
           {statusLabel}
         </Text>
@@ -344,7 +325,7 @@ export function PublishStep() {
   return (
     <Stack gap="md">
       {/* Summary card */}
-      <Card withBorder padding="md">
+      <div className="border rounded-md p-4">
         <Text fw={500} mb="sm">Publish Summary</Text>
         <Stack gap="xs">
           <Group justify="space-between">
@@ -359,23 +340,25 @@ export function PublishStep() {
             <Text size="sm">Scope:</Text>
             <Group gap="xs">
               {scopeDisplay?.tooltip ? (
-                <Tooltip label={scopeDisplay.tooltip} multiline w={300}>
-                  <Text size="sm" fw={500} style={{ cursor: 'help', textDecoration: 'underline dotted' }}>
-                    {scopeDisplay.label}
-                  </Text>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Text size="sm" fw={500} className="cursor-help underline decoration-dotted">
+                      {scopeDisplay.label}
+                    </Text>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[300px] whitespace-pre-line">{scopeDisplay.tooltip}</TooltipContent>
                 </Tooltip>
               ) : (
                 <Text size="sm" fw={500}>{scopeDisplay?.label}</Text>
               )}
               {diff?.scope?.startsWith('bbox:') && (
-                <Anchor
-                  size="xs"
+                <button
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-0.5"
                   onClick={() => handleViewOnMap(diff.scope)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
                 >
                   <IconMap size={12} />
                   View
-                </Anchor>
+                </button>
               )}
             </Group>
           </Group>
@@ -384,11 +367,11 @@ export function PublishStep() {
             <Text size="sm" fw={500}>{version?.featureCount?.toLocaleString()}</Text>
           </Group>
         </Stack>
-      </Card>
+      </div>
 
       {/* Changes summary */}
       {diff && (
-        <Card withBorder padding="md" bg="var(--mantine-color-gray-0)">
+        <div className="border rounded-md p-4 bg-muted/30">
           <Text fw={500} mb="sm">Changes to Apply</Text>
           <Group gap="xl">
             <Group gap="xs">
@@ -404,34 +387,40 @@ export function PublishStep() {
               <Text size="sm">deactivated</Text>
             </Group>
           </Group>
-        </Card>
+        </div>
       )}
 
       {/* Deactivation warning */}
       {diff && diff.stats.deactivatedCount > 0 && (
-        <Alert icon={<IconInfoCircle size={16} />} color="orange" variant="light">
-          <strong>{diff.stats.deactivatedCount} roads</strong> in the import file area
-          will be marked as inactive because they are not in the import file.
+        <Alert>
+          <IconInfoCircle size={16} />
+          <AlertDescription>
+            <strong>{diff.stats.deactivatedCount} roads</strong> in the import file area
+            will be marked as inactive because they are not in the import file.
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Confirmation checkbox */}
-      <Checkbox
-        label={`I understand that this will update roads in the ${scopeDisplay?.label || 'selected area'}`}
-        checked={confirmed}
-        onChange={(e) => setConfirmed(e.currentTarget.checked)}
-      />
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="confirm-publish"
+          checked={confirmed}
+          onCheckedChange={(checked) => setConfirmed(checked === true)}
+        />
+        <label htmlFor="confirm-publish" className="text-sm cursor-pointer">
+          I understand that this will update roads in the {scopeDisplay?.label || 'selected area'}
+        </label>
+      </div>
 
       {/* Publish button */}
       <Button
-        leftSection={<IconRocket size={16} />}
         onClick={handlePublish}
-        disabled={!confirmed}
-        loading={publishMutation.isPending}
-        fullWidth
-        color="green"
+        disabled={!confirmed || publishMutation.isPending}
+        className="w-full"
       >
-        Publish Import
+        <IconRocket size={16} className="mr-1" />
+        {publishMutation.isPending ? 'Publishing...' : 'Publish Import'}
       </Button>
     </Stack>
   );

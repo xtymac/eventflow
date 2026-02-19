@@ -5,21 +5,13 @@
  */
 
 import { useState } from 'react';
-import {
-  Stack,
-  Text,
-  Button,
-  Card,
-  Badge,
-  Group,
-  Alert,
-  Table,
-  Loader,
-  Pagination,
-  Divider,
-  Select,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Stack, Text, Group, Divider, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { showNotification } from '@/lib/toast';
 import { IconInfoCircle, IconRefresh, IconMapPin } from '@tabler/icons-react';
 import { useOsmSyncBbox, useOsmSyncWard, useOsmSyncStatus, useOsmSyncLogs } from '../../hooks/useOsmSync';
 import { useWards } from '../../hooks/useApi';
@@ -45,7 +37,7 @@ export function OsmSyncPanel() {
 
   const handleSyncCurrentView = () => {
     if (!mapBbox) {
-      notifications.show({
+      showNotification({
         title: 'Error',
         message: 'Map bbox not available. Please wait for the map to load.',
         color: 'red',
@@ -58,14 +50,14 @@ export function OsmSyncPanel() {
       { minLng, minLat, maxLng, maxLat },
       {
         onSuccess: (result) => {
-          notifications.show({
+          showNotification({
             title: 'Sync completed',
             message: `Created: ${result.roadsCreated}, Updated: ${result.roadsUpdated}, Skipped: ${result.roadsSkipped}`,
             color: result.status === 'completed' ? 'green' : 'yellow',
           });
         },
         onError: (error) => {
-          notifications.show({
+          showNotification({
             title: 'Sync failed',
             message: error.message,
             color: 'red',
@@ -77,7 +69,7 @@ export function OsmSyncPanel() {
 
   const handleSyncWard = () => {
     if (!selectedWard) {
-      notifications.show({
+      showNotification({
         title: 'Error',
         message: 'Please select a ward first.',
         color: 'red',
@@ -87,14 +79,14 @@ export function OsmSyncPanel() {
 
     syncWard.mutate(selectedWard, {
       onSuccess: (result) => {
-        notifications.show({
+        showNotification({
           title: 'Ward sync completed',
           message: `${selectedWard}: Created ${result.roadsCreated}, Updated ${result.roadsUpdated}`,
           color: result.status === 'completed' ? 'green' : 'yellow',
         });
       },
       onError: (error) => {
-        notifications.show({
+        showNotification({
           title: 'Ward sync failed',
           message: error.message,
           color: 'red',
@@ -116,15 +108,15 @@ export function OsmSyncPanel() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'green';
+        return 'bg-green-100 text-green-800';
       case 'running':
-        return 'blue';
+        return 'bg-blue-100 text-blue-800';
       case 'partial':
-        return 'yellow';
+        return 'bg-yellow-100 text-yellow-800';
       case 'failed':
-        return 'red';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'gray';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -132,13 +124,16 @@ export function OsmSyncPanel() {
     <Stack gap="md">
       <Text fw={600}>OSM Sync</Text>
 
-      <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-        OSM data may have delays of a few minutes to hours from Overpass API.
-        Low-zoom tile previews are rebuilt daily at 4am JST.
+      <Alert>
+        <IconInfoCircle size={16} />
+        <AlertDescription>
+          OSM data may have delays of a few minutes to hours from Overpass API.
+          Low-zoom tile previews are rebuilt daily at 4am JST.
+        </AlertDescription>
       </Alert>
 
       {/* Status Card */}
-      <Card withBorder padding="sm">
+      <div className="border rounded-md p-2">
         <Text size="sm" fw={500} mb="xs">Sync Status</Text>
         {isLoadingStatus ? (
           <Loader size="sm" />
@@ -146,7 +141,7 @@ export function OsmSyncPanel() {
           <Stack gap="xs">
             <Group justify="space-between">
               <Text size="sm" c="dimmed">Status:</Text>
-              <Badge color={syncStatus?.runningSyncs ? 'blue' : 'green'}>
+              <Badge variant="secondary" className={syncStatus?.runningSyncs ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}>
                 {syncStatus?.runningSyncs ? `${syncStatus.runningSyncs} running` : 'Idle'}
               </Badge>
             </Group>
@@ -160,48 +155,53 @@ export function OsmSyncPanel() {
             </Group>
           </Stack>
         )}
-      </Card>
+      </div>
 
       {/* Sync Actions */}
-      <Card withBorder padding="sm">
+      <div className="border rounded-md p-2">
         <Text size="sm" fw={500} mb="xs">Sync Actions</Text>
         <Stack gap="sm">
           <Button
-            leftSection={<IconRefresh size={16} />}
             onClick={handleSyncCurrentView}
-            loading={syncBbox.isPending}
-            disabled={!mapBbox || syncStatus?.runningSyncs ? true : false}
-            fullWidth
+            disabled={!mapBbox || (syncStatus?.runningSyncs ? true : false) || syncBbox.isPending}
+            className="w-full"
           >
-            Sync Current Viewport
+            <IconRefresh size={16} className="mr-2" />
+            {syncBbox.isPending ? 'Syncing...' : 'Sync Current Viewport'}
           </Button>
 
-          <Divider label="or" labelPosition="center" />
+          <Divider label="or" />
 
           <Group gap="sm">
-            <Select
-              placeholder="Select ward..."
-              data={wardsData?.data.map((w) => ({ value: w, label: w })) ?? []}
-              value={selectedWard}
-              onChange={setSelectedWard}
-              style={{ flex: 1 }}
-              clearable
-            />
+            <div className="flex-1">
+              <Select
+                value={selectedWard ?? undefined}
+                onValueChange={(val) => setSelectedWard(val || null)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select ward..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {wardsData?.data.map((w) => (
+                    <SelectItem key={w} value={w}>{w}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button
-              leftSection={<IconMapPin size={16} />}
               onClick={handleSyncWard}
-              loading={syncWard.isPending}
-              disabled={!selectedWard || syncStatus?.runningSyncs ? true : false}
+              disabled={!selectedWard || (syncStatus?.runningSyncs ? true : false) || syncWard.isPending}
             >
-              Sync
+              <IconMapPin size={16} className="mr-2" />
+              {syncWard.isPending ? 'Syncing...' : 'Sync'}
             </Button>
           </Group>
         </Stack>
-      </Card>
+      </div>
 
       {/* Sync Result */}
       {(syncBbox.isSuccess || syncWard.isSuccess) && (
-        <Card withBorder padding="sm" bg="var(--mantine-color-green-0)">
+        <div className="border rounded-md p-2 bg-green-50">
           <Text size="sm" fw={500} mb="xs">Last Sync Result</Text>
           <Stack gap="xs">
             <Group justify="space-between">
@@ -224,70 +224,83 @@ export function OsmSyncPanel() {
             </Group>
             <Group justify="space-between">
               <Text size="sm">Skipped (protected):</Text>
-              <Text size="sm" fw={500} c="gray">
+              <Text size="sm" fw={500}>
                 {(syncBbox.data ?? syncWard.data)?.roadsSkipped ?? 0}
               </Text>
             </Group>
           </Stack>
-        </Card>
+        </div>
       )}
 
       {/* Sync Logs */}
-      <Card withBorder padding="sm">
+      <div className="border rounded-md p-2">
         <Text size="sm" fw={500} mb="xs">Recent Sync Logs</Text>
         {isLoadingLogs ? (
           <Loader size="sm" />
         ) : (
           <>
-            <Table striped highlightOnHover withTableBorder fz="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Time</Table.Th>
-                  <Table.Th>Type</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Created</Table.Th>
-                  <Table.Th>Updated</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Updated</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {logsData?.data.map((log) => (
-                  <Table.Tr key={log.id}>
-                    <Table.Td>{formatDate(log.startedAt)}</Table.Td>
-                    <Table.Td>
+                  <TableRow key={log.id}>
+                    <TableCell className="text-xs">{formatDate(log.startedAt)}</TableCell>
+                    <TableCell className="text-xs">
                       {log.syncType === 'ward' ? log.wardParam : log.syncType}
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge size="xs" color={getStatusColor(log.status)}>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={`text-xs ${getStatusColor(log.status)}`}>
                         {log.status}
                       </Badge>
-                    </Table.Td>
-                    <Table.Td>{log.roadsCreated ?? '-'}</Table.Td>
-                    <Table.Td>{log.roadsUpdated ?? '-'}</Table.Td>
-                  </Table.Tr>
+                    </TableCell>
+                    <TableCell className="text-xs">{log.roadsCreated ?? '-'}</TableCell>
+                    <TableCell className="text-xs">{log.roadsUpdated ?? '-'}</TableCell>
+                  </TableRow>
                 ))}
                 {(!logsData?.data || logsData.data.length === 0) && (
-                  <Table.Tr>
-                    <Table.Td colSpan={5}>
+                  <TableRow>
+                    <TableCell colSpan={5}>
                       <Text c="dimmed" ta="center" size="sm">No sync logs yet</Text>
-                    </Table.Td>
-                  </Table.Tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </Table.Tbody>
+              </TableBody>
             </Table>
 
             {logsData?.meta && logsData.meta.total > PAGE_SIZE && (
               <Group justify="center" mt="sm">
-                <Pagination
-                  size="sm"
-                  total={Math.ceil(logsData.meta.total / PAGE_SIZE)}
-                  value={logsPage}
-                  onChange={setLogsPage}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
+                    disabled={logsPage <= 1}
+                  >
+                    Prev
+                  </Button>
+                  <Text size="sm">{logsPage} / {Math.ceil(logsData.meta.total / PAGE_SIZE)}</Text>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogsPage((p) => p + 1)}
+                    disabled={logsPage >= Math.ceil(logsData.meta.total / PAGE_SIZE)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </Group>
             )}
           </>
         )}
-      </Card>
+      </div>
     </Stack>
   );
 }

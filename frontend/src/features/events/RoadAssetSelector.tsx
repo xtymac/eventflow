@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MultiSelect, Select, Text, Stack, Loader, Group, Button } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { Stack, Group, Text, Loader } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useDebounce } from 'use-debounce';
 import { useAssets, useWards } from '../../hooks/useApi';
 import { getRoadAssetLabel, isRoadAssetUnnamed } from '../../utils/roadAssetLabel';
 import type { RoadAsset } from '@nagoya/shared';
@@ -46,7 +51,7 @@ export function RoadAssetSelector({
     }
   }, [initialWard, hasSetInitialWard]);
   const [searchValue, setSearchValue] = useState('');
-  const [debouncedSearch] = useDebouncedValue(searchValue, 300);
+  const [debouncedSearch] = useDebounce(searchValue, 300);
   const [offset, setOffset] = useState(0);
   const [loadedOptions, setLoadedOptions] = useState<
     Array<{ value: string; label: string }>
@@ -105,6 +110,20 @@ export function RoadAssetSelector({
       label: ward,
     })) ?? [];
 
+  const selectedSet = new Set(value);
+
+  const handleToggle = (id: string) => {
+    if (selectedSet.has(id)) {
+      onChange(value.filter((v) => v !== id));
+    } else {
+      onChange([...value, id]);
+    }
+  };
+
+  const handleRemove = (id: string) => {
+    onChange(value.filter((v) => v !== id));
+  };
+
   if (isLoading || wardsLoading) {
     return (
       <Stack gap="xs">
@@ -120,53 +139,101 @@ export function RoadAssetSelector({
   return (
     <Stack gap="xs">
       <Group grow>
-        <Select
-          label="Filter by Ward"
-          placeholder="All wards"
-          data={wardOptions}
-          value={wardFilter}
-          onChange={setWardFilter}
-          clearable
-          size="sm"
-        />
+        <div className="flex flex-col gap-1">
+          <Label className="text-sm">Filter by Ward</Label>
+          <Select
+            value={wardFilter || undefined}
+            onValueChange={(val) => setWardFilter(val || null)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All wards" />
+            </SelectTrigger>
+            <SelectContent>
+              {wardOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Group>
-      <MultiSelect
-        label={
-          <Group gap="xs">
-            <span>{label}</span>
-            {isLoadingIntersecting && (
-              <Group gap={4}>
-                <Loader size={12} />
-                <Text size="xs" c="dimmed">Loading intersecting roads...</Text>
-              </Group>
-            )}
+
+      {/* Label with loading indicator */}
+      <div className="flex items-center gap-1.5">
+        <Label className="text-sm">
+          {label}
+          {required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+        {isLoadingIntersecting && (
+          <Group gap={4}>
+            <Loader size="xs" />
+            <Text size="xs" c="dimmed">Loading intersecting roads...</Text>
           </Group>
-        }
+        )}
+      </div>
+
+      {/* Selected items as badges */}
+      {value.length > 0 && (
+        <Group gap="xs" className="flex-wrap">
+          {value.map((id) => {
+            const opt = loadedOptions.find((o) => o.value === id);
+            return (
+              <Badge
+                key={id}
+                variant="secondary"
+                className="cursor-pointer pr-1"
+                onClick={() => handleRemove(id)}
+              >
+                {opt?.label || id}
+                <span className="ml-1 text-muted-foreground hover:text-foreground">&times;</span>
+              </Badge>
+            );
+          })}
+        </Group>
+      )}
+
+      {/* Search input */}
+      <Input
         placeholder="Search and select road assets..."
-        data={loadedOptions}
-        value={value}
-        onChange={onChange}
-        searchable
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        // Disable local filtering since we use server-side search
-        filter={({ options }) => options}
-        clearable
-        required={required}
-        error={error}
-        maxDropdownHeight={200}
-        nothingFoundMessage={
-          wardFilter
-            ? `No road assets found in ${wardFilter}`
-            : 'No road assets found'
-        }
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+        className="h-8 text-sm"
       />
+
+      {/* Scrollable options list */}
+      <div className="border rounded max-h-[200px] overflow-y-auto">
+        {loadedOptions.length === 0 ? (
+          <div className="p-3 text-center text-sm text-muted-foreground">
+            {wardFilter
+              ? `No road assets found in ${wardFilter}`
+              : 'No road assets found'}
+          </div>
+        ) : (
+          loadedOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`w-full text-left px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                selectedSet.has(opt.value) ? 'bg-accent' : ''
+              }`}
+              onClick={() => handleToggle(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))
+        )}
+      </div>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
       {hasNextPage && (
         <Button
-          variant="subtle"
-          size="xs"
+          variant="ghost"
+          size="sm"
           onClick={() => setOffset((prev) => prev + LIMIT)}
-          loading={isFetching}
+          disabled={isFetching}
+          type="button"
         >
           Load more assets...
         </Button>

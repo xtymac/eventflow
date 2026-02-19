@@ -1,4 +1,4 @@
-import { Paper, Text, Stack, Group, Box } from '@mantine/core';
+import { Stack, Group, Box, Text, Paper } from '@/components/shims';
 import dayjs from 'dayjs';
 
 interface HoveredEventData {
@@ -35,7 +35,6 @@ export function EventMapTooltip({
     <Paper
       shadow="md"
       p="sm"
-      radius="sm"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
@@ -62,12 +61,12 @@ export function EventMapTooltip({
               borderRadius: '50%',
             }}
           />
-          <Text size="xs" fw={600} tt="capitalize">
+          <Text size="xs" fw={600} className="capitalize">
             {event.status}
           </Text>
         </Group>
 
-        <Stack gap={2}>
+        <Stack gap="0">
           <Text size="xs" c="dimmed">
             <strong>Dates:</strong> {formatDate(event.startDate)} - {formatDate(event.endDate)}
           </Text>

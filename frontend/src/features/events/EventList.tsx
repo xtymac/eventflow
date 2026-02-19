@@ -1,21 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Stack,
-  TextInput,
-  Card,
-  Text,
-  Badge,
   Group,
+  Text,
   Loader,
   Center,
-  ActionIcon,
-  Tooltip,
-  Chip,
-  Button,
-  Collapse,
-  UnstyledButton,
-} from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+} from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
 import { IconSearch, IconPlus, IconFilter, IconChevronDown, IconChevronRight, IconX, IconArchive } from '@tabler/icons-react';
 import { useEvents } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
@@ -23,13 +20,13 @@ import type { ConstructionEvent, EventStatus } from '@nagoya/shared';
 import dayjs from 'dayjs';
 import { formatLocalDate } from '../../utils/dateFormat';
 
-const STATUS_COLORS: Record<EventStatus, string> = {
-  planned: 'blue',
-  active: 'yellow',
-  pending_review: 'orange',
-  closed: 'gray',
-  archived: 'dark',
-  cancelled: 'red',
+const STATUS_VARIANT: Record<EventStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  planned: 'default',
+  active: 'secondary',
+  pending_review: 'secondary',
+  closed: 'outline',
+  archived: 'outline',
+  cancelled: 'destructive',
 };
 
 const STATUS_LABELS: Record<EventStatus, string> = {
@@ -110,33 +107,38 @@ export function EventList() {
     <Stack gap="sm">
       <Group justify="space-between">
         <Text fw={600}>Events ({events.length})</Text>
-        <Tooltip label="Create new event">
-          <ActionIcon variant="filled" onClick={() => openEventForm()}>
-            <IconPlus size={16} />
-          </ActionIcon>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="default" size="icon" onClick={() => openEventForm()}>
+              <IconPlus size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Create new event</TooltipContent>
         </Tooltip>
       </Group>
 
-      <TextInput
-        placeholder="Search events..."
-        leftSection={<IconSearch size={16} />}
-        value={search}
-        onChange={(e) => setEventFilter('search', e.target.value)}
-        size="sm"
-      />
+      <div className="relative">
+        <IconSearch size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search events..."
+          value={search}
+          onChange={(e) => setEventFilter('search', e.target.value)}
+          className="pl-8 h-9"
+        />
+      </div>
 
-      <UnstyledButton
+      <button
         onClick={toggleFilters}
         aria-expanded={filtersOpen}
         aria-controls="event-filters"
-        style={{ width: '100%', textAlign: 'left' }}
+        className="w-full text-left"
       >
         <Group justify="space-between">
           <Group gap="xs">
             <IconFilter size={14} />
             <Text size="sm" fw={500}>Filters</Text>
             {activeFilterCount > 0 && (
-              <Badge size="xs" radius="xl">{activeFilterCount}</Badge>
+              <Badge variant="default" className="text-[10px] px-1.5 py-0">{activeFilterCount}</Badge>
             )}
           </Group>
           <IconChevronDown
@@ -147,77 +149,100 @@ export function EventList() {
             }}
           />
         </Group>
-      </UnstyledButton>
+      </button>
 
-      <Collapse in={filtersOpen} id="event-filters">
-        <Stack gap="sm">
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Status</Text>
-            <Chip.Group
-              multiple
-              value={statusFilter ? [statusFilter] : []}
-              onChange={(val) => {
-                if (val.length === 0) {
-                  setEventFilter('status', null);
-                } else {
-                  const newValue = val.find((v) => v !== statusFilter);
-                  setEventFilter('status', newValue || val[0]);
-                }
-              }}
-            >
-              <Group gap="xs" wrap="wrap">
-                <Chip value="planned">Planned</Chip>
-                <Chip value="active">Active</Chip>
-                <Chip value="pending_review" color="orange">Pending Review</Chip>
-                <Chip value="closed">Closed</Chip>
-                <Chip value="cancelled" color="red">Cancelled</Chip>
+      <Collapsible open={filtersOpen}>
+        <CollapsibleContent id="event-filters">
+          <Stack gap="sm">
+            <div>
+              <Text size="xs" c="dimmed" fw={600} mb="xs">Status</Text>
+              <Group gap="xs" className="flex-wrap">
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={statusFilter === 'planned'}
+                  onPressedChange={(pressed) => setEventFilter('status', pressed ? 'planned' : null)}
+                >
+                  Planned
+                </Toggle>
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={statusFilter === 'active'}
+                  onPressedChange={(pressed) => setEventFilter('status', pressed ? 'active' : null)}
+                >
+                  Active
+                </Toggle>
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={statusFilter === 'pending_review'}
+                  onPressedChange={(pressed) => setEventFilter('status', pressed ? 'pending_review' : null)}
+                >
+                  Pending Review
+                </Toggle>
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={statusFilter === 'closed'}
+                  onPressedChange={(pressed) => setEventFilter('status', pressed ? 'closed' : null)}
+                >
+                  Closed
+                </Toggle>
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={statusFilter === 'cancelled'}
+                  onPressedChange={(pressed) => setEventFilter('status', pressed ? 'cancelled' : null)}
+                >
+                  Cancelled
+                </Toggle>
               </Group>
-            </Chip.Group>
-          </div>
+            </div>
 
-          <TextInput
-            label="Department"
-            placeholder="Filter by department..."
-            size="xs"
-            value={department || ''}
-            onChange={(e) => setEventFilter('department', e.target.value || null)}
-          />
-
-          <div>
-            <Text size="xs" c="dimmed" fw={600} mb={4}>Start Date Range</Text>
-            <Group grow>
-              <DatePickerInput
-                size="xs"
-                placeholder="From"
-                value={dateRange.from}
-                onChange={(date) => setEventFilter('dateRange', { ...dateRange, from: date })}
-                clearable
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Department</label>
+              <Input
+                placeholder="Filter by department..."
+                className="h-8 text-xs"
+                value={department || ''}
+                onChange={(e) => setEventFilter('department', e.target.value || null)}
               />
-              <DatePickerInput
-                size="xs"
-                placeholder="To"
-                value={dateRange.to}
-                onChange={(date) => setEventFilter('dateRange', { ...dateRange, to: date })}
-                minDate={dateRange.from || undefined}
-                clearable
-              />
-            </Group>
-          </div>
+            </div>
 
-          {activeFilterCount > 0 && (
-            <Group justify="flex-end">
-              <Button
-                variant="subtle"
-                size="xs"
-                leftSection={<IconX size={14} />}
-                onClick={resetEventFilters}
-              >
-                Clear all filters
-              </Button>
-            </Group>
-          )}
-        </Stack>
-      </Collapse>
+            <div>
+              <Text size="xs" c="dimmed" fw={600} mb="xs">Start Date Range</Text>
+              <Group grow>
+                <DatePickerInput
+                  placeholder="From"
+                  value={dateRange.from}
+                  onChange={(date) => setEventFilter('dateRange', { ...dateRange, from: date })}
+                  clearable
+                />
+                <DatePickerInput
+                  placeholder="To"
+                  value={dateRange.to}
+                  onChange={(date) => setEventFilter('dateRange', { ...dateRange, to: date })}
+                  clearable
+                />
+              </Group>
+            </div>
+
+            {activeFilterCount > 0 && (
+              <Group justify="flex-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetEventFilters}
+                >
+                  <IconX size={14} />
+                  Clear all filters
+                </Button>
+              </Group>
+            )}
+          </Stack>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Stack gap="xs">
         {isLoading ? (
@@ -229,26 +254,21 @@ export function EventList() {
             <Text c="red" size="sm">Failed to load events</Text>
           </Center>
         ) : events.length === 0 ? (
-          <Text c="dimmed" ta="center" py="lg">
+          <Text c="dimmed" ta="center" className="py-6">
             No events found
           </Text>
         ) : (
           events.map((event: ConstructionEvent) => (
-            <Card
+            <div
               key={event.id}
               ref={(el) => {
                 if (el) eventCardRefs.current.set(event.id, el);
               }}
-              padding="sm"
-              radius="sm"
-              withBorder
-              style={{
-                cursor: 'pointer',
-                borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : undefined,
-                backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : undefined,
-                transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-              }}
-              className="event-card-hover"
+              className={`rounded-md border p-3 cursor-pointer transition-colors duration-150 hover:shadow-sm ${
+                selectedEventId === event.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'hover:bg-muted/50'
+              }`}
               onClick={() => {
                 if (selectedEventId === event.id) {
                   // Already selected: toggle between overview and close-up
@@ -270,27 +290,27 @@ export function EventList() {
               onMouseEnter={() => !isEventFormOpen && setHoveredEvent(event.id)}
               onMouseLeave={() => setHoveredEvent(null)}
             >
-              <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
-                <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }}>
+              <Group justify="space-between" mb="xs" className="flex-nowrap items-start">
+                <Text fw={500} size="sm" lineClamp={2} className="flex-1" style={{ lineHeight: 1.3 }}>
                   {event.name}
                 </Text>
-                <Badge color={STATUS_COLORS[event.status]} size="sm" style={{ flexShrink: 0, marginTop: 2 }}>
+                <Badge variant={STATUS_VARIANT[event.status]} className="shrink-0 mt-0.5">
                   {STATUS_LABELS[event.status]}
                 </Badge>
               </Group>
 
               {event.department && (
-                <Text size="xs" c="gray.6" fw={500} mb={6}>
+                <Text size="xs" c="dimmed" fw={500} mb="xs">
                   {event.department}
                 </Text>
               )}
 
-              <Group gap="xs" mb={6}>
-                <Badge variant="outline" size="xs">
+              <Group gap="xs" mb="xs">
+                <Badge variant="outline" className="text-[10px]">
                   {event.restrictionType}
                 </Badge>
                 {event.ward && (
-                  <Badge variant="outline" size="xs" color="gray">
+                  <Badge variant="outline" className="text-[10px]">
                     {event.ward}
                   </Badge>
                 )}
@@ -299,7 +319,7 @@ export function EventList() {
               <Text size="xs" c="dimmed">
                 {dayjs(event.startDate).format('YYYY/MM/DD')} - {dayjs(event.endDate).format('YYYY/MM/DD')}
               </Text>
-            </Card>
+            </div>
           ))
         )}
       </Stack>
@@ -307,120 +327,113 @@ export function EventList() {
       {/* Archived Events Section */}
       {archivedCount > 0 && (
         <Stack gap="xs" mt="md">
-          <UnstyledButton
+          <button
             onClick={() => setEventFilter('showArchivedSection', !showArchivedSection)}
             aria-expanded={showArchivedSection}
             aria-controls="archived-events"
-            style={{ width: '100%', textAlign: 'left' }}
+            className="w-full text-left"
           >
             <Group
               justify="space-between"
-              p="xs"
-              style={{
-                backgroundColor: 'var(--mantine-color-gray-1)',
-                borderRadius: 'var(--mantine-radius-sm)',
-              }}
+              px="xs"
+              className="py-1.5 bg-muted rounded"
             >
               <Group gap="xs">
-                <IconArchive size={14} color="var(--mantine-color-gray-6)" />
+                <IconArchive size={14} className="text-muted-foreground" />
                 <Text size="sm" fw={500} c="dimmed">
                   Archived Events ({archivedCount})
                 </Text>
               </Group>
               {showArchivedSection ? (
-                <IconChevronDown size={14} color="var(--mantine-color-gray-6)" />
+                <IconChevronDown size={14} className="text-muted-foreground" />
               ) : (
-                <IconChevronRight size={14} color="var(--mantine-color-gray-6)" />
+                <IconChevronRight size={14} className="text-muted-foreground" />
               )}
             </Group>
-          </UnstyledButton>
+          </button>
 
-          <Collapse in={showArchivedSection} id="archived-events">
-            <Stack gap="xs">
-              {archivedLoading ? (
-                <Center py="md">
-                  <Loader size="sm" />
-                </Center>
-              ) : archivedEvents.length === 0 ? (
-                <Text c="dimmed" ta="center" py="sm" size="sm">
-                  No archived events
-                </Text>
-              ) : (
-                archivedEvents.map((event: ConstructionEvent) => (
-                  <Card
-                    key={event.id}
-                    ref={(el) => {
-                      if (el) eventCardRefs.current.set(event.id, el);
-                    }}
-                    padding="sm"
-                    radius="sm"
-                    withBorder
-                    style={{
-                      cursor: 'pointer',
-                      borderColor: selectedEventId === event.id ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-gray-3)',
-                      backgroundColor: selectedEventId === event.id ? 'var(--mantine-color-blue-0)' : 'var(--mantine-color-gray-0)',
-                      opacity: 0.85,
-                      transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
-                    }}
-                    className="event-card-hover"
-                    onClick={() => {
-                      if (selectedEventId === event.id) {
-                        if (event.geometry) {
-                          const newCloseUp = !isCloseUp;
-                          setIsCloseUp(newCloseUp);
-                          setFlyToGeometry(event.geometry, newCloseUp);
+          <Collapsible open={showArchivedSection}>
+            <CollapsibleContent id="archived-events">
+              <Stack gap="xs">
+                {archivedLoading ? (
+                  <Center py="md">
+                    <Loader size="sm" />
+                  </Center>
+                ) : archivedEvents.length === 0 ? (
+                  <Text c="dimmed" ta="center" size="sm" className="py-2">
+                    No archived events
+                  </Text>
+                ) : (
+                  archivedEvents.map((event: ConstructionEvent) => (
+                    <div
+                      key={event.id}
+                      ref={(el) => {
+                        if (el) eventCardRefs.current.set(event.id, el);
+                      }}
+                      className={`rounded-md border p-3 cursor-pointer transition-colors duration-150 opacity-85 ${
+                        selectedEventId === event.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-muted bg-muted/30 hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        if (selectedEventId === event.id) {
+                          if (event.geometry) {
+                            const newCloseUp = !isCloseUp;
+                            setIsCloseUp(newCloseUp);
+                            setFlyToGeometry(event.geometry, newCloseUp);
+                          }
+                        } else {
+                          selectEvent(event.id);
+                          openEventDetailModal(event.id);
+                          setIsCloseUp(false);
+                          if (event.geometry) {
+                            setFlyToGeometry(event.geometry, false);
+                          }
                         }
-                      } else {
-                        selectEvent(event.id);
-                        openEventDetailModal(event.id);
-                        setIsCloseUp(false);
-                        if (event.geometry) {
-                          setFlyToGeometry(event.geometry, false);
-                        }
-                      }
-                    }}
-                    onMouseEnter={() => !isEventFormOpen && setHoveredEvent(event.id)}
-                    onMouseLeave={() => setHoveredEvent(null)}
-                  >
-                    <Group justify="space-between" mb={4} wrap="nowrap" align="flex-start">
-                      <Text fw={500} size="sm" lineClamp={2} style={{ flex: 1, lineHeight: 1.3 }} c="dimmed">
-                        {event.name}
-                      </Text>
-                      <Group gap={4}>
-                        <Badge color="gray" size="xs" variant="light">
-                          Archived
-                        </Badge>
-                        <Badge color={STATUS_COLORS[event.status]} size="sm" style={{ flexShrink: 0 }}>
-                          {STATUS_LABELS[event.status]}
-                        </Badge>
+                      }}
+                      onMouseEnter={() => !isEventFormOpen && setHoveredEvent(event.id)}
+                      onMouseLeave={() => setHoveredEvent(null)}
+                    >
+                      <Group justify="space-between" mb="xs" className="flex-nowrap items-start">
+                        <Text fw={500} size="sm" lineClamp={2} c="dimmed" className="flex-1" style={{ lineHeight: 1.3 }}>
+                          {event.name}
+                        </Text>
+                        <Group gap={4}>
+                          <Badge variant="outline" className="text-[10px]">
+                            Archived
+                          </Badge>
+                          <Badge variant={STATUS_VARIANT[event.status]} className="shrink-0">
+                            {STATUS_LABELS[event.status]}
+                          </Badge>
+                        </Group>
                       </Group>
-                    </Group>
 
-                    {event.department && (
-                      <Text size="xs" c="gray.5" fw={500} mb={6}>
-                        {event.department}
-                      </Text>
-                    )}
-
-                    <Group gap="xs" mb={6}>
-                      <Badge variant="outline" size="xs" color="gray">
-                        {event.restrictionType}
-                      </Badge>
-                      {event.ward && (
-                        <Badge variant="outline" size="xs" color="gray">
-                          {event.ward}
-                        </Badge>
+                      {event.department && (
+                        <Text size="xs" c="dimmed" fw={500} mb="xs">
+                          {event.department}
+                        </Text>
                       )}
-                    </Group>
 
-                    <Text size="xs" c="gray.5">
-                      {dayjs(event.startDate).format('YYYY/MM/DD')} - {dayjs(event.endDate).format('YYYY/MM/DD')}
-                    </Text>
-                  </Card>
-                ))
-              )}
-            </Stack>
-          </Collapse>
+                      <Group gap="xs" mb="xs">
+                        <Badge variant="outline" className="text-[10px]">
+                          {event.restrictionType}
+                        </Badge>
+                        {event.ward && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {event.ward}
+                          </Badge>
+                        )}
+                      </Group>
+
+                      <Text size="xs" c="dimmed">
+                        {dayjs(event.startDate).format('YYYY/MM/DD')} - {dayjs(event.endDate).format('YYYY/MM/DD')}
+                      </Text>
+                    </div>
+                  ))
+                )}
+              </Stack>
+            </CollapsibleContent>
+          </Collapsible>
         </Stack>
       )}
     </Stack>

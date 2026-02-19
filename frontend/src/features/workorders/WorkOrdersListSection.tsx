@@ -1,4 +1,7 @@
-import { Stack, Text, Paper, Badge, Group, Button, Alert, Loader, Center } from '@mantine/core';
+import { Stack, Text, Paper, Group, Center, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { IconPlus, IconAlertCircle, IconTool, IconEye, IconHammer } from '@tabler/icons-react';
 import { useWorkOrders } from '../../hooks/useApi';
 import type { WorkOrderStatus, WorkOrderType } from '@nagoya/shared';
@@ -11,11 +14,11 @@ interface WorkOrdersListSectionProps {
 }
 
 const STATUS_COLORS: Record<WorkOrderStatus, string> = {
-  draft: 'gray',
-  assigned: 'blue',
-  in_progress: 'yellow',
-  completed: 'green',
-  cancelled: 'red',
+  draft: 'bg-gray-100 text-gray-800',
+  assigned: 'bg-blue-100 text-blue-800',
+  in_progress: 'bg-yellow-100 text-yellow-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
 };
 
 const STATUS_LABELS: Record<WorkOrderStatus, string> = {
@@ -46,8 +49,9 @@ export function WorkOrdersListSection({ eventId, onCreateWorkOrder, onSelectWork
 
   if (error) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red">
-        Failed to load work orders
+      <Alert variant="destructive">
+        <IconAlertCircle size={16} />
+        <AlertDescription>Failed to load work orders</AlertDescription>
       </Alert>
     );
   }
@@ -59,11 +63,11 @@ export function WorkOrdersListSection({ eventId, onCreateWorkOrder, onSelectWork
           Work Orders ({workOrders.length})
         </Text>
         <Button
-          size="compact-xs"
-          variant="light"
-          leftSection={<IconPlus size={12} />}
+          size="sm"
+          variant="outline"
           onClick={onCreateWorkOrder}
         >
+          <IconPlus size={12} className="mr-1" />
           Add
         </Button>
       </Group>
@@ -73,7 +77,7 @@ export function WorkOrdersListSection({ eventId, onCreateWorkOrder, onSelectWork
           No work orders for this event.
         </Text>
       ) : (
-        <Stack gap={4}>
+        <Stack gap="xs">
           {workOrders.map((wo) => {
             const TypeIcon = TYPE_ICONS[wo.type] || IconTool;
             return (
@@ -84,19 +88,19 @@ export function WorkOrdersListSection({ eventId, onCreateWorkOrder, onSelectWork
                 style={{ cursor: 'pointer' }}
                 onClick={() => onSelectWorkOrder(wo.id)}
               >
-                <Group justify="space-between" wrap="nowrap">
-                  <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                <Group justify="space-between">
+                  <Group gap="xs">
                     <TypeIcon size={14} />
                     <Text size="xs" truncate fw={500}>
                       {wo.title}
                     </Text>
                   </Group>
-                  <Badge size="xs" color={STATUS_COLORS[wo.status]}>
+                  <Badge className={STATUS_COLORS[wo.status]}>
                     {STATUS_LABELS[wo.status]}
                   </Badge>
                 </Group>
-                <Group gap="xs" mt={4}>
-                  <Badge size="xs" variant="outline">
+                <Group gap="xs" mt="xs">
+                  <Badge variant="outline" className="text-xs">
                     {wo.type}
                   </Badge>
                   {wo.assignedDept && (

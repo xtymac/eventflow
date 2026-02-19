@@ -1,18 +1,10 @@
-import { useRef, useEffect } from 'react';
-import {
-  TextInput,
-  Paper,
-  Stack,
-  Text,
-  Group,
-  Loader,
-  ActionIcon,
-  Collapse,
-  ScrollArea,
-  Kbd,
-  Alert,
-} from '@mantine/core';
-import { useHotkeys, useClickOutside } from '@mantine/hooks';
+import { useRef, useEffect, useCallback } from 'react';
+import { Stack, Text, Group, Loader } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import {
   IconX,
   IconMapPin,
@@ -23,6 +15,7 @@ import {
   IconAlertTriangle,
   IconMap2,
 } from '@tabler/icons-react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { useMapSearch } from '../hooks/useMapSearch';
 import { useSearchStore } from '../stores/searchStore';
 import { useUIStore } from '../stores/uiStore';
@@ -96,7 +89,19 @@ export function MapSearch() {
   const showLoading = isLoading || isFetching || (isValidQuery && !hasMatchingResults && !error);
 
   // Click outside to close dropdown
-  useClickOutside(() => setIsOpen(false), null, [dropdownRef.current, inputRef.current].filter(Boolean) as HTMLElement[]);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        inputRef.current && !inputRef.current.contains(target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setIsOpen]);
 
   // Update search center when coordinate search is performed
   useEffect(() => {
@@ -115,21 +120,20 @@ export function MapSearch() {
   }, [data, setSearchCenter, setFlyToGeometry, setIsOpen]);
 
   // Keyboard shortcuts
-  useHotkeys([
-    ['mod+k', (e) => {
-      e.preventDefault();
-      setIsOpen(true);
-      inputRef.current?.focus();
-    }],
-    ['Escape', () => {
-      if (isOpen) {
-        setIsOpen(false);
-        inputRef.current?.blur();
-      }
-    }],
-  ]);
+  useHotkeys('mod+k', (e) => {
+    e.preventDefault();
+    setIsOpen(true);
+    inputRef.current?.focus();
+  });
 
-  const handleSelect = (result: SearchResult) => {
+  useHotkeys('Escape', () => {
+    if (isOpen) {
+      setIsOpen(false);
+      inputRef.current?.blur();
+    }
+  });
+
+  const handleSelect = useCallback((result: SearchResult) => {
     selectResult(result.id);
 
     const geometry = result.geometry
@@ -190,7 +194,7 @@ export function MapSearch() {
 
     // Close dropdown
     setIsOpen(false);
-  };
+  }, [selectResult, setSearchCenter, setFlyToGeometry, showEvents, toggleEvents, selectEvent, openEventDetailModal, setCurrentView, showAssets, toggleAssets, selectAsset, showGreenSpaces, toggleGreenSpaces, showStreetLights, toggleStreetLights, showRivers, toggleRivers, showStreetTrees, toggleStreetTrees, showParkFacilities, toggleParkFacilities, showPavementSections, togglePavementSections, showPumpStations, togglePumpStations, setIsOpen]);
 
   const handleClear = () => {
     setQuery('');
@@ -242,118 +246,106 @@ export function MapSearch() {
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%', maxWidth: 360 }}>
-      <TextInput
-        ref={inputRef}
-        placeholder="場所を検索 / 座標入力... ⌘K"
-        leftSection={<IconMap2 size={16} />}
-        rightSection={
-          query ? (
-            <ActionIcon
-              size="sm"
-              variant="subtle"
+      <div className="relative">
+        <IconMap2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          placeholder="場所を検索 / 座標入力... ⌘K"
+          className="rounded-full pl-9 pr-10"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!isOpen && e.target.value.length > 0) {
+              setIsOpen(true);
+            }
+          }}
+          onFocus={() => {
+            if (query.length >= 2) {
+              setIsOpen(true);
+            }
+          }}
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          {query ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
               onClick={handleClear}
               aria-label="Clear search"
             >
               <IconX size={14} />
-            </ActionIcon>
+            </Button>
           ) : (
-            <Kbd size="xs">K</Kbd>
-          )
-        }
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          if (!isOpen && e.target.value.length > 0) {
-            setIsOpen(true);
-          }
-        }}
-        onFocus={() => {
-          if (query.length >= 2) {
-            setIsOpen(true);
-          }
-        }}
-        radius="xl"
-        styles={{
-          input: {
-            backgroundColor: 'var(--mantine-color-body)',
-            transition: 'border-color 0.2s ease',
-            '&:focus': {
-              borderColor: 'var(--mantine-color-blue-5)',
-            },
-          },
-        }}
-      />
-
-      <Collapse in={isOpen && query.length >= 2 && !isCoordinateSearch}>
-        <Paper
-          shadow="md"
-          p="sm"
-          withBorder
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 4px)',
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            maxHeight: 350,
-          }}
-        >
-          {showLoading ? (
-            <Group justify="center" py="md">
-              <Loader size="sm" />
-              <Text size="sm" c="dimmed">検索中...</Text>
-            </Group>
-          ) : error ? (
-            <Text size="sm" c="red" ta="center" py="md">
-              検索エラーが発生しました
-            </Text>
-          ) : isOutOfBounds ? (
-            <Alert color="yellow" icon={<IconAlertTriangle size={16} />} py="xs">
-              <Text size="sm">
-                {data?.meta?.errorMessage || '指定された座標は名古屋市の範囲外です'}
-              </Text>
-            </Alert>
-          ) : results.length === 0 ? (
-            <Text size="sm" c="dimmed" ta="center" py="md">
-              「{query}」の検索結果がありません
-            </Text>
-          ) : (
-            <ScrollArea.Autosize mah={300}>
-              <Stack gap="xs">
-                {results.map((result) => (
-                  <Paper
-                    key={result.id}
-                    p="xs"
-                    withBorder
-                    style={{
-                      cursor: 'pointer',
-                      backgroundColor: selectedResultId === result.id ? 'var(--mantine-color-blue-0)' : undefined,
-                      borderColor: selectedResultId === result.id ? 'var(--mantine-color-blue-5)' : undefined,
-                    }}
-                    onClick={() => handleSelect(result)}
-                  >
-                    <Group gap="xs" wrap="nowrap">
-                      <div style={{ flexShrink: 0, color: 'var(--mantine-color-blue-6)' }}>
-                        {getTypeIcon(result.type)}
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <Text size="sm" fw={500} lineClamp={1}>
-                          {result.name}
-                        </Text>
-                        {(result.subtitle || typeLabels[result.type]) && (
-                          <Text size="xs" c="dimmed" lineClamp={1}>
-                            {result.subtitle || typeLabels[result.type]}
-                          </Text>
-                        )}
-                      </div>
-                    </Group>
-                  </Paper>
-                ))}
-              </Stack>
-            </ScrollArea.Autosize>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              K
+            </kbd>
           )}
-        </Paper>
-      </Collapse>
+        </div>
+      </div>
+
+      <Collapsible open={isOpen && query.length >= 2 && !isCoordinateSearch}>
+        <CollapsibleContent>
+          <div
+            className="absolute left-0 right-0 z-[1000] mt-1 rounded-lg border bg-background p-3 shadow-md"
+            style={{ maxHeight: 350 }}
+          >
+            {showLoading ? (
+              <Group justify="center" className="py-4">
+                <Loader size="sm" />
+                <Text size="sm" c="dimmed">検索中...</Text>
+              </Group>
+            ) : error ? (
+              <p className="py-4 text-center text-sm text-red-600">
+                検索エラーが発生しました
+              </p>
+            ) : isOutOfBounds ? (
+              <Alert variant="default" className="border-yellow-300 bg-yellow-50">
+                <IconAlertTriangle size={16} />
+                <AlertDescription>
+                  {data?.meta?.errorMessage || '指定された座標は名古屋市の範囲外です'}
+                </AlertDescription>
+              </Alert>
+            ) : results.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                「{query}」の検索結果がありません
+              </p>
+            ) : (
+              <ScrollArea className="max-h-[300px]">
+                <Stack gap="xs">
+                  {results.map((result) => (
+                    <div
+                      key={result.id}
+                      className="cursor-pointer rounded-md border p-2 hover:bg-accent"
+                      style={{
+                        backgroundColor: selectedResultId === result.id ? 'hsl(var(--accent))' : undefined,
+                        borderColor: selectedResultId === result.id ? 'hsl(var(--primary))' : undefined,
+                      }}
+                      onClick={() => handleSelect(result)}
+                    >
+                      <Group gap="xs" className="flex-nowrap">
+                        <div className="shrink-0 text-primary">
+                          {getTypeIcon(result.type)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {result.name}
+                          </p>
+                          {(result.subtitle || typeLabels[result.type]) && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {result.subtitle || typeLabels[result.type]}
+                            </p>
+                          )}
+                        </div>
+                      </Group>
+                    </div>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

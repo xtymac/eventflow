@@ -1,20 +1,13 @@
-import { Tooltip } from '@mantine/core';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { DataLayer } from './adminDataLayers';
 
 interface LayerMenuItemProps {
   layer: DataLayer;
   onToggle?: () => void;
   depth: number;
-  /** Whether this layer (or any child) is currently visible on the map */
   isActive?: boolean;
 }
 
-/**
- * Layer menu item — uniform gray box design for all items.
- * Category headers and leaf items share the same visual style;
- * categories use bold text, leaves use normal weight.
- * Placeholder items are dimmed with tooltip "データ準備中".
- */
 export function LayerMenuItem({
   layer,
   onToggle,
@@ -23,12 +16,10 @@ export function LayerMenuItem({
 }: LayerMenuItemProps) {
   const hasChildren = layer.children && layer.children.length > 0;
 
-  // Small checkmark indicator for active layers (right-aligned)
   const checkmark = isActive ? (
     <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 'auto', fontWeight: 700 }}>&#10003;</span>
   ) : null;
 
-  // Category headers: gray box with bold text (公園, 樹木)
   if (hasChildren) {
     return (
       <div
@@ -39,7 +30,7 @@ export function LayerMenuItem({
           marginLeft: depth * 20 + 12,
           marginBottom: 4,
           padding: '8px 12px',
-          backgroundColor: 'var(--mantine-color-gray-1)',
+          backgroundColor: '#f1f3f5',
           borderRadius: 2,
           fontSize: 14,
           fontWeight: 600,
@@ -52,7 +43,6 @@ export function LayerMenuItem({
     );
   }
 
-  // Leaf items: gray box (same visual style, normal weight)
   const button = (
     <button
       type="button"
@@ -67,7 +57,7 @@ export function LayerMenuItem({
         marginLeft: depth * 20 + 12,
         marginBottom: 4,
         padding: '8px 12px',
-        backgroundColor: 'var(--mantine-color-gray-1)',
+        backgroundColor: '#f1f3f5',
         color: layer.isPlaceholder ? '#adb5bd' : '#333',
         border: 'none',
         borderRadius: 2,
@@ -84,8 +74,13 @@ export function LayerMenuItem({
 
   if (layer.isPlaceholder) {
     return (
-      <Tooltip label="データ準備中" position="right" withArrow>
-        {button}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {button}
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          データ準備中
+        </TooltipContent>
       </Tooltip>
     );
   }

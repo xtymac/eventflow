@@ -6,8 +6,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Drawer, Stack, Title, Group, ActionIcon, Tabs, Box, Text, Progress, useMantineColorScheme } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Text } from '@/components/shims';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { showNotification } from '@/lib/toast';
 import { useDropzone, type FileRejection } from 'react-dropzone';
 import { IconX, IconUpload, IconDownload } from '@tabler/icons-react';
 import { useUIStore } from '../stores/uiStore';
@@ -29,8 +33,6 @@ export function ImportExportSidebar() {
   const setActiveTab = useUIStore((s) => s.setImportExportActiveTab);
   const setImportWizardStep = useUIStore((s) => s.setImportWizardStep);
   const setCurrentImportVersionId = useUIStore((s) => s.setCurrentImportVersionId);
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -79,7 +81,7 @@ export function ImportExportSidebar() {
   const handleFileValidation = useCallback((file: File): boolean => {
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (!VALID_EXTENSIONS.includes(ext)) {
-      notifications.show({
+      showNotification({
         title: 'Invalid file',
         message: `Invalid file type: ${ext}. Please use .gpkg, .geojson, or .json`,
         color: 'red',
@@ -87,7 +89,7 @@ export function ImportExportSidebar() {
       return false;
     }
     if (file.size > MAX_SIZE) {
-      notifications.show({
+      showNotification({
         title: 'File too large',
         message: 'Maximum file size is 100MB',
         color: 'red',
@@ -122,7 +124,7 @@ export function ImportExportSidebar() {
       // Open the wizard
       useUIStore.setState({ importWizardOpen: true });
 
-      notifications.show({
+      showNotification({
         title: 'Upload successful',
         message: `${file.name} uploaded successfully`,
         color: 'green',
@@ -130,7 +132,7 @@ export function ImportExportSidebar() {
     } catch (error) {
       clearInterval(progressInterval);
       setUploadProgress(0);
-      notifications.show({
+      showNotification({
         title: 'Upload failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -143,7 +145,7 @@ export function ImportExportSidebar() {
   const handleReject = useCallback((rejections: FileRejection[]) => {
     const rejection = rejections[0];
     if (rejection) {
-      notifications.show({
+      showNotification({
         title: 'Invalid file',
         message: rejection.errors[0]?.message || 'Please upload a .gpkg, .geojson, or .json file (max 100MB)',
         color: 'red',
@@ -174,154 +176,93 @@ export function ImportExportSidebar() {
   });
 
   return (
-    <Drawer
-      opened={isOpen}
-      onClose={close}
-      position="right"
-      size={width}
-      withCloseButton={false}
-      padding="md"
-      overlayProps={{ backgroundOpacity: 0.3 }}
-      styles={{
-        content: { height: '100%', display: 'flex', flexDirection: 'column' },
-        body: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-      }}
-    >
-      {/* Resize Handle - left edge */}
-      <Box
-        className={`sidebar-resize-handle ${isResizing ? 'active' : ''}`}
-        onMouseDown={handleResizeStart}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: 6,
-          height: '100%',
-          cursor: 'col-resize',
-          background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
-          transition: isResizing ? 'none' : 'background 0.2s',
-          zIndex: 10,
-        }}
-      />
-      <Stack gap="md" h="100%">
-        <Group justify="space-between">
-          <Title order={4}>Import / Export</Title>
-          <ActionIcon variant="subtle" color="gray" onClick={close}>
-            <IconX size={18} />
-          </ActionIcon>
-        </Group>
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) close(); }}>
+      <SheetContent
+        side="right"
+        className="p-0"
+        style={{ width, maxWidth: MAX_WIDTH, minWidth: MIN_WIDTH }}
+      >
+        {/* Resize Handle - left edge */}
+        <div
+          className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 transition-colors ${isResizing ? 'bg-primary' : 'hover:bg-primary/30'}`}
+          onMouseDown={handleResizeStart}
+        />
 
-        <Tabs
-          value={activeTab}
-          onChange={(value) => setActiveTab(value as 'import' | 'export')}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-        >
-          <Tabs.List>
-            <Tabs.Tab value="export" leftSection={<IconDownload size={16} />}>
-              Export
-            </Tabs.Tab>
-            <Tabs.Tab value="import" leftSection={<IconUpload size={16} />}>
-              Import
-            </Tabs.Tab>
-          </Tabs.List>
-
-          <div
-            {...getRootProps()}
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              borderRadius: 8,
-              border: isDragActive
-                ? `2px dashed ${isDragReject ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-blue-5)'}`
-                : '2px dashed transparent',
-              backgroundColor: isDragActive
-                ? isDragReject
-                  ? 'var(--mantine-color-red-0)'
-                  : isDark
-                    ? 'rgba(34, 139, 230, 0.1)'
-                    : 'var(--mantine-color-blue-0)'
-                : 'transparent',
-              transition: 'border-color 0.2s, background-color 0.2s',
-            }}
-          >
-            <input {...getInputProps()} />
-
-            {/* Drag overlay */}
-            {isDragActive && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10,
-                  pointerEvents: 'none',
-                  backgroundColor: isDark
-                    ? 'rgba(26, 27, 30, 0.9)'
-                    : 'rgba(255, 255, 255, 0.9)',
-                  borderRadius: 6,
-                }}
-              >
-                <IconUpload
-                  size={48}
-                  style={{
-                    color: isDragReject
-                      ? 'var(--mantine-color-red-5)'
-                      : 'var(--mantine-color-blue-5)',
-                    marginBottom: 12,
-                  }}
-                />
-                <Text
-                  size="lg"
-                  fw={600}
-                  c={isDragReject ? 'red' : 'blue'}
-                >
-                  {isDragReject ? 'Invalid file type' : 'Drop file to import'}
-                </Text>
-                <Text size="sm" c="dimmed" mt={4}>
-                  .gpkg, .geojson, or .json files only
-                </Text>
-              </div>
-            )}
-
-            {/* Upload progress overlay */}
-            {isUploading && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10,
-                  backgroundColor: isDark
-                    ? 'rgba(26, 27, 30, 0.9)'
-                    : 'rgba(255, 255, 255, 0.9)',
-                  borderRadius: 6,
-                  padding: 24,
-                }}
-              >
-                <Text size="sm" mb={12}>Uploading...</Text>
-                <Progress value={uploadProgress} size="sm" w="80%" animated />
-              </div>
-            )}
-
-            <Tabs.Panel value="export" pt="md" style={{ flex: 1, overflow: 'auto' }}>
-              <ExportSection />
-            </Tabs.Panel>
-
-            <Tabs.Panel value="import" pt="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <ImportSection />
-            </Tabs.Panel>
+        <div className="flex h-full flex-col gap-4 p-4 pl-5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-lg font-semibold">Import / Export</h4>
+            <Button variant="ghost" size="icon" onClick={close}>
+              <IconX size={18} />
+            </Button>
           </div>
-        </Tabs>
-      </Stack>
-    </Drawer>
+
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as 'import' | 'export')}
+            className="flex flex-1 flex-col"
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="export" className="flex-1">
+                <IconDownload size={16} className="mr-2" />
+                Export
+              </TabsTrigger>
+              <TabsTrigger value="import" className="flex-1">
+                <IconUpload size={16} className="mr-2" />
+                Import
+              </TabsTrigger>
+            </TabsList>
+
+            <div
+              {...getRootProps()}
+              className="relative flex min-h-0 flex-1 flex-col rounded-lg transition-colors"
+              style={{
+                border: isDragActive
+                  ? `2px dashed ${isDragReject ? '#ef4444' : '#3b82f6'}`
+                  : '2px dashed transparent',
+                backgroundColor: isDragActive
+                  ? isDragReject
+                    ? 'rgba(239, 68, 68, 0.05)'
+                    : 'rgba(59, 130, 246, 0.05)'
+                  : 'transparent',
+              }}
+            >
+              <input {...getInputProps()} />
+
+              {/* Drag overlay */}
+              {isDragActive && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-md bg-background/90 pointer-events-none">
+                  <IconUpload
+                    size={48}
+                    className={isDragReject ? 'text-red-500 mb-3' : 'text-blue-500 mb-3'}
+                  />
+                  <Text size="lg" fw={600} c={isDragReject ? 'red' : 'blue'}>
+                    {isDragReject ? 'Invalid file type' : 'Drop file to import'}
+                  </Text>
+                  <Text size="sm" c="dimmed" className="mt-1">
+                    .gpkg, .geojson, or .json files only
+                  </Text>
+                </div>
+              )}
+
+              {/* Upload progress overlay */}
+              {isUploading && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-md bg-background/90 p-6">
+                  <p className="mb-3 text-sm">Uploading...</p>
+                  <Progress value={uploadProgress} className="w-4/5" />
+                </div>
+              )}
+
+              <TabsContent value="export" className="mt-4 flex-1 overflow-auto">
+                <ExportSection />
+              </TabsContent>
+
+              <TabsContent value="import" className="mt-4 flex flex-1 flex-col overflow-hidden">
+                <ImportSection />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

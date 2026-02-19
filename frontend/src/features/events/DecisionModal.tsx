@@ -1,6 +1,12 @@
 import { useState } from 'react';
-import { Modal, Stack, Button, Text, Alert, Textarea, Select, Group, Divider } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Stack, Group, Text, Divider } from '@/components/shims';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { showNotification } from '@/lib/toast';
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { useCloseEvent, useWorkOrders, useEvent } from '../../hooks/useApi';
@@ -57,14 +63,14 @@ export function DecisionModal() {
       {
         onSuccess: () => {
           handleClose();
-          notifications.show({
+          showNotification({
             title: 'Event Closed',
             message: 'Event closed successfully.',
             color: 'green',
           });
         },
         onError: (error) => {
-          notifications.show({
+          showNotification({
             title: 'Close Failed',
             message: error instanceof Error ? error.message : 'Failed to close event',
             color: 'red',
@@ -75,89 +81,107 @@ export function DecisionModal() {
   };
 
   return (
-    <Modal
-      opened={isDecisionModalOpen}
-      onClose={handleClose}
-      title="Close Event"
-      centered
-      zIndex={300}
-      size="md"
-    >
-      {!decisionEventId ? (
-        <Alert icon={<IconAlertCircle size={16} />} color="red">
-          No event selected. Please close and try again.
-        </Alert>
-      ) : isPendingReview ? (
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            Review the event and confirm closure. Gov role required.
-          </Text>
+    <Dialog open={isDecisionModalOpen} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent style={{ zIndex: 300 }}>
+        <DialogHeader>
+          <DialogTitle>Close Event</DialogTitle>
+        </DialogHeader>
 
-          {/* Work Orders Status */}
-          {workOrders.length > 0 && (
-            <Alert
-              color={hasIncompleteWorkOrders ? 'yellow' : 'green'}
-              icon={hasIncompleteWorkOrders ? <IconAlertCircle size={16} /> : <IconCheck size={16} />}
-            >
-              <Group gap="xs">
-                <Text size="sm" fw={500}>
-                  Work Orders: {workOrders.length - incompleteWorkOrders.length}/{workOrders.length} completed
-                </Text>
-              </Group>
-              {hasIncompleteWorkOrders && (
-                <Text size="xs" mt={4}>
-                  {incompleteWorkOrders.length} work order(s) still in progress. You can still close, but consider completing them first.
-                </Text>
-              )}
-            </Alert>
-          )}
+        {!decisionEventId ? (
+          <Alert variant="destructive">
+            <IconAlertCircle size={16} />
+            <AlertDescription>
+              No event selected. Please close and try again.
+            </AlertDescription>
+          </Alert>
+        ) : isPendingReview ? (
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">
+              Review the event and confirm closure. Gov role required.
+            </Text>
 
-          <Divider />
+            {/* Work Orders Status */}
+            {workOrders.length > 0 && (
+              <Alert variant={hasIncompleteWorkOrders ? 'default' : 'default'} className={hasIncompleteWorkOrders ? 'border-yellow-300 bg-yellow-50' : 'border-green-300 bg-green-50'}>
+                {hasIncompleteWorkOrders ? <IconAlertCircle size={16} /> : <IconCheck size={16} />}
+                <AlertDescription>
+                  <Group gap="xs">
+                    <Text size="sm" fw={500}>
+                      Work Orders: {workOrders.length - incompleteWorkOrders.length}/{workOrders.length} completed
+                    </Text>
+                  </Group>
+                  {hasIncompleteWorkOrders && (
+                    <Text size="xs" mt="xs">
+                      {incompleteWorkOrders.length} work order(s) still in progress. You can still close, but consider completing them first.
+                    </Text>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* Role Selection (temporary until RBAC) */}
-          <Select
-            label="Your Role"
-            description="Temporary: Select your Gov role for authorization"
-            placeholder="Select role"
-            data={GOV_ROLE_OPTIONS}
-            value={selectedRole}
-            onChange={setSelectedRole}
-            required
-          />
+            <Divider />
 
-          {/* Close Notes */}
-          <Textarea
-            label="Close Notes"
-            description="Optional notes about the event closure"
-            placeholder="Any notes about this closure..."
-            value={closeNotes}
-            onChange={(e) => setCloseNotes(e.currentTarget.value)}
-            minRows={2}
-          />
+            {/* Role Selection (temporary until RBAC) */}
+            <div className="flex flex-col gap-1.5">
+              <Label>
+                Your Role <span className="text-destructive">*</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">Temporary: Select your Gov role for authorization</p>
+              <Select
+                value={selectedRole || undefined}
+                onValueChange={setSelectedRole}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GOV_ROLE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Divider />
+            {/* Close Notes */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Close Notes</Label>
+              <p className="text-xs text-muted-foreground">Optional notes about the event closure</p>
+              <Textarea
+                placeholder="Any notes about this closure..."
+                value={closeNotes}
+                onChange={(e) => setCloseNotes(e.currentTarget.value)}
+                rows={2}
+              />
+            </div>
 
-          {/* Action Buttons */}
-          <Group justify="flex-end">
-            <Button variant="subtle" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              color="teal"
-              onClick={handleCloseEvent}
-              loading={closeEvent.isPending}
-              disabled={!selectedRole}
-              leftSection={<IconCheck size={16} />}
-            >
-              Close Event
-            </Button>
-          </Group>
-        </Stack>
-      ) : (
-        <Alert icon={<IconAlertCircle size={16} />} color="yellow">
-          This event is not in pending review status and cannot be closed.
-        </Alert>
-      )}
-    </Modal>
+            <Divider />
+
+            {/* Action Buttons */}
+            <Group justify="flex-end">
+              <Button variant="ghost" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                className="bg-teal-600 hover:bg-teal-700 text-white"
+                onClick={handleCloseEvent}
+                disabled={closeEvent.isPending || !selectedRole}
+              >
+                <IconCheck size={16} />
+                Close Event
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
+          <Alert className="border-yellow-300 bg-yellow-50">
+            <IconAlertCircle size={16} />
+            <AlertDescription>
+              This event is not in pending review status and cannot be closed.
+            </AlertDescription>
+          </Alert>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

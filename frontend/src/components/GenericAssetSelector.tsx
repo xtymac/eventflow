@@ -1,6 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Select, Text, Loader } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { Text, Loader } from '@/components/shims';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useDebounce } from 'use-debounce';
 import {
   useAssets,
   useRiversInBbox,
@@ -54,8 +62,8 @@ export function GenericAssetSelector({
   error,
   disabled = false,
 }: GenericAssetSelectorProps) {
-  const [searchValue, setSearchValue] = useState('');
-  const [debouncedSearch] = useDebouncedValue(searchValue, 300);
+  const [searchValue] = useState('');
+  const [debouncedSearch] = useDebounce(searchValue, 300);
   const mapBbox = useUIStore((s) => s.mapBbox);
 
   // Fetch assets based on type
@@ -187,26 +195,36 @@ export function GenericAssetSelector({
   const isLoading = query.isLoading || query.isFetching;
 
   return (
-    <Select
-      label={label}
-      placeholder={placeholder}
-      data={options}
-      value={value}
-      onChange={onChange}
-      searchable
-      clearable
-      searchValue={searchValue}
-      onSearchChange={setSearchValue}
-      error={error}
-      disabled={disabled}
-      nothingFoundMessage={
-        isLoading ? <Loader size="xs" /> :
-        !mapBbox && assetType !== 'road' ?
-          <Text size="xs" c="dimmed">地図を移動してください</Text> :
-          <Text size="xs" c="dimmed">見つかりませんでした</Text>
-      }
-      rightSection={isLoading ? <Loader size="xs" /> : undefined}
-      maxDropdownHeight={300}
-    />
+    <div>
+      <Label className="mb-1.5 block text-sm font-medium">{label}</Label>
+      <Select
+        value={value ?? ''}
+        onValueChange={(v) => onChange(v || null)}
+        disabled={disabled}
+      >
+        <SelectTrigger className={error ? 'border-red-500' : ''}>
+          <SelectValue placeholder={placeholder} />
+          {isLoading && <Loader size="xs" className="ml-2" />}
+        </SelectTrigger>
+        <SelectContent>
+          {options.length > 0 ? (
+            options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))
+          ) : (
+            <div className="px-2 py-4 text-center">
+              {isLoading ? (
+                <Loader size="xs" />
+              ) : !mapBbox && assetType !== 'road' ? (
+                <Text size="xs" c="dimmed">地図を移動してください</Text>
+              ) : (
+                <Text size="xs" c="dimmed">見つかりませんでした</Text>
+              )}
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
   );
 }

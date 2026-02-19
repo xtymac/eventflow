@@ -10,21 +10,18 @@ import {
     Stack,
     Text,
     Group,
-    Card,
-    Tabs,
-    Badge,
-    Loader,
-    Alert,
-    ScrollArea,
-    Paper,
     Center,
-    Button,
     Box,
     Divider,
-    ThemeIcon,
     Title,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+    Loader,
+} from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { showNotification } from '@/lib/toast';
 import {
     IconPlus,
     IconPencil,
@@ -64,23 +61,20 @@ function LocalFeatureTable({ features, emptyMessage, onFeatureClick }: LocalFeat
     }
 
     return (
-        <ScrollArea h="calc(100vh - 400px)" type="auto" offsetScrollbars>
+        <ScrollArea className="h-[calc(100vh-400px)]">
             <Stack gap="xs">
                 {features.slice(0, 100).map((feature, index) => {
                     const props = feature.properties as FeatureProperties | null;
                     const hasGeometry = !!feature.geometry;
                     return (
-                        <Card
+                        <div
                             key={props?.id || index}
-                            withBorder
-                            padding="xs"
-                            radius="sm"
+                            className="border rounded-sm p-2 feature-card"
                             onClick={() => hasGeometry && onFeatureClick?.(feature)}
                             style={{
                                 cursor: hasGeometry && onFeatureClick ? 'pointer' : 'default',
                                 transition: 'background-color 0.2s',
                             }}
-                            className="feature-card"
                         >
                             <Group justify="space-between" wrap="nowrap">
                                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
@@ -92,19 +86,19 @@ function LocalFeatureTable({ features, emptyMessage, onFeatureClick }: LocalFeat
                                             {props?.id || '-'}
                                         </Text>
                                         {props?.ward && (
-                                            <Badge size="xs" variant="dot" color="gray">
+                                            <Badge variant="outline" className="text-[10px] px-1 py-0">
                                                 {props.ward}
                                             </Badge>
                                         )}
                                     </Group>
                                 </Stack>
                                 {props?.roadType && (
-                                    <Badge size="xs" variant="light">
+                                    <Badge variant="secondary" className="text-[10px] px-1 py-0">
                                         {props.roadType}
                                     </Badge>
                                 )}
                             </Group>
-                        </Card>
+                        </div>
                     );
                 })}
                 {features.length > 100 && (
@@ -124,31 +118,30 @@ interface ChangeCountCardProps {
     color: string;
 }
 
+const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = {
+    green: { border: 'border-green-300', bg: 'bg-green-50', text: 'text-green-800' },
+    blue: { border: 'border-blue-300', bg: 'bg-blue-50', text: 'text-blue-800' },
+    orange: { border: 'border-orange-300', bg: 'bg-orange-50', text: 'text-orange-800' },
+};
+
 function ChangeCountCard({ icon, count, label, color }: ChangeCountCardProps) {
+    const colors = COLOR_MAP[color] || COLOR_MAP.blue;
     return (
-        <Paper
-            withBorder
-            p="xs"
-            radius="md"
-            flex={1}
-            style={{
-                borderColor: `var(--mantine-color-${color}-3)`,
-                backgroundColor: `var(--mantine-color-${color}-0)`,
-                textAlign: 'center',
-            }}
+        <div
+            className={`border rounded-md p-2 flex-1 text-center ${colors.border} ${colors.bg}`}
         >
             <Stack gap={4} align="center">
                 <Group gap={4}>
-                    <ThemeIcon size="sm" color={color} variant="transparent">
+                    <div className={colors.text}>
                         {icon}
-                    </ThemeIcon>
-                    <Text fw={700} size="md" ff="monospace" c={`${color}.8`}>
+                    </div>
+                    <Text fw={700} size="md" ff="monospace" className={colors.text}>
                         {count.toLocaleString()}
                     </Text>
                 </Group>
-                <Text size="xs" c={`${color}.8`}>{label}</Text>
+                <Text size="xs" className={colors.text}>{label}</Text>
             </Stack>
-        </Paper>
+        </div>
     );
 }
 
@@ -166,7 +159,7 @@ export function ImportVersionDetails({
     onBack,
 }: ImportVersionDetailsProps) {
     const { data: diffData, isLoading, error } = useHistoricalDiff(version.id);
-    const [activeTab, setActiveTab] = useState<string | null>('updated');
+    const [activeTab, setActiveTab] = useState<string>('updated');
 
     const { closeImportExportSidebar, enterHistoricalPreview } = useUIStore();
     const setImportAreaHighlight = useMapStore((s) => s.setImportAreaHighlight);
@@ -195,7 +188,7 @@ export function ImportVersionDetails({
 
     const handleFeatureClick = (feature: Feature) => {
         if (!feature.geometry) {
-            notifications.show({
+            showNotification({
                 title: 'Cannot highlight',
                 message: 'This feature has no geometry data',
                 color: 'yellow',
@@ -230,7 +223,7 @@ export function ImportVersionDetails({
     const handlePreviewAll = () => {
         const allFeatures = getAllModifiedFeatures();
         if (allFeatures.length === 0) {
-            notifications.show({
+            showNotification({
                 title: 'No changes',
                 message: 'No map changes to preview',
                 color: 'yellow',
@@ -260,7 +253,8 @@ export function ImportVersionDetails({
         <Stack gap="md" h="100%" style={{ overflow: 'hidden' }}>
             {/* Header */}
             <Box>
-                <Button variant="subtle" leftSection={<IconArrowLeft size={16} />} size="xs" onClick={onBack} mb="xs" px={0}>
+                <Button variant="ghost" size="sm" onClick={onBack} className="mb-1 px-0">
+                    <IconArrowLeft size={16} className="mr-1" />
                     Back to History
                 </Button>
                 <Group justify="space-between" align="flex-start">
@@ -268,8 +262,11 @@ export function ImportVersionDetails({
                         <Title order={5}>Version #{displayNumber}</Title>
                         <Group gap="xs">
                             <Badge
-                                color={version.status === 'published' ? 'green' : 'orange'}
-                                variant="light"
+                                className={
+                                    version.status === 'published'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-orange-100 text-orange-800'
+                                }
                             >
                                 {version.status}
                             </Badge>
@@ -290,8 +287,11 @@ export function ImportVersionDetails({
             )}
 
             {error && (
-                <Alert color="yellow" icon={<IconInfoCircle size={16} />}>
-                    Details not available for this version.
+                <Alert>
+                    <IconInfoCircle size={16} />
+                    <AlertDescription>
+                        Details not available for this version.
+                    </AlertDescription>
                 </Alert>
             )}
 
@@ -320,48 +320,50 @@ export function ImportVersionDetails({
                     </Group>
 
                     {hasNoChanges && (
-                        <Alert color="blue" variant="light">
-                            No road data changes in this version.
+                        <Alert>
+                            <AlertDescription>
+                                No road data changes in this version.
+                            </AlertDescription>
                         </Alert>
                     )}
 
                     {/* List Tabs */}
                     {hasChanges && (
-                        <Stack flex={1} style={{ overflow: 'hidden' }}>
-                            <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md" defaultValue="updated">
-                                <Tabs.List grow>
-                                    <Tabs.Tab value="updated" disabled={diff.stats.updatedCount === 0}>
+                        <Stack style={{ flex: 1, overflow: 'hidden' }}>
+                            <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="updated">
+                                <TabsList className="w-full">
+                                    <TabsTrigger value="updated" disabled={diff.stats.updatedCount === 0} className="flex-1">
                                         Updated
-                                    </Tabs.Tab>
-                                    <Tabs.Tab value="added" disabled={diff.stats.addedCount === 0}>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="added" disabled={diff.stats.addedCount === 0} className="flex-1">
                                         Added
-                                    </Tabs.Tab>
-                                    <Tabs.Tab value="deactivated" disabled={diff.stats.deactivatedCount === 0}>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="deactivated" disabled={diff.stats.deactivatedCount === 0} className="flex-1">
                                         Removed
-                                    </Tabs.Tab>
-                                </Tabs.List>
+                                    </TabsTrigger>
+                                </TabsList>
 
-                                <Tabs.Panel value="updated" pt="sm">
+                                <TabsContent value="updated" className="pt-2">
                                     <LocalFeatureTable
                                         features={diff.updated}
                                         emptyMessage="No updates"
                                         onFeatureClick={handleFeatureClick}
                                     />
-                                </Tabs.Panel>
-                                <Tabs.Panel value="added" pt="sm">
+                                </TabsContent>
+                                <TabsContent value="added" className="pt-2">
                                     <LocalFeatureTable
                                         features={diff.added}
                                         emptyMessage="No additions"
                                         onFeatureClick={handleFeatureClick}
                                     />
-                                </Tabs.Panel>
-                                <Tabs.Panel value="deactivated" pt="sm">
+                                </TabsContent>
+                                <TabsContent value="deactivated" className="pt-2">
                                     <LocalFeatureTable
                                         features={diff.deactivated}
                                         emptyMessage="No removals"
                                         onFeatureClick={handleFeatureClick}
                                     />
-                                </Tabs.Panel>
+                                </TabsContent>
                             </Tabs>
                         </Stack>
                     )}
@@ -369,13 +371,13 @@ export function ImportVersionDetails({
             )}
 
             {/* Footer Action */}
-            <Box pt="md" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
+            <Box pt="md" style={{ borderTop: '1px solid hsl(var(--border))' }}>
                 <Button
-                    fullWidth
+                    className="w-full"
                     onClick={handlePreviewAll}
                     disabled={!hasChanges}
-                    leftSection={<IconMap size={16} />}
                 >
+                    <IconMap size={16} className="mr-1" />
                     Preview All on Map
                 </Button>
             </Box>

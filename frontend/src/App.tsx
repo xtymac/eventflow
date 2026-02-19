@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { AppShell, Burger, Group, Title, SegmentedControl, Stack, ActionIcon, Tooltip, ScrollArea, Text, Indicator, Box } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { IconBell, IconX, IconFileImport } from '@tabler/icons-react';
+import { Stack, Text, Group } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { IconBell, IconX, IconFileImport, IconMenu2 } from '@tabler/icons-react';
 import { useShallow } from 'zustand/shallow';
+import { useDisclosure } from './hooks/useDisclosure';
 import { EventList } from './features/events/EventList';
 import { AssetList } from './features/assets/AssetList';
 import { InspectionList } from './features/inspections/InspectionList';
@@ -16,8 +20,6 @@ import { useUIStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useNotifications } from './hooks/useNotifications';
 import { EventEditorOverlay } from './features/events/EventEditorOverlay';
-// Phase 0: RoadUpdateModeOverlay disabled - Road editing is frozen
-// import { RoadUpdateModeOverlay } from './features/assets/RoadUpdateModeOverlay';
 import { InspectionEditorOverlay } from './features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from './features/inspections/InspectionDetailModal';
 import { AssetDetailPanel } from './features/assets/AssetDetailPanel';
@@ -55,11 +57,9 @@ function App() {
   useEffect(() => {
     const hintShown = sessionStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
     if (!hintShown) {
-      // Delay the hint to let the page and list load first
       const timer = setTimeout(() => {
         setShowResizeHint(true);
         sessionStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
-        // Remove hint class after animation completes (2 cycles * 0.5s = 1s)
         setTimeout(() => setShowResizeHint(false), 1200);
       }, 2000);
       return () => clearTimeout(timer);
@@ -95,10 +95,11 @@ function App() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, sidebarWidth]);
+
   // Sync UI state with URL parameters (filters, tabs, selections)
   useUrlState();
 
-  const [mobileOpened, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
+  const [, { toggle: toggleMobile, open: openMobile }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop, open: openDesktop }] = useDisclosure(true);
   const {
     currentView,
@@ -110,9 +111,6 @@ function App() {
     detailModalEventId,
     closeEventDetailModal,
     isRoadUpdateModeActive,
-    // Phase 0: Road Update Mode disabled - these are no longer used
-    // roadUpdateEventId,
-    // exitRoadUpdateMode,
     isInspectionFormOpen,
     selectedInspectionForEdit,
     inspectionFormEventId,
@@ -134,9 +132,6 @@ function App() {
     detailModalEventId: state.detailModalEventId,
     closeEventDetailModal: state.closeEventDetailModal,
     isRoadUpdateModeActive: state.isRoadUpdateModeActive,
-    // Phase 0: Road Update Mode disabled - these are no longer used
-    // roadUpdateEventId: state.roadUpdateEventId,
-    // exitRoadUpdateMode: state.exitRoadUpdateMode,
     isInspectionFormOpen: state.isInspectionFormOpen,
     selectedInspectionForEdit: state.selectedInspectionForEdit,
     inspectionFormEventId: state.inspectionFormEventId,
@@ -189,171 +184,150 @@ function App() {
     }
   };
 
+  const showLeftSidebar = !isFullScreenMap && desktopOpened;
+  const showRightSidebar = detailModalEventId || selectedAssetId || isHistoricalPreviewMode;
+
   return (
-      <AppShell
-        header={{ height: 60 }}
-        navbar={{
-          width: sidebarWidth,
-          breakpoint: 'sm',
-          collapsed: { mobile: isFullScreenMap || !mobileOpened, desktop: isFullScreenMap || !desktopOpened },
-        }}
-        aside={{
-          width: 400,
-          breakpoint: 'sm',
-          collapsed: { mobile: !detailModalEventId && !selectedAssetId && !isHistoricalPreviewMode, desktop: !detailModalEventId && !selectedAssetId && !isHistoricalPreviewMode },
-        }}
-        padding={0}
-      >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Burger
-              opened={!isFullScreenMap && mobileOpened}
-              onClick={toggleMobile}
-              hiddenFrom="sm"
-              size="sm"
-            />
-            <Burger
-              opened={!isFullScreenMap && desktopOpened}
-              onClick={toggleDesktop}
-              visibleFrom="sm"
-              size="sm"
-            />
-            <img src="/favicon.svg" alt="EventFlow" width={44} height={44} style={{ marginLeft: 8 }} />
-            <Title order={3}>EventFlow</Title>
-          </Group>
-
-          {/* Map Search - centered in header */}
-          <MapSearch />
-
-          <Group gap="xs">
-            <Tooltip label="Import / Export">
-              <ActionIcon variant="subtle" onClick={toggleImportExportSidebar}>
-                <IconFileImport size={20} />
-              </ActionIcon>
-            </Tooltip>
-
-            <Tooltip label="Notifications">
-              <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
-                <ActionIcon variant="subtle" onClick={toggleSidebar}>
-                  <IconBell size={20} />
-                </ActionIcon>
-              </Indicator>
-            </Tooltip>
-          </Group>
+    <div className="flex h-screen flex-col">
+      {/* Header */}
+      <header className="flex h-[60px] shrink-0 items-center justify-between border-b px-4">
+        <Group>
+          <Button variant="ghost" size="icon" onClick={toggleDesktop} className="hidden sm:flex">
+            <IconMenu2 size={20} />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={toggleMobile} className="sm:hidden">
+            <IconMenu2 size={20} />
+          </Button>
+          <img src="/favicon.svg" alt="EventFlow" width={44} height={44} className="ml-2" />
+          <h3 className="text-lg font-semibold">EventFlow</h3>
         </Group>
-      </AppShell.Header>
 
-      <AppShell.Navbar p="md">
-        <AppShell.Section>
-          <Stack gap="xs" mb="md">
-            <SegmentedControl
-              value={currentView}
-              onChange={(value) => setCurrentView(value as View)}
-              data={VIEW_OPTIONS}
-              fullWidth
+        {/* Map Search - centered in header */}
+        <MapSearch />
+
+        <Group gap="xs">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={toggleImportExportSidebar}>
+                <IconFileImport size={20} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Import / Export</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="relative">
+                <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+                  <IconBell size={20} />
+                </Button>
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Notifications</TooltipContent>
+          </Tooltip>
+        </Group>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left sidebar */}
+        {showLeftSidebar && (
+          <aside className="flex shrink-0 flex-col border-r p-4" style={{ width: sidebarWidth }}>
+            <Stack gap="xs" className="mb-4">
+              <ToggleGroup
+                type="single"
+                value={currentView}
+                onValueChange={(value) => { if (value) setCurrentView(value as View); }}
+                className="w-full"
+              >
+                {VIEW_OPTIONS.map((opt) => (
+                  <ToggleGroupItem key={opt.value} value={opt.value} className="flex-1">
+                    {opt.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Stack>
+
+            <ScrollArea className="flex-1">
+              {renderSidebarContent()}
+            </ScrollArea>
+          </aside>
+        )}
+
+        {/* Resize Handle */}
+        {showLeftSidebar && (
+          <div
+            className={`sidebar-resize-handle hidden cursor-col-resize sm:block ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
+            onMouseDown={handleResizeStart}
+            style={{
+              width: 6,
+              ...(showResizeHint ? {} : {
+                background: isResizing ? 'hsl(var(--primary))' : 'transparent',
+                transition: isResizing ? 'none' : 'background 0.2s',
+              }),
+            }}
+          />
+        )}
+
+        {/* Main content */}
+        <main className="relative flex-1" style={{ height: 'calc(100vh - 60px)' }}>
+          <MapView />
+          <ExportBboxConfirmOverlay />
+          <ImportPreviewOverlay />
+
+          {isEventFormOpen && (
+            <EventEditorOverlay
+              eventId={editingEventId}
+              duplicateEventId={duplicateEventId}
+              onClose={closeEventForm}
             />
-          </Stack>
-        </AppShell.Section>
+          )}
 
-        <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars key={currentView}>
-          {renderSidebarContent()}
-        </AppShell.Section>
-      </AppShell.Navbar>
+          {isInspectionFormOpen && (
+            <InspectionEditorOverlay
+              inspectionId={selectedInspectionForEdit}
+              prefillEventId={inspectionFormEventId}
+              prefillAssetId={inspectionFormAssetId}
+              onClose={closeInspectionForm}
+            />
+          )}
+        </main>
 
-      {/* Resize Handle - positioned fixed, only visible when sidebar is open on desktop */}
-      {!isFullScreenMap && desktopOpened && (
-        <Box
-          className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
-          onMouseDown={handleResizeStart}
-          visibleFrom="sm"
-          style={{
-            position: 'fixed',
-            top: 60,
-            left: sidebarWidth - 3,
-            width: 6,
-            height: 'calc(100vh - 60px)',
-            cursor: 'col-resize',
-            zIndex: 100,
-            // Don't set inline background/transition when hint animation is playing
-            ...(showResizeHint ? {} : {
-              background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
-              transition: isResizing ? 'none' : 'background 0.2s, left 0.1s',
-            }),
-          }}
-        />
-      )}
-
-      <AppShell.Main style={{ height: 'calc(100vh - 60px)', position: 'relative' }}>
-        <MapView />
-
-        {/* Export bbox confirmation overlay */}
-        <ExportBboxConfirmOverlay />
-
-        {/* Import preview overlay (when viewing a road from review step) */}
-        <ImportPreviewOverlay />
-
-        {isEventFormOpen && (
-          <EventEditorOverlay
-            eventId={editingEventId}
-            duplicateEventId={duplicateEventId}
-            onClose={closeEventForm}
-          />
+        {/* Right sidebar - Event Details, Asset Details, or Historical Preview */}
+        {showRightSidebar && (
+          <aside className="flex w-[400px] shrink-0 flex-col border-l" style={{ padding: isHistoricalPreviewMode ? 0 : 16 }}>
+            {isHistoricalPreviewMode ? (
+              <HistoricalPreviewSidebar />
+            ) : selectedAssetId && selectedAssetType ? (
+              <>
+                <Group justify="space-between" className="mb-4">
+                  <Text fw={600}>Asset Details</Text>
+                  <Button variant="ghost" size="icon" onClick={() => selectAsset(null)}>
+                    <IconX size={18} />
+                  </Button>
+                </Group>
+                <ScrollArea className="flex-1">
+                  <AssetDetailPanel assetId={selectedAssetId} assetType={selectedAssetType} />
+                </ScrollArea>
+              </>
+            ) : detailModalEventId ? (
+              <>
+                <Group justify="space-between" className="mb-4">
+                  <Text fw={600}>Event Details</Text>
+                  <Button variant="ghost" size="icon" onClick={closeEventDetailModal}>
+                    <IconX size={18} />
+                  </Button>
+                </Group>
+                <ScrollArea className="flex-1">
+                  <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
+                </ScrollArea>
+              </>
+            ) : null}
+          </aside>
         )}
-
-        {/* Phase 0: RoadUpdateModeOverlay disabled - Road editing is frozen
-        {isRoadUpdateModeActive && roadUpdateEventId && (
-          <RoadUpdateModeOverlay
-            eventId={roadUpdateEventId}
-            onClose={exitRoadUpdateMode}
-          />
-        )}
-        */}
-
-        {isInspectionFormOpen && (
-          <InspectionEditorOverlay
-            inspectionId={selectedInspectionForEdit}
-            prefillEventId={inspectionFormEventId}
-            prefillAssetId={inspectionFormAssetId}
-            onClose={closeInspectionForm}
-          />
-        )}
-      </AppShell.Main>
-
-      {/* Right sidebar - Event Details, Asset Details, or Historical Preview */}
-      <AppShell.Aside p={isHistoricalPreviewMode ? 0 : 'md'}>
-        {isHistoricalPreviewMode ? (
-          <HistoricalPreviewSidebar />
-        ) : selectedAssetId && selectedAssetType ? (
-          <>
-            <AppShell.Section>
-              <Group justify="space-between" mb="md">
-                <Text fw={600}>Asset Details</Text>
-                <ActionIcon variant="subtle" color="gray" onClick={() => selectAsset(null)}>
-                  <IconX size={18} />
-                </ActionIcon>
-              </Group>
-            </AppShell.Section>
-            <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
-              <AssetDetailPanel assetId={selectedAssetId} assetType={selectedAssetType} />
-            </AppShell.Section>
-          </>
-        ) : detailModalEventId ? (
-          <>
-            <AppShell.Section>
-              <Group justify="space-between" mb="md">
-                <Text fw={600}>Event Details</Text>
-                <ActionIcon variant="subtle" color="gray" onClick={closeEventDetailModal}>
-                  <IconX size={18} />
-                </ActionIcon>
-              </Group>
-            </AppShell.Section>
-            <AppShell.Section grow component={ScrollArea} type="hover" scrollbarSize={10} offsetScrollbars>
-              <EventDetailPanel eventId={detailModalEventId} showBackButton={false} />
-            </AppShell.Section>
-          </>
-        ) : null}
-      </AppShell.Aside>
+      </div>
 
       <DecisionModal />
 
@@ -364,15 +338,10 @@ function App() {
         />
       )}
 
-      {/* Import Wizard Modal */}
       <ImportWizard />
-
-      {/* Notification Sidebar - slides from right */}
       <NotificationSidebar />
-
-      {/* Import/Export Sidebar - slides from right */}
       <ImportExportSidebar />
-    </AppShell>
+    </div>
   );
 }
 

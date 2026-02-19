@@ -56,17 +56,6 @@ function calculateBboxAreaM2(bbox: string): number | null {
 
 // Events hooks
 export function useEvents(filters?: EventFilters, options?: { enabled?: boolean }) {
-  const params = new URLSearchParams();
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        // Convert boolean to string for URL params
-        params.append(key, typeof value === 'boolean' ? String(value) : value);
-      }
-    });
-  }
-  const queryString = params.toString() ? `?${params.toString()}` : '';
-
   return useQuery({
     queryKey: ['events', filters],
     queryFn: async () => {

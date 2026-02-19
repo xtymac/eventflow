@@ -9,16 +9,15 @@ import {
   Stack,
   Text,
   Group,
-  Badge,
-  Button,
-  ActionIcon,
-  ScrollArea,
-  Paper,
   Loader,
-  Alert,
-  Divider,
   Box,
-} from '@mantine/core';
+  Divider,
+  Paper,
+} from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   IconX,
   IconPlus,
@@ -48,7 +47,14 @@ interface ChangeCountCardProps {
   onClick: () => void;
 }
 
+const COLOR_MAP: Record<string, { border: string; activeBorder: string; activeBg: string; iconColor: string }> = {
+  green: { border: 'border-transparent', activeBorder: 'border-green-500', activeBg: 'bg-green-50', iconColor: 'text-green-600' },
+  blue: { border: 'border-transparent', activeBorder: 'border-blue-500', activeBg: 'bg-blue-50', iconColor: 'text-blue-600' },
+  orange: { border: 'border-transparent', activeBorder: 'border-orange-500', activeBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+};
+
 function ChangeCountCard({ icon, count, label, color, isActive, onClick }: ChangeCountCardProps) {
+  const colors = COLOR_MAP[color] || COLOR_MAP.blue;
   return (
     <Paper
       withBorder
@@ -57,13 +63,12 @@ function ChangeCountCard({ icon, count, label, color, isActive, onClick }: Chang
       onClick={onClick}
       style={{
         cursor: count > 0 ? 'pointer' : 'default',
-        borderColor: isActive ? `var(--mantine-color-${color}-5)` : undefined,
-        backgroundColor: isActive ? `var(--mantine-color-${color}-0)` : undefined,
         opacity: count === 0 ? 0.5 : 1,
         flex: 1,
         textAlign: 'center',
         transition: 'all 0.15s',
       }}
+      className={isActive ? `${colors.activeBorder} ${colors.activeBg}` : colors.border}
     >
       <Group justify="center" gap={4}>
         {icon}
@@ -87,8 +92,15 @@ interface RoadItemProps {
   selectedLabel: string | null;
 }
 
+const ROAD_COLOR_MAP: Record<string, { activeBorder: string; activeBg: string }> = {
+  green: { activeBorder: 'border-green-500', activeBg: 'bg-green-50' },
+  blue: { activeBorder: 'border-blue-500', activeBg: 'bg-blue-50' },
+  orange: { activeBorder: 'border-orange-500', activeBg: 'bg-orange-50' },
+};
+
 function RoadItem({ feature, featureProps, isSelected, color, onSelect, onHover, selectedGeometry, selectedLabel }: RoadItemProps) {
   const label = featureProps?.name || featureProps?.id || 'Unnamed Road';
+  const colors = ROAD_COLOR_MAP[color] || ROAD_COLOR_MAP.blue;
 
   return (
     <Paper
@@ -109,16 +121,15 @@ function RoadItem({ feature, featureProps, isSelected, color, onSelect, onHover,
       }}
       style={{
         cursor: 'pointer',
-        borderColor: isSelected ? `var(--mantine-color-${color}-5)` : undefined,
-        backgroundColor: isSelected ? `var(--mantine-color-${color}-0)` : undefined,
         transition: 'all 0.15s',
       }}
+      className={isSelected ? `${colors.activeBorder} ${colors.activeBg}` : ''}
     >
       <Text size="xs" fw={isSelected ? 600 : 400} lineClamp={1}>
         {label}
       </Text>
       {featureProps?.roadType && (
-        <Badge size="xs" variant="light" mt={2}>{featureProps.roadType}</Badge>
+        <Badge variant="secondary" className="text-[10px] px-1 py-0 mt-0.5">{featureProps.roadType}</Badge>
       )}
     </Paper>
   );
@@ -208,18 +219,18 @@ export function HistoricalPreviewSidebar() {
   return (
     <Stack h="100%" gap={0}>
       {/* Header */}
-      <Group justify="space-between" p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+      <Group justify="space-between" p="md" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
         <Stack gap={2}>
           <Text fw={600}>Import #{historicalPreviewDisplayNumber}</Text>
           <Text size="xs" c="dimmed">Change Preview</Text>
         </Stack>
-        <ActionIcon variant="subtle" color="gray" onClick={handleClose}>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
           <IconX size={18} />
-        </ActionIcon>
+        </Button>
       </Group>
 
       {/* Content */}
-      <ScrollArea style={{ flex: 1 }} p="md" type="hover" scrollbarSize={10} offsetScrollbars>
+      <ScrollArea className="flex-1 p-4">
         <Stack gap="md">
           {/* Loading state */}
           {isLoading && (
@@ -231,8 +242,11 @@ export function HistoricalPreviewSidebar() {
 
           {/* Error state */}
           {error && (
-            <Alert color="yellow" variant="light" icon={<IconInfoCircle size={16} />}>
-              Change history not available for this version.
+            <Alert>
+              <IconInfoCircle size={16} />
+              <AlertDescription>
+                Change history not available for this version.
+              </AlertDescription>
             </Alert>
           )}
 
@@ -241,7 +255,7 @@ export function HistoricalPreviewSidebar() {
             <>
               <Group gap="xs">
                 <ChangeCountCard
-                  icon={<IconPlus size={14} color="var(--mantine-color-green-6)" />}
+                  icon={<IconPlus size={14} className="text-green-600" />}
                   count={diff.stats.addedCount}
                   label="Added"
                   color="green"
@@ -249,7 +263,7 @@ export function HistoricalPreviewSidebar() {
                   onClick={() => diff.stats.addedCount > 0 && jumpToChangeType('added')}
                 />
                 <ChangeCountCard
-                  icon={<IconPencil size={14} color="var(--mantine-color-blue-6)" />}
+                  icon={<IconPencil size={14} className="text-blue-600" />}
                   count={diff.stats.updatedCount}
                   label="Updated"
                   color="blue"
@@ -257,7 +271,7 @@ export function HistoricalPreviewSidebar() {
                   onClick={() => diff.stats.updatedCount > 0 && jumpToChangeType('updated')}
                 />
                 <ChangeCountCard
-                  icon={<IconArchive size={14} color="var(--mantine-color-orange-6)" />}
+                  icon={<IconArchive size={14} className="text-orange-600" />}
                   count={diff.stats.deactivatedCount}
                   label="Removed"
                   color="orange"
@@ -354,10 +368,9 @@ export function HistoricalPreviewSidebar() {
       </ScrollArea>
 
       {/* Footer */}
-      <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+      <Box p="md" style={{ borderTop: '1px solid hsl(var(--border))' }}>
         <Button
-          variant="filled"
-          fullWidth
+          className="w-full"
           onClick={handleClose}
         >
           Close Preview

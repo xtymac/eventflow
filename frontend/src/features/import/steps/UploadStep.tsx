@@ -5,8 +5,10 @@
  */
 
 import { useRef, useState } from 'react';
-import { Stack, Text, Progress, Alert, useMantineColorScheme } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Stack, Text } from '@/components/shims';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { showNotification } from '@/lib/toast';
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
 import { motion } from 'motion/react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
@@ -29,8 +31,7 @@ const secondaryVariant = {
 
 // Grid pattern background component
 function GridPattern() {
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false;
 
   const columns = 41;
   const rows = 11;
@@ -44,7 +45,7 @@ function GridPattern() {
         alignItems: 'center',
         gap: '1px',
         transform: 'scale(1.05)',
-        backgroundColor: isDark ? 'var(--mantine-color-dark-8)' : 'var(--mantine-color-gray-1)',
+        backgroundColor: isDark ? 'hsl(var(--muted))' : 'hsl(var(--muted) / 0.5)',
       }}
     >
       {Array.from({ length: rows }).map((_, row) =>
@@ -58,7 +59,7 @@ function GridPattern() {
                 height: 10,
                 flexShrink: 0,
                 borderRadius: 2,
-                backgroundColor: isDark ? 'var(--mantine-color-dark-9)' : 'var(--mantine-color-gray-0)',
+                backgroundColor: isDark ? 'hsl(var(--background))' : 'hsl(var(--card))',
                 boxShadow: index % 2 === 0
                   ? 'none'
                   : isDark
@@ -74,8 +75,7 @@ function GridPattern() {
 }
 
 export function UploadStep() {
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false;
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -88,7 +88,7 @@ export function UploadStep() {
   const handleFileValidation = (file: File): boolean => {
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (!VALID_EXTENSIONS.includes(ext)) {
-      notifications.show({
+      showNotification({
         title: 'Invalid file',
         message: `Invalid file type: ${ext}. Please use .gpkg or .geojson`,
         color: 'red',
@@ -96,7 +96,7 @@ export function UploadStep() {
       return false;
     }
     if (file.size > MAX_SIZE) {
-      notifications.show({
+      showNotification({
         title: 'File too large',
         message: 'Maximum file size is 100MB',
         color: 'red',
@@ -127,7 +127,7 @@ export function UploadStep() {
       setCurrentImportVersionId(result.data.id);
       setImportWizardStep('configure');
 
-      notifications.show({
+      showNotification({
         title: 'Upload successful',
         message: `${file.name} uploaded successfully`,
         color: 'green',
@@ -136,7 +136,7 @@ export function UploadStep() {
       clearInterval(progressInterval);
       setUploadProgress(0);
       setSelectedFile(null);
-      notifications.show({
+      showNotification({
         title: 'Upload failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -149,7 +149,7 @@ export function UploadStep() {
   const handleReject = (rejections: FileRejection[]) => {
     const rejection = rejections[0];
     if (rejection) {
-      notifications.show({
+      showNotification({
         title: 'Invalid file',
         message: rejection.errors[0]?.message || 'Please upload a .gpkg or .geojson file (max 100MB)',
         color: 'red',
@@ -191,9 +191,12 @@ export function UploadStep() {
 
   return (
     <Stack gap="md">
-      <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-        Upload a GeoPackage (.gpkg) or GeoJSON (.geojson) file containing road data.
-        Maximum file size: 100MB.
+      <Alert>
+        <IconInfoCircle size={16} />
+        <AlertDescription>
+          Upload a GeoPackage (.gpkg) or GeoJSON (.geojson) file containing road data.
+          Maximum file size: 100MB.
+        </AlertDescription>
       </Alert>
 
       <div {...getRootProps()} style={{ width: '100%' }}>
@@ -210,15 +213,15 @@ export function UploadStep() {
             overflow: 'hidden',
             border: `2px dashed ${
               isDragReject
-                ? 'var(--mantine-color-red-5)'
+                ? 'hsl(var(--destructive))'
                 : isDragActive
-                  ? 'var(--mantine-color-blue-5)'
-                  : 'var(--mantine-color-gray-4)'
+                  ? 'hsl(var(--primary))'
+                  : 'hsl(var(--border))'
             }`,
             backgroundColor: isDragReject
-              ? 'var(--mantine-color-red-0)'
+              ? 'hsl(var(--destructive) / 0.05)'
               : isDragActive
-                ? 'var(--mantine-color-blue-0)'
+                ? 'hsl(var(--primary) / 0.05)'
                 : 'transparent',
             transition: 'border-color 0.2s, background-color 0.2s',
           }}
@@ -259,7 +262,7 @@ export function UploadStep() {
             <Text
               fw={700}
               size="lg"
-              c={isDark ? 'gray.3' : 'gray.7'}
+              className="text-gray-600"
               style={{ position: 'relative', zIndex: 20 }}
             >
               Upload file
@@ -267,7 +270,7 @@ export function UploadStep() {
             <Text
               size="sm"
               c="dimmed"
-              mt={8}
+              mt="sm"
               style={{ position: 'relative', zIndex: 20 }}
             >
               Drag or drop your file here or click to upload
@@ -283,7 +286,7 @@ export function UploadStep() {
                     position: 'relative',
                     overflow: 'hidden',
                     zIndex: 40,
-                    backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'white',
+                    backgroundColor: isDark ? 'hsl(var(--card))' : 'white',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
@@ -302,7 +305,7 @@ export function UploadStep() {
                       style={{
                         fontSize: 14,
                         fontWeight: 500,
-                        color: isDark ? 'var(--mantine-color-gray-3)' : 'var(--mantine-color-gray-7)',
+                        color: 'hsl(var(--foreground))',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -319,8 +322,8 @@ export function UploadStep() {
                         borderRadius: 8,
                         padding: '4px 8px',
                         fontSize: 12,
-                        color: isDark ? 'white' : 'var(--mantine-color-gray-6)',
-                        backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                        color: 'hsl(var(--muted-foreground))',
+                        backgroundColor: 'hsl(var(--muted))',
                         margin: 0,
                         flexShrink: 0,
                       }}
@@ -337,7 +340,7 @@ export function UploadStep() {
                       marginTop: 8,
                       justifyContent: 'space-between',
                       fontSize: 12,
-                      color: isDark ? 'var(--mantine-color-gray-5)' : 'var(--mantine-color-gray-6)',
+                      color: 'hsl(var(--muted-foreground))',
                     }}
                   >
                     <motion.p
@@ -346,7 +349,7 @@ export function UploadStep() {
                       style={{
                         padding: '2px 6px',
                         borderRadius: 4,
-                        backgroundColor: isDark ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                        backgroundColor: 'hsl(var(--muted))',
                         margin: 0,
                       }}
                     >
@@ -371,7 +374,7 @@ export function UploadStep() {
                     style={{
                       position: 'relative',
                       zIndex: 40,
-                      backgroundColor: isDark ? 'var(--mantine-color-dark-6)' : 'white',
+                      backgroundColor: isDark ? 'hsl(var(--card))' : 'white',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -393,8 +396,8 @@ export function UploadStep() {
                           flexDirection: 'column',
                           alignItems: 'center',
                           color: isDragReject
-                            ? 'var(--mantine-color-red-6)'
-                            : 'var(--mantine-color-blue-6)',
+                            ? 'hsl(var(--destructive))'
+                            : 'hsl(var(--primary))',
                         }}
                       >
                         <Text size="sm" fw={500}>
@@ -405,7 +408,7 @@ export function UploadStep() {
                     ) : (
                       <IconUpload
                         size={16}
-                        style={{ color: isDark ? 'var(--mantine-color-gray-4)' : 'var(--mantine-color-gray-6)' }}
+                        style={{ color: 'hsl(var(--muted-foreground))' }}
                       />
                     )}
                   </motion.div>
@@ -416,7 +419,7 @@ export function UploadStep() {
                     style={{
                       position: 'absolute',
                       opacity: 0,
-                      border: '1px dashed var(--mantine-color-blue-4)',
+                      border: '1px dashed hsl(var(--primary) / 0.5)',
                       inset: 0,
                       zIndex: 30,
                       backgroundColor: 'transparent',
@@ -438,7 +441,7 @@ export function UploadStep() {
             </div>
 
             {/* File type hint */}
-            <Text size="xs" c="dimmed" mt={24} style={{ position: 'relative', zIndex: 20 }}>
+            <Text size="xs" c="dimmed" mt="lg" style={{ position: 'relative', zIndex: 20 }}>
               Accepts .gpkg and .geojson files up to 100MB
             </Text>
           </div>
@@ -446,7 +449,7 @@ export function UploadStep() {
       </div>
 
       {isUploading && (
-        <Progress value={uploadProgress} size="sm" animated />
+        <Progress value={uploadProgress} className="h-2" />
       )}
     </Stack>
   );

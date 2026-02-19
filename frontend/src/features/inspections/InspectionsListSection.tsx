@@ -1,4 +1,7 @@
-import { Stack, Text, Paper, Badge, Group, Button, Alert, Loader, Center } from '@mantine/core';
+import { Stack, Text, Paper, Group, Center, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { IconPlus, IconAlertCircle, IconCalendar } from '@tabler/icons-react';
 import { useInspections } from '../../hooks/useApi';
 import { useUIStore } from '../../stores/uiStore';
@@ -7,18 +10,11 @@ interface InspectionsListSectionProps {
   eventId: string;
 }
 
-function getResultBadgeColor(result: string) {
-  switch (result) {
-    case 'pass':
-      return 'green';
-    case 'fail':
-      return 'red';
-    case 'pending':
-      return 'yellow';
-    default:
-      return 'gray';
-  }
-}
+const resultBadgeColorMap: Record<string, string> = {
+  pass: 'bg-green-100 text-green-800',
+  fail: 'bg-red-100 text-red-800',
+  pending: 'bg-yellow-100 text-yellow-800',
+};
 
 function getResultLabel(result: string) {
   switch (result) {
@@ -59,8 +55,9 @@ export function InspectionsListSection({ eventId }: InspectionsListSectionProps)
 
   if (error) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red">
-        Failed to load inspections
+      <Alert variant="destructive">
+        <IconAlertCircle size={16} />
+        <AlertDescription>Failed to load inspections</AlertDescription>
       </Alert>
     );
   }
@@ -72,11 +69,11 @@ export function InspectionsListSection({ eventId }: InspectionsListSectionProps)
           Inspections ({inspections.length})
         </Text>
         <Button
-          size="compact-xs"
-          variant="light"
-          leftSection={<IconPlus size={12} />}
+          size="sm"
+          variant="outline"
           onClick={handleAddInspection}
         >
+          <IconPlus size={12} className="mr-1" />
           Add
         </Button>
       </Group>
@@ -86,7 +83,7 @@ export function InspectionsListSection({ eventId }: InspectionsListSectionProps)
           No inspections recorded for this event.
         </Text>
       ) : (
-        <Stack gap={4}>
+        <Stack gap="xs">
           {inspections.map((inspection) => (
             <Paper
               key={inspection.id}
@@ -95,19 +92,19 @@ export function InspectionsListSection({ eventId }: InspectionsListSectionProps)
               style={{ cursor: 'pointer' }}
               onClick={() => handleViewInspection(inspection.id)}
             >
-              <Group justify="space-between" wrap="nowrap">
-                <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+              <Group justify="space-between">
+                <Group gap="xs">
                   <IconCalendar size={14} />
                   <Text size="xs" truncate>
                     {new Date(inspection.inspectionDate).toLocaleDateString()}
                   </Text>
                 </Group>
-                <Badge size="xs" color={getResultBadgeColor(inspection.result)}>
+                <Badge className={resultBadgeColorMap[inspection.result] || 'bg-gray-100 text-gray-800'}>
                   {getResultLabel(inspection.result)}
                 </Badge>
               </Group>
               {inspection.notes && (
-                <Text size="xs" c="dimmed" lineClamp={1} mt={4}>
+                <Text size="xs" c="dimmed" lineClamp={1} mt="xs">
                   {inspection.notes}
                 </Text>
               )}

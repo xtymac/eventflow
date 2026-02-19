@@ -6,24 +6,27 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { Stack, Text, Group, Center, Loader } from '@/components/shims';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  Stack,
-  Text,
-  Button,
-  Card,
   Table,
-  Badge,
-  Group,
-  ActionIcon,
-  Loader,
-  Center,
-  Pagination,
-  Alert,
-  Modal,
-  Tooltip,
-  SegmentedControl,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { showNotification } from '@/lib/toast';
 import {
   IconUpload,
   IconTrash,
@@ -74,9 +77,9 @@ function parseBboxScope(scope: string): GeoJSON.Polygon | null {
 
 /**
  * Format scope string for compact display
- * - "full" → "Full City"
- * - "ward:Nishi" → "Nishi Ward"
- * - "bbox:..." → "File bbox"
+ * - "full" -> "Full City"
+ * - "ward:Nishi" -> "Nishi Ward"
+ * - "bbox:..." -> "File bbox"
  */
 function formatScopeDisplay(scope: string): string {
   if (scope === 'full') return 'Full City';
@@ -88,15 +91,15 @@ function formatScopeDisplay(scope: string): string {
 function getStatusColor(status: ImportVersion['status']): string {
   switch (status) {
     case 'draft':
-      return 'gray';
+      return 'bg-gray-100 text-gray-800';
     case 'published':
-      return 'green';
+      return 'bg-green-100 text-green-800';
     case 'archived':
-      return 'orange';
+      return 'bg-orange-100 text-orange-800';
     case 'rolled_back':
-      return 'gray';
+      return 'bg-gray-100 text-gray-800';
     default:
-      return 'gray';
+      return 'bg-gray-100 text-gray-800';
   }
 }
 
@@ -146,7 +149,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   // Handle error loading historical diff
   useEffect(() => {
     if (pendingPreviewVersionId && diffError && !isDiffLoading) {
-      notifications.show({
+      showNotification({
         title: 'History not available',
         message: 'Change history for this version is not available. It may have been deleted or never created.',
         color: 'yellow',
@@ -187,7 +190,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
       }
 
       if (allFeatures.length === 0) {
-        notifications.show({
+        showNotification({
           title: 'No changes to preview',
           message: 'No roads were modified in this import',
           color: 'yellow',
@@ -243,7 +246,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
         pendingRollbackInfoRef.current = null;
       }
 
-      notifications.show({
+      showNotification({
         title: 'Rollback successful',
         message: 'Roads have been restored to the previous state',
         color: 'green',
@@ -253,7 +256,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
       setRollbackJobId(null);
       setRollbackVersionId(null);
       pendingRollbackInfoRef.current = null;
-      notifications.show({
+      showNotification({
         title: 'Rollback failed',
         message: job.errorMessage || 'Unknown error',
         color: 'red',
@@ -272,13 +275,13 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
   const handleDelete = async (id: string) => {
     try {
       await deleteMutation.mutateAsync(id);
-      notifications.show({
+      showNotification({
         title: 'Version deleted',
         message: 'Draft version has been deleted',
         color: 'green',
       });
     } catch (error) {
-      notifications.show({
+      showNotification({
         title: 'Delete failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -314,7 +317,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
       // Start preview mode so the overlay shows
       startImportPreview([scopeFeature], 0);
     } else {
-      notifications.show({
+      showNotification({
         title: 'Cannot view on map',
         message: 'Only bbox scopes can be shown on map',
         color: 'yellow',
@@ -351,7 +354,7 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
     } catch (error) {
       setRollbackVersionId(null);
       pendingRollbackInfoRef.current = null;
-      notifications.show({
+      showNotification({
         title: 'Rollback failed',
         message: error instanceof Error ? error.message : 'Unknown error',
         color: 'red',
@@ -401,20 +404,16 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
         <Group justify="space-between">
           <Text fw={600}>Import History</Text>
           <Group gap="sm">
-            <SegmentedControl
-              size="xs"
-              value={viewMode}
-              onChange={(v) => setViewMode(v as 'timeline' | 'table')}
-              data={[
-                { value: 'timeline', label: <IconTimeline size={14} /> },
-                { value: 'table', label: <IconList size={14} /> },
-              ]}
-            />
-            <Button
-              leftSection={<IconUpload size={16} />}
-              onClick={handleNewImport}
-              size="sm"
-            >
+            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'timeline' | 'table')}>
+              <ToggleGroupItem value="timeline" aria-label="Timeline view" size="sm">
+                <IconTimeline size={14} />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Table view" size="sm">
+                <IconList size={14} />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={handleNewImport} size="sm">
+              <IconUpload size={16} className="mr-1" />
               New Import
             </Button>
           </Group>
@@ -426,43 +425,47 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
         <Group gap="xs" mb="xs">
           <Button
             onClick={handleNewImport}
-            leftSection={<IconUpload size={16} />}
             style={{ flex: 1 }}
           >
+            <IconUpload size={16} className="mr-1" />
             New Import
           </Button>
-          <SegmentedControl
-            size="xs"
-            value={viewMode}
-            onChange={(v) => setViewMode(v as 'timeline' | 'table')}
-            data={[
-              { value: 'timeline', label: <IconTimeline size={14} /> },
-              { value: 'table', label: <IconList size={14} /> },
-            ]}
-          />
+          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'timeline' | 'table')}>
+            <ToggleGroupItem value="timeline" aria-label="Timeline view" size="sm">
+              <IconTimeline size={14} />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view" size="sm">
+              <IconList size={14} />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </Group>
       )}
 
       {!compact && (
-        <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-          Import GeoPackage or GeoJSON files to update road data.
-          Published versions can be rolled back if needed.
+        <Alert>
+          <IconInfoCircle size={16} />
+          <AlertDescription>
+            Import GeoPackage or GeoJSON files to update road data.
+            Published versions can be rolled back if needed.
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Loading overlay when fetching diff for preview */}
       {isDiffLoading && pendingPreviewVersionId && (
-        <Alert color="blue" variant="light">
-          <Group gap="sm">
-            <Loader size="sm" />
-            <Text size="sm">Loading preview...</Text>
-          </Group>
+        <Alert>
+          <AlertDescription>
+            <Group gap="sm">
+              <Loader size="sm" />
+              <Text size="sm">Loading preview...</Text>
+            </Group>
+          </AlertDescription>
         </Alert>
       )}
 
       {/* Timeline View */}
       {viewMode === 'timeline' && (
-        <Card withBorder padding="md" style={compact ? { flex: 1, overflowY: 'auto', overflowX: 'hidden' } : undefined}>
+        <div className="border rounded-md p-4" style={compact ? { flex: 1, overflowY: 'auto', overflowX: 'hidden' } : undefined}>
           <ImportVersionTimeline
             versions={versions}
             onViewChanges={handleViewDetails}
@@ -475,50 +478,50 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
             page={page}
             pageSize={PAGE_SIZE}
           />
-        </Card>
+        </div>
       )}
 
       {/* Table View */}
       {viewMode === 'table' && (
-        <Card withBorder padding={0} style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
+        <div className="border rounded-md" style={{ overflowX: 'auto', ...(compact ? { flex: 1, overflow: 'auto' } : {}) }}>
           {rollbackJobId && (
-            <Alert color="blue" variant="light" m="sm">
-              <Group gap="sm">
-                <Loader size="sm" />
-                <Text size="sm">Rolling back to previous version...</Text>
-              </Group>
+            <Alert className="m-2">
+              <AlertDescription>
+                <Group gap="sm">
+                  <Loader size="sm" />
+                  <Text size="sm">Rolling back to previous version...</Text>
+                </Group>
+              </AlertDescription>
             </Alert>
           )}
-          <Table striped highlightOnHover style={{ minWidth: 600 }}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th style={{ width: 60 }}>Version</Table.Th>
-                <Table.Th style={{ minWidth: 200 }}>File</Table.Th>
-                <Table.Th style={{ width: 80 }}>Status</Table.Th>
-                <Table.Th style={{ width: 70 }}>Features</Table.Th>
-                <Table.Th style={{ width: 80 }}>Uploaded</Table.Th>
-                <Table.Th style={{ width: 80 }}>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead style={{ width: 60 }}>Version</TableHead>
+                <TableHead style={{ minWidth: 200 }}>File</TableHead>
+                <TableHead style={{ width: 80 }}>Status</TableHead>
+                <TableHead style={{ width: 70 }}>Features</TableHead>
+                <TableHead style={{ width: 80 }}>Uploaded</TableHead>
+                <TableHead style={{ width: 80 }}>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {versions.map((version, index) => {
                 // Calculate sequential display number (oldest = 1, newest = total)
-                // Versions are sorted newest-first, so we reverse the numbering
                 const displayNumber = nonDraftTotal - ((page - 1) * PAGE_SIZE) - index;
                 return (
-                  <Table.Tr key={version.id}>
-                    <Table.Td>
+                  <TableRow key={version.id}>
+                    <TableCell>
                       <Text size="sm" fw={500}>#{displayNumber}</Text>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Text
                         size="sm"
-                        title={(version.status === 'published' || version.status === 'archived')
-                          ? `${version.fileName} - Click to view changes`
-                          : version.fileName}
-                        style={(version.status === 'published' || version.status === 'archived')
-                          ? { cursor: 'pointer', fontWeight: 500 }
-                          : undefined}
+                        className={
+                          (version.status === 'published' || version.status === 'archived')
+                            ? 'cursor-pointer font-medium'
+                            : undefined
+                        }
                         onClick={(version.status === 'published' || version.status === 'archived')
                           ? () => handleViewDetails(version, displayNumber)
                           : undefined}
@@ -528,132 +531,162 @@ export function ImportVersionList({ compact = false }: ImportVersionListProps) {
                       <Text size="xs" c="dimmed">
                         {version.fileType.toUpperCase()} · {formatScopeDisplay(version.importScope)}
                       </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge color={getStatusColor(version.status)} size="sm" style={{ minWidth: 70 }}>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(version.status)} style={{ minWidth: 70 }}>
                         {version.status}
                       </Badge>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Text size="sm">{version.featureCount.toLocaleString()}</Text>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Text size="sm">{formatDate(version.uploadedAt)}</Text>
-                    </Table.Td>
-                    <Table.Td>
+                    </TableCell>
+                    <TableCell>
                       <Group gap="xs">
                         {version.importScope.startsWith('bbox:') && (
-                          <Tooltip label="View import area on map" withArrow>
-                            <ActionIcon
-                              variant="subtle"
-                              color="blue"
-                              size="sm"
-                              onClick={() => handleViewOnMap(version, displayNumber)}
-                            >
-                              <IconMap size={14} />
-                            </ActionIcon>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleViewOnMap(version, displayNumber)}
+                              >
+                                <IconMap size={14} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View import area on map</TooltipContent>
                           </Tooltip>
                         )}
 
                         {version.status === 'draft' && (
-                          <Tooltip label="Delete draft" withArrow>
-                            <ActionIcon
-                              variant="subtle"
-                              color="red"
-                              size="sm"
-                              onClick={() => handleDelete(version.id)}
-                              loading={deleteMutation.isPending}
-                            >
-                              <IconTrash size={14} />
-                            </ActionIcon>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600"
+                                onClick={() => handleDelete(version.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <IconTrash size={14} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete draft</TooltipContent>
                           </Tooltip>
                         )}
 
                         {/* View changes - for published, archived, and rolled_back */}
                         {(version.status === 'published' || version.status === 'archived' || version.status === 'rolled_back') && (
-                          <Tooltip label="View changes from this import" withArrow>
-                            <ActionIcon
-                              variant="subtle"
-                              color="blue"
-                              size="sm"
-                              onClick={() => handleViewDetails(version, displayNumber)}
-                            >
-                              <IconEye size={14} />
-                            </ActionIcon>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => handleViewDetails(version, displayNumber)}
+                              >
+                                <IconEye size={14} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View changes from this import</TooltipContent>
                           </Tooltip>
                         )}
 
                         {/* Rollback - only for archived versions (not rolled_back or published) */}
                         {version.status === 'archived' && version.snapshotPath && (
-                          <Tooltip label="Rollback to this version" withArrow>
-                            <ActionIcon
-                              variant="subtle"
-                              color="orange"
-                              size="sm"
-                              onClick={() => setRollbackVersionId(version.id)}
-                              disabled={!!rollbackJobId}
-                            >
-                              <IconArrowBack size={14} />
-                            </ActionIcon>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-orange-600"
+                                onClick={() => setRollbackVersionId(version.id)}
+                                disabled={!!rollbackJobId}
+                              >
+                                <IconArrowBack size={14} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Rollback to this version</TooltipContent>
                           </Tooltip>
                         )}
                       </Group>
-                    </Table.Td>
-                  </Table.Tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
 
               {versions.length === 0 && (
-                <Table.Tr>
-                  <Table.Td colSpan={6}>
+                <TableRow>
+                  <TableCell colSpan={6}>
                     <Text c="dimmed" ta="center" py="lg">
                       No import versions yet. Click "New Import" to get started.
                     </Text>
-                  </Table.Td>
-                </Table.Tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </Table.Tbody>
+            </TableBody>
           </Table>
-        </Card>
+        </div>
       )}
 
       {totalPages > 1 && (
         <Group justify="center">
-          <Pagination
-            size="sm"
-            total={totalPages}
-            value={page}
-            onChange={setPage}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </Group>
       )}
 
       {/* Rollback confirmation modal */}
-      <Modal
-        opened={!!rollbackVersionId && !rollbackJobId}
-        onClose={() => setRollbackVersionId(null)}
-        title="Confirm Rollback"
-        centered
+      <Dialog
+        open={!!rollbackVersionId && !rollbackJobId}
+        onOpenChange={(v) => !v && setRollbackVersionId(null)}
       >
-        <Stack gap="md">
-          <Text size="sm">
-            Are you sure you want to rollback? This will restore the road data to the state
-            when this version was published.
-          </Text>
-          <Group justify="flex-end" gap="sm">
-            <Button variant="subtle" onClick={() => setRollbackVersionId(null)}>
-              Cancel
-            </Button>
-            <Button
-              color="orange"
-              onClick={handleRollback}
-              loading={rollbackMutation.isPending}
-            >
-              Confirm Rollback
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Rollback</DialogTitle>
+          </DialogHeader>
+          <Stack gap="md">
+            <Text size="sm">
+              Are you sure you want to rollback? This will restore the road data to the state
+              when this version was published.
+            </Text>
+            <Group justify="flex-end" gap="sm">
+              <Button variant="ghost" onClick={() => setRollbackVersionId(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRollback}
+                disabled={rollbackMutation.isPending}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {rollbackMutation.isPending ? 'Rolling back...' : 'Confirm Rollback'}
+              </Button>
+            </Group>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }

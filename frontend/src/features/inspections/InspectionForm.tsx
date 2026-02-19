@@ -1,18 +1,18 @@
 import { useEffect, useMemo } from 'react';
+import { Stack, Group, Text, Paper, Center, Loader } from '@/components/shims';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
-  Stack,
-  Textarea,
   Select,
-  Button,
-  Group,
-  Text,
-  Paper,
-  Radio,
-  Loader,
-  Center,
-} from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
-import { notifications } from '@mantine/notifications';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { showNotification } from '@/lib/toast';
 import { IconMapPin, IconCheck } from '@tabler/icons-react';
 import { useForm, Controller } from 'react-hook-form';
 import { useUIStore } from '../../stores/uiStore';
@@ -148,7 +148,7 @@ export function InspectionForm({
 
   const onSubmit = (data: InspectionFormData) => {
     if (!geometry) {
-      notifications.show({
+      showNotification({
         title: 'Location Required',
         message: 'Please click on the map to set the inspection location.',
         color: 'red',
@@ -157,7 +157,7 @@ export function InspectionForm({
     }
 
     if (!data.inspectionDate) {
-      notifications.show({
+      showNotification({
         title: 'Date Required',
         message: 'Please select an inspection date.',
         color: 'red',
@@ -180,7 +180,7 @@ export function InspectionForm({
         { id: inspectionId, data: inspectionData },
         {
           onSuccess: () => {
-            notifications.show({
+            showNotification({
               title: 'Inspection Updated',
               message: 'Inspection record has been updated.',
               color: 'green',
@@ -188,7 +188,7 @@ export function InspectionForm({
             handleClose();
           },
           onError: (error) => {
-            notifications.show({
+            showNotification({
               title: 'Update Failed',
               message: error instanceof Error ? error.message : 'Failed to update inspection',
               color: 'red',
@@ -200,7 +200,7 @@ export function InspectionForm({
       // Create
       createInspection.mutate(inspectionData, {
         onSuccess: () => {
-          notifications.show({
+          showNotification({
             title: 'Inspection Created',
             message: 'Inspection record has been created.',
             color: 'green',
@@ -208,7 +208,7 @@ export function InspectionForm({
           handleClose();
         },
         onError: (error) => {
-          notifications.show({
+          showNotification({
             title: 'Create Failed',
             message: error instanceof Error ? error.message : 'Failed to create inspection',
             color: 'red',
@@ -243,15 +243,23 @@ export function InspectionForm({
           name="linkType"
           control={control}
           render={({ field }) => (
-            <Radio.Group
-              label="Link Inspection To"
-              {...field}
-            >
-              <Group mt="xs">
-                <Radio value="event" label="Construction Event" />
-                <Radio value="asset" label="Road Asset" />
-              </Group>
-            </Radio.Group>
+            <div>
+              <Label className="mb-2 block">Link Inspection To</Label>
+              <RadioGroup
+                value={field.value}
+                onValueChange={field.onChange}
+                className="flex flex-row gap-4 mt-1"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="event" id="link-event" />
+                  <Label htmlFor="link-event">Construction Event</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="asset" id="link-asset" />
+                  <Label htmlFor="link-asset">Road Asset</Label>
+                </div>
+              </RadioGroup>
+            </div>
           )}
         />
 
@@ -262,17 +270,21 @@ export function InspectionForm({
             control={control}
             rules={{ required: linkType === 'event' }}
             render={({ field }) => (
-              <Select
-                label="Event"
-                placeholder="Select event"
-                data={events.map((e) => ({
-                  value: e.id,
-                  label: `${e.name} (${e.status})`,
-                }))}
-                searchable
-                required
-                {...field}
-              />
+              <div>
+                <Label className="mb-1 block">Event *</Label>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select event" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name} ({e.status})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           />
         ) : (
@@ -281,17 +293,21 @@ export function InspectionForm({
             control={control}
             rules={{ required: linkType === 'asset' }}
             render={({ field }) => (
-              <Select
-                label="Road Asset"
-                placeholder="Select road asset"
-                data={assets.map((a) => ({
-                  value: a.id,
-                  label: a.displayName || a.name || a.ref || a.id,
-                }))}
-                searchable
-                required
-                {...field}
-              />
+              <div>
+                <Label className="mb-1 block">Road Asset *</Label>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select road asset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assets.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.displayName || a.name || a.ref || a.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           />
         )}
@@ -310,9 +326,9 @@ export function InspectionForm({
                 </Text>
               </Group>
               <Button
-                size="xs"
-                variant="light"
-                color="red"
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-300 hover:bg-red-50"
                 onClick={handleClearPoint}
               >
                 Clear
@@ -325,10 +341,10 @@ export function InspectionForm({
               </Text>
               <Button
                 size="sm"
-                variant="light"
-                leftSection={<IconMapPin size={14} />}
+                variant="outline"
                 onClick={handleStartDrawing}
               >
+                <IconMapPin size={14} className="mr-1" />
                 Set Location
               </Button>
             </Stack>
@@ -355,12 +371,21 @@ export function InspectionForm({
           control={control}
           rules={{ required: true }}
           render={({ field }) => (
-            <Select
-              label="Result"
-              data={resultOptions}
-              required
-              {...field}
-            />
+            <div>
+              <Label className="mb-1 block">Result *</Label>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select result" />
+                </SelectTrigger>
+                <SelectContent>
+                  {resultOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         />
 
@@ -368,28 +393,28 @@ export function InspectionForm({
           name="notes"
           control={control}
           render={({ field }) => (
-            <Textarea
-              label="Notes"
-              placeholder="Additional notes..."
-              rows={3}
-              {...field}
-            />
+            <div>
+              <Label className="mb-1 block">Notes</Label>
+              <Textarea
+                placeholder="Additional notes..."
+                rows={3}
+                {...field}
+              />
+            </div>
           )}
         />
 
         {/* Action Buttons */}
         <Group justify="flex-end" mt="md">
-          <Button variant="subtle" onClick={handleClose} disabled={isLoading}>
+          <Button variant="ghost" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
             type="submit"
-            color="green"
-            leftSection={<IconCheck size={16} />}
-            loading={isLoading}
-            disabled={!hasValidGeometry}
+            disabled={!hasValidGeometry || isLoading}
           >
-            {inspectionId ? 'Save Changes' : 'Create Inspection'}
+            <IconCheck size={16} className="mr-1" />
+            {isLoading ? 'Saving...' : inspectionId ? 'Save Changes' : 'Create Inspection'}
           </Button>
         </Group>
       </Stack>

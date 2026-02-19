@@ -2,10 +2,17 @@
  * Import Wizard Component
  *
  * Step-by-step wizard for importing GeoPackage/GeoJSON files:
- * Upload → Configure → Review → Publish
+ * Upload -> Configure -> Review -> Publish
  */
 
-import { Modal, Stepper, Stack } from '@mantine/core';
+import { Stack } from '@/components/shims';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Stepper } from '@/components/ui/stepper';
 import { IconUpload, IconSettings, IconEye, IconRocket } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
 import { UploadStep } from './steps/UploadStep';
@@ -65,35 +72,32 @@ export function ImportWizard() {
   };
 
   return (
-    <Modal
-      opened={importWizardOpen}
-      onClose={handleClose}
-      title="Import GeoPackage / GeoJSON"
-      size="xl"
-      padding="lg"
-      closeOnClickOutside={false}
-    >
-      <Stack gap="lg">
-        <Stepper
-          active={currentStepIndex}
-          size="sm"
-          onStepClick={handleStepClick}
-          allowNextStepsSelect={false}
-        >
-          {stepOrder.map((step) => (
-            <Stepper.Step
-              key={step}
-              label={STEP_CONFIG[step].label}
-              description={STEP_CONFIG[step].description}
-              icon={STEP_CONFIG[step].icon}
-            />
-          ))}
-        </Stepper>
+    <Dialog open={importWizardOpen} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Import GeoPackage / GeoJSON</DialogTitle>
+        </DialogHeader>
+        <Stack gap="lg">
+          <Stepper
+            active={currentStepIndex}
+            size="sm"
+            onStepClick={handleStepClick}
+          >
+            {stepOrder.map((step) => (
+              <Stepper.Step
+                key={step}
+                label={STEP_CONFIG[step].label}
+                description={STEP_CONFIG[step].description}
+                icon={STEP_CONFIG[step].icon}
+              />
+            ))}
+          </Stepper>
 
-        <div style={{ minHeight: 300 }}>
-          {renderStepContent()}
-        </div>
-      </Stack>
-    </Modal>
+          <div style={{ minHeight: 300 }}>
+            {renderStepContent()}
+          </div>
+        </Stack>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useDebounce } from 'use-debounce';
 import type { SearchResponse } from '@nagoya/shared';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -52,7 +52,7 @@ export function useMapSearch(query: string, options?: UseMapSearchOptions & { co
     context,
   } = options || {};
 
-  const [debouncedQuery] = useDebouncedValue(query, debounceMs);
+  const [debouncedQuery] = useDebounce(query, debounceMs);
 
   const shouldFetch = enabled && debouncedQuery.trim().length >= minQueryLength;
 

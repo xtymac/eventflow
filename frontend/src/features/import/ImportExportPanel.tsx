@@ -5,7 +5,7 @@
  * export scope selection and import version history.
  */
 
-import { Stack, Title, Divider } from '@mantine/core';
+import { Stack, Title, Divider } from '@/components/shims';
 import { ExportSection } from './components/ExportSection';
 import { ImportSection } from './components/ImportSection';
 

@@ -6,7 +6,10 @@
  * Includes a backdrop that dims and blocks interactions with other UI elements.
  */
 
-import { Paper, Stack, Group, Text, Button, Badge, Portal, Box } from '@mantine/core';
+import { createPortal } from 'react-dom';
+import { Paper, Stack, Group, Text, Box } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { IconArrowBack, IconMap } from '@tabler/icons-react';
 import { useUIStore } from '../../../stores/uiStore';
 import { useMapStore } from '../../../stores/mapStore';
@@ -23,6 +26,12 @@ function getSidebarWidth(): number {
     return DEFAULT_SIDEBAR_WIDTH;
   }
 }
+
+const CHANGE_TYPE_BADGE: Record<string, { label: string; className: string }> = {
+  added: { label: 'Added', className: 'bg-green-100 text-green-800' },
+  updated: { label: 'Updated', className: 'bg-blue-100 text-blue-800' },
+  removed: { label: 'Removed', className: 'bg-orange-100 text-orange-800' },
+};
 
 export function ImportPreviewOverlay() {
   const isImportPreviewMode = useUIStore((s) => s.isImportPreviewMode);
@@ -53,11 +62,7 @@ export function ImportPreviewOverlay() {
   const isScopeAreaPreview = props?.id === 'scope-area';
 
   // Change type badge configuration
-  const changeTypeBadge = changeType ? {
-    added: { label: 'Added', color: 'green' },
-    updated: { label: 'Updated', color: 'blue' },
-    removed: { label: 'Removed', color: 'orange' },
-  }[changeType] : null;
+  const changeTypeBadge = changeType ? CHANGE_TYPE_BADGE[changeType] : null;
 
   const handleClose = () => {
     setImportAreaHighlight(null);
@@ -67,36 +72,39 @@ export function ImportPreviewOverlay() {
   return (
     <>
       {/* Backdrop overlays - blocks interactions with header and sidebar during preview */}
-      <Portal>
-        {/* Header overlay */}
-        <Box
-          onClick={handleClose}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 60,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 150,
-            cursor: 'pointer',
-          }}
-        />
-        {/* Left sidebar overlay */}
-        <Box
-          onClick={handleClose}
-          style={{
-            position: 'fixed',
-            top: 60,
-            left: 0,
-            bottom: 0,
-            width: sidebarWidth,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 150,
-            cursor: 'pointer',
-          }}
-        />
-      </Portal>
+      {createPortal(
+        <>
+          {/* Header overlay */}
+          <Box
+            onClick={handleClose}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 60,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 150,
+              cursor: 'pointer',
+            }}
+          />
+          {/* Left sidebar overlay */}
+          <Box
+            onClick={handleClose}
+            style={{
+              position: 'fixed',
+              top: 60,
+              left: 0,
+              bottom: 0,
+              width: sidebarWidth,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 150,
+              cursor: 'pointer',
+            }}
+          />
+        </>,
+        document.body
+      )}
 
       {/* Control panel - positioned above the backdrop */}
       <Paper
@@ -123,7 +131,7 @@ export function ImportPreviewOverlay() {
         {!isScopeAreaPreview && (
           <Group gap="xs" wrap="wrap">
             {changeTypeBadge && (
-              <Badge size="sm" color={changeTypeBadge.color}>
+              <Badge className={changeTypeBadge.className}>
                 {changeTypeBadge.label}
               </Badge>
             )}
@@ -131,12 +139,12 @@ export function ImportPreviewOverlay() {
               {importPreviewLabel || 'Unnamed Road'}
             </Text>
             {roadType && (
-              <Badge size="sm" variant="light">
+              <Badge variant="secondary">
                 {roadType}
               </Badge>
             )}
             {ward && (
-              <Badge size="sm" variant="light" color="gray">
+              <Badge variant="outline">
                 {ward}
               </Badge>
             )}
@@ -153,9 +161,9 @@ export function ImportPreviewOverlay() {
 
         <Group justify="flex-end" gap="sm">
           <Button
-            leftSection={<IconArrowBack size={16} />}
             onClick={handleClose}
           >
+            <IconArrowBack size={16} className="mr-1" />
             {isScopeAreaPreview
               ? 'Back to Import'
               : isImportWizardMode

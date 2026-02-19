@@ -1,6 +1,7 @@
-import { Group, Button, Text } from '@mantine/core';
-import { modals } from '@mantine/modals';
-import { notifications } from '@mantine/notifications';
+import { Group, Text } from '@/components/shims';
+import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import { showNotification } from '@/lib/toast';
 // Phase 0: IconRoad removed - Road Update Mode disabled
 import { IconEdit, IconPlayerPlay, IconPlayerStop, IconTrash, IconCopy, IconArchive, IconArchiveOff } from '@tabler/icons-react';
 import { useUIStore } from '../../stores/uiStore';
@@ -18,9 +19,10 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   const cancelEvent = useCancelEvent();
   const archiveEvent = useArchiveEvent();
   const unarchiveEvent = useUnarchiveEvent();
+  const { openConfirmModal } = useConfirmDialog();
 
   const handleCancelEvent = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Cancel Event',
       children: <Text size="sm">Are you sure you want to cancel this event? This action cannot be undone.</Text>,
       labels: { confirm: 'Cancel Event', cancel: 'Keep Event' },
@@ -35,14 +37,14 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
             if (detailModalEventId === event.id) {
               closeEventDetailModal();
             }
-            notifications.show({
+            showNotification({
               title: 'Event Cancelled',
               message: 'The event has been cancelled successfully.',
               color: 'green',
             });
           },
           onError: (error) => {
-            notifications.show({
+            showNotification({
               title: 'Cancel Failed',
               message: error instanceof Error ? error.message : 'Failed to cancel event',
               color: 'red',
@@ -55,7 +57,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   };
 
   const handleStartEvent = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Start Event',
       children: <Text size="sm">Are you sure you want to start this event?</Text>,
       labels: { confirm: 'Start Event', cancel: 'Cancel' },
@@ -66,7 +68,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   };
 
   const handleRequestReview = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Request Review',
       children: <Text size="sm">Are you sure you want to mark this event for review? This will move it to "Pending Review" status.</Text>,
       labels: { confirm: 'Request Review', cancel: 'Cancel' },
@@ -76,7 +78,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
           { id: event.id, status: 'pending_review' },
           {
             onSuccess: () => {
-              notifications.show({
+              showNotification({
                 title: 'Event Pending Review',
                 message: 'The event is now awaiting Gov review for closure.',
                 color: 'orange',
@@ -90,7 +92,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   };
 
   const handleArchiveEvent = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Archive Event',
       children: <Text size="sm">Are you sure you want to archive this event? It will be hidden from the default list and map.</Text>,
       labels: { confirm: 'Archive', cancel: 'Cancel' },
@@ -105,14 +107,14 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
             if (detailModalEventId === event.id) {
               closeEventDetailModal();
             }
-            notifications.show({
+            showNotification({
               title: 'Event Archived',
               message: 'The event has been archived successfully.',
               color: 'green',
             });
           },
           onError: (error) => {
-            notifications.show({
+            showNotification({
               title: 'Archive Failed',
               message: error instanceof Error ? error.message : 'Failed to archive event',
               color: 'red',
@@ -125,7 +127,7 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
   };
 
   const handleUnarchiveEvent = () => {
-    modals.openConfirmModal({
+    openConfirmModal({
       title: 'Unarchive Event',
       children: <Text size="sm">Are you sure you want to unarchive this event? It will be visible in the default list again.</Text>,
       labels: { confirm: 'Unarchive', cancel: 'Cancel' },
@@ -133,14 +135,14 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       onConfirm: () => {
         unarchiveEvent.mutate(event.id, {
           onSuccess: () => {
-            notifications.show({
+            showNotification({
               title: 'Event Unarchived',
               message: 'The event is now visible in the default list.',
               color: 'green',
             });
           },
           onError: (error) => {
-            notifications.show({
+            showNotification({
               title: 'Unarchive Failed',
               message: error instanceof Error ? error.message : 'Failed to unarchive event',
               color: 'red',
@@ -160,12 +162,12 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
     <Group gap="xs">
       {canEdit && (
         <Button
-          size="xs"
-          variant="light"
-          leftSection={<IconEdit size={14} />}
+          variant="outline"
+          size="sm"
           onClick={() => openEventForm(event.id)}
           disabled={isLoading}
         >
+          <IconEdit size={14} />
           Edit
         </Button>
       )}
@@ -173,25 +175,22 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       {event.status === 'planned' && (
         <>
           <Button
-            size="xs"
-            variant="light"
-            color="green"
-            leftSection={<IconPlayerPlay size={14} />}
+            variant="outline"
+            size="sm"
+            className="border-green-300 text-green-700 hover:bg-green-50"
             onClick={handleStartEvent}
-            loading={changeStatus.isPending}
             disabled={isLoading}
           >
+            <IconPlayerPlay size={14} />
             Start
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="red"
-            leftSection={<IconTrash size={14} />}
+            variant="destructive"
+            size="sm"
             onClick={handleCancelEvent}
-            loading={cancelEvent.isPending}
             disabled={isLoading}
           >
+            <IconTrash size={14} />
             Cancel
           </Button>
         </>
@@ -199,13 +198,13 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
 
       {event.status === 'active' && (
         <Button
-          size="xs"
-          variant="light"
-          color="orange"
-          leftSection={<IconPlayerStop size={14} />}
+          variant="outline"
+          size="sm"
+          className="border-orange-300 text-orange-700 hover:bg-orange-50"
           onClick={handleRequestReview}
-          loading={isLoading}
+          disabled={isLoading}
         >
+          <IconPlayerStop size={14} />
           Request Review
         </Button>
       )}
@@ -213,9 +212,8 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       {/* Phase 1: pending_review status - Gov can close the event */}
       {event.status === 'pending_review' && !event.archivedAt && (
         <Button
-          size="xs"
-          variant="filled"
-          color="teal"
+          size="sm"
+          className="bg-teal-600 hover:bg-teal-700 text-white"
           onClick={() => openDecisionModal(event.id)}
           disabled={isLoading}
         >
@@ -227,23 +225,21 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       {event.status === 'closed' && !event.archivedAt && (
         <>
           <Button
-            size="xs"
-            variant="light"
-            leftSection={<IconCopy size={14} />}
+            variant="outline"
+            size="sm"
             onClick={() => openDuplicateEventForm(event.id)}
             disabled={isLoading}
           >
+            <IconCopy size={14} />
             Duplicate
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="gray"
-            leftSection={<IconArchive size={14} />}
+            variant="outline"
+            size="sm"
             onClick={handleArchiveEvent}
-            loading={archiveEvent.isPending}
             disabled={isLoading}
           >
+            <IconArchive size={14} />
             Archive
           </Button>
         </>
@@ -252,23 +248,21 @@ export function EventActionButtons({ event }: EventActionButtonsProps) {
       {event.archivedAt && (
         <>
           <Button
-            size="xs"
-            variant="light"
-            leftSection={<IconCopy size={14} />}
+            variant="outline"
+            size="sm"
             onClick={() => openDuplicateEventForm(event.id)}
             disabled={isLoading}
           >
+            <IconCopy size={14} />
             Duplicate
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="blue"
-            leftSection={<IconArchiveOff size={14} />}
+            variant="outline"
+            size="sm"
             onClick={handleUnarchiveEvent}
-            loading={unarchiveEvent.isPending}
             disabled={isLoading}
           >
+            <IconArchiveOff size={14} />
             Unarchive
           </Button>
         </>

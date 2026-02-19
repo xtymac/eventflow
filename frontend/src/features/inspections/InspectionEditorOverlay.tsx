@@ -1,4 +1,6 @@
-import { Box, Paper, Group, Text, ActionIcon, ScrollArea } from '@mantine/core';
+import { Box, Paper, Group, Text } from '@/components/shims';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { IconX } from '@tabler/icons-react';
 import { InspectionForm } from './InspectionForm';
 
@@ -50,12 +52,12 @@ export function InspectionEditorOverlay({
               Click on the map to set the inspection location.
             </Text>
           </div>
-          <ActionIcon variant="subtle" onClick={onClose} aria-label="Close editor">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close editor">
             <IconX size={16} />
-          </ActionIcon>
+          </Button>
         </Group>
 
-        <ScrollArea offsetScrollbars scrollbarSize={8} style={{ flex: 1 }}>
+        <ScrollArea className="flex-1">
           <InspectionForm
             inspectionId={inspectionId}
             prefillEventId={prefillEventId}

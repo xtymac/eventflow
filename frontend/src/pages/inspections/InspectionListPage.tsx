@@ -1,5 +1,23 @@
 import { useState, useMemo } from 'react';
-import { Box, TextInput, Table, Badge, Text, Group, ScrollArea, Select } from '@mantine/core';
+import { Box, Text, Group } from '@/components/shims';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useInspections } from '../../hooks/useApi';
@@ -10,7 +28,7 @@ const INSPECTION_TYPE_LABELS: Record<string, string> = {
 };
 
 const CONDITION_COLORS: Record<string, string> = {
-  A: 'green', B: 'yellow', C: 'orange', D: 'red', S: 'red',
+  A: 'bg-green-600 text-white', B: 'bg-yellow-500 text-white', C: 'bg-orange-500 text-white', D: 'bg-red-600 text-white', S: 'bg-red-600 text-white',
 };
 
 const RESULT_LABELS: Record<string, string> = {
@@ -44,95 +62,106 @@ export function InspectionListPage() {
   }, [data, search, typeFilter]);
 
   return (
-    <Box p="lg" h="100%">
+    <Box p="lg" style={{ height: '100%' }}>
       <Group justify="space-between" mb="md">
         <Text size="xl" fw={700}>点検一覧</Text>
-        <Badge size="lg" variant="light">{inspections.length} 件</Badge>
+        <Badge variant="outline">{inspections.length} 件</Badge>
       </Group>
 
       <Group mb="md" gap="sm">
-        <TextInput
-          placeholder="ID・点検者・所見で検索..."
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: 1, maxWidth: 400 }}
-        />
-        <Select
-          placeholder="種別で絞り込み"
-          data={TYPE_OPTIONS}
-          value={typeFilter}
-          onChange={setTypeFilter}
-          clearable
-          w={180}
-        />
+        <div className="relative" style={{ flex: 1, maxWidth: 400 }}>
+          <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="ID・点検者・所見で検索..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div style={{ width: 180 }}>
+          <Select
+            value={typeFilter ?? ''}
+            onValueChange={(v) => setTypeFilter(v || null)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="種別で絞り込み" />
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Group>
 
       <PageState loading={isLoading} error={isError} empty={inspections.length === 0} emptyMessage="点検データがありません">
-        <ScrollArea h="calc(100vh - 240px)">
-          <Table striped highlightOnHover withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th w={100}>ID</Table.Th>
-                <Table.Th w={120}>点検日</Table.Th>
-                <Table.Th w={80}>種別</Table.Th>
-                <Table.Th w={80}>結果</Table.Th>
-                <Table.Th w={60}>評価</Table.Th>
-                <Table.Th>点検者</Table.Th>
-                <Table.Th>所見</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+        <ScrollArea style={{ height: 'calc(100vh - 240px)' }}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead style={{ width: 100 }}>ID</TableHead>
+                <TableHead style={{ width: 120 }}>点検日</TableHead>
+                <TableHead style={{ width: 80 }}>種別</TableHead>
+                <TableHead style={{ width: 80 }}>結果</TableHead>
+                <TableHead style={{ width: 60 }}>評価</TableHead>
+                <TableHead>点検者</TableHead>
+                <TableHead>所見</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {inspections.map((insp) => (
-                <Table.Tr
+                <TableRow
                   key={insp.id}
                   onClick={() => navigate(`/inspections/${insp.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <Table.Td>
-                    <Text size="xs" c="dimmed" truncate>
+                  <TableCell>
+                    <Text size="xs" c="dimmed" className="truncate">
                       {insp.id.slice(0, 8)}...
                     </Text>
-                  </Table.Td>
-                  <Table.Td>
+                  </TableCell>
+                  <TableCell>
                     {new Date(insp.inspectionDate).toLocaleDateString('ja-JP')}
-                  </Table.Td>
-                  <Table.Td>
+                  </TableCell>
+                  <TableCell>
                     {insp.inspectionType
                       ? INSPECTION_TYPE_LABELS[insp.inspectionType] || insp.inspectionType
                       : '—'}
-                  </Table.Td>
-                  <Table.Td>
+                  </TableCell>
+                  <TableCell>
                     <Badge
-                      color={insp.result === 'pass' ? 'green' : insp.result === 'fail' ? 'red' : 'gray'}
-                      variant="light"
-                      size="sm"
+                      variant="secondary"
+                      className={
+                        insp.result === 'pass' ? 'bg-green-100 text-green-800' :
+                        insp.result === 'fail' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }
                     >
                       {RESULT_LABELS[insp.result] || insp.result}
                     </Badge>
-                  </Table.Td>
-                  <Table.Td>
+                  </TableCell>
+                  <TableCell>
                     {insp.conditionGrade ? (
                       <Badge
-                        color={CONDITION_COLORS[insp.conditionGrade] || 'gray'}
-                        variant="filled"
-                        size="sm"
+                        variant="secondary"
+                        className={CONDITION_COLORS[insp.conditionGrade] || 'bg-gray-100 text-gray-800'}
                       >
                         {insp.conditionGrade}
                       </Badge>
                     ) : (
                       '—'
                     )}
-                  </Table.Td>
-                  <Table.Td>{insp.inspector || '—'}</Table.Td>
-                  <Table.Td>
-                    <Text size="xs" lineClamp={1}>
+                  </TableCell>
+                  <TableCell>{insp.inspector || '—'}</TableCell>
+                  <TableCell>
+                    <Text size="xs" className="line-clamp-1">
                       {insp.notes || insp.findings || '—'}
                     </Text>
-                  </Table.Td>
-                </Table.Tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Table.Tbody>
+            </TableBody>
           </Table>
         </ScrollArea>
       </PageState>

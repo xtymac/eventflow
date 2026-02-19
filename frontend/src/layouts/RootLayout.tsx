@@ -1,5 +1,3 @@
-import { Text, Title } from '@/components/shims';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -9,168 +7,109 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { IconChevronDown, IconMap, IconBuilding, IconClipboardList, IconUsers, IconLogout, IconTree, IconListDetails } from '@tabler/icons-react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ChevronDown, LogOut, Search } from 'lucide-react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { isDemoEnvironment, isAdminNavEnabled } from '../utils/environment';
-import { DemoHeader } from '../features/admin-demo/DemoHeader';
-import { useUIStore } from '../stores/uiStore';
+import { AppSidebar } from '../components/AppSidebar';
 
-const NAV_HEIGHT = 60;
-
-interface NavItemProps {
-  label: string;
-  to: string;
-  icon: React.ReactNode;
-  matchPaths?: string[];
-}
-
-function NavItem({ label, to, icon, matchPaths }: NavItemProps) {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isActive = matchPaths
-    ? matchPaths.some((p) => pathname.startsWith(p))
-    : pathname.startsWith(to);
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(to)}
-      className="flex items-center gap-1.5 rounded-sm px-4 py-1.5 text-sm"
-      style={{
-        backgroundColor: isActive ? '#e7f5ff' : undefined,
-        color: isActive ? '#1c7ed6' : undefined,
-        fontWeight: isActive ? 600 : 400,
-      }}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
+const HEADER_HEIGHT = 67;
 
 export function RootLayout() {
-  const { user, isAuthenticated, logout, hasRole, canAccessScope } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  const isDemoMode = isAdminNavEnabled() && isDemoEnvironment();
-  const isUnifiedLayout = user?.role === 'user' || user?.role === 'admin';
-  const demoSidebarOpen = useUIStore((s) => s.demoSidebarOpen);
-  const toggleDemoSidebar = useUIStore((s) => s.toggleDemoSidebar);
 
   if (!isAuthenticated) {
     const next = pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';
     return <Navigate to={`/login${next}`} replace />;
   }
 
-  const assetsActive = pathname.startsWith('/assets');
-
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex-none border-b" style={{ height: NAV_HEIGHT }}>
-        {isDemoMode ? (
-          isUnifiedLayout
-            ? <DemoHeader />
-            : <DemoHeader sidebarOpen={demoSidebarOpen} onToggleSidebar={toggleDemoSidebar} />
-        ) : (
-          <div className="flex h-full items-center justify-between px-4">
-            {/* Left: Logo + Nav */}
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => navigate('/map')} className="flex items-center gap-1.5 cursor-pointer">
-                <img src="/favicon.svg" alt="" width={36} height={36} />
-                <Title order={4} className="hidden md:block">EventFlow</Title>
-              </button>
+    <div className="flex h-screen">
+      {/* Left: Sidebar */}
+      <AppSidebar />
 
-              <div className="flex items-center gap-1 ml-4">
-                {(canAccessScope('parks') || canAccessScope('park-trees')) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="flex items-center gap-1.5 rounded-sm px-4 py-1.5 text-sm cursor-pointer"
-                        style={{
-                          backgroundColor: assetsActive ? '#e7f5ff' : undefined,
-                          color: assetsActive ? '#1c7ed6' : undefined,
-                          fontWeight: assetsActive ? 600 : 400,
-                        }}
-                      >
-                        <IconBuilding size={18} />
-                        公園管理
-                        <IconChevronDown size={14} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[200px]">
-                      {canAccessScope('parks') && (
-                        <DropdownMenuItem onClick={() => navigate('/assets/parks')}>
-                          <IconBuilding size={16} className="mr-2" />
-                          公園管理
-                        </DropdownMenuItem>
-                      )}
-                      {canAccessScope('park-trees') && (
-                        <DropdownMenuItem onClick={() => navigate('/assets/park-trees')}>
-                          <IconTree size={16} className="mr-2" />
-                          樹木管理
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                <NavItem label="地図" to="/map" icon={<IconMap size={18} />} />
-                <NavItem label="資産台帳" to="/assets/parks" icon={<IconListDetails size={18} />} matchPaths={['/assets']} />
-                <NavItem label="案件管理" to="/cases" icon={<IconClipboardList size={18} />} matchPaths={['/cases', '/inspections']} />
-
-                {hasRole(['admin']) && (
-                  <NavItem label="業者管理" to="/vendors" icon={<IconUsers size={18} />} />
-                )}
-              </div>
-            </div>
-
-            {/* Right: User */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className="flex items-center gap-1.5 cursor-pointer">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
-                      {user?.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div style={{ lineHeight: 1 }}>
-                    <Text size="sm" fw={500} className="hidden sm:block">{user?.name}</Text>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        user?.role === 'admin' ? 'bg-red-100 text-red-700' :
-                        user?.role === 'park_manager' ? 'bg-green-100 text-green-700' :
-                        user?.role === 'tree_manager' ? 'bg-teal-100 text-teal-700' :
-                        'bg-blue-100 text-blue-700'
-                      }
-                    >
-                      {user?.roleLabel}
-                    </Badge>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[200px]" align="end">
-                <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600"
-                  onClick={() => { logout(); navigate('/login'); }}
-                >
-                  <IconLogout size={16} className="mr-2" />
-                  ログアウト
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+      {/* Right: Header + Content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header
+          className="flex shrink-0 items-center justify-between bg-white px-10"
+          style={{ height: HEADER_HEIGHT, borderBottom: '1px solid var(--sidebar-sidebar-border, #E5E5E5)' }}
+        >
+          {/* Search bar */}
+          <div
+            className="max-w-[480px] w-full"
+            style={{
+              display: 'flex',
+              minHeight: 36,
+              padding: '4px 4px 4px 16px',
+              marginLeft: 30,
+              alignItems: 'center',
+              gap: 8,
+              borderRadius: 8,
+              border: '1px solid #E5E5E5',
+              background: '#FFF',
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.00)',
+            }}
+          >
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <Input
+              placeholder="検索"
+              className="h-auto min-h-0 flex-1 border-0 p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+            />
+            <Select defaultValue="all">
+              <SelectTrigger className="h-7 w-auto shrink-0 border-0 shadow-none focus:ring-0 gap-1 text-sm text-muted-foreground">
+                <SelectValue placeholder="すべて" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべて</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </header>
 
-      <main className="flex-1 overflow-hidden" style={{ height: `calc(100vh - ${NAV_HEIGHT}px)` }}>
-        <Outlet />
-      </main>
+          {/* User info */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="flex items-center gap-3 cursor-pointer">
+                <Avatar className="size-10">
+                  <AvatarFallback className="text-sm">
+                    {user?.name?.substring(0, 2) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-left leading-tight">
+                  <p className="text-sm font-medium">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground">{user?.roleLabel}</p>
+                </div>
+                <ChevronDown className="size-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[200px]" align="end">
+              <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => { logout(); navigate('/login'); }}
+              >
+                <LogOut className="mr-2 size-4" />
+                ログアウト
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

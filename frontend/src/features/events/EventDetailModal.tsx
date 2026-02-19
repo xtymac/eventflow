@@ -1,4 +1,4 @@
-import { Modal } from '@mantine/core';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EventDetailPanel } from './EventDetailPanel';
 
 interface EventDetailModalProps {
@@ -8,13 +8,13 @@ interface EventDetailModalProps {
 
 export function EventDetailModal({ eventId, onClose }: EventDetailModalProps) {
   return (
-    <Modal
-      opened={true}
-      onClose={onClose}
-      size="lg"
-      withCloseButton
-    >
-      <EventDetailPanel eventId={eventId} showBackButton={false} />
-    </Modal>
+    <Dialog open={true} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Event Detail</DialogTitle>
+        </DialogHeader>
+        <EventDetailPanel eventId={eventId} showBackButton={false} />
+      </DialogContent>
+    </Dialog>
   );
 }
