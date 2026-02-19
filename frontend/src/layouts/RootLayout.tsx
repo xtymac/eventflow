@@ -37,7 +37,7 @@ export function RootLayout() {
       <AppSidebar />
 
       {/* Right: Header + Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
         <header
           className="flex shrink-0 items-center justify-between bg-white px-10"
@@ -104,7 +104,7 @@ export function RootLayout() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-hidden">
+        <main className="min-w-0 flex-1 overflow-hidden">
           <Outlet />
         </main>
       </div>
