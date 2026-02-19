@@ -45,18 +45,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DataTableNumberedPagination } from '@/components/ui/data-table-numbered-pagination';
-import { DataTableViewOptions } from '@/components/ui/data-table-view-options';
+import { DataTableViewOptions, type FilterOption } from '@/components/ui/data-table-view-options';
 import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
 
 /* ── Style tokens ── */
 const headerCls = 'h-10 px-2 text-xs font-medium text-muted-foreground border-b border-[#f5f5f5]';
 const cellCls = 'h-10 px-2 text-sm max-w-0 truncate';
 const numCellCls = `${cellCls} text-right`;
-const modalSectionTitleCls = 'border-b border-[#d7d7d7] pb-3 text-[18px] font-medium text-[#6f6f6f] sm:text-[20px]';
-const modalLabelCls = 'text-[18px] font-semibold text-[#222222] sm:text-[20px]';
-const modalInputCls = 'mt-2 h-14 rounded-[14px] border-[#d2d2d2] bg-white px-4 text-[17px] shadow-none placeholder:text-[#7a7a7a] focus-visible:ring-[2px] focus-visible:ring-[#cfcfcf] sm:text-[18px]';
-const modalSelectTriggerCls = 'mt-2 h-14 w-full rounded-[14px] border-[#d2d2d2] bg-white px-4 text-[17px] shadow-none data-[placeholder]:text-transparent focus-visible:ring-[2px] focus-visible:ring-[#cfcfcf] sm:text-[18px]';
-const modalGridCls = 'grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8';
+const modalSectionTitleCls = 'text-sm font-normal uppercase tracking-[1.5px] text-[#737373]';
+const modalLabelCls = 'text-sm font-medium text-[#0a0a0a]';
+const modalInputCls = 'mt-1 h-9 rounded-lg border-[#e5e5e5] bg-white px-3 text-sm shadow-[0_1px_2px_0_rgba(0,0,0,0)] placeholder:text-[#a3a3a3] focus-visible:ring-1 focus-visible:ring-ring';
+const modalSelectTriggerCls = 'mt-1 h-9 w-full rounded-lg border-[#e5e5e5] bg-white px-3 text-sm shadow-[0_1px_2px_0_rgba(0,0,0,0)] data-[placeholder]:text-transparent focus-visible:ring-1 focus-visible:ring-ring';
+const modalGridCls = 'grid grid-cols-3 gap-4';
 
 function AdvancedSearchIcon({ className }: { className?: string }) {
   return (
@@ -127,11 +127,32 @@ function buildColumnVisibility(preset: ColumnPreset): VisibilityState {
   return next;
 }
 
+/* ── Toolbar filter options (for 表示するフィルター tab) ── */
+const TOOLBAR_FILTER_OPTIONS: FilterOption[] = [
+  { id: 'search', label: '検索' },
+  { id: 'ward', label: '区' },
+  { id: 'category', label: '種別' },
+  { id: 'schoolDistrict', label: '学区名' },
+  { id: 'managementOffice', label: '管理公所' },
+  { id: 'areaHa', label: '面積, ha' },
+  { id: 'openingYear', label: '開園年度' },
+  { id: 'establishedDate', label: '設置年月日' },
+  { id: 'planNumber', label: '計画番号' },
+  { id: 'plannedAreaHa', label: '計画面積, ha' },
+  { id: 'planDecisionDate', label: '計画決定日' },
+  { id: 'acquisitionMethod', label: '取得方法' },
+  { id: 'paidFacility', label: '有料施設' },
+  { id: 'disasterFacility', label: '防災施設' },
+];
+
+const DEFAULT_VISIBLE_FILTERS = ['search', 'ward', 'category', 'acquisitionMethod'];
+
 /* ── Filter options derived from data ── */
 const wards = [...new Set(CURATED_PARKS.map((p) => p.ward))].sort();
 const categories = [...new Set(CURATED_PARKS.map((p) => p.category))].sort();
 const acquisitionMethods = [...new Set(CURATED_PARKS.map((p) => p.acquisitionMethod))].sort();
 const managementOffices = [...new Set(CURATED_PARKS.map((p) => p.managementOffice))].sort();
+const schoolDistricts = [...new Set(CURATED_PARKS.map((p) => p.schoolDistrict).filter(Boolean))].sort();
 const paidFacilities = [...new Set(CURATED_PARKS.map((p) => p.paidFacility))].sort();
 const disasterFacilities = [...new Set(CURATED_PARKS.map((p) => p.disasterFacility))].sort();
 
@@ -279,6 +300,7 @@ export function ParkListPage() {
   const [acquisitionFilter, setAcquisitionFilter] = useState<string | undefined>(undefined);
   const [columnPreset, setColumnPreset] = useState<ColumnPreset>('standard');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => buildColumnVisibility('standard'));
+  const [visibleFilters, setVisibleFilters] = useState<string[]>(DEFAULT_VISIBLE_FILTERS);
 
   // Advanced search state
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
@@ -433,51 +455,111 @@ export function ParkListPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 16 }}>
-        <div
-          className="flex h-9 w-[316px] items-center gap-3 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
-          style={{ padding: '0 16px' }}
-        >
-          <Search className="size-4 shrink-0 text-muted-foreground" />
-          <Input
-            placeholder="No, 名称, 所在地"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-auto min-h-0 flex-1 border-0 p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
-          />
-        </div>
+        {visibleFilters.includes('search') && (
+          <div
+            className="flex h-9 w-[316px] items-center gap-3 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+            style={{ padding: '0 16px' }}
+          >
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <Input
+              placeholder="No, 名称, 所在地"
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="h-auto min-h-0 flex-1 border-0 p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+            />
+          </div>
+        )}
 
-        <Select value={wardFilter ?? ''} onValueChange={(v) => setWardFilter(v || undefined)}>
-          <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-            <SelectValue placeholder="区" />
-          </SelectTrigger>
-          <SelectContent>
-            {wards.map((w) => (
-              <SelectItem key={w} value={w}>{w}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {visibleFilters.includes('ward') && (
+          <Select value={wardFilter ?? ''} onValueChange={(v) => setWardFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="区" />
+            </SelectTrigger>
+            <SelectContent>
+              {wards.map((w) => (
+                <SelectItem key={w} value={w}>{w}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
-        <Select value={categoryFilter ?? ''} onValueChange={(v) => setCategoryFilter(v || undefined)}>
-          <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-            <SelectValue placeholder="種別" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {visibleFilters.includes('category') && (
+          <Select value={categoryFilter ?? ''} onValueChange={(v) => setCategoryFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="種別" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
-        <Select value={acquisitionFilter ?? ''} onValueChange={(v) => setAcquisitionFilter(v || undefined)}>
-          <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-            <SelectValue placeholder="取得方法" />
-          </SelectTrigger>
-          <SelectContent>
-            {acquisitionMethods.map((m) => (
-              <SelectItem key={m} value={m}>{m}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {visibleFilters.includes('schoolDistrict') && (
+          <Select value={schoolDistrictFilter || ''} onValueChange={(v) => setSchoolDistrictFilter(v || '')}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="学区名" />
+            </SelectTrigger>
+            <SelectContent>
+              {schoolDistricts.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {visibleFilters.includes('managementOffice') && (
+          <Select value={managementOfficeFilter ?? ''} onValueChange={(v) => setManagementOfficeFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="管理公所" />
+            </SelectTrigger>
+            <SelectContent>
+              {managementOffices.map((m) => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {visibleFilters.includes('acquisitionMethod') && (
+          <Select value={acquisitionFilter ?? ''} onValueChange={(v) => setAcquisitionFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="取得方法" />
+            </SelectTrigger>
+            <SelectContent>
+              {acquisitionMethods.map((m) => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {visibleFilters.includes('paidFacility') && (
+          <Select value={paidFacilityFilter ?? ''} onValueChange={(v) => setPaidFacilityFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="有料施設" />
+            </SelectTrigger>
+            <SelectContent>
+              {paidFacilities.map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {visibleFilters.includes('disasterFacility') && (
+          <Select value={disasterFacilityFilter ?? ''} onValueChange={(v) => setDisasterFacilityFilter(v || undefined)}>
+            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="防災施設" />
+            </SelectTrigger>
+            <SelectContent>
+              {disasterFacilities.map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <div className="flex items-center gap-2 ml-auto">
           <Button
@@ -489,7 +571,12 @@ export function ParkListPage() {
             <AdvancedSearchIcon className="size-4" />
             <span className="sr-only">詳細検索</span>
           </Button>
-          <DataTableViewOptions table={table} />
+          <DataTableViewOptions
+            table={table}
+            filterOptions={TOOLBAR_FILTER_OPTIONS}
+            visibleFilters={visibleFilters}
+            onVisibleFiltersChange={setVisibleFilters}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -598,29 +685,29 @@ export function ParkListPage() {
 
       <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
         <DialogContent
-          className="w-[min(1200px,calc(100vw-32px))] max-w-none gap-0 overflow-hidden rounded-[20px] border border-[#d8d8d8] bg-[#f4f4f4] p-0 shadow-[0_28px_80px_rgba(0,0,0,0.28)] [&_[data-slot=dialog-close]]:top-6 [&_[data-slot=dialog-close]]:right-6 [&_[data-slot=dialog-close]]:opacity-70 [&_[data-slot=dialog-close]_svg]:size-6"
+          className="w-[700px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]_svg]:size-6"
           showCloseButton
         >
-          <DialogHeader className="px-6 pb-0 pt-6 sm:px-8 sm:pt-7">
-            <DialogTitle className="text-[34px] font-bold leading-none tracking-tight text-[#191919] sm:text-[44px]">詳細検索</DialogTitle>
+          <DialogHeader className="px-4 pb-0 pt-4">
+            <DialogTitle className="text-xl font-bold leading-6 tracking-normal text-[#0a0a0a]">詳細検索</DialogTitle>
             <DialogDescription className="sr-only">公園の詳細検索フィルター</DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto px-6 pb-8 pt-6 sm:px-8 sm:pt-8" style={{ maxHeight: 'calc(100vh - 240px)' }}>
-            <div className="space-y-10">
+          <div className="overflow-y-auto px-4 pb-4 pt-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            <div className="space-y-6">
               {/* 基本属性・管理 */}
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <p className={modalSectionTitleCls}>基本属性・管理</p>
-                <div className="space-y-6">
+                <div className="space-y-2">
                   <div>
                     <label className={modalLabelCls}>検索</label>
-                    <div className="mt-2 flex h-14 items-center gap-3 rounded-[14px] border border-[#d2d2d2] bg-white px-4 shadow-none">
-                      <Search className="size-5 shrink-0 text-[#7a7a7a]" />
+                    <div className="mt-1 flex h-9 items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white px-3 shadow-[0_1px_2px_0_rgba(0,0,0,0)]">
+                      <Search className="size-4 shrink-0 text-[#a3a3a3]" />
                       <Input
                         placeholder="No, 名称, 所在地"
                         value={draft.search}
                         onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
-                        className="h-auto min-h-0 flex-1 border-0 p-0 text-[17px] shadow-none placeholder:text-[#7a7a7a] focus-visible:ring-0 sm:text-[18px]"
+                        className="h-auto min-h-0 flex-1 border-0 p-0 text-sm shadow-none placeholder:text-[#a3a3a3] focus-visible:ring-0"
                       />
                     </div>
                   </div>
@@ -679,7 +766,7 @@ export function ParkListPage() {
               </div>
 
               {/* 規模・供用履歴 */}
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <p className={modalSectionTitleCls}>規模・供用履歴</p>
                 <div className={modalGridCls}>
                   <div>
@@ -692,29 +779,29 @@ export function ParkListPage() {
                   </div>
                   <div>
                     <label className={modalLabelCls}>開園年度</label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-1">
                       <Input
-                        className={`${modalInputCls} pr-12`}
+                        className={`${modalInputCls} pr-9`}
                       />
-                      <CalendarIcon className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-[#646464]" />
+                      <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
                     </div>
                   </div>
                   <div>
                     <label className={modalLabelCls}>設置年月日</label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-1">
                       <Input
-                        className={`${modalInputCls} pr-12`}
+                        className={`${modalInputCls} pr-9`}
                       />
-                      <CalendarIcon className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-[#646464]" />
+                      <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* 都市計画・権利 */}
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <p className={modalSectionTitleCls}>都市計画・権利</p>
-                <div className="space-y-6">
+                <div className="space-y-2">
                   <div className={modalGridCls}>
                     <div>
                       <label className={modalLabelCls}>計画番号</label>
@@ -761,7 +848,7 @@ export function ParkListPage() {
               </div>
 
               {/* 施設・機能 */}
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <p className={modalSectionTitleCls}>施設・機能</p>
                 <div className={modalGridCls}>
                   <div>
@@ -795,25 +882,25 @@ export function ParkListPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-[#d6d6d6] bg-[#e9e9e9] px-6 py-5 sm:px-8">
+          <div className="flex items-center justify-between bg-[#f5f5f5] px-4 py-4">
             <button
               type="button"
-              className="text-[17px] font-semibold text-[#757575] hover:text-[#4c4c4c] sm:text-[18px]"
+              className="text-sm font-medium text-[#737373] hover:text-[#525252]"
               onClick={clearDraft}
             >
               すべてクリア
             </button>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => setAdvancedSearchOpen(false)}
-                className="h-14 rounded-[14px] border-[#c7c7c7] bg-white px-8 text-[17px] text-[#2b2b2b] shadow-none hover:bg-[#f8f8f8] sm:text-[18px]"
+                className="h-9 rounded-lg border-[#d4d4d4] bg-white px-4 text-sm font-medium shadow-[0_1px_2px_0_rgba(0,0,0,0)] hover:bg-[#f5f5f5]"
               >
                 Cancel
               </Button>
               <Button
                 onClick={applyAdvancedSearch}
-                className="h-14 rounded-[14px] bg-[#215042] px-8 text-[17px] text-white shadow-none hover:bg-[#1a4035] sm:text-[18px]"
+                className="h-9 rounded-lg bg-[#215042] px-4 text-sm font-medium text-white shadow-none hover:bg-[#1a4035]"
               >
                 Apply
               </Button>

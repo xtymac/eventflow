@@ -1,19 +1,28 @@
 "use client"
 
+import { useState } from "react"
 import { type Column, type Table } from "@tanstack/react-table"
+import { GripVertical } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+
+export interface FilterOption {
+  id: string
+  label: string
+}
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>
+  filterOptions?: FilterOption[]
+  visibleFilters?: string[]
+  onVisibleFiltersChange?: (filters: string[]) => void
+  maxFilters?: number
 }
 
 function getColumnLabel<TData>(column: Column<TData, unknown>): string {
@@ -32,7 +41,13 @@ function getColumnLabel<TData>(column: Column<TData, unknown>): string {
 
 export function DataTableViewOptions<TData>({
   table,
+  filterOptions = [],
+  visibleFilters = [],
+  onVisibleFiltersChange,
+  maxFilters = 4,
 }: DataTableViewOptionsProps<TData>) {
+  const [activeTab, setActiveTab] = useState<"columns" | "filters">("columns")
+
   const columns = table
     .getAllColumns()
     .filter(
@@ -40,9 +55,21 @@ export function DataTableViewOptions<TData>({
         typeof column.accessorFn !== "undefined" && column.getCanHide()
     )
 
+  const hasFilterTab = filterOptions.length > 0
+
+  function toggleFilter(filterId: string) {
+    if (!onVisibleFiltersChange) return
+    const isSelected = visibleFilters.includes(filterId)
+    if (isSelected) {
+      onVisibleFiltersChange(visibleFilters.filter((id) => id !== filterId))
+    } else if (visibleFilters.length < maxFilters) {
+      onVisibleFiltersChange([...visibleFilters, filterId])
+    }
+  }
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button
           variant="secondary"
           size="icon-sm"
@@ -54,20 +81,105 @@ export function DataTableViewOptions<TData>({
           </svg>
           <span className="sr-only">表示する項目</span>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[180px]">
-        <DropdownMenuLabel>表示列</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {columns.map((column) => (
-          <DropdownMenuCheckboxItem
-            key={column.id}
-            checked={column.getIsVisible()}
-            onCheckedChange={(value) => column.toggleVisibility(!!value)}
-          >
-            {getColumnLabel(column)}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[240px] p-0.5">
+        {/* Tabs header */}
+        <div className="flex flex-col py-3">
+          <div className="flex items-center gap-6 px-2.5">
+            <button
+              type="button"
+              className={`flex flex-col items-center gap-3 text-xs font-medium leading-4 ${
+                activeTab === "columns"
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              }`}
+              onClick={() => setActiveTab("columns")}
+            >
+              <span>表示する項目</span>
+              {activeTab === "columns" && (
+                <div className="h-0.5 w-full rounded-full bg-foreground" />
+              )}
+            </button>
+            {hasFilterTab && (
+              <button
+                type="button"
+                className={`flex flex-col items-center gap-3 text-xs font-medium leading-4 ${
+                  activeTab === "filters"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setActiveTab("filters")}
+              >
+                <span>表示するフィルター</span>
+                {activeTab === "filters" && (
+                  <div className="h-0.5 w-full rounded-full bg-foreground" />
+                )}
+              </button>
+            )}
+          </div>
+          <div className="h-px w-full bg-border" />
+        </div>
+
+        {/* Columns tab content */}
+        {activeTab === "columns" && (
+          <div className="flex flex-col pb-1">
+            {columns.map((column) => (
+              <label
+                key={column.id}
+                className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-2 py-[5.5px] hover:bg-accent"
+              >
+                <div className="flex items-center gap-1 p-0.5">
+                  <GripVertical className="size-6 text-muted-foreground/50" />
+                  <Checkbox
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  />
+                </div>
+                <span className="text-sm leading-5">
+                  {getColumnLabel(column)}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {/* Filters tab content */}
+        {activeTab === "filters" && hasFilterTab && (
+          <div className="flex flex-col pb-1">
+            <div className="flex min-h-8 items-center px-2 py-[5.5px]">
+              <p className="text-xs leading-4 text-muted-foreground">
+                最大{maxFilters}件まで選択可能です
+              </p>
+            </div>
+            {filterOptions.map((option) => {
+              const isChecked = visibleFilters.includes(option.id)
+              const isDisabled = !isChecked && visibleFilters.length >= maxFilters
+              return (
+                <label
+                  key={option.id}
+                  className={`flex min-h-8 items-center gap-2 rounded-md px-2 py-[5.5px] ${
+                    isDisabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer hover:bg-accent"
+                  }`}
+                >
+                  <div className="flex items-center gap-1 p-0.5">
+                    <GripVertical className="size-6 text-muted-foreground/50" />
+                    <Checkbox
+                      checked={isChecked}
+                      disabled={isDisabled}
+                      onCheckedChange={() => toggleFilter(option.id)}
+                    />
+                  </div>
+                  <span className="text-sm leading-5">
+                    {option.label}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   )
 }
