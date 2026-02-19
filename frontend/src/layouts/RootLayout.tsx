@@ -1,4 +1,3 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,17 +77,15 @@ export function RootLayout() {
           {/* User info */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className="flex items-center gap-3 cursor-pointer">
-                <Avatar className="size-10">
-                  <AvatarFallback className="text-sm">
-                    {user?.name?.substring(0, 2) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-left leading-tight">
-                  <p className="text-sm font-medium">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground">{user?.roleLabel}</p>
+              <button type="button" data-testid="user-avatar" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginRight: 30 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 9999, backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#0a0a0a', flexShrink: 0 }}>
+                  {user?.name?.split(/\s+/).map(s => s[0]).join('').slice(0, 2) || 'U'}
                 </div>
-                <ChevronDown className="size-4 text-muted-foreground" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' }}>
+                  <p style={{ fontSize: 14, lineHeight: '20px', color: '#0a0a0a', margin: 0 }}>{user?.name}</p>
+                  <p style={{ fontSize: 12, lineHeight: '16px', color: '#737373', margin: 0 }}>{user?.roleLabel}</p>
+                </div>
+                <ChevronDown style={{ width: 20, height: 20, color: '#737373', flexShrink: 0 }} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[200px]" align="end">

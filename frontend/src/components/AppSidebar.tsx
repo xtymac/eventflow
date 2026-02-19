@@ -156,12 +156,10 @@ export function AppSidebar() {
           <div className="h-px w-full" style={{ background: 'var(--sidebar-sidebar-border, #E5E5E5)' }} />
         </div>
 
-        {/* 資産台帳 (always expanded for now) */}
+        {/* 資産台帳 */}
         <SidebarGroup
           label="資産台帳"
           icon={Table2}
-          expandable
-          expanded={isAssets}
           onClick={() => navigate('/assets/parks')}
         />
         <SidebarSubItem

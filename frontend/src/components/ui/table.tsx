@@ -58,7 +58,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
         "hover:bg-muted/50 data-[state=selected]:bg-muted transition-colors",
         className
       )}
-      style={{ borderBottom: '1px solid var(--sidebar-sidebar-border, #E5E5E5)' }}
+      style={{ borderBottom: '1px solid #f5f5f5' }}
       {...props}
     />
   )

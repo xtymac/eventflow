@@ -1,5 +1,5 @@
 import { Table } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+import { MoreHorizontal } from "lucide-react"
 
 interface DataTableNumberedPaginationProps<TData> {
   table: Table<TData>
@@ -30,6 +30,10 @@ function getPageNumbers(currentPage: number, totalPages: number): (number | '...
   return pages
 }
 
+const ghostBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] px-4 py-2 text-[#404040] hover:bg-[#f5f5f5] disabled:opacity-50 disabled:pointer-events-none"
+const activeBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] min-w-[34px] px-4 py-2 border border-[#d4d4d4] bg-white text-[#0a0a0a] shadow-[0_1px_2px_0_rgba(0,0,0,0)]"
+const inactiveBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] min-w-[34px] px-4 py-2 text-[#404040] hover:bg-[#f5f5f5]"
+
 export function DataTableNumberedPagination<TData>({
   table,
 }: DataTableNumberedPaginationProps<TData>) {
@@ -41,44 +45,44 @@ export function DataTableNumberedPagination<TData>({
   const pageNumbers = getPageNumbers(currentPage, totalPages)
 
   return (
-    <div className="flex items-center justify-end gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
+    <div className="flex items-center justify-end" style={{ gap: 8 }}>
+      <button
+        type="button"
         onClick={() => table.previousPage()}
         disabled={!table.getCanPreviousPage()}
-        className="text-sm"
+        className={ghostBtn}
       >
         前へ
-      </Button>
+      </button>
 
       {pageNumbers.map((page, i) =>
         page === '...' ? (
-          <span key={`ellipsis-${i}`} className="px-2 text-sm text-muted-foreground">
-            ...
+          <span
+            key={`ellipsis-${i}`}
+            className="inline-flex items-center justify-center rounded-lg min-h-[36px] min-w-[36px]"
+          >
+            <MoreHorizontal className="size-5 text-[#404040]" />
           </span>
         ) : (
-          <Button
+          <button
             key={page}
-            variant={page === currentPage ? 'outline' : 'ghost'}
-            size="sm"
+            type="button"
             onClick={() => table.setPageIndex(page - 1)}
-            className="h-8 w-8 p-0 text-sm"
+            className={page === currentPage ? activeBtn : inactiveBtn}
           >
             {page}
-          </Button>
+          </button>
         )
       )}
 
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        type="button"
         onClick={() => table.nextPage()}
         disabled={!table.getCanNextPage()}
-        className="text-sm"
+        className={ghostBtn}
       >
         次へ
-      </Button>
+      </button>
     </div>
   )
 }

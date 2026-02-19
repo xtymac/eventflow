@@ -42,7 +42,7 @@ import { DataTableViewOptions } from '@/components/ui/data-table-view-options';
 import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
 
 /* ── Style tokens ── */
-const headerCls = 'h-10 px-2 text-xs font-normal text-muted-foreground border-b border-[#e5e5e5]';
+const headerCls = 'h-10 px-2 text-xs font-medium text-muted-foreground border-b border-[#f5f5f5]';
 const cellCls = 'h-10 px-2 text-sm max-w-0 truncate';
 const numCellCls = `${cellCls} text-right`;
 
@@ -291,10 +291,10 @@ export function ParkListPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 30, padding: '36px 40px 24px', height: 'calc(100% - 60px)' }}>
+    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '24px 24px 16px', height: 'calc(100% - 32px)' }}>
       <div className="flex items-center justify-between" style={{ marginBottom: 32 }}>
         <h1 className="text-5xl font-semibold leading-none tracking-tight">公園</h1>
-        <Button size="icon-lg" className="size-14 rounded-full bg-green-800 hover:bg-green-700">
+        <Button size="icon-lg" className="size-14 rounded-full border-0 bg-green-800 hover:bg-green-700">
           <Plus className="size-6" />
         </Button>
       </div>
@@ -391,7 +391,7 @@ export function ParkListPage() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
           <Table style={{ minWidth: totalWidth }}>
             <TableHeader className="sticky top-0 z-10 bg-white">
               {table.getHeaderGroups().map((headerGroup) => (
