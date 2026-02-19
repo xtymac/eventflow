@@ -96,9 +96,7 @@ export function DataTableViewOptions<TData>({
               onClick={() => setActiveTab("columns")}
             >
               <span>表示する項目</span>
-              {activeTab === "columns" && (
-                <div className="h-0.5 w-full rounded-full bg-foreground" />
-              )}
+              <div className={`h-0.5 w-full rounded-full ${activeTab === "columns" ? "bg-foreground" : "bg-transparent"}`} />
             </button>
             {hasFilterTab && (
               <button
@@ -111,9 +109,7 @@ export function DataTableViewOptions<TData>({
                 onClick={() => setActiveTab("filters")}
               >
                 <span>表示するフィルター</span>
-                {activeTab === "filters" && (
-                  <div className="h-0.5 w-full rounded-full bg-foreground" />
-                )}
+                <div className={`h-0.5 w-full rounded-full ${activeTab === "filters" ? "bg-foreground" : "bg-transparent"}`} />
               </button>
             )}
           </div>
