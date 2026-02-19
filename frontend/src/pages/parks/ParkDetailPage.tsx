@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Box, Text, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -396,7 +395,7 @@ export function ParkDetailPage() {
   };
 
   return (
-    <ScrollArea style={{ height: 'calc(100vh - 60px)' }}>
+    <div className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden">
       <Box p="lg" className="w-full max-w-full overflow-x-hidden">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-4">
@@ -485,7 +484,7 @@ export function ParkDetailPage() {
               </div>
 
               {/* ═══ Facilities section ═══ */}
-              <div className="w-full min-w-0 max-w-full overflow-hidden">
+              <div className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 w-full min-w-0 max-w-full overflow-hidden">
                 <Text fw={600} className="text-base mb-3">施設</Text>
 
                 {/* Search + filter toolbar */}
@@ -546,9 +545,24 @@ export function ParkDetailPage() {
                 </div>
 
                 {/* Facilities table — horizontal scroll */}
+                <div className="px-1 pb-2 text-[11px] text-[#a3a3a3]">左右にスクロールして全列を表示</div>
                 <PageState loading={!usingDummy && facilitiesLoading} empty={filteredFacilities.length === 0} emptyMessage={hasActiveFilters ? '条件に一致する施設がありません' : 'この公園に施設はありません'}>
-                  <div className="w-full max-w-full border border-[#e5e5e5] rounded-lg overflow-x-auto scrollbar-auto-hide [&_[data-slot=table-container]]:overflow-visible">
-                    <Table style={{ minWidth: TOTAL_WIDTH }}>
+                  <div className="w-full max-w-full border border-[#e5e5e5] rounded-lg">
+                    <div
+                      className="w-full"
+                      style={{
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
+                        maxWidth: '100%',
+                        scrollbarGutter: 'stable both-edges',
+                        WebkitOverflowScrolling: 'touch',
+                      }}
+                    >
+                      <table
+                        data-testid="park-facilities-table"
+                        className="caption-bottom text-sm"
+                        style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}
+                      >
                       <TableHeader>
                         <TableRow className="bg-[#fafafa] hover:bg-[#fafafa]">
                           <TableHead style={{ width: COL.thumb, minWidth: COL.thumb }} />
@@ -641,91 +655,93 @@ export function ParkDetailPage() {
                           );
                         })}
                       </TableBody>
-                    </Table>
+                      </table>
+                    </div>
                   </div>
                 </PageState>
               </div>
 
               {/* ═══ Building coverage section ═══ */}
               {coverageData.length > 0 && (
-                <div>
-                  <Text fw={600} className="text-base mb-3">公園内建ぺい率一覧</Text>
-                  <Stack gap="sm">
+                <div className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 flex flex-col gap-2">
+                  <p className="font-mono text-base font-normal text-[#171717]">公園内建ぺい率一覧</p>
+                  <div className="flex flex-col gap-4">
                     {coverageData.map((cat, ci) => (
                       <Collapsible
                         key={ci}
                         open={openCoverage[ci] ?? false}
                         onOpenChange={(open) => setOpenCoverage(prev => ({ ...prev, [ci]: open }))}
                       >
-                        <CollapsibleTrigger className="w-full">
-                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-4 py-4 bg-[#fafafa] border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-[#f5f5f5] transition-colors">
-                            <div className="flex items-center gap-2 text-[#737373]">
-                              {openCoverage[ci] ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                              <span className="text-[20px] leading-none font-semibold">{cat.label}</span>
+                        <div>
+                          <CollapsibleTrigger className="w-full flex items-center justify-between py-3 cursor-pointer text-left bg-transparent border-none outline-none">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              {openCoverage[ci] ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                              <span className="text-base font-medium">{cat.label}</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-4 md:flex md:items-center md:gap-8 text-xs w-full md:w-auto">
-                              <div className="text-right">
-                                <div className="text-[#a3a3a3]">建築面積m2</div>
-                                <div className="font-semibold text-[#0a0a0a] text-[16px]">{formatCoverageBuildingArea(cat)}</div>
+                            <div className="flex items-center gap-5 w-[330px]">
+                              <div className="flex-1 flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground">建築面積m2</span>
+                                <span className="text-sm font-medium text-foreground">{formatCoverageBuildingArea(cat)}</span>
                               </div>
-                              <div className="text-right">
-                                <div className="text-[#a3a3a3]">限度面積 m2</div>
-                                <div className="font-semibold text-[#0a0a0a] text-[16px]">{formatCoverageLimitArea(cat)}</div>
+                              <div className="flex-1 flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground">限度面積 m2</span>
+                                <span className="text-sm font-medium text-foreground">{formatCoverageLimitArea(cat)}</span>
                               </div>
-                              <div className="text-right">
-                                <div className="text-[#a3a3a3]">建ぺい率%</div>
-                                <Badge className="bg-[#22C55E] text-white text-xs px-3 py-0.5 rounded-full">
+                              <div className="flex-1 flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground">建ﾍﾟｲ率％</span>
+                                <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full w-fit">
                                   {formatCoverageRate(cat)}
                                 </Badge>
                               </div>
                             </div>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          {cat.items.length > 0 ? (
-                            <div className="border border-t-0 border-[#e5e5e5] rounded-b-lg overflow-hidden">
-                              <Table className="w-full">
-                                <TableHeader>
-                                  <TableRow className="bg-[#fafafa]">
-                                    <TableHead className="text-xs text-[#737373] font-semibold">施設の種別</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold">物件</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold text-right">建築面積m2</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold">設置年月日</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold">検査済証の有無</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold">設置許可</TableHead>
-                                    <TableHead className="text-xs text-[#737373] font-semibold">備考</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {cat.items.map((item, ii) => (
-                                    <TableRow key={ii}>
-                                      <TableCell className="text-xs text-[#262626]">{item.type}</TableCell>
-                                      <TableCell className="text-xs text-[#262626]">{item.property}</TableCell>
-                                      <TableCell className="text-xs text-[#262626] text-right">{item.buildingArea.toFixed(2)}</TableCell>
-                                      <TableCell className="text-xs text-[#262626]">{item.installDate}</TableCell>
-                                      <TableCell className="text-xs text-[#262626]">{item.inspectionCert}</TableCell>
-                                      <TableCell className="text-xs text-[#262626]">{item.installPermit}</TableCell>
-                                      <TableCell className="text-xs text-[#262626]">{item.notes || '-'}</TableCell>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="border-t border-[#e5e5e5] mt-2" />
+                            {cat.items.length > 0 ? (
+                              <div className="overflow-x-auto">
+                                <Table className="w-full">
+                                  <TableHeader>
+                                    <TableRow className="hover:bg-transparent border-0">
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">施設の種別</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">物件</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">建築面積m2</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">設置年月日</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">検査済証の有無</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">設置許可</TableHead>
+                                      <TableHead className="text-xs text-muted-foreground font-medium h-10 px-2">備考</TableHead>
                                     </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          ) : (
-                            <div className="border border-t-0 border-[#e5e5e5] rounded-b-lg px-4 py-6 text-center text-xs text-[#a3a3a3]">
-                              データなし
-                            </div>
-                          )}
-                        </CollapsibleContent>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {cat.items.map((item, ii) => (
+                                      <TableRow key={ii} className="bg-[#fafafa] border-b border-[#f5f5f5] last:border-b-0 hover:bg-[#fafafa]">
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.type}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.property}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.buildingArea.toFixed(2)}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.installDate}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.inspectionCert}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.installPermit}</TableCell>
+                                        <TableCell className="text-sm text-foreground h-10 px-2 py-0">{item.notes || '-'}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ) : (
+                              <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                データなし
+                              </div>
+                            )}
+                          </CollapsibleContent>
+                        </div>
                       </Collapsible>
                     ))}
-                  </Stack>
+                  </div>
                 </div>
               )}
             </Stack>
           )}
         </PageState>
       </Box>
-    </ScrollArea>
+    </div>
   );
 }

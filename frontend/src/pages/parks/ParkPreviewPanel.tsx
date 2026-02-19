@@ -170,13 +170,8 @@ function ParkFacilitiesTab({ parkId, parkName }: { parkId: string; parkName: str
   const apiFacilities = facilitiesData?.features || [];
   const dummyFacilities = getDummyFacilitiesByPark(parkId);
 
-  // Assign varied demo statuses based on index for visual variety
-  const DEMO_STATUSES = ['active', 'underRepair', 'suspended', 'active', 'active', 'underRepair', 'active', 'suspended'];
   const facilities = apiFacilities.length > 0
-    ? apiFacilities.map((f: any, i: number) => ({
-        ...f.properties,
-        status: DEMO_STATUSES[i % DEMO_STATUSES.length],
-      }))
+    ? apiFacilities.map((f: any) => f.properties)
     : dummyFacilities;
 
   if (isLoading && apiFacilities.length === 0 && dummyFacilities.length === 0) {
