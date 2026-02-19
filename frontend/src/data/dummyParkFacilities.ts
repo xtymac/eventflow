@@ -155,6 +155,9 @@ const INSPECTION_DATES = [
 ];
 const INSTALL_YEARS = [2005, 2008, 2012, 2015, 2018, 2010, 2003, 2020];
 const DESIGN_LIVES = [15, 20, 25, 30];
+const STATUSES: Array<ParkFacilityAsset['status']> = [
+  'active', 'underRepair', 'suspended', 'active', 'active', 'underRepair', 'active', 'suspended',
+];
 
 function buildFeatures(): FacilityFeature[] {
   const features: FacilityFeature[] = [];
@@ -199,7 +202,7 @@ function buildFeatures(): FacilityFeature[] {
             type: 'Point',
             coordinates: [centerLng + offset[0], centerLat + offset[1]],
           },
-          status: 'active' as const,
+          status: STATUSES[i % STATUSES.length],
           condition: conditionGrade === 'A' ? 'good' : conditionGrade === 'B' ? 'attention' : 'bad',
           riskLevel: conditionGrade === 'C' ? 'high' : conditionGrade === 'B' ? 'medium' : 'low',
           ward,

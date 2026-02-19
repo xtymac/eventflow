@@ -547,7 +547,7 @@ export function ParkDetailPage() {
                 {/* Facilities table — horizontal scroll */}
                 <div className="px-1 pb-2 text-[11px] text-[#a3a3a3]">左右にスクロールして全列を表示</div>
                 <PageState loading={!usingDummy && facilitiesLoading} empty={filteredFacilities.length === 0} emptyMessage={hasActiveFilters ? '条件に一致する施設がありません' : 'この公園に施設はありません'}>
-                  <div className="w-full max-w-full border border-[#e5e5e5] rounded-lg">
+                  <div className="w-full max-w-full">
                     <div
                       className="w-full"
                       style={{
