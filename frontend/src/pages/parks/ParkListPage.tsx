@@ -471,11 +471,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('ward') && (
-          <Select value={wardFilter ?? ''} onValueChange={(v) => setWardFilter(v || undefined)}>
+          <Select value={wardFilter ?? '__all__'} onValueChange={(v) => setWardFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="区" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {wards.map((w) => (
                 <SelectItem key={w} value={w}>{w}</SelectItem>
               ))}
@@ -484,11 +485,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('category') && (
-          <Select value={categoryFilter ?? ''} onValueChange={(v) => setCategoryFilter(v || undefined)}>
+          <Select value={categoryFilter ?? '__all__'} onValueChange={(v) => setCategoryFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="種別" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -497,11 +499,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('schoolDistrict') && (
-          <Select value={schoolDistrictFilter || ''} onValueChange={(v) => setSchoolDistrictFilter(v || '')}>
+          <Select value={schoolDistrictFilter || '__all__'} onValueChange={(v) => setSchoolDistrictFilter(v === '__all__' ? '' : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="学区名" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {schoolDistricts.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -510,11 +513,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('managementOffice') && (
-          <Select value={managementOfficeFilter ?? ''} onValueChange={(v) => setManagementOfficeFilter(v || undefined)}>
+          <Select value={managementOfficeFilter ?? '__all__'} onValueChange={(v) => setManagementOfficeFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="管理公所" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {managementOffices.map((m) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
@@ -523,11 +527,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('acquisitionMethod') && (
-          <Select value={acquisitionFilter ?? ''} onValueChange={(v) => setAcquisitionFilter(v || undefined)}>
+          <Select value={acquisitionFilter ?? '__all__'} onValueChange={(v) => setAcquisitionFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="取得方法" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {acquisitionMethods.map((m) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
@@ -536,11 +541,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('paidFacility') && (
-          <Select value={paidFacilityFilter ?? ''} onValueChange={(v) => setPaidFacilityFilter(v || undefined)}>
+          <Select value={paidFacilityFilter ?? '__all__'} onValueChange={(v) => setPaidFacilityFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="有料施設" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {paidFacilities.map((f) => (
                 <SelectItem key={f} value={f}>{f}</SelectItem>
               ))}
@@ -549,11 +555,12 @@ export function ParkListPage() {
         )}
 
         {visibleFilters.includes('disasterFacility') && (
-          <Select value={disasterFacilityFilter ?? ''} onValueChange={(v) => setDisasterFacilityFilter(v || undefined)}>
+          <Select value={disasterFacilityFilter ?? '__all__'} onValueChange={(v) => setDisasterFacilityFilter(v === '__all__' ? undefined : v)}>
             <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
               <SelectValue placeholder="防災施設" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__all__">すべて</SelectItem>
               {disasterFacilities.map((f) => (
                 <SelectItem key={f} value={f}>{f}</SelectItem>
               ))}
@@ -714,11 +721,12 @@ export function ParkListPage() {
                   <div className={modalGridCls}>
                     <div>
                       <label className={modalLabelCls}>区</label>
-                      <Select value={draft.ward ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, ward: v || undefined }))}>
+                      <Select value={draft.ward ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, ward: v === '__all__' ? undefined : v }))}>
                         <SelectTrigger className={modalSelectTriggerCls}>
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__all__">すべて</SelectItem>
                           {wards.map((w) => (
                             <SelectItem key={w} value={w}>{w}</SelectItem>
                           ))}
@@ -727,11 +735,12 @@ export function ParkListPage() {
                     </div>
                     <div>
                       <label className={modalLabelCls}>種別</label>
-                      <Select value={draft.category ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, category: v || undefined }))}>
+                      <Select value={draft.category ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, category: v === '__all__' ? undefined : v }))}>
                         <SelectTrigger className={modalSelectTriggerCls}>
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__all__">すべて</SelectItem>
                           {categories.map((c) => (
                             <SelectItem key={c} value={c}>{c}</SelectItem>
                           ))}
@@ -750,11 +759,12 @@ export function ParkListPage() {
                   <div className={modalGridCls}>
                     <div>
                       <label className={modalLabelCls}>管理公所</label>
-                      <Select value={draft.managementOffice ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, managementOffice: v || undefined }))}>
+                      <Select value={draft.managementOffice ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, managementOffice: v === '__all__' ? undefined : v }))}>
                         <SelectTrigger className={modalSelectTriggerCls}>
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__all__">すべて</SelectItem>
                           {managementOffices.map((m) => (
                             <SelectItem key={m} value={m}>{m}</SelectItem>
                           ))}
@@ -832,11 +842,12 @@ export function ParkListPage() {
                   <div className={modalGridCls}>
                     <div>
                       <label className={modalLabelCls}>取得方法</label>
-                      <Select value={draft.acquisitionMethod ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, acquisitionMethod: v || undefined }))}>
+                      <Select value={draft.acquisitionMethod ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, acquisitionMethod: v === '__all__' ? undefined : v }))}>
                         <SelectTrigger className={modalSelectTriggerCls}>
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__all__">すべて</SelectItem>
                           {acquisitionMethods.map((m) => (
                             <SelectItem key={m} value={m}>{m}</SelectItem>
                           ))}
@@ -853,11 +864,12 @@ export function ParkListPage() {
                 <div className={modalGridCls}>
                   <div>
                     <label className={modalLabelCls}>有料施設</label>
-                    <Select value={draft.paidFacility ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, paidFacility: v || undefined }))}>
+                    <Select value={draft.paidFacility ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, paidFacility: v === '__all__' ? undefined : v }))}>
                       <SelectTrigger className={modalSelectTriggerCls}>
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__all__">すべて</SelectItem>
                         {paidFacilities.map((f) => (
                           <SelectItem key={f} value={f}>{f}</SelectItem>
                         ))}
@@ -866,11 +878,12 @@ export function ParkListPage() {
                   </div>
                   <div>
                     <label className={modalLabelCls}>防災施設</label>
-                    <Select value={draft.disasterFacility ?? ''} onValueChange={(v) => setDraft((d) => ({ ...d, disasterFacility: v || undefined }))}>
+                    <Select value={draft.disasterFacility ?? '__all__'} onValueChange={(v) => setDraft((d) => ({ ...d, disasterFacility: v === '__all__' ? undefined : v }))}>
                       <SelectTrigger className={modalSelectTriggerCls}>
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__all__">すべて</SelectItem>
                         {disasterFacilities.map((f) => (
                           <SelectItem key={f} value={f}>{f}</SelectItem>
                         ))}
