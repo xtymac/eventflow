@@ -88,7 +88,7 @@ export function DataTableViewOptions<TData>({
           <div className="flex items-center gap-6 px-2.5">
             <button
               type="button"
-              className={`flex flex-col items-center gap-3 text-xs font-medium leading-4 ${
+              className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer ${
                 activeTab === "columns"
                   ? "text-foreground"
                   : "text-muted-foreground"
@@ -103,7 +103,7 @@ export function DataTableViewOptions<TData>({
             {hasFilterTab && (
               <button
                 type="button"
-                className={`flex flex-col items-center gap-3 text-xs font-medium leading-4 ${
+                className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer ${
                   activeTab === "filters"
                     ? "text-foreground"
                     : "text-muted-foreground"
@@ -133,6 +133,7 @@ export function DataTableViewOptions<TData>({
                   <Checkbox
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    className="data-[state=checked]:bg-[#215042] data-[state=checked]:border-[#215042]"
                   />
                 </div>
                 <span className="text-sm leading-5">
@@ -169,6 +170,7 @@ export function DataTableViewOptions<TData>({
                       checked={isChecked}
                       disabled={isDisabled}
                       onCheckedChange={() => toggleFilter(option.id)}
+                      className="data-[state=checked]:bg-[#215042] data-[state=checked]:border-[#215042]"
                     />
                   </div>
                   <span className="text-sm leading-5">

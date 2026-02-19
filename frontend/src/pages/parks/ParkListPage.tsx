@@ -449,7 +449,7 @@ export function ParkListPage() {
     <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '24px 24px 16px', height: 'calc(100% - 32px)' }}>
       <div className="flex items-center justify-between" style={{ marginBottom: 32 }}>
         <h1 className="text-5xl font-semibold leading-none tracking-tight">公園</h1>
-        <Button size="icon-lg" className="size-14 rounded-full border-0 bg-green-800 hover:bg-green-700">
+        <Button size="icon-lg" className="size-14 rounded-full border-0 bg-[#215042] hover:bg-[#2a6554]">
           <Plus className="size-6" />
         </Button>
       </div>
@@ -685,7 +685,7 @@ export function ParkListPage() {
 
       <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
         <DialogContent
-          className="flex flex-col w-[700px] max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]_svg]:size-6"
+          className="flex flex-col w-[700px] max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]]:border-0 [&_[data-slot=dialog-close]]:bg-transparent [&_[data-slot=dialog-close]_svg]:size-6"
           showCloseButton
         >
           <DialogHeader className="p-4 items-start self-stretch">
@@ -885,7 +885,7 @@ export function ParkListPage() {
           <div className="flex shrink-0 items-center justify-between bg-[#f5f5f5] p-4">
             <button
               type="button"
-              className="text-sm font-medium text-[#737373] hover:text-[#525252]"
+              className="border-0 bg-transparent text-sm font-medium text-[#737373] hover:text-[#525252] cursor-pointer"
               onClick={clearDraft}
             >
               すべてクリア
