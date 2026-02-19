@@ -427,16 +427,32 @@ export function ParkListPage() {
     });
   }, [wardFilter, categoryFilter, acquisitionFilter, schoolDistrictFilter, managementOfficeFilter, paidFacilityFilter, disasterFacilityFilter, areaHaFilter, planNumberFilter, plannedAreaHaFilter]);
 
+  // Dynamic page size based on available table height
+  const TABLE_ROW_H = 41; // h-10 (40px) + 1px border
+  const TABLE_HEADER_H = 41;
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 16 });
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const rows = Math.max(1, Math.floor((entry.contentRect.height - TABLE_HEADER_H) / TABLE_ROW_H));
+      setPagination((prev) => ({ ...prev, pageSize: rows }));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const table = useReactTable({
     data: filteredData,
     columns,
-    state: { globalFilter, columnVisibility },
+    state: { globalFilter, columnVisibility, pagination },
+    onPaginationChange: setPagination,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 16 } },
     globalFilterFn: (row, _columnId, filterValue: string) => {
       const s = filterValue.toLowerCase();
       const v = row.original;
@@ -661,9 +677,9 @@ export function ParkListPage() {
         </div>
       </div>
 
-      <div className="flex min-h-0">
+      <div className="relative flex min-h-0 flex-1">
         {/* Table side */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className={`flex min-h-0 min-w-0 flex-1 flex-col${selectedPark ? ' mr-[494px]' : ''}`}>
           <div ref={scrollRef} onScroll={handleScroll} className="scrollbar-auto-hide min-h-0 flex-1 overflow-x-auto overflow-y-hidden [&_[data-slot=table-container]]:overflow-visible">
             <Table style={{ minWidth: totalWidth }}>
               <TableHeader className="sticky top-0 z-10 bg-white">
@@ -692,30 +708,37 @@ export function ParkListPage() {
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className={`cursor-pointer${row.original.id === selectedParkId ? ' bg-[#f0faf6]' : ''}`}
-                      onClick={() => setSelectedParkId(row.original.id)}
-                    >
-                      {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta as { className?: string } | undefined;
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            className={meta?.className}
-                            style={{
-                              width: cell.column.getSize(),
-                              minWidth: cell.column.getSize(),
-                              ...(cell.column.id === 'actions' ? stickyRightStyle : {}),
-                            }}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
+                  <>
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        className={`cursor-pointer${row.original.id === selectedParkId ? ' bg-[#f0faf6]' : ''}`}
+                        onClick={() => setSelectedParkId(row.original.id)}
+                      >
+                        {row.getVisibleCells().map((cell) => {
+                          const meta = cell.column.columnDef.meta as { className?: string } | undefined;
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              className={meta?.className}
+                              style={{
+                                width: cell.column.getSize(),
+                                minWidth: cell.column.getSize(),
+                                ...(cell.column.id === 'actions' ? stickyRightStyle : {}),
+                              }}
+                            >
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                    {Array.from({ length: pagination.pageSize - table.getRowModel().rows.length }).map((_, i) => (
+                      <TableRow key={`empty-${i}`} className="hover:bg-transparent">
+                        <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-10">&nbsp;</TableCell>
+                      </TableRow>
+                    ))}
+                  </>
                 ) : (
                   <TableRow>
                     <TableCell
@@ -737,7 +760,7 @@ export function ParkListPage() {
 
         {/* Preview panel */}
         {selectedPark && (
-          <div className="relative z-10 w-[494px] shrink-0 border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel">
+          <div className="absolute right-0 top-0 bottom-0 z-10 w-[494px] border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel">
             <ParkPreviewPanel
               park={selectedPark}
               onClose={() => setSelectedParkId(null)}
