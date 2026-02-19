@@ -50,7 +50,7 @@ export function RootLayout() {
               display: 'flex',
               minHeight: 36,
               padding: '4px 4px 4px 16px',
-              marginLeft: 30,
+              marginLeft: 0,
               alignItems: 'center',
               gap: 8,
               borderRadius: 8,
@@ -77,7 +77,7 @@ export function RootLayout() {
           {/* User info */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" data-testid="user-avatar" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginRight: 30 }}>
+              <button type="button" data-testid="user-avatar" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 9999, backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#0a0a0a', flexShrink: 0 }}>
                   {user?.name?.split(/\s+/).map(s => s[0]).join('').slice(0, 2) || 'U'}
                 </div>
@@ -88,6 +88,7 @@ export function RootLayout() {
                 <ChevronDown style={{ width: 20, height: 20, color: '#737373', flexShrink: 0 }} />
               </button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent className="w-[200px]" align="end">
               <DropdownMenuLabel>{user?.department}</DropdownMenuLabel>
               <DropdownMenuSeparator />

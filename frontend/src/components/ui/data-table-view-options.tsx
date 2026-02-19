@@ -82,13 +82,13 @@ export function DataTableViewOptions<TData>({
           <span className="sr-only">表示する項目</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[240px] p-0.5">
+      <PopoverContent align="end" className="w-fit min-w-[240px] p-0.5">
         {/* Tabs header */}
         <div className="flex flex-col py-3">
           <div className="flex items-center gap-6 px-2.5">
             <button
               type="button"
-              className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer ${
+              className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer whitespace-nowrap ${
                 activeTab === "columns"
                   ? "text-foreground"
                   : "text-muted-foreground"
@@ -103,7 +103,7 @@ export function DataTableViewOptions<TData>({
             {hasFilterTab && (
               <button
                 type="button"
-                className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer ${
+                className={`flex flex-col items-center gap-3 border-0 bg-transparent text-xs font-medium leading-4 cursor-pointer whitespace-nowrap ${
                   activeTab === "filters"
                     ? "text-foreground"
                     : "text-muted-foreground"
