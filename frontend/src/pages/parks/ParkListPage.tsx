@@ -561,7 +561,7 @@ export function ParkListPage() {
           </Select>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2">
           <Button
             variant="secondary"
             size="icon-sm"
@@ -685,15 +685,15 @@ export function ParkListPage() {
 
       <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>
         <DialogContent
-          className="w-[700px] max-w-[calc(100vw-32px)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]_svg]:size-6"
+          className="flex flex-col w-[700px] max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]_svg]:size-6"
           showCloseButton
         >
-          <DialogHeader className="px-4 pb-0 pt-4">
+          <DialogHeader className="p-4 items-start self-stretch">
             <DialogTitle className="text-xl font-bold leading-6 tracking-normal text-[#0a0a0a]">詳細検索</DialogTitle>
             <DialogDescription className="sr-only">公園の詳細検索フィルター</DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto px-4 pb-4 pt-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto p-4">
             <div className="space-y-6">
               {/* 基本属性・管理 */}
               <div className="space-y-3">
@@ -821,11 +821,11 @@ export function ParkListPage() {
                     </div>
                     <div>
                       <label className={modalLabelCls}>計画決定日</label>
-                      <div className="relative mt-2">
+                      <div className="relative mt-1">
                         <Input
-                          className={`${modalInputCls} pr-12`}
+                          className={`${modalInputCls} pr-9`}
                         />
-                        <CalendarIcon className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-[#646464]" />
+                        <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
                       </div>
                     </div>
                   </div>
@@ -882,7 +882,7 @@ export function ParkListPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between bg-[#f5f5f5] px-4 py-4">
+          <div className="flex shrink-0 items-center justify-between bg-[#f5f5f5] p-4">
             <button
               type="button"
               className="text-sm font-medium text-[#737373] hover:text-[#525252]"

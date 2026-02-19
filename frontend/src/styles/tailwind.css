@@ -1,5 +1,7 @@
 /* Tailwind v4: selective imports to avoid preflight conflict with Mantine */
 /* Re-enable full @import "tailwindcss" in Phase 5 after Mantine removal */
+/* Establish layer order: theme (lowest) → base → utilities (highest) */
+@layer theme, base, utilities;
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/utilities" layer(utilities);
 @import "tw-animate-css";
