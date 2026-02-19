@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ColumnDef,
   type VisibilityState,
@@ -9,7 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Search, Ellipsis, CircleArrowRight, Plus, CalendarIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,7 @@ import {
 import { DataTableNumberedPagination } from '@/components/ui/data-table-numbered-pagination';
 import { DataTableViewOptions, type FilterOption } from '@/components/ui/data-table-view-options';
 import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
+import { ParkPreviewPanel } from './ParkPreviewPanel';
 
 /* ── Style tokens ── */
 const headerCls = 'h-10 px-2 text-xs font-medium text-muted-foreground border-b border-[#f5f5f5]';
@@ -156,135 +157,6 @@ const schoolDistricts = [...new Set(CURATED_PARKS.map((p) => p.schoolDistrict).f
 const paidFacilities = [...new Set(CURATED_PARKS.map((p) => p.paidFacility))].sort();
 const disasterFacilities = [...new Set(CURATED_PARKS.map((p) => p.disasterFacility))].sort();
 
-/* ── Columns ── */
-const columns: ColumnDef<CuratedPark>[] = [
-  {
-    accessorKey: 'no',
-    header: 'No',
-    size: 72,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'displayName',
-    header: '名称',
-    size: 150,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'ward',
-    header: '区',
-    size: 80,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'address',
-    header: '所在地',
-    size: 320,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'areaHa',
-    header: '面積, ha',
-    size: 90,
-    cell: ({ getValue }) => (getValue<number>()).toFixed(2),
-    meta: { className: numCellCls, headerClassName: `${headerCls} text-right` },
-  },
-  {
-    accessorKey: 'openingYear',
-    header: '開園年度',
-    size: 86,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'establishedDate',
-    header: '設置年月日',
-    size: 110,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'planNumber',
-    header: '計画番号',
-    size: 80,
-    cell: ({ getValue }) => getValue<string>() || '-',
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'plannedAreaHa',
-    header: '計画面積, ha',
-    size: 110,
-    cell: ({ getValue }) => (getValue<number>()).toFixed(2),
-    meta: { className: numCellCls, headerClassName: `${headerCls} text-right` },
-  },
-  {
-    accessorKey: 'urbanPlanNumber',
-    header: '都市計画番号',
-    size: 110,
-    cell: ({ getValue }) => getValue<string>() || '-',
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'planDecisionDate',
-    header: '計画決定日',
-    size: 100,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'acquisitionMethod',
-    header: '取得方法',
-    size: 80,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'category',
-    header: '種別',
-    size: 50,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'schoolDistrict',
-    header: '学区名',
-    size: 140,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'paidFacility',
-    header: '有料施設',
-    size: 60,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'disasterFacility',
-    header: '防災施設',
-    size: 140,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'managementOffice',
-    header: '管理公所',
-    size: 130,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    accessorKey: 'notes',
-    header: '備考',
-    size: 340,
-    meta: { className: cellCls, headerClassName: headerCls },
-  },
-  {
-    id: 'actions',
-    size: 61,
-    header: '',
-    cell: () => (
-      <div className="flex items-center justify-center gap-3">
-        <Ellipsis className="size-4 text-muted-foreground" />
-        <CircleArrowRight className="size-4 text-muted-foreground" />
-      </div>
-    ),
-    enableHiding: false,
-    meta: { className: 'h-10 px-2 text-center', headerClassName: `${headerCls} text-center` },
-  },
-];
-
 /* ── Pre-sorted source data ── */
 const sortedData: CuratedPark[] = [...CURATED_PARKS].sort((a, b) => {
   const aNum = parseFloat(a.no.replace(/[^0-9.]/g, ''));
@@ -301,6 +173,159 @@ export function ParkListPage() {
   const [columnPreset, setColumnPreset] = useState<ColumnPreset>('standard');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => buildColumnVisibility('standard'));
   const [visibleFilters, setVisibleFilters] = useState<string[]>(DEFAULT_VISIBLE_FILTERS);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedParkId = searchParams.get('selected');
+
+  const setSelectedParkId = useCallback((id: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (id) {
+        next.set('selected', id);
+      } else {
+        next.delete('selected');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const selectedPark = useMemo(
+    () => selectedParkId ? CURATED_PARKS.find(p => p.id === selectedParkId) ?? null : null,
+    [selectedParkId],
+  );
+
+  const columns = useMemo<ColumnDef<CuratedPark>[]>(() => [
+    {
+      accessorKey: 'no',
+      header: 'No',
+      size: 72,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'displayName',
+      header: '名称',
+      size: 150,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'ward',
+      header: '区',
+      size: 80,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'address',
+      header: '所在地',
+      size: 320,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'areaHa',
+      header: '面積, ha',
+      size: 90,
+      cell: ({ getValue }) => (getValue<number>()).toFixed(2),
+      meta: { className: numCellCls, headerClassName: `${headerCls} text-right` },
+    },
+    {
+      accessorKey: 'openingYear',
+      header: '開園年度',
+      size: 86,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'establishedDate',
+      header: '設置年月日',
+      size: 110,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'planNumber',
+      header: '計画番号',
+      size: 80,
+      cell: ({ getValue }) => getValue<string>() || '-',
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'plannedAreaHa',
+      header: '計画面積, ha',
+      size: 110,
+      cell: ({ getValue }) => (getValue<number>()).toFixed(2),
+      meta: { className: numCellCls, headerClassName: `${headerCls} text-right` },
+    },
+    {
+      accessorKey: 'urbanPlanNumber',
+      header: '都市計画番号',
+      size: 110,
+      cell: ({ getValue }) => getValue<string>() || '-',
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'planDecisionDate',
+      header: '計画決定日',
+      size: 100,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'acquisitionMethod',
+      header: '取得方法',
+      size: 80,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'category',
+      header: '種別',
+      size: 50,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'schoolDistrict',
+      header: '学区名',
+      size: 140,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'paidFacility',
+      header: '有料施設',
+      size: 60,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'disasterFacility',
+      header: '防災施設',
+      size: 140,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'managementOffice',
+      header: '管理公所',
+      size: 130,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      accessorKey: 'notes',
+      header: '備考',
+      size: 340,
+      meta: { className: cellCls, headerClassName: headerCls },
+    },
+    {
+      id: 'actions',
+      size: 61,
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-3">
+          <Ellipsis className="size-4 text-muted-foreground" />
+          <CircleArrowRight
+            className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/assets/parks/${row.original.id}`);
+            }}
+          />
+        </div>
+      ),
+      enableHiding: false,
+      meta: { className: 'h-10 px-2 text-center', headerClassName: `${headerCls} text-center` },
+    },
+  ], [navigate]);
 
   // Advanced search state
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
@@ -426,6 +451,17 @@ export function ParkListPage() {
 
   const totalWidth = table.getVisibleLeafColumns().reduce((sum, c) => sum + (c.getSize() ?? 100), 0);
 
+  // Auto-show scrollbar while scrolling, hide after idle
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout>>();
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.classList.add('is-scrolling');
+    clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => el.classList.remove('is-scrolling'), 800);
+  }, []);
+
   function clearAllFilters() {
     setGlobalFilter('');
     setWardFilter(undefined);
@@ -439,6 +475,13 @@ export function ParkListPage() {
     setPlanNumberFilter('');
     setPlannedAreaHaFilter('');
   }
+
+  // Close preview panel when selected park is filtered out
+  useEffect(() => {
+    if (selectedParkId && !filteredData.some(p => p.id === selectedParkId)) {
+      setSelectedParkId(null);
+    }
+  }, [filteredData, selectedParkId]);
 
   function applyColumnPreset(preset: ColumnPreset) {
     setColumnPreset(preset);
@@ -618,76 +661,90 @@ export function ParkListPage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-auto [&_[data-slot=table-container]]:overflow-visible">
-          <Table style={{ minWidth: totalWidth }}>
-            <TableHeader className="sticky top-0 z-10 bg-white">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                  {headerGroup.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as { headerClassName?: string } | undefined;
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className={meta?.headerClassName}
-                        style={{
-                          width: header.getSize(),
-                          minWidth: header.getSize(),
-                          ...(header.column.id === 'actions' ? { ...stickyRightStyle, zIndex: 20 } : {}),
-                        }}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/assets/parks/${row.original.id}`)}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const meta = cell.column.columnDef.meta as { className?: string } | undefined;
+      <div className="flex min-h-0 flex-1">
+        {/* Table side */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div ref={scrollRef} onScroll={handleScroll} className="scrollbar-auto-hide min-h-0 flex-1 overflow-x-auto overflow-y-hidden [&_[data-slot=table-container]]:overflow-visible">
+            <Table style={{ minWidth: totalWidth }}>
+              <TableHeader className="sticky top-0 z-10 bg-white">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                    {headerGroup.headers.map((header) => {
+                      const meta = header.column.columnDef.meta as { headerClassName?: string } | undefined;
                       return (
-                        <TableCell
-                          key={cell.id}
-                          className={meta?.className}
+                        <TableHead
+                          key={header.id}
+                          className={meta?.headerClassName}
                           style={{
-                            width: cell.column.getSize(),
-                            minWidth: cell.column.getSize(),
-                            ...(cell.column.id === 'actions' ? stickyRightStyle : {}),
+                            width: header.getSize(),
+                            minWidth: header.getSize(),
+                            ...(header.column.id === 'actions' ? { ...stickyRightStyle, zIndex: 20 } : {}),
                           }}
                         >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHead>
                       );
                     })}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={table.getVisibleLeafColumns().length}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    該当する公園がありません
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className={`cursor-pointer${row.original.id === selectedParkId ? ' bg-[#f0faf6]' : ''}`}
+                      onClick={() => setSelectedParkId(row.original.id)}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const meta = cell.column.columnDef.meta as { className?: string } | undefined;
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            className={meta?.className}
+                            style={{
+                              width: cell.column.getSize(),
+                              minWidth: cell.column.getSize(),
+                              ...(cell.column.id === 'actions' ? stickyRightStyle : {}),
+                            }}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={table.getVisibleLeafColumns().length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      該当する公園がありません
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex items-center justify-end" style={{ marginTop: 16 }}>
+            <DataTableNumberedPagination table={table} />
+          </div>
         </div>
 
-        <div className="flex items-center justify-end" style={{ marginTop: 16 }}>
-          <DataTableNumberedPagination table={table} />
-        </div>
+        {/* Preview panel */}
+        {selectedPark && (
+          <div className="relative z-10 w-[494px] shrink-0 border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel">
+            <ParkPreviewPanel
+              park={selectedPark}
+              onClose={() => setSelectedParkId(null)}
+              onNavigateToDetail={() => navigate(`/assets/parks/${selectedPark.id}`)}
+            />
+          </div>
+        )}
       </div>
 
       <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>

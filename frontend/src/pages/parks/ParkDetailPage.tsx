@@ -1,56 +1,147 @@
-import { useState, useEffect } from 'react';
-import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
+import { useState, useEffect, useMemo } from 'react';
+import { Box, Text, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { IconPencil } from '@tabler/icons-react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
+  BreadcrumbPage, BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { IconPencil, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { CircleArrowRight } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+
 import * as turf from '@turf/turf';
 import { useGreenSpace, useParkFacilitiesByPark } from '../../hooks/useApi';
 import { recordVisit } from '../../hooks/useRecentVisits';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
-import { getDummyFacilitiesByPark } from '../../data/dummyFacilities';
+import {
+  getDummyFacilitiesByPark, FACILITY_CLASSIFICATION_LABELS, FACILITY_STATUS_CONFIG,
+  type DummyFacility,
+} from '../../data/dummyFacilities';
+import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
 
-const GREEN_SPACE_TYPE_LABELS: Record<string, string> = {
-  park: '\u516C\u5712', garden: '\u5EAD\u5712', forest: '\u68EE\u6797', meadow: '\u8349\u5730',
-  nature_reserve: '\u81EA\u7136\u4FDD\u8B77\u533A', recreation_ground: '\u30EC\u30AF\u30EA\u30A8\u30FC\u30B7\u30E7\u30F3',
+/* ── constants ─────────────────────────────────────────── */
+
+const CURATED_MAP = new Map<string, CuratedPark>(CURATED_PARKS.map(p => [p.id, p]));
+
+const DUMMY_CENTERS: Record<string, { center: [number, number]; areaM2: number }> = Object.fromEntries(
+  CURATED_PARKS.map(p => [p.id, { center: centerForPark(p.id), areaM2: p.areaM2 }]),
+);
+
+function centerForPark(id: string): [number, number] {
+  const map: Record<string, [number, number]> = {
+    'GS-zxpnkee2': [136.9213, 35.1575], 'GS-nliigh01': [136.9050, 35.1860],
+    'GS-4g77l6x7': [136.9740, 35.1570], 'GS-es1u7z8r': [136.8980, 35.1650],
+    'GS-9ego0pvp': [136.8780, 35.2010], 'GS-auy42b1p': [136.9410, 35.0780],
+    'GS-gs3xyhbw': [136.8640, 35.1170], 'GS-3d67hwf5': [136.8350, 35.0970],
+    'GS-byrogagk': [136.9110, 35.1720], 'GS-ful7d9lw': [136.9340, 35.1870],
+    'GS-7f2voyoy': [137.0100, 35.1780], 'GS-x1q5e2te': [137.0200, 35.1650],
+    'GS-ldnfwyur': [136.9780, 35.2050], 'GS-9exy95g1': [136.9370, 35.1060],
+    'GS-xk4kyf2q': [136.9100, 35.2020], 'GS-cfam78i3': [136.9370, 35.1350],
+    'GS-gul3d3ul': [136.9080, 35.1280], 'GS-rtljov09': [136.9430, 35.1710],
+  };
+  return map[id] || [136.9, 35.15];
+}
+
+const MARKER_OFFSETS: Array<[number, number]> = [
+  [0.0003, 0.0002], [-0.0002, 0.0003], [0.0002, -0.0002],
+  [-0.0003, -0.0002], [0.0004, 0.0001], [-0.0001, 0.0004],
+  [0.0003, -0.0003], [-0.0004, 0.0003],
+];
+
+/* ── building coverage dummy data ──────────────────────── */
+
+interface CoverageItem {
+  type: string;
+  property: string;
+  buildingArea: number;
+  installDate: string;
+  inspectionCert: string;
+  installPermit: string;
+  notes: string;
+}
+
+interface CoverageCategory {
+  label: string;
+  buildingArea: number;
+  limitArea: number;
+  coverageRate: number;
+  buildingAreaDisplay?: string;
+  limitAreaDisplay?: string;
+  coverageRateDisplay?: string;
+  items: CoverageItem[];
+}
+
+const BUILDING_COVERAGE: Record<string, CoverageCategory[]> = {
+  'GS-4g77l6x7': [
+    {
+      label: '2%物件(A)',
+      buildingArea: 50.94,
+      buildingAreaDisplay: '50.94',
+      limitArea: 2248,
+      limitAreaDisplay: '2,248',
+      coverageRate: 0.05,
+      coverageRateDisplay: '0.05%',
+      items: [
+        { type: '便', property: '便所(ゲートボール場)', buildingArea: 17.24, installDate: '1977/03/31', inspectionCert: '有／無', installPermit: '-', notes: '2015/03/05' },
+        { type: '便', property: '便所(芝生広場)', buildingArea: 9.24, installDate: '1982/03/26', inspectionCert: '有／無', installPermit: '-', notes: '2015/03/05' },
+        { type: '管', property: '器具庫', buildingArea: 1.45, installDate: '2003/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP　児童球技場' },
+      ],
+    },
+    {
+      label: '10%物件(B)',
+      buildingArea: 187.00,
+      buildingAreaDisplay: '187.00',
+      limitArea: 26100.00,
+      limitAreaDisplay: '26,100.00',
+      coverageRate: 0.07,
+      coverageRateDisplay: '0.07%',
+      items: [],
+    },
+  ],
+  'GS-nliigh01': [
+    {
+      label: '2%物件(A)', buildingArea: 50.74, limitArea: 2248, coverageRate: 0.05,
+      items: [
+        { type: '便', property: '便所(ゲートボール場)', buildingArea: 17.24, installDate: '1977/03/31', inspectionCert: '有／無', installPermit: '-', notes: '2015/03/05' },
+        { type: '便', property: '便所(芝生広場)', buildingArea: 9.24, installDate: '1982/03/26', inspectionCert: '有／無', installPermit: '-', notes: '2015/03/05' },
+        { type: '管', property: '器具庫', buildingArea: 1.45, installDate: '2003/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP　児童球技場' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 187.00, limitArea: 26100.00, coverageRate: 0.07,
+      items: [],
+    },
+  ],
+  'GS-zxpnkee2': [
+    {
+      label: '2%物件(A)', buildingArea: 38.50, limitArea: 4731, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(正門付近)', buildingArea: 22.30, installDate: '1985/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 16.20, installDate: '1998/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 142.00, limitArea: 23654.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
 };
 
-/** Map English ward names (from DB) to Japanese */
-const WARD_JA: Record<string, string> = {
-  'Atsuta-ku': '\u71B1\u7530\u533A', 'Chikusa-ku': '\u5343\u7A2E\u533A', 'Higashi-ku': '\u6771\u533A',
-  'Kita-ku': '\u5317\u533A', 'Meito-ku': '\u540D\u6771\u533A', 'Midori-ku': '\u7DD1\u533A',
-  'Minami-ku': '\u5357\u533A', 'Minato-ku': '\u6E2F\u533A', 'Mizuho-ku': '\u7A02\u7A42\u533A',
-  'Moriyama-ku': '\u5B88\u5C71\u533A', 'Naka-ku': '\u4E2D\u533A', 'Nakagawa-ku': '\u4E2D\u5DDD\u533A',
-  'Nakamura-ku': '\u4E2D\u6751\u533A', 'Nishi-ku': '\u897F\u533A', 'Showa-ku': '\u662D\u548C\u533A',
-  'Tempaku-ku': '\u5929\u767D\u533A',
-};
+/* ── helpers ────────────────────────────────────────────── */
 
-// Dummy data for demo when API is unavailable
-const DUMMY_PARKS: Record<string, any> = {
-  'GS-zxpnkee2': { id: 'GS-zxpnkee2', displayName: '\u9DB4\u821E\u516C\u5712', ward: '\u662D\u548C\u533A', greenSpaceType: 'park', areaM2: 236537, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9213, 35.1575] },
-  'GS-nliigh01': { id: 'GS-nliigh01', displayName: '\u540D\u57CE\u516C\u5712', ward: '\u5317\u533A', greenSpaceType: 'park', areaM2: 205208, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9050, 35.1860] },
-  'GS-4g77l6x7': { id: 'GS-4g77l6x7', displayName: '\u6771\u5C71\u52D5\u690D\u7269\u5712', ward: '\u5343\u7A2E\u533A', greenSpaceType: 'park', areaM2: 894903, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u5E83\u8449\u6A39', center: [136.9740, 35.1570] },
-  'GS-es1u7z8r': { id: 'GS-es1u7z8r', displayName: '\u767D\u5DDD\u516C\u5712', ward: '\u4E2D\u533A', greenSpaceType: 'park', areaM2: 89299, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.8980, 35.1650] },
-  'GS-9ego0pvp': { id: 'GS-9ego0pvp', displayName: '\u5E84\u5185\u7DD1\u5730\u516C\u5712', ward: '\u897F\u533A', greenSpaceType: 'park', areaM2: 426621, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.8780, 35.2010] },
-  'GS-auy42b1p': { id: 'GS-auy42b1p', displayName: '\u5927\u9AD8\u7DD1\u5730\u516C\u5712', ward: '\u7DD1\u533A', greenSpaceType: 'park', areaM2: 1102426, status: 'active', operator: '\u611B\u77E5\u770C', vegetationType: '\u5E83\u8449\u6A39', center: [136.9410, 35.0780] },
-  'GS-gs3xyhbw': { id: 'GS-gs3xyhbw', displayName: '\u8352\u5B50\u5DDD\u516C\u5712', ward: '\u6E2F\u533A', greenSpaceType: 'park', areaM2: 237208, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.8640, 35.1170] },
-  'GS-3d67hwf5': { id: 'GS-3d67hwf5', displayName: '\u6238\u7530\u5DDD\u7DD1\u5730', ward: '\u4E2D\u5DDD\u533A', greenSpaceType: 'park', areaM2: 364075, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.8350, 35.0970] },
-  'GS-byrogagk': { id: 'GS-byrogagk', displayName: '\u4E45\u5C4B\u5927\u901A\u516C\u5712', ward: '\u4E2D\u533A', greenSpaceType: 'park', areaM2: 105736, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9110, 35.1720] },
-  'GS-ful7d9lw': { id: 'GS-ful7d9lw', displayName: '\u5FB3\u5DDD\u5712', ward: '\u6771\u533A', greenSpaceType: 'garden', areaM2: 55029, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u65E5\u672C\u5EAD\u5712', center: [136.9340, 35.1870] },
-  'GS-7f2voyoy': { id: 'GS-7f2voyoy', displayName: '\u732A\u9AD8\u7DD1\u5730', ward: '\u540D\u6771\u533A', greenSpaceType: 'park', areaM2: 631296, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u5E83\u8449\u6A39', center: [137.0100, 35.1780] },
-  'GS-x1q5e2te': { id: 'GS-x1q5e2te', displayName: '\u7267\u91CE\u30F6\u6C60\u7DD1\u5730', ward: '\u540D\u6771\u533A', greenSpaceType: 'park', areaM2: 1351901, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [137.0200, 35.1650] },
-  'GS-ldnfwyur': { id: 'GS-ldnfwyur', displayName: '\u5C0F\u5E61\u7DD1\u5730\u516C\u5712', ward: '\u5B88\u5C71\u533A', greenSpaceType: 'park', areaM2: 131662, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9780, 35.2050] },
-  'GS-9exy95g1': { id: 'GS-9exy95g1', displayName: '\u7B20\u5BFA\u516C\u5712', ward: '\u5357\u533A', greenSpaceType: 'park', areaM2: 65235, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9370, 35.1060] },
-  'GS-xk4kyf2q': { id: 'GS-xk4kyf2q', displayName: '\u5FD7\u8CC0\u516C\u5712', ward: '\u5317\u533A', greenSpaceType: 'park', areaM2: 51705, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9100, 35.2020] },
-  'GS-cfam78i3': { id: 'GS-cfam78i3', displayName: '\u7A02\u7A42\u516C\u5712', ward: '\u7A02\u7A42\u533A', greenSpaceType: 'park', areaM2: 239836, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9370, 35.1350] },
-  'GS-gul3d3ul': { id: 'GS-gul3d3ul', displayName: '\u71B1\u7530\u795E\u5BAE\u516C\u5712', ward: '\u71B1\u7530\u533A', greenSpaceType: 'park', areaM2: 78109, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9080, 35.1280] },
-  'GS-rtljov09': { id: 'GS-rtljov09', displayName: '\u5343\u7A2E\u516C\u5712', ward: '\u5343\u7A2E\u533A', greenSpaceType: 'park', areaM2: 58659, status: 'active', operator: '\u540D\u53E4\u5C4B\u5E02', vegetationType: '\u6DF7\u5408\u6797', center: [136.9430, 35.1710] },
-};
-
-/** Generate an approximate polygon from center [lng, lat] and area in m2. */
 function makeApproxPolygon(center: [number, number], areaM2: number) {
   const side = Math.sqrt(areaM2);
   const latDeg = (side / 2) / 111000;
@@ -59,91 +150,266 @@ function makeApproxPolygon(center: [number, number], areaM2: number) {
   return {
     type: 'Polygon' as const,
     coordinates: [[
-      [lng - lngDeg, lat - latDeg],
-      [lng + lngDeg, lat - latDeg],
-      [lng + lngDeg, lat + latDeg],
-      [lng - lngDeg, lat + latDeg],
+      [lng - lngDeg, lat - latDeg], [lng + lngDeg, lat - latDeg],
+      [lng + lngDeg, lat + latDeg], [lng - lngDeg, lat + latDeg],
       [lng - lngDeg, lat - latDeg],
     ]],
   };
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  if (value === null || value === undefined || value === '') return null;
+function formatDate(d?: string) {
+  if (!d) return '-';
+  return d.replace(/-/g, '/');
+}
+
+function formatCoverageBuildingArea(cat: CoverageCategory) {
+  return cat.buildingAreaDisplay || cat.buildingArea.toFixed(2);
+}
+
+function formatCoverageLimitArea(cat: CoverageCategory) {
+  return cat.limitAreaDisplay || cat.limitArea.toLocaleString(undefined, { minimumFractionDigits: 2 });
+}
+
+function formatCoverageRate(cat: CoverageCategory) {
+  return cat.coverageRateDisplay || `${cat.coverageRate.toFixed(2)}%`;
+}
+
+/* ── small UI components ───────────────────────────────── */
+
+const fieldRowCls = 'flex items-start justify-between py-2.5 border-b border-[#f0f0f0] text-sm';
+const fieldLabelCls = 'text-[#737373] shrink-0';
+const fieldValueCls = 'text-right text-[#0a0a0a] ml-4 font-medium';
+const sectionTitleCls = 'text-sm font-semibold text-[#0a0a0a] mt-6 mb-2';
+
+function FieldRow({ label, value, multiline }: { label: string; value: string | number | null | undefined; multiline?: boolean }) {
+  const display = value === null || value === undefined || value === '' ? '-' : String(value);
   return (
-    <Group gap="xs" py={4}>
-      <Text size="sm" c="dimmed" className="w-[120px] shrink-0">{label}</Text>
-      <Text size="sm">{value}</Text>
-    </Group>
+    <div className={fieldRowCls}>
+      <span className={fieldLabelCls}>{label}</span>
+      <span className={`${fieldValueCls}${multiline ? ' whitespace-pre-line' : ''}`}>{display}</span>
+    </div>
   );
 }
+
+function StatusBadge({ status }: { status: string }) {
+  const config = FACILITY_STATUS_CONFIG[status] || { label: status, className: 'bg-gray-400 text-white' };
+  return (
+    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${config.className}`}>
+      {config.label}
+    </span>
+  );
+}
+
+function FacilityPlaceholderImage({ category }: { category: string }) {
+  const colors: Record<string, string> = {
+    bench: '#8B5E3C', shelter: '#6B8E23', toilet: '#4682B4', playground: '#FF6347',
+    lighting: '#FFD700', waterFountain: '#00CED1', signBoard: '#708090',
+    pavement: '#A0522D', sportsFacility: '#32CD32', fence: '#808080',
+  };
+  const bg = colors[category] || '#a0a0a0';
+  return (
+    <div
+      className="flex size-[56px] shrink-0 items-center justify-center rounded-md text-white text-[10px] font-medium"
+      style={{ backgroundColor: bg, opacity: 0.8 }}
+    >
+      {category === 'bench' ? '🪑' : category === 'shelter' ? '⛺' : category === 'toilet' ? '🚻'
+        : category === 'playground' ? '🎠' : category === 'lighting' ? '💡' : category === 'waterFountain' ? '🚰'
+        : category === 'signBoard' ? '📋' : category === 'pavement' ? '🛤️' : category === 'sportsFacility' ? '⚽' : '📦'}
+    </div>
+  );
+}
+
+function RankBadge({ rank }: { rank?: string }) {
+  if (!rank) return <span className="text-xs text-[#a3a3a3]">-</span>;
+  const colors: Record<string, string> = {
+    A: 'bg-[#22C55E] text-white', B: 'bg-[#FACC15] text-[#713F12]',
+    C: 'bg-[#F87171] text-white', D: 'bg-[#6B7280] text-white',
+  };
+  return (
+    <span className={`inline-flex items-center justify-center size-6 rounded text-[10px] font-bold ${colors[rank] || 'bg-gray-200 text-gray-700'}`}>
+      {rank}
+    </span>
+  );
+}
+
+function UrgencyBadge({ level }: { level?: string }) {
+  if (!level) return <span className="text-xs text-[#a3a3a3]">-</span>;
+  const cfg: Record<string, { label: string; cls: string }> = {
+    high: { label: '高', cls: 'bg-[#F87171] text-white' },
+    medium: { label: '中', cls: 'bg-[#FACC15] text-[#713F12]' },
+    low: { label: '低', cls: 'bg-[#22C55E] text-white' },
+  };
+  const c = cfg[level] || { label: level, cls: 'bg-gray-200 text-gray-700' };
+  return (
+    <span className={`inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold ${c.cls}`}>
+      {c.label}
+    </span>
+  );
+}
+
+/* ── table column config ───────────────────────────────── */
+
+const thCls = 'text-xs text-[#737373] font-medium whitespace-nowrap';
+const tdCls = 'text-xs text-[#0a0a0a] whitespace-nowrap';
+const tdDimCls = 'text-xs text-[#a3a3a3] whitespace-nowrap';
+
+const stickyRightStyle: React.CSSProperties = {
+  position: 'sticky',
+  right: 0,
+  backgroundColor: 'white',
+  boxShadow: '-4px 0 8px -4px rgba(0,0,0,0.08)',
+};
+
+/** Column widths – total determines horizontal scroll extent */
+const COL = {
+  thumb: 64, name: 80, status: 72, facilityId: 72, classification: 72,
+  parkName: 100, subItem: 72, subItemDetail: 72, quantity: 52, installDate: 92,
+  elapsedYears: 64, manufacturer: 72, installer: 72, mainMaterial: 120,
+  designDoc: 80, inspectionDate: 92, structureRank: 72, wearRank: 72,
+  repairDate: 92, managementType: 72, urgency: 72, countermeasure: 72,
+  plannedYear: 80, estimatedCost: 90, notes: 200, actions: 48,
+} as const;
+
+const TOTAL_WIDTH = Object.values(COL).reduce((s, w) => s + w, 0);
+
+/* ── main component ────────────────────────────────────── */
 
 export function ParkDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  /* API data */
   const { data: parkData, isLoading, isError } = useGreenSpace(id ?? null);
   const { data: facilitiesData, isLoading: facilitiesLoading } = useParkFacilitiesByPark(id ?? null);
 
+  /* Resolve park: API → curated → fallback */
   const apiPark = parkData?.properties;
-  const dummyPark = id ? DUMMY_PARKS[id] : null;
-  const park = apiPark || dummyPark;
-  const usingDummy = !apiPark && !!dummyPark;
+  const curatedPark = id ? CURATED_MAP.get(id) : undefined;
+  const park = apiPark || curatedPark;
+  const usingDummy = !apiPark && !!curatedPark;
+
+  /* Geometry */
+  const dummyInfo = id ? DUMMY_CENTERS[id] : undefined;
   const geometry = parkData?.geometry
-    || (!isLoading && usingDummy && dummyPark?.center && dummyPark?.areaM2
-      ? makeApproxPolygon(dummyPark.center, dummyPark.areaM2)
+    || (!isLoading && usingDummy && dummyInfo
+      ? makeApproxPolygon(dummyInfo.center, dummyInfo.areaM2)
       : undefined);
 
+  /* Facilities */
   const apiFacilities = facilitiesData?.features || [];
-  const dummyFacilities = id ? getDummyFacilitiesByPark(id).map((f) => ({ properties: f, geometry: { type: 'Point' as const, coordinates: dummyPark?.center || [136.9, 35.15] } })) : [];
-  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
-  const parkName = park?.displayName || park?.nameJa || park?.name || '\u8AAD\u307F\u8FBC\u307F\u4E2D...';
-  const parkBackTo = id ? `/assets/parks/${id}` : '/assets/parks';
-
-  // Record this park visit in recent visits
-  useEffect(() => {
-    if (id && park) {
-      const name = park.displayName || park.nameJa || park.name;
-      if (name) recordVisit(`/assets/parks/${id}`, name);
-    }
-  }, [id, park]);
-
   const centroid = geometry
     ? turf.centroid({ type: 'Feature', properties: {}, geometry } as any).geometry.coordinates
-    : null;
+    : dummyInfo?.center || null;
 
-  const MARKER_OFFSETS: Array<[number, number]> = [
-    [0.0003, 0.0002], [-0.0002, 0.0003], [0.0002, -0.0002],
-    [-0.0003, -0.0002], [0.0004, 0.0001], [-0.0001, 0.0004],
-    [0.0003, -0.0003], [-0.0004, 0.0003],
-  ];
+  const dummyFacilities = useMemo(() => {
+    if (!id) return [];
+    return getDummyFacilitiesByPark(id).map((f, i) => ({
+      properties: f,
+      geometry: {
+        type: 'Point' as const,
+        coordinates: centroid
+          ? [centroid[0] + MARKER_OFFSETS[i % MARKER_OFFSETS.length][0], centroid[1] + MARKER_OFFSETS[i % MARKER_OFFSETS.length][1]]
+          : [136.9, 35.15],
+      },
+    }));
+  }, [id, centroid]);
 
+  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
+  const parkName = (curatedPark?.displayName || apiPark?.displayName || apiPark?.nameJa || apiPark?.name || '読み込み中...');
+
+  /* Record visit */
+  useEffect(() => {
+    if (id && parkName && parkName !== '読み込み中...') {
+      recordVisit(`/assets/parks/${id}`, parkName);
+    }
+  }, [id, parkName]);
+
+  /* Facility filter state */
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterClassification, setFilterClassification] = useState('__all__');
+  const [filterStructureRank, setFilterStructureRank] = useState('__all__');
+  const [filterWearRank, setFilterWearRank] = useState('__all__');
+
+  const filteredFacilities = useMemo(() => {
+    return facilities.filter((f: any) => {
+      const p: DummyFacility = f.properties;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!((p.name?.toLowerCase().includes(q)) || (p.facilityId?.toLowerCase().includes(q)))) return false;
+      }
+      if (filterClassification !== '__all__' && p.facilityClassification !== filterClassification) return false;
+      if (filterStructureRank !== '__all__' && p.structureRank !== filterStructureRank) return false;
+      if (filterWearRank !== '__all__' && p.wearRank !== filterWearRank) return false;
+      return true;
+    });
+  }, [facilities, searchQuery, filterClassification, filterStructureRank, filterWearRank]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilterClassification('__all__');
+    setFilterStructureRank('__all__');
+    setFilterWearRank('__all__');
+  };
+
+  const hasActiveFilters = searchQuery || filterClassification !== '__all__' || filterStructureRank !== '__all__' || filterWearRank !== '__all__';
+
+  /* Map markers */
   const [hoveredFacilityIndex, setHoveredFacilityIndex] = useState<number | null>(null);
 
-  const facilityMarkers: Array<{ lng: number; lat: number; color: string }> = [];
-  const facilityToMarkerIdx = new Map<number, number>();
-  facilities.forEach((f: any, listIdx: number) => {
-    if (f.geometry?.type !== 'Point') return;
-    const markerIdx = facilityMarkers.length;
-    const isDummy = f.properties.id?.startsWith('PF-demo-');
-    if (isDummy && centroid) {
-      const offset = MARKER_OFFSETS[markerIdx % MARKER_OFFSETS.length];
-      facilityMarkers.push({ lng: centroid[0] + offset[0], lat: centroid[1] + offset[1], color: '#e03131' });
-    } else {
-      facilityMarkers.push({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], color: '#e03131' });
+  const facilityMarkers = useMemo(() => {
+    const markers: Array<{ lng: number; lat: number; color: string }> = [];
+    facilities.forEach((f: any) => {
+      if (f.geometry?.type !== 'Point') return;
+      markers.push({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], color: '#e03131' });
+    });
+    return markers;
+  }, [facilities]);
+
+  const facilityToMarkerIdx = useMemo(() => {
+    const map = new Map<number, number>();
+    let markerIdx = 0;
+    facilities.forEach((f: any, i: number) => {
+      if (f.geometry?.type !== 'Point') return;
+      map.set(i, markerIdx++);
+    });
+    return map;
+  }, [facilities]);
+
+  /* Building coverage */
+  const coverageData = id ? (BUILDING_COVERAGE[id] || []) : [];
+  const [openCoverage, setOpenCoverage] = useState<Record<number, boolean>>({ 0: true });
+
+  useEffect(() => {
+    if (coverageData.length > 0) {
+      setOpenCoverage({ 0: true });
+      return;
     }
-    facilityToMarkerIdx.set(listIdx, markerIdx);
-  });
+    setOpenCoverage({});
+  }, [id, coverageData.length]);
+
+  /* Navigate to facility */
+  const goToFacility = (facilityId: string) => {
+    navigate(`/assets/facilities/${facilityId}`, {
+      state: { breadcrumbFrom: { to: `/assets/parks/${id}`, label: parkName } },
+    });
+  };
 
   return (
     <ScrollArea style={{ height: 'calc(100vh - 60px)' }}>
-      <Box p="lg">
+      <Box p="lg" className="w-full max-w-full overflow-x-hidden">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/assets/parks">公園</Link>
+              <BreadcrumbLink
+                onClick={() => {
+                  if (location.key !== 'default') navigate(-1);
+                  else navigate('/assets/parks');
+                }}
+                className="cursor-pointer"
+              >
+                公園
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -156,95 +422,306 @@ export function ParkDetailPage() {
         <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={!park} emptyMessage="公園が見つかりません">
           {park && (
             <Stack gap="lg">
-              {/* Map */}
-              {geometry ? (
-                <MiniMap key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`} geometry={geometry} markers={facilityMarkers} height={250} fillColor="#22C55E" highlightedMarkerIndex={hoveredFacilityIndex != null ? facilityToMarkerIdx.get(hoveredFacilityIndex) ?? null : null} />
-              ) : park.center ? (
-                <MiniMap
-                  center={park.center as [number, number]}
-                  markers={[{ lng: park.center[0], lat: park.center[1], color: '#22C55E' }, ...facilityMarkers]}
-                  zoom={15}
-                  height={250}
-                  highlightedMarkerIndex={hoveredFacilityIndex != null ? (facilityToMarkerIdx.get(hoveredFacilityIndex) ?? -1) + 1 : null}
-                />
-              ) : null}
-
-              {/* Park Info */}
-              <Paper withBorder p="md" className="rounded-md">
-                <Group justify="space-between">
-                  <Text fw={600}>公園情報</Text>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <IconPencil size={16} />
-                  </Button>
-                </Group>
-                <SimpleGrid cols={{ base: 1, md: 2 }} className="mt-2">
-                  <div>
-                    <InfoRow label="名称" value={park.displayName || park.nameJa || park.name} />
-                    <InfoRow label="種別" value={GREEN_SPACE_TYPE_LABELS[park.greenSpaceType] || park.greenSpaceType} />
-                    <InfoRow label="面積" value={park.areaM2 ? `${Math.round(park.areaM2).toLocaleString()} m\u00B2` : null} />
-                    <InfoRow label="植生" value={park.vegetationType} />
+              {/* ═══ Two-column: Info + Map ═══ */}
+              <div className="flex gap-6 items-start">
+                {/* Left: Park info sections */}
+                <div className="flex-1 min-w-0">
+                  {/* 基本情報 */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold text-[#0a0a0a]">基本情報</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <IconPencil size={16} />
+                    </Button>
                   </div>
-                  <div>
-                    <InfoRow label="管理者" value={park.operator} />
-                    <InfoRow label="区" value={WARD_JA[park.ward] || park.ward} />
-                    <InfoRow
-                      label="状態"
-                      value={<Badge variant="secondary" className={park.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>{park.status}</Badge>}
+                  <FieldRow label="No" value={curatedPark?.no || (park as any).no} />
+                  <FieldRow label="公園名称" value={parkName} />
+                  <FieldRow label="種別" value={curatedPark?.category || (park as any).greenSpaceType} />
+                  <FieldRow label="行政区" value={curatedPark?.ward || (park as any).ward} />
+                  <FieldRow
+                    label="所在地"
+                    value={curatedPark?.address || (park as any).address}
+                    multiline
+                  />
+                  <FieldRow label="学区名" value={curatedPark?.schoolDistrict || (park as any).schoolDistrict} />
+
+                  {/* 計画・規模・履歴 */}
+                  <p className={sectionTitleCls}>計画・規模・履歴</p>
+                  <FieldRow label="面積, ha" value={curatedPark?.areaHa?.toFixed(2) || (park as any).areaM2 ? ((park as any).areaM2 / 10000).toFixed(2) : null} />
+                  <FieldRow label="開園年度" value={curatedPark?.openingYear} />
+                  <FieldRow label="設置年月日" value={curatedPark?.establishedDate} />
+                  <FieldRow label="計画番号" value={curatedPark?.planNumber} />
+                  <FieldRow label="計画面積, ha" value={curatedPark?.plannedAreaHa?.toFixed(2)} />
+                  <FieldRow label="計画決定日" value={curatedPark?.planDecisionDate} />
+                  <FieldRow label="取得方法" value={curatedPark?.acquisitionMethod} />
+
+                  {/* 施設・備考 */}
+                  <p className={sectionTitleCls}>施設・備考</p>
+                  <FieldRow label="有料施設" value={curatedPark?.paidFacility} />
+                  <FieldRow label="防災施設" value={curatedPark?.disasterFacility} />
+                  <FieldRow label="備考" value={curatedPark?.notes?.replace(/<br>/g, '\n')} multiline />
+                </div>
+
+                {/* Right: Map */}
+                <div className="w-[45%] shrink-0">
+                  {geometry ? (
+                    <MiniMap
+                      key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`}
+                      geometry={geometry}
+                      markers={facilityMarkers}
+                      height={480}
+                      fillColor="#22C55E"
+                      highlightedMarkerIndex={hoveredFacilityIndex != null ? facilityToMarkerIdx.get(hoveredFacilityIndex) ?? null : null}
                     />
-                    <InfoRow
-                      label="リスク"
-                      value={park.riskLevel ? <Badge variant="secondary" className={park.riskLevel === 'high' ? 'bg-red-100 text-red-800' : park.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}>{park.riskLevel}</Badge> : null}
+                  ) : centroid ? (
+                    <MiniMap
+                      center={centroid as [number, number]}
+                      markers={[{ lng: centroid[0], lat: centroid[1], color: '#22C55E' }, ...facilityMarkers]}
+                      zoom={15}
+                      height={480}
+                      highlightedMarkerIndex={hoveredFacilityIndex != null ? (facilityToMarkerIdx.get(hoveredFacilityIndex) ?? -1) + 1 : null}
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* ═══ Facilities section ═══ */}
+              <div className="w-full min-w-0 max-w-full overflow-hidden">
+                <Text fw={600} className="text-base mb-3">施設</Text>
+
+                {/* Search + filter toolbar */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <div className="relative w-[280px] shrink-0">
+                    <IconSearch size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#a3a3a3]" />
+                    <Input
+                      placeholder="名称, 施設ID, 備考"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-9 text-sm"
                     />
                   </div>
-                </SimpleGrid>
-              </Paper>
 
-              {/* Facilities */}
-              <Paper withBorder p="md" className="rounded-md">
-                <Group justify="space-between" mb="sm">
-                  <Text fw={600}>施設 List</Text>
-                  <Badge variant="secondary">{facilities.length} 件</Badge>
-                </Group>
+                  <Select value={filterClassification} onValueChange={setFilterClassification}>
+                    <SelectTrigger size="sm" className="w-[130px] shrink-0">
+                      <SelectValue placeholder="施設分類" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">施設分類</SelectItem>
+                      {Object.entries(FACILITY_CLASSIFICATION_LABELS).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <PageState loading={!usingDummy && facilitiesLoading} empty={facilities.length === 0} emptyMessage="この公園に施設はありません">
-                  <Stack gap={0}>
-                    {facilities.map((f: any, i: number) => {
-                      const p = f.properties;
-                      return (
-                        <Box
-                          key={p.id}
-                          py="sm"
-                          px="md"
-                          className="cursor-pointer rounded mb-1 transition-colors"
-                          onClick={() => navigate(`/assets/facilities/${p.id}`, {
-                            state: {
-                              breadcrumbFrom: {
-                                to: parkBackTo,
-                                label: parkName,
-                              },
-                            },
-                          })}
-                          onMouseEnter={() => setHoveredFacilityIndex(i)}
-                          onMouseLeave={() => setHoveredFacilityIndex(null)}
-                          style={{
-                            backgroundColor: hoveredFacilityIndex === i ? '#dbe4ff' : '#f1f3f5',
-                          }}
-                        >
-                          <Text size="sm" fw={500}>{p.name}</Text>
-                        </Box>
-                      );
-                    })}
-                  </Stack>
+                  <Select value={filterStructureRank} onValueChange={setFilterStructureRank}>
+                    <SelectTrigger size="sm" className="w-[140px] shrink-0">
+                      <SelectValue placeholder="構造ランク" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">構造ランク</SelectItem>
+                      {['A', 'B', 'C', 'D'].map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterWearRank} onValueChange={setFilterWearRank}>
+                    <SelectTrigger size="sm" className="w-[140px] shrink-0">
+                      <SelectValue placeholder="消耗ランク" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">消耗ランク</SelectItem>
+                      {['A', 'B', 'C', 'D'].map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-xs text-[#737373] hover:text-[#0a0a0a] transition-colors cursor-pointer bg-transparent border-none px-2 py-1 whitespace-nowrap shrink-0"
+                  >
+                    すべてクリア
+                  </button>
+                </div>
+
+                {/* Facilities table — horizontal scroll */}
+                <PageState loading={!usingDummy && facilitiesLoading} empty={filteredFacilities.length === 0} emptyMessage={hasActiveFilters ? '条件に一致する施設がありません' : 'この公園に施設はありません'}>
+                  <div className="w-full max-w-full border border-[#e5e5e5] rounded-lg overflow-x-auto scrollbar-auto-hide [&_[data-slot=table-container]]:overflow-visible">
+                    <Table style={{ minWidth: TOTAL_WIDTH }}>
+                      <TableHeader>
+                        <TableRow className="bg-[#fafafa] hover:bg-[#fafafa]">
+                          <TableHead style={{ width: COL.thumb, minWidth: COL.thumb }} />
+                          <TableHead className={thCls} style={{ width: COL.name, minWidth: COL.name }} />
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.status, minWidth: COL.status }}>状態</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.facilityId, minWidth: COL.facilityId }}>施設ID</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.classification, minWidth: COL.classification }}>施設分類</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.parkName, minWidth: COL.parkName }}>公園名称</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.subItem, minWidth: COL.subItem }}>細目</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.subItemDetail, minWidth: COL.subItemDetail }}>細目補足</TableHead>
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.quantity, minWidth: COL.quantity }}>数量</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.installDate, minWidth: COL.installDate }}>設置年</TableHead>
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.elapsedYears, minWidth: COL.elapsedYears }}>経過年数</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.manufacturer, minWidth: COL.manufacturer }}>メーカー</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.installer, minWidth: COL.installer }}>設置業者</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.mainMaterial, minWidth: COL.mainMaterial }}>主要部材</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.designDoc, minWidth: COL.designDoc }}>設計書番号</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.inspectionDate, minWidth: COL.inspectionDate }}>最近点検日</TableHead>
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.structureRank, minWidth: COL.structureRank }}>構造ランク</TableHead>
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.wearRank, minWidth: COL.wearRank }}>消耗ランク</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.repairDate, minWidth: COL.repairDate }}>直近修理日</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.managementType, minWidth: COL.managementType }}>管理種別</TableHead>
+                          <TableHead className={`${thCls} text-center`} style={{ width: COL.urgency, minWidth: COL.urgency }}>緊急度判定</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.countermeasure, minWidth: COL.countermeasure }}>対策内容</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.plannedYear, minWidth: COL.plannedYear }}>実施予定年</TableHead>
+                          <TableHead className={`${thCls} text-right`} style={{ width: COL.estimatedCost, minWidth: COL.estimatedCost }}>概算費用</TableHead>
+                          <TableHead className={thCls} style={{ width: COL.notes, minWidth: COL.notes }}>備考</TableHead>
+                          <TableHead style={{ width: COL.actions, minWidth: COL.actions, ...stickyRightStyle, zIndex: 20 }} className="bg-[#fafafa]" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredFacilities.map((f: any, i: number) => {
+                          const p: DummyFacility = f.properties;
+                          return (
+                            <TableRow
+                              key={p.id}
+                              className="cursor-pointer hover:bg-[#f5f5f5] transition-colors"
+                              onClick={() => goToFacility(p.id)}
+                              onMouseEnter={() => setHoveredFacilityIndex(i)}
+                              onMouseLeave={() => setHoveredFacilityIndex(null)}
+                            >
+                              <TableCell className="p-2" style={{ width: COL.thumb, minWidth: COL.thumb }}>
+                                <FacilityPlaceholderImage category={p.category} />
+                              </TableCell>
+                              <TableCell className="text-sm font-medium text-[#0a0a0a] p-2" style={{ width: COL.name, minWidth: COL.name }}>
+                                {p.name}
+                              </TableCell>
+                              <TableCell className="text-center p-2" style={{ width: COL.status, minWidth: COL.status }}>
+                                <StatusBadge status={p.status} />
+                              </TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.facilityId || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2`}>
+                                {p.facilityClassification ? (FACILITY_CLASSIFICATION_LABELS[p.facilityClassification] || p.facilityClassification) : '-'}
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <Badge variant="secondary" className="bg-[#22C55E]/15 text-[#15803d] text-[10px] font-semibold px-1.5 py-0 rounded whitespace-nowrap">
+                                  {parkName}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.subItem || '-'}</TableCell>
+                              <TableCell className={`${tdDimCls} p-2`}>{p.subItemDetail || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2 text-center`}>
+                                {p.quantity ? `${p.quantity}基` : '-'}
+                              </TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{formatDate(p.dateInstalled)}</TableCell>
+                              <TableCell className={`${tdCls} p-2 text-center`}>{p.designLife ?? '-'}</TableCell>
+                              <TableCell className={`${tdDimCls} p-2`}>{p.manufacturer || '-'}</TableCell>
+                              <TableCell className={`${tdDimCls} p-2`}>{p.installer || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.mainMaterial || '-'}</TableCell>
+                              <TableCell className={`${tdDimCls} p-2`}>{p.designDocNumber || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{formatDate(p.lastInspectionDate)}</TableCell>
+                              <TableCell className="p-2 text-center"><RankBadge rank={p.structureRank} /></TableCell>
+                              <TableCell className="p-2 text-center"><RankBadge rank={p.wearRank} /></TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.lastRepairDate || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.managementType || '-'}</TableCell>
+                              <TableCell className="p-2 text-center"><UrgencyBadge level={p.urgencyLevel} /></TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.countermeasure || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2`}>{p.plannedYear || '-'}</TableCell>
+                              <TableCell className={`${tdCls} p-2 text-right`}>
+                                {p.estimatedCost ? `\u00A5${p.estimatedCost.toLocaleString()}` : '-'}
+                              </TableCell>
+                              <TableCell className={`${tdCls} p-2 max-w-[200px] truncate`}>{p.notes || '-'}</TableCell>
+                              <TableCell className="p-2 text-center" style={stickyRightStyle}>
+                                <CircleArrowRight
+                                  className="size-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                                  onClick={(e) => { e.stopPropagation(); goToFacility(p.id); }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </PageState>
-              </Paper>
+              </div>
 
-              {/* Coverage */}
-              <Paper withBorder p="md" className="rounded-md">
-                <Text fw={600} mb="sm">公園内建ぺい率</Text>
-                <Text c="dimmed" size="sm" ta="center" py="xl">
-                  公園内建ぺい率
-                </Text>
-              </Paper>
+              {/* ═══ Building coverage section ═══ */}
+              {coverageData.length > 0 && (
+                <div>
+                  <Text fw={600} className="text-base mb-3">公園内建ぺい率一覧</Text>
+                  <Stack gap="sm">
+                    {coverageData.map((cat, ci) => (
+                      <Collapsible
+                        key={ci}
+                        open={openCoverage[ci] ?? false}
+                        onOpenChange={(open) => setOpenCoverage(prev => ({ ...prev, [ci]: open }))}
+                      >
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-4 py-4 bg-[#fafafa] border border-[#e5e5e5] rounded-lg cursor-pointer hover:bg-[#f5f5f5] transition-colors">
+                            <div className="flex items-center gap-2 text-[#737373]">
+                              {openCoverage[ci] ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                              <span className="text-[20px] leading-none font-semibold">{cat.label}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4 md:flex md:items-center md:gap-8 text-xs w-full md:w-auto">
+                              <div className="text-right">
+                                <div className="text-[#a3a3a3]">建築面積m2</div>
+                                <div className="font-semibold text-[#0a0a0a] text-[16px]">{formatCoverageBuildingArea(cat)}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[#a3a3a3]">限度面積 m2</div>
+                                <div className="font-semibold text-[#0a0a0a] text-[16px]">{formatCoverageLimitArea(cat)}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[#a3a3a3]">建ぺい率%</div>
+                                <Badge className="bg-[#22C55E] text-white text-xs px-3 py-0.5 rounded-full">
+                                  {formatCoverageRate(cat)}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          {cat.items.length > 0 ? (
+                            <div className="border border-t-0 border-[#e5e5e5] rounded-b-lg overflow-hidden">
+                              <Table className="w-full">
+                                <TableHeader>
+                                  <TableRow className="bg-[#fafafa]">
+                                    <TableHead className="text-xs text-[#737373] font-semibold">施設の種別</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold">物件</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold text-right">建築面積m2</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold">設置年月日</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold">検査済証の有無</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold">設置許可</TableHead>
+                                    <TableHead className="text-xs text-[#737373] font-semibold">備考</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {cat.items.map((item, ii) => (
+                                    <TableRow key={ii}>
+                                      <TableCell className="text-xs text-[#262626]">{item.type}</TableCell>
+                                      <TableCell className="text-xs text-[#262626]">{item.property}</TableCell>
+                                      <TableCell className="text-xs text-[#262626] text-right">{item.buildingArea.toFixed(2)}</TableCell>
+                                      <TableCell className="text-xs text-[#262626]">{item.installDate}</TableCell>
+                                      <TableCell className="text-xs text-[#262626]">{item.inspectionCert}</TableCell>
+                                      <TableCell className="text-xs text-[#262626]">{item.installPermit}</TableCell>
+                                      <TableCell className="text-xs text-[#262626]">{item.notes || '-'}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          ) : (
+                            <div className="border border-t-0 border-[#e5e5e5] rounded-b-lg px-4 py-6 text-center text-xs text-[#a3a3a3]">
+                              データなし
+                            </div>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </Stack>
+                </div>
+              )}
             </Stack>
           )}
         </PageState>

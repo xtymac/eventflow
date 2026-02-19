@@ -6,14 +6,17 @@ import type * as GeoJSONTypes from 'geojson';
 interface MiniMapProps {
   geometry?: GeoJSONTypes.Geometry | null;
   markers?: Array<{ lng: number; lat: number; color?: string }>;
-  height?: number;
+  height?: number | string;
   center?: [number, number];
   zoom?: number;
   fillColor?: string;
+  fillOpacity?: number;
   /** Index of marker to highlight (pulse + scale up) */
   highlightedMarkerIndex?: number | null;
   /** When true, center/zoom on markers instead of fitting full geometry bounds */
   focusOnMarkers?: boolean;
+  /** 'pin' (default MapLibre markers) or 'circle' (SVG circle dot) */
+  markerType?: 'pin' | 'circle';
 }
 
 // Same raster basemap as main MapView (CARTO Voyager @2x for HiDPI)
@@ -31,7 +34,7 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', highlightedMarkerIndex, focusOnMarkers }: MiniMapProps) {
+export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', fillOpacity = 0.15, highlightedMarkerIndex, focusOnMarkers, markerType = 'pin' }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerEls = useRef<HTMLElement[]>([]);
@@ -76,7 +79,7 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
             source: 'geometry',
             paint: {
               'fill-color': fillColor,
-              'fill-opacity': 0.15,
+              'fill-opacity': fillOpacity,
             },
           });
           map.addLayer({
@@ -130,9 +133,19 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
       markerEls.current = [];
       if (markers) {
         markers.forEach((m) => {
-          const marker = new maplibregl.Marker({ color: m.color || '#e03131' })
-            .setLngLat([m.lng, m.lat])
-            .addTo(map);
+          let marker: maplibregl.Marker;
+          if (markerType === 'circle') {
+            const el = document.createElement('div');
+            el.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="6" fill="white"/><circle cx="6" cy="6" r="4" fill="${m.color || '#3B82F6'}"/></svg>`;
+            el.style.cursor = 'pointer';
+            marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+              .setLngLat([m.lng, m.lat])
+              .addTo(map);
+          } else {
+            marker = new maplibregl.Marker({ color: m.color || '#e03131' })
+              .setLngLat([m.lng, m.lat])
+              .addTo(map);
+          }
           markerEls.current.push(marker.getElement());
         });
       }
