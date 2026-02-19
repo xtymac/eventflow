@@ -1,7 +1,5 @@
 import { type Table } from "@tanstack/react-table"
-
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { MoreHorizontal } from "lucide-react"
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>
@@ -60,52 +58,97 @@ export function DataTablePagination<TData>({
   const items = buildPaginationItems(currentPage, pageCount)
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="ghost"
-        className="h-9 px-3 text-sm text-muted-foreground hover:text-foreground"
+    <nav data-pagination="" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <style>{`
+        [data-pagination] button {
+          all: unset;
+          box-sizing: border-box;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          font-family: inherit;
+          line-height: 20px;
+          min-height: 36px;
+          padding: 8px 16px;
+          cursor: pointer;
+          white-space: nowrap;
+          color: #404040;
+        }
+        [data-pagination] button:hover:not(:disabled):not([data-active]) {
+          background-color: #f5f5f5;
+        }
+        [data-pagination] button:disabled {
+          opacity: 0.5;
+          pointer-events: none;
+          cursor: default;
+        }
+        [data-pagination] button[data-page] {
+          min-width: 34px;
+        }
+        [data-pagination] button[data-active] {
+          min-width: 34px;
+          color: #0a0a0a;
+          border: 1px solid #d4d4d4;
+          background-color: #fff;
+          box-shadow: 0 1px 2px 0 rgba(0,0,0,0);
+          cursor: default;
+        }
+        [data-pagination] .pg-ellipsis {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          min-height: 36px;
+          min-width: 36px;
+        }
+        [data-pagination] .pg-ellipsis svg {
+          width: 20px;
+          height: 20px;
+          color: #404040;
+        }
+      `}</style>
+
+      <button
+        type="button"
         onClick={() => table.previousPage()}
         disabled={!table.getCanPreviousPage()}
       >
         前へ
-      </Button>
+      </button>
 
-      <div className="flex items-center gap-1">
-        {items.map((item) => {
-          if (item.type === "ellipsis") {
-            return (
-              <span key={item.key} className="px-2 text-muted-foreground">
-                ...
-              </span>
-            )
-          }
-
-          const isActive = item.page === currentPage
+      {items.map((item) => {
+        if (item.type === "ellipsis") {
           return (
-            <Button
-              key={item.page}
-              variant="ghost"
-              className={cn(
-                "size-9 rounded-md p-0 text-sm text-muted-foreground hover:text-foreground",
-                isActive &&
-                  "border border-[#d9d9d9] bg-white font-medium text-foreground hover:bg-white"
-              )}
-              onClick={() => table.setPageIndex(item.page)}
-            >
-              {item.page + 1}
-            </Button>
+            <span key={item.key} className="pg-ellipsis">
+              <MoreHorizontal />
+            </span>
           )
-        })}
-      </div>
+        }
 
-      <Button
-        variant="ghost"
-        className="h-9 px-3 text-sm text-muted-foreground hover:text-foreground"
+        const isActive = item.page === currentPage
+        return (
+          <button
+            key={item.page}
+            type="button"
+            data-page=""
+            {...(isActive ? { 'data-active': '' } : {})}
+            onClick={() => table.setPageIndex(item.page)}
+          >
+            {item.page + 1}
+          </button>
+        )
+      })}
+
+      <button
+        type="button"
         onClick={() => table.nextPage()}
         disabled={!table.getCanNextPage()}
       >
         次へ
-      </Button>
-    </div>
+      </button>
+    </nav>
   )
 }

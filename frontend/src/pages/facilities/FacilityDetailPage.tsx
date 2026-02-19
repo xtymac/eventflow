@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { IconChevronDown, IconChevronRight, IconPhoto, IconPencil } from '@table
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import { useParkFacility, useGreenSpace, useLifecyclePlans, useInspectionsByAsset, useRepairsByAsset } from '../../hooks/useApi';
+import { recordVisit } from '../../hooks/useRecentVisits';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
 import { getDummyFacility } from '../../data/dummyFacilities';
@@ -118,6 +120,14 @@ export function FacilityDetailPage() {
   const locationState = location.state as FacilityDetailLocationState | null;
   const breadcrumbTo = locationState?.breadcrumbFrom?.to || '/assets/facilities';
   const breadcrumbLabel = locationState?.breadcrumbFrom?.label || '施設';
+
+  // Record this facility visit in recent visits
+  useEffect(() => {
+    if (id && facility) {
+      const name = facility.name;
+      if (name) recordVisit(`/assets/facilities/${id}`, name);
+    }
+  }, [id, facility]);
 
   return (
     <ScrollArea style={{ height: 'calc(100vh - 60px)' }}>

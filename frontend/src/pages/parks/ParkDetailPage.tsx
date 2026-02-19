@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { IconPencil } from '@tabler/icons-react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import { useGreenSpace, useParkFacilitiesByPark } from '../../hooks/useApi';
+import { recordVisit } from '../../hooks/useRecentVisits';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
 import { getDummyFacilitiesByPark } from '../../data/dummyFacilities';
@@ -98,6 +99,14 @@ export function ParkDetailPage() {
   const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
   const parkName = park?.displayName || park?.nameJa || park?.name || '\u8AAD\u307F\u8FBC\u307F\u4E2D...';
   const parkBackTo = id ? `/assets/parks/${id}` : '/assets/parks';
+
+  // Record this park visit in recent visits
+  useEffect(() => {
+    if (id && park) {
+      const name = park.displayName || park.nameJa || park.name;
+      if (name) recordVisit(`/assets/parks/${id}`, name);
+    }
+  }, [id, park]);
 
   const centroid = geometry
     ? turf.centroid({ type: 'Feature', properties: {}, geometry } as any).geometry.coordinates

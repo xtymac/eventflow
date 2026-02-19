@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useRecentVisits } from '@/hooks/useRecentVisits';
 
 const SIDEBAR_WIDTH = 240;
 
@@ -111,6 +112,47 @@ function SidebarSubItem({
   );
 }
 
+/* ── Recent visits section ── */
+function RecentVisitsSection() {
+  const navigate = useNavigate();
+  const recentVisits = useRecentVisits();
+
+  if (recentVisits.length === 0) return null;
+
+  return (
+    <div className="flex w-full flex-col">
+      {/* Divider */}
+      <div className="flex flex-col items-start gap-2.5 self-stretch" style={{ padding: '10px 12px' }}>
+        <div className="h-px w-full" style={{ background: 'var(--sidebar-sidebar-border, #E5E5E5)' }} />
+      </div>
+
+      {/* Label */}
+      <div className="flex items-center self-stretch px-3 py-2">
+        <span className="text-xs font-semibold" style={{ color: 'var(--sidebar-unofficial-sidebar-muted, #737373)' }}>
+          最近
+        </span>
+      </div>
+
+      {/* Items */}
+      {recentVisits.map((visit) => (
+        <button
+          key={visit.path}
+          type="button"
+          onClick={() => navigate(visit.path)}
+          className="flex h-8 w-full items-center gap-2 border-0 bg-transparent px-3 py-1 text-sm cursor-pointer rounded-md hover:bg-accent"
+        >
+          <span
+            className="flex-1 truncate text-left text-sm font-normal leading-5 tracking-normal"
+            style={{ color: 'var(--sidebar-sidebar-foreground, #404040)' }}
+          >
+            {visit.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -204,6 +246,9 @@ export function AppSidebar() {
           onClick={() => navigate('/vendors')}
         />
       </nav>
+
+        {/* 最近 (Recent Visits) */}
+        <RecentVisitsSection />
       </div>
     </aside>
   );

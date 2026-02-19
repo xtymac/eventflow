@@ -30,10 +30,6 @@ function getPageNumbers(currentPage: number, totalPages: number): (number | '...
   return pages
 }
 
-const ghostBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] px-4 py-2 text-[#404040] hover:bg-[#f5f5f5] disabled:opacity-50 disabled:pointer-events-none"
-const activeBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] min-w-[34px] px-4 py-2 border border-[#d4d4d4] bg-white text-[#0a0a0a] shadow-[0_1px_2px_0_rgba(0,0,0,0)]"
-const inactiveBtn = "inline-flex items-center justify-center rounded-lg text-sm font-medium min-h-[36px] min-w-[34px] px-4 py-2 text-[#404040] hover:bg-[#f5f5f5]"
-
 export function DataTableNumberedPagination<TData>({
   table,
 }: DataTableNumberedPaginationProps<TData>) {
@@ -45,30 +41,79 @@ export function DataTableNumberedPagination<TData>({
   const pageNumbers = getPageNumbers(currentPage, totalPages)
 
   return (
-    <div className="flex items-center justify-end" style={{ gap: 8 }}>
+    <nav data-pagination="" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+      <style>{`
+        [data-pagination] button {
+          all: unset;
+          box-sizing: border-box;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          font-family: inherit;
+          line-height: 20px;
+          min-height: 36px;
+          padding: 8px 16px;
+          cursor: pointer;
+          white-space: nowrap;
+          color: #404040;
+        }
+        [data-pagination] button:hover:not(:disabled):not([data-active]) {
+          background-color: #f5f5f5;
+        }
+        [data-pagination] button:disabled {
+          opacity: 0.5;
+          pointer-events: none;
+          cursor: default;
+        }
+        [data-pagination] button[data-page] {
+          min-width: 34px;
+        }
+        [data-pagination] button[data-active] {
+          min-width: 34px;
+          color: #0a0a0a;
+          border: 1px solid #d4d4d4;
+          background-color: #fff;
+          box-shadow: 0 1px 2px 0 rgba(0,0,0,0);
+          cursor: default;
+        }
+        [data-pagination] .pg-ellipsis {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          min-height: 36px;
+          min-width: 36px;
+        }
+        [data-pagination] .pg-ellipsis svg {
+          width: 20px;
+          height: 20px;
+          color: #404040;
+        }
+      `}</style>
+
       <button
         type="button"
         onClick={() => table.previousPage()}
         disabled={!table.getCanPreviousPage()}
-        className={ghostBtn}
       >
         前へ
       </button>
 
       {pageNumbers.map((page, i) =>
         page === '...' ? (
-          <span
-            key={`ellipsis-${i}`}
-            className="inline-flex items-center justify-center rounded-lg min-h-[36px] min-w-[36px]"
-          >
-            <MoreHorizontal className="size-5 text-[#404040]" />
+          <span key={`ellipsis-${i}`} className="pg-ellipsis">
+            <MoreHorizontal />
           </span>
         ) : (
           <button
             key={page}
             type="button"
+            data-page=""
+            {...(page === currentPage ? { 'data-active': '' } : {})}
             onClick={() => table.setPageIndex(page - 1)}
-            className={page === currentPage ? activeBtn : inactiveBtn}
           >
             {page}
           </button>
@@ -79,10 +124,9 @@ export function DataTableNumberedPagination<TData>({
         type="button"
         onClick={() => table.nextPage()}
         disabled={!table.getCanNextPage()}
-        className={ghostBtn}
       >
         次へ
       </button>
-    </div>
+    </nav>
   )
 }
