@@ -661,7 +661,7 @@ export function ParkListPage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0">
         {/* Table side */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div ref={scrollRef} onScroll={handleScroll} className="scrollbar-auto-hide min-h-0 flex-1 overflow-x-auto overflow-y-hidden [&_[data-slot=table-container]]:overflow-visible">
