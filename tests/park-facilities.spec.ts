@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const SCREENSHOT_DIR = 'tests/screenshots';
-
-// Use local dev server
-test.use({ baseURL: 'http://localhost:5173' });
+import { SCREENSHOT_DIR } from './helpers';
 
 // Helper: wait for app to mount (login screen or main app)
 async function waitForApp(page: import('@playwright/test').Page) {

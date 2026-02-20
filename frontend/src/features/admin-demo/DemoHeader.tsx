@@ -13,27 +13,11 @@ import { IconChevronDown, IconLogout } from '@tabler/icons-react';
 import { Menu as MenuIcon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { scopeToDepartment } from '../../contexts/AuthContext';
-import type { Scope } from '../../contexts/AuthContext';
+import { DEPARTMENTS, detectDepartment } from '@/lib/departments';
 
 interface DemoHeaderProps {
   sidebarOpen?: boolean;
   onToggleSidebar?: () => void;
-}
-
-const DEPARTMENTS = [
-  { label: '公園管理', value: 'park' as const, route: '/assets/parks' },
-  { label: '樹木管理', value: 'tree' as const, route: '/assets/park-trees' },
-];
-
-/** Detect current department from URL path */
-function detectDepartment(pathname: string): 'park' | 'tree' {
-  const match = pathname.match(/^\/assets\/([^/]+)/);
-  if (match) {
-    const scope = match[1] as Scope;
-    return scopeToDepartment(scope);
-  }
-  return 'park';
 }
 
 export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {

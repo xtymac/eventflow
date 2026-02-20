@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const SCREENSHOT_DIR = 'tests/screenshots';
-
-test.use({ baseURL: 'http://localhost:5173' });
+import { SCREENSHOT_DIR } from './helpers';
 
 async function waitForApp(page: import('@playwright/test').Page) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });

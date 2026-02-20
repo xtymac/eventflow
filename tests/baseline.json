@@ -1,0 +1,7 @@
+{
+  "totalTests": 50,
+  "browsers": ["chromium"],
+  "totalRuns": 50,
+  "skipped": 0,
+  "note": "Update when adding/removing tests. Skipped count must not increase without updating this file."
+}

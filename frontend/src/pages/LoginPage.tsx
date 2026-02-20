@@ -3,15 +3,13 @@ import { Box, Stack, Text, Title, Divider } from '@/components/shims';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PasswordInput } from '@/components/ui/password-input';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth, type UserRole } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('admin');
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -19,7 +17,7 @@ export function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const u = username || '\u30C6\u30B9\u30C8\u30E6\u30FC\u30B6\u30FC';
-    login(u, password, role);
+    login(u, password, 'admin');
     const next = searchParams.get('next');
     navigate(next && next.startsWith('/') ? next : '/map');
   };
@@ -106,23 +104,6 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-
-                {/* Role Selection */}
-                <div>
-                  <Text size="sm" fw={500} className="mb-1.5">
-                    ロール
-                  </Text>
-                  <RadioGroup value={role} onValueChange={(v) => setRole(v as UserRole)}>
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="admin" id="role-admin" />
-                      <Label htmlFor="role-admin" className="text-sm">管理者（技術指導課）</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="user" id="role-user" />
-                      <Label htmlFor="role-user" className="text-sm">利用者（緑地部／公園緑地課、各土木事務所）</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
               </Stack>
 
               {/* Submit Button */}

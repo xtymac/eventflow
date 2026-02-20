@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { SCREENSHOT_DIR } from './helpers';
 
-const SCREENSHOT_DIR = 'tests/screenshots';
+test.use({ baseURL: 'https://eventflow.uixai.org' });
 
 // Helper: navigate and wait for the app shell to render (not networkidle — map tiles never stop)
 async function loadApp(page: import('@playwright/test').Page) {

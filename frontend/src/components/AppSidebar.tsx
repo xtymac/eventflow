@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   MapPin,
   Table2,
@@ -6,10 +6,18 @@ import {
   ChevronRight,
   RefreshCcwDot,
   SquareUser,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { useRecentVisits } from '@/hooks/useRecentVisits';
+import { DEPARTMENTS, detectDepartment } from '@/lib/departments';
 
 const SIDEBAR_WIDTH = 240;
 
@@ -156,11 +164,11 @@ function RecentVisitsSection() {
 export function AppSidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const currentDeptValue = detectDepartment(pathname);
+  const currentDept = DEPARTMENTS.find(d => d.value === currentDeptValue)!;
   const isMap = pathname.startsWith('/map');
-  const isAssets = pathname.startsWith('/assets');
   const isPark = pathname.startsWith('/assets/parks');
   const isFacility = pathname.startsWith('/assets/facilities');
-  const isCases = pathname.startsWith('/cases') || pathname.startsWith('/inspections');
   const isVendors = pathname.startsWith('/vendors');
 
   return (
@@ -172,15 +180,37 @@ export function AppSidebar() {
       <div className="flex flex-col items-stretch gap-6 self-stretch">
         {/* Logo + Department dropdown */}
         <div className="flex h-[59px] min-h-[36px] items-center gap-3 self-stretch px-3 py-[7.5px]">
-          <img
-            src="/logo.svg"
-            alt="logo"
-            width={32}
-            height={32}
-            className="shrink-0 rounded-lg object-cover"
-          />
-          <span className="flex-1 text-sm text-foreground">公園管理</span>
-          <ChevronDown className="size-4 text-muted-foreground" />
+          <Link to="/map" className="shrink-0">
+            <img
+              src="/logo.svg"
+              alt="地図に戻る"
+              width={32}
+              height={32}
+              className="shrink-0 rounded-lg object-cover"
+            />
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex flex-1 items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 cursor-pointer text-sm text-foreground hover:bg-accent"
+              >
+                <span className="flex-1 text-left">{currentDept.label}</span>
+                <ChevronDown className="size-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {DEPARTMENTS.map((dept) => (
+                <DropdownMenuItem
+                  key={dept.value}
+                  onClick={() => dept.route !== pathname && navigate(dept.route)}
+                >
+                  <Check className={cn('size-4', currentDeptValue === dept.value ? 'opacity-100' : 'opacity-0')} />
+                  {dept.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Navigation */}

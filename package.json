@@ -32,7 +32,10 @@
     "nagoya:import": "npx tsx scripts/import-nagoya-to-assets.ts",
     "nagoya:status": "curl -s http://localhost:3000/nagoya-sync/status | jq && curl -s http://localhost:3000/nagoya-building-sync/status | jq",
     "nagoya:export-stats": "curl -s http://localhost:3000/pmtiles-export/stats | jq",
-    "docs:notion:sync": "npx tsx scripts/notion-sync.ts"
+    "docs:notion:sync": "npx tsx scripts/notion-sync.ts",
+    "test": "npx playwright test",
+    "test:check": "npx tsx tests/check-baseline.ts",
+    "test:full": "npm test && npm run test:check"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
