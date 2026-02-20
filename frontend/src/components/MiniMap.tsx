@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import type * as GeoJSONTypes from 'geojson';
@@ -38,6 +38,9 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerEls = useRef<HTMLElement[]>([]);
+  const initialBounds = useRef<[[number, number], [number, number]] | null>(null);
+  const initialCenter = useRef<[number, number] | null>(null);
+  const initialZoom = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -107,8 +110,10 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
         try {
           if (focusOnMarkers && markers && markers.length > 0) {
             // Center on the first marker; use zoom prop or default 16
-            map.setCenter([markers[0].lng, markers[0].lat]);
-            map.setZoom(zoom || 16);
+            initialCenter.current = [markers[0].lng, markers[0].lat];
+            initialZoom.current = zoom || 16;
+            map.setCenter(initialCenter.current);
+            map.setZoom(initialZoom.current);
           } else {
             const geoBbox = turf.bbox({ type: 'Feature', properties: {}, geometry });
             // Extend bbox to include marker positions
@@ -121,8 +126,9 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
                 if (m.lat > maxLat) maxLat = m.lat;
               }
             }
+            initialBounds.current = [[minLng, minLat], [maxLng, maxLat]];
             map.fitBounds(
-              [[minLng, minLat], [maxLng, maxLat]],
+              initialBounds.current,
               { padding: 40, maxZoom: 17, duration: 0 }
             );
           }
@@ -175,16 +181,55 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
     });
   }, [highlightedMarkerIndex]);
 
+  const handleRefocus = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (initialBounds.current) {
+      map.fitBounds(initialBounds.current, { padding: 40, maxZoom: 17, duration: 300 });
+    } else if (initialCenter.current && initialZoom.current != null) {
+      map.flyTo({ center: initialCenter.current, zoom: initialZoom.current, duration: 300 });
+    } else if (center) {
+      map.flyTo({ center, zoom: zoom || 14, duration: 300 });
+    }
+  }, [center, zoom]);
+
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height,
-        borderRadius: 'var(--mantine-radius-md)',
-        overflow: 'hidden',
-        border: '1px solid var(--mantine-color-gray-3)',
-      }}
-    />
+    <div style={{ position: 'relative', width: '100%', height }}>
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 'var(--mantine-radius-md)',
+          overflow: 'hidden',
+          border: '1px solid var(--mantine-color-gray-3)',
+        }}
+      />
+      <button
+        type="button"
+        onClick={handleRefocus}
+        title="公園に戻る"
+        style={{
+          position: 'absolute',
+          bottom: 12,
+          left: 12,
+          width: 32,
+          height: 32,
+          borderRadius: 6,
+          border: '1px solid rgba(0,0,0,0.12)',
+          background: '#fff',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+        </svg>
+      </button>
+    </div>
   );
 }

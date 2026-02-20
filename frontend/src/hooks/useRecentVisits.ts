@@ -23,7 +23,17 @@ function readVisits(): RecentVisit[] {
 }
 
 export function recordVisit(path: string, label: string) {
-  const visits = readVisits().filter((v) => v.path !== path);
+  const visits = readVisits();
+  const existing = visits.find((v) => v.path === path);
+  if (existing) {
+    // Already in list — update label in-place, don't reorder
+    if (existing.label !== label) {
+      existing.label = label;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(visits));
+      window.dispatchEvent(new Event(CHANGE_EVENT));
+    }
+    return;
+  }
   visits.unshift({ path, label, visitedAt: Date.now() });
   const trimmed = visits.slice(0, MAX_ITEMS);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));

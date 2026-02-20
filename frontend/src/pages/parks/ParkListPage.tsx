@@ -9,7 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Search, Ellipsis, CircleArrowRight, Plus, CalendarIcon } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -204,6 +204,19 @@ export function ParkListPage() {
       accessorKey: 'displayName',
       header: '名称',
       size: 150,
+      cell: ({ row }) => {
+        const id = row.original.id;
+        if (!id) return row.original.displayName;
+        return (
+          <Link
+            to={`/assets/parks/${id}`}
+            className="underline text-primary hover:text-primary/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.original.displayName}
+          </Link>
+        );
+      },
       meta: { className: cellCls, headerClassName: headerCls },
     },
     {
@@ -447,7 +460,13 @@ export function ParkListPage() {
     data: filteredData,
     columns,
     state: { globalFilter, columnVisibility, pagination },
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      setPagination((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater;
+        if (next.pageIndex !== prev.pageIndex) setSelectedParkId(null);
+        return next;
+      });
+    },
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
@@ -505,11 +524,11 @@ export function ParkListPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '24px 24px 16px', height: 'calc(100% - 32px)' }}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 32 }}>
-        <h1 className="text-5xl font-semibold leading-none tracking-tight">公園</h1>
-        <Button size="icon-lg" className="size-14 rounded-full border-0 bg-[#215042] hover:bg-[#2a6554]">
-          <Plus className="size-6" />
+    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '12px 24px 16px', height: 'calc(100% - 32px)' }} onClick={() => setSelectedParkId(null)}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+        <h1 className="text-3xl font-semibold leading-none tracking-tight">公園</h1>
+        <Button size="icon-sm" className="size-9 rounded-full border-0 bg-[#215042] hover:bg-[#2a6554]">
+          <Plus className="size-4" />
         </Button>
       </div>
 
@@ -713,7 +732,7 @@ export function ParkListPage() {
                       <TableRow
                         key={row.id}
                         className={`cursor-pointer${row.original.id === selectedParkId ? ' bg-[#f0faf6]' : ''}`}
-                        onClick={() => setSelectedParkId(row.original.id)}
+                        onClick={(e) => { e.stopPropagation(); setSelectedParkId(row.original.id); }}
                       >
                         {row.getVisibleCells().map((cell) => {
                           const meta = cell.column.columnDef.meta as { className?: string } | undefined;
@@ -753,14 +772,11 @@ export function ParkListPage() {
             </Table>
           </div>
 
-          <div className="flex items-center justify-end" style={{ marginTop: 16 }}>
-            <DataTableNumberedPagination table={table} />
-          </div>
         </div>
 
         {/* Preview panel */}
         {selectedPark && (
-          <div className="absolute right-0 top-0 bottom-0 z-10 w-[494px] border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel">
+          <div className="absolute right-0 top-0 bottom-0 z-10 w-[494px] border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel" onClick={(e) => e.stopPropagation()}>
             <ParkPreviewPanel
               park={selectedPark}
               onClose={() => setSelectedParkId(null)}
@@ -768,6 +784,10 @@ export function ParkListPage() {
             />
           </div>
         )}
+      </div>
+
+      <div className="flex items-center justify-end" style={{ marginTop: 16 }}>
+        <DataTableNumberedPagination table={table} />
       </div>
 
       <Dialog open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen}>

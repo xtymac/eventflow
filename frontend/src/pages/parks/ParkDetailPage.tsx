@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Text, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -396,9 +395,15 @@ export function ParkDetailPage() {
 
   return (
     <div className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden">
-      <Box p="lg" className="w-full max-w-full overflow-x-hidden">
-        {/* Breadcrumb */}
-        <Breadcrumb className="mb-4">
+      {/* Sticky breadcrumb bar */}
+      <div
+        className="sticky top-0 z-10 px-6 py-3"
+        style={{
+          background: '#FFF',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10)',
+        }}
+      >
+        <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink
@@ -417,10 +422,12 @@ export function ParkDetailPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
 
+      <div className="p-6 w-full max-w-full overflow-x-hidden">
         <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={!park} emptyMessage="公園が見つかりません">
           {park && (
-            <Stack gap="lg">
+            <div className="flex flex-col gap-6">
               {/* ═══ Two-column: Info + Map ═══ */}
               <div className="flex gap-6 items-start">
                 {/* Left: Park info sections */}
@@ -461,13 +468,13 @@ export function ParkDetailPage() {
                 </div>
 
                 {/* Right: Map */}
-                <div className="w-[45%] shrink-0">
+                <div className="w-[45%] shrink-0 sticky top-[48px] h-[calc(100vh-156px)]">
                   {geometry ? (
                     <MiniMap
                       key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`}
                       geometry={geometry}
                       markers={facilityMarkers}
-                      height={480}
+                      height="100%"
                       fillColor="#22C55E"
                       highlightedMarkerIndex={hoveredFacilityIndex != null ? facilityToMarkerIdx.get(hoveredFacilityIndex) ?? null : null}
                     />
@@ -476,7 +483,7 @@ export function ParkDetailPage() {
                       center={centroid as [number, number]}
                       markers={[{ lng: centroid[0], lat: centroid[1], color: '#22C55E' }, ...facilityMarkers]}
                       zoom={15}
-                      height={480}
+                      height="100%"
                       highlightedMarkerIndex={hoveredFacilityIndex != null ? (facilityToMarkerIdx.get(hoveredFacilityIndex) ?? -1) + 1 : null}
                     />
                   ) : null}
