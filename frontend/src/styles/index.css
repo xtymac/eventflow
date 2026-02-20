@@ -128,11 +128,11 @@ body {
 }
 .scrollbar-auto-hide:hover::-webkit-scrollbar-thumb,
 .scrollbar-auto-hide.is-scrolling::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.15);
 }
 .scrollbar-auto-hide:hover::-webkit-scrollbar-thumb:hover,
 .scrollbar-auto-hide.is-scrolling::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Hide scrollbar for tabs container */

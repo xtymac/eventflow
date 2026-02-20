@@ -746,7 +746,7 @@ export function ParkListPage() {
         </div>
       </div>
 
-      <div className="relative flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10)' }}>
         {/* Table side */}
         <div className={`flex min-h-0 min-w-0 flex-1 flex-col${selectedPark ? ' mr-[494px]' : ''}`}>
           <div ref={scrollRef} onScroll={handleScroll} data-testid="park-table-scroll" className="scrollbar-auto-hide min-h-0 flex-1 overflow-x-auto overflow-y-auto [&_[data-slot=table-container]]:overflow-visible">
@@ -821,7 +821,7 @@ export function ParkListPage() {
 
         {/* Preview panel */}
         {selectedPark && (
-          <div className="absolute right-0 top-0 bottom-0 z-10 w-[494px] border-l border-[#e5e5e5] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-0 top-0 bottom-0 z-10 w-[494px] bg-white flex flex-col overflow-hidden shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)]" data-testid="park-preview-panel" onClick={(e) => e.stopPropagation()}>
             <ParkPreviewPanel
               park={selectedPark}
               onClose={() => setSelectedParkId(null)}
