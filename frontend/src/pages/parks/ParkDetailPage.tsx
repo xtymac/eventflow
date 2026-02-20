@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -277,6 +277,52 @@ export function ParkDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  /* Scroll-priority refs */
+  const pageScrollRef = useRef<HTMLDivElement>(null);
+  const leftInfoScrollRef = useRef<HTMLDivElement>(null);
+  const mapPanelRef = useRef<HTMLDivElement>(null);
+
+  /** Outside the map, wheel drives the left info panel first;
+   *  only after it hits its scroll boundary does the page scroll.
+   *  Uses native listener with passive:false so preventDefault() works. */
+  useEffect(() => {
+    const root = pageScrollRef.current;
+    if (!root) return;
+
+    function onWheel(e: WheelEvent) {
+      if (e.deltaY === 0) return;
+      // Inside map → let map handle zoom
+      if (mapPanelRef.current?.contains(e.target as Node)) return;
+      // Inside left panel → browser scrolls it naturally (then chains to page)
+      if (leftInfoScrollRef.current?.contains(e.target as Node)) return;
+
+      // Cursor is outside both left panel and map → redirect to left panel
+      const el = leftInfoScrollRef.current;
+      if (!el) return;
+
+      const EPSILON = 1;
+      if (el.scrollHeight <= el.clientHeight + EPSILON) return;
+
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 20;
+      else if (e.deltaMode === 2) dy *= el.clientHeight;
+
+      const scrollingDown = dy > 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - EPSILON;
+      const atTop = el.scrollTop <= EPSILON;
+
+      if (scrollingDown && atBottom) return;
+      if (!scrollingDown && atTop) return;
+
+      el.scrollTop += dy;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    root.addEventListener('wheel', onWheel, { passive: false, capture: true });
+    return () => root.removeEventListener('wheel', onWheel, { capture: true });
+  }, []);
+
   /* API data */
   const { data: parkData, isLoading, isError } = useGreenSpace(id ?? null);
   const { data: facilitiesData, isLoading: facilitiesLoading } = useParkFacilitiesByPark(id ?? null);
@@ -394,7 +440,7 @@ export function ParkDetailPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden">
+    <div ref={pageScrollRef} data-testid="park-detail-scroll-root" className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden">
       {/* Sticky breadcrumb bar */}
       <div
         className="sticky top-0 z-10 px-6 py-3"
@@ -431,7 +477,7 @@ export function ParkDetailPage() {
               {/* ═══ Two-column: Info + Map ═══ */}
               <div className="flex gap-6 items-start">
                 {/* Left: Park info sections */}
-                <div className="flex-1 min-w-0">
+                <div ref={leftInfoScrollRef} data-testid="park-basic-info-scroll" className="flex-1 min-w-0 h-[calc(100vh-156px)] overflow-y-auto sticky top-[48px]">
                   {/* 基本情報 */}
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-[#0a0a0a]">基本情報</span>
@@ -468,7 +514,7 @@ export function ParkDetailPage() {
                 </div>
 
                 {/* Right: Map */}
-                <div className="w-[45%] shrink-0 sticky top-[48px] h-[calc(100vh-156px)]">
+                <div ref={mapPanelRef} data-testid="park-mini-map-panel" className="w-[45%] shrink-0 sticky top-[48px] h-[calc(100vh-156px)]">
                   {geometry ? (
                     <MiniMap
                       key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`}
@@ -492,7 +538,7 @@ export function ParkDetailPage() {
 
               {/* ═══ Facilities section ═══ */}
               <div className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 w-full min-w-0 max-w-full overflow-hidden">
-                <Text fw={600} className="text-base mb-3">施設</Text>
+                <p className="font-semibold text-base mb-3">施設</p>
 
                 {/* Search + filter toolbar */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -745,10 +791,10 @@ export function ParkDetailPage() {
                   </div>
                 </div>
               )}
-            </Stack>
+            </div>
           )}
         </PageState>
-      </Box>
+      </div>
     </div>
   );
 }

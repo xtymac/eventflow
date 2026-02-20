@@ -121,4 +121,121 @@ test.describe('Park Facilities', () => {
 
     await page.screenshot({ path: `${SCREENSHOT_DIR}/pf-05-facility-minimap.png`, fullPage: true });
   });
+
+  test('6 - Left panel priority scroll behavior', async ({ page }) => {
+    await waitForApp(page);
+    await page.goto('/assets/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const scrollRoot = page.getByTestId('park-detail-scroll-root');
+    const leftPanel = page.getByTestId('park-basic-info-scroll');
+    const mapPanel = page.getByTestId('park-mini-map-panel');
+    const facilitiesTable = page.getByTestId('park-facilities-table');
+
+    await expect(scrollRoot).toBeVisible({ timeout: 10_000 });
+    await expect(leftPanel).toBeVisible({ timeout: 10_000 });
+    await expect(mapPanel).toBeVisible({ timeout: 10_000 });
+    await expect(facilitiesTable).toBeVisible({ timeout: 10_000 });
+
+    // Reset scroll positions
+    await scrollRoot.evaluate(el => { el.scrollTop = 0; });
+    await leftPanel.evaluate(el => { el.scrollTop = 0; });
+
+    // Confirm left panel is scrollable
+    const canScroll = await leftPanel.evaluate(el => el.scrollHeight > el.clientHeight + 1);
+    expect(canScroll).toBe(true);
+
+    // Helper: dispatch a cancelable wheel event on an element via DOM
+    async function dispatchWheel(locator: import('@playwright/test').Locator, deltaY: number) {
+      await locator.evaluate((el, dy) => {
+        el.dispatchEvent(new WheelEvent('wheel', {
+          deltaY: dy, deltaX: 0, bubbles: true, cancelable: true,
+        }));
+      }, deltaY);
+    }
+
+    // Dispatch wheel events on the facilities table (outside both panels).
+    // The handler should redirect scroll to the left panel.
+    for (let i = 0; i < 3; i++) {
+      await dispatchWheel(facilitiesTable, 60);
+      await page.waitForTimeout(80);
+    }
+
+    // Left panel should have scrolled; page root should not
+    const leftScrollTop = await leftPanel.evaluate(el => el.scrollTop);
+    const rootScrollTop = await scrollRoot.evaluate(el => el.scrollTop);
+    expect(leftScrollTop).toBeGreaterThan(0);
+    expect(rootScrollTop).toBe(0);
+
+    // Scroll left panel to the very bottom
+    await leftPanel.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await page.waitForTimeout(100);
+    await scrollRoot.evaluate(el => { el.scrollTop = 0; });
+
+    // Now use real mouse wheel (trusted event) over facilities table.
+    // Left panel is at bottom, so handler returns early → native scroll on page root.
+    await facilitiesTable.hover();
+    for (let i = 0; i < 5; i++) {
+      await page.mouse.wheel(0, 120);
+      await page.waitForTimeout(80);
+    }
+    const rootScrollTopAfter = await scrollRoot.evaluate(el => el.scrollTop);
+    expect(rootScrollTopAfter).toBeGreaterThan(0);
+
+    // Dispatch wheel on map panel — left panel scrollTop should stay unchanged
+    const leftScrollBefore = await leftPanel.evaluate(el => el.scrollTop);
+    for (let i = 0; i < 3; i++) {
+      await dispatchWheel(mapPanel, 120);
+      await page.waitForTimeout(80);
+    }
+    const leftScrollAfter = await leftPanel.evaluate(el => el.scrollTop);
+    expect(leftScrollAfter).toBe(leftScrollBefore);
+
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/pf-06-scroll-priority.png`, fullPage: true });
+  });
+
+  test('7 - Short left panel falls through to page scroll', async ({ page }) => {
+    await waitForApp(page);
+    await page.goto('/assets/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const scrollRoot = page.getByTestId('park-detail-scroll-root');
+    const leftPanel = page.getByTestId('park-basic-info-scroll');
+    const facilitiesTable = page.getByTestId('park-facilities-table');
+
+    await expect(scrollRoot).toBeVisible({ timeout: 10_000 });
+    await expect(leftPanel).toBeVisible({ timeout: 10_000 });
+    await expect(facilitiesTable).toBeVisible({ timeout: 10_000 });
+
+    // Make left panel tall enough that its content doesn't overflow
+    await leftPanel.evaluate(el => {
+      el.style.height = `${el.scrollHeight + 200}px`;
+    });
+    await scrollRoot.evaluate(el => { el.scrollTop = 0; });
+    await leftPanel.evaluate(el => { el.scrollTop = 0; });
+
+    const canScroll = await leftPanel.evaluate(el => el.scrollHeight > el.clientHeight + 1);
+    expect(canScroll).toBe(false);
+
+    // Dispatch wheel on facilities table — should NOT be intercepted (left panel too short)
+    // so the event is not prevented and doesn't scroll left panel
+    for (let i = 0; i < 5; i++) {
+      await facilitiesTable.evaluate((el, dy) => {
+        el.dispatchEvent(new WheelEvent('wheel', {
+          deltaY: dy, deltaX: 0, bubbles: true, cancelable: true,
+        }));
+      }, 120);
+      await page.waitForTimeout(50);
+    }
+
+    // Left panel should not have scrolled
+    const leftScrollTop = await leftPanel.evaluate(el => el.scrollTop);
+    expect(leftScrollTop).toBe(0);
+
+    // Note: DOM-dispatched WheelEvents do not trigger native scroll, so we can't
+    // assert rootScrollTop > 0 here. The key assertion is that the handler does NOT
+    // redirect wheel to the left panel when it can't scroll.
+
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/pf-07-short-panel-fallthrough.png`, fullPage: true });
+  });
 });
