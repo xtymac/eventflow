@@ -281,6 +281,7 @@ export function ParkDetailPage() {
   const pageScrollRef = useRef<HTMLDivElement>(null);
   const leftInfoScrollRef = useRef<HTMLDivElement>(null);
   const mapPanelRef = useRef<HTMLDivElement>(null);
+  const topBlockRef = useRef<HTMLDivElement>(null);
 
   /** Outside the map, wheel drives the left info panel first;
    *  only after it hits its scroll boundary does the page scroll.
@@ -295,8 +296,10 @@ export function ParkDetailPage() {
       if (mapPanelRef.current?.contains(e.target as Node)) return;
       // Inside left panel → browser scrolls it naturally (then chains to page)
       if (leftInfoScrollRef.current?.contains(e.target as Node)) return;
+      // Outside top block (e.g. facilities/coverage area) → let page scroll naturally
+      if (!topBlockRef.current?.contains(e.target as Node)) return;
 
-      // Cursor is outside both left panel and map → redirect to left panel
+      // Cursor is inside top block but outside both left panel and map → redirect to left panel
       const el = leftInfoScrollRef.current;
       if (!el) return;
 
@@ -440,7 +443,7 @@ export function ParkDetailPage() {
   };
 
   return (
-    <div ref={pageScrollRef} data-testid="park-detail-scroll-root" className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden">
+    <div ref={pageScrollRef} data-testid="park-detail-scroll-root" className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden scrollbar-hidden">
       {/* Sticky breadcrumb bar */}
       <div
         className="sticky top-0 z-10 px-6 py-3"
@@ -473,11 +476,11 @@ export function ParkDetailPage() {
       <div className="p-6 w-full max-w-full overflow-x-hidden">
         <PageState loading={!usingDummy && isLoading} error={!usingDummy && isError} empty={!park} emptyMessage="公園が見つかりません">
           {park && (
-            <div className="flex flex-col gap-6">
-              {/* ═══ Two-column: Info + Map ═══ */}
-              <div className="flex gap-6 items-start">
+              <div className="flex flex-col gap-6">
+                {/* ═══ Top block: info + map side-by-side ═══ */}
+                <div ref={topBlockRef} data-testid="park-detail-top-block" className="flex gap-6 items-start">
                 {/* Left: Park info sections */}
-                <div ref={leftInfoScrollRef} data-testid="park-basic-info-scroll" className="flex-1 min-w-0 h-[calc(100vh-156px)] overflow-y-auto sticky top-[48px]">
+                <div ref={leftInfoScrollRef} data-testid="park-basic-info-scroll" className="flex-1 min-w-0 h-[calc(100vh-156px)] overflow-y-auto sticky top-[48px] scrollbar-hidden">
                   {/* 基本情報 */}
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-[#0a0a0a]">基本情報</span>
@@ -512,6 +515,7 @@ export function ParkDetailPage() {
                   <FieldRow label="防災施設" value={curatedPark?.disasterFacility} />
                   <FieldRow label="備考" value={curatedPark?.notes?.replace(/<br>/g, '\n')} multiline />
                 </div>
+                {/* end park-basic-info-scroll */}
 
                 {/* Right: Map */}
                 <div ref={mapPanelRef} data-testid="park-mini-map-panel" className="w-[45%] shrink-0 sticky top-[48px] h-[calc(100vh-156px)]">
@@ -534,10 +538,11 @@ export function ParkDetailPage() {
                     />
                   ) : null}
                 </div>
-              </div>
+                </div>
+                {/* end park-detail-top-block */}
 
               {/* ═══ Facilities section ═══ */}
-              <div className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 w-full min-w-0 max-w-full overflow-hidden">
+              <div data-testid="park-facilities-section" className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 w-full min-w-0 max-w-full overflow-hidden">
                 <p className="font-semibold text-base mb-3">施設</p>
 
                 {/* Search + filter toolbar */}
@@ -716,7 +721,7 @@ export function ParkDetailPage() {
 
               {/* ═══ Building coverage section ═══ */}
               {coverageData.length > 0 && (
-                <div className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 flex flex-col gap-2">
+                <div data-testid="park-coverage-section" className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 flex flex-col gap-2">
                   <p className="font-mono text-base font-normal text-[#171717]">公園内建ぺい率一覧</p>
                   <div className="flex flex-col gap-4">
                     {coverageData.map((cat, ci) => (
@@ -791,7 +796,7 @@ export function ParkDetailPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
           )}
         </PageState>
       </div>

@@ -15,6 +15,10 @@ async function loginAndNavigate(page: import('@playwright/test').Page, path: str
     await page.goto(path, { waitUntil: 'domcontentloaded' });
   }
   await page.waitForTimeout(1000);
+  // Reset scroll state to prevent leaking between tests
+  await page.locator('[data-testid="park-table-scroll"]').evaluate(
+    (el) => { el.scrollTop = 0; }
+  ).catch(() => {});
 }
 
 test.describe('Park List Page', () => {
@@ -30,7 +34,7 @@ test.describe('Park List Page', () => {
     await expect(headerCells.first()).toBeVisible({ timeout: 10_000 });
 
     // Should have data rows
-    const dataRows = page.locator('tbody tr');
+    const dataRows = page.locator('[data-testid="park-table-row"]');
     const rowCount = await dataRows.count();
     console.log(`  → Park list: ${rowCount} rows`);
     expect(rowCount).toBeGreaterThan(0);
@@ -64,35 +68,48 @@ test.describe('Park List Page', () => {
     await loginAndNavigate(page, '/assets/parks');
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
-    const initialRows = await page.locator('tbody tr').count();
+    const initialRows = await page.locator('[data-testid="park-table-row"]').count();
 
     // Type a search term
     const searchInput = page.locator('input[placeholder*="No"]');
     await searchInput.fill('鶴舞');
     await page.waitForTimeout(500);
 
-    const filteredRows = await page.locator('tbody tr').count();
+    const filteredRows = await page.locator('[data-testid="park-table-row"]').count();
     console.log(`  → Before filter: ${initialRows}, after: ${filteredRows}`);
     expect(filteredRows).toBeLessThan(initialRows);
 
     await page.screenshot({ path: `${SCREENSHOT_DIR}/park-list-03-search.png`, fullPage: false });
   });
 
-  test('4 - Pagination renders with numbered pages', async ({ page }) => {
+  test('4 - Infinite scroll loads all rows', async ({ page }) => {
     await loginAndNavigate(page, '/assets/parks');
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
-    // Pagination should show 前へ and 次へ buttons
-    const prevButton = page.getByRole('button', { name: '前へ' });
-    const nextButton = page.getByRole('button', { name: '次へ' });
-    await expect(prevButton).toBeVisible({ timeout: 10_000 });
-    await expect(nextButton).toBeVisible({ timeout: 10_000 });
+    // Pagination controls should NOT exist
+    await expect(page.getByRole('button', { name: '前へ' })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: '次へ' })).not.toBeVisible();
 
-    // Should have numbered page buttons
-    const pageOneButton = page.getByRole('button', { name: '1', exact: true });
-    await expect(pageOneButton).toBeVisible();
+    // Get initial visible row count
+    const rows = page.locator('[data-testid="park-table-row"]');
+    const initialCount = await rows.count();
+    console.log(`  → Initial rows: ${initialCount}`);
 
-    await page.screenshot({ path: `${SCREENSHOT_DIR}/park-list-04-pagination.png`, fullPage: false });
+    // Scroll to load all rows
+    const scrollContainer = page.locator('[data-testid="park-table-scroll"]');
+    let currentCount = initialCount;
+    for (let i = 0; i < 10 && currentCount < 18; i++) {
+      await scrollContainer.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+      await page.waitForTimeout(300);
+      const newCount = await rows.count();
+      if (newCount === currentCount) break;
+      currentCount = newCount;
+    }
+
+    console.log(`  → Final rows after scroll: ${currentCount}`);
+    expect(currentCount).toBe(18);
+
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/park-list-04-infinite-scroll.png`, fullPage: false });
   });
 
   test('5 - Row height and spacing match design', async ({ page }) => {
@@ -100,7 +117,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Check row height is ~40px (h-10)
-    const firstDataRow = page.locator('tbody tr').first();
+    const firstDataRow = page.locator('[data-testid="park-table-row"]').first();
     const rowBox = await firstDataRow.boundingBox();
     expect(rowBox).not.toBeNull();
     console.log(`  → Row height: ${rowBox!.height}px`);
@@ -127,8 +144,8 @@ test.describe('Park List Page', () => {
     const panel = page.locator('[data-testid="park-preview-panel"]');
     await expect(panel).not.toBeVisible();
 
-    // Click first data row (東山公園)
-    const firstRow = page.locator('tbody tr').first();
+    // Click first data row
+    const firstRow = page.locator('[data-testid="park-table-row"]').first();
     await firstRow.click();
     await page.waitForTimeout(500);
 
@@ -147,7 +164,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click 名城公園 row (second row)
-    const secondRow = page.locator('tbody tr').nth(1);
+    const secondRow = page.locator('[data-testid="park-table-row"]').nth(1);
     await secondRow.click();
     await page.waitForTimeout(500);
 
@@ -170,7 +187,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click first row to open panel
-    await page.locator('tbody tr').first().click();
+    await page.locator('[data-testid="park-table-row"]').first().click();
     await page.waitForTimeout(500);
 
     // Click the 公園詳細 button in the panel
@@ -193,7 +210,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click first row to open panel
-    await page.locator('tbody tr').first().click();
+    await page.locator('[data-testid="park-table-row"]').first().click();
     await page.waitForTimeout(500);
 
     const panel = page.locator('[data-testid="park-preview-panel"]');
@@ -215,7 +232,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click the CircleArrowRight icon in the first row's actions column
-    const firstRowArrow = page.locator('tbody tr').first().locator('svg.lucide-circle-arrow-right');
+    const firstRowArrow = page.locator('[data-testid="park-table-row"]').first().locator('svg.lucide-circle-arrow-right');
     await expect(firstRowArrow).toBeVisible({ timeout: 5_000 });
     await firstRowArrow.click();
     await page.waitForTimeout(1500);
@@ -233,8 +250,8 @@ test.describe('Park List Page', () => {
     await loginAndNavigate(page, '/assets/parks');
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
-    // Click 鶴舞公園 row (first row) to open panel
-    await page.locator('tbody tr').first().click();
+    // Click first row to open panel
+    await page.locator('[data-testid="park-table-row"]').first().click();
     await page.waitForTimeout(500);
 
     const panel = page.locator('[data-testid="park-preview-panel"]');
@@ -263,7 +280,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click 鶴舞公園 row (has facilities)
-    await page.locator('tbody tr', { hasText: '鶴舞公園' }).click();
+    await page.locator('[data-testid="park-table-row"]', { hasText: '鶴舞公園' }).click();
     await page.waitForTimeout(500);
 
     const panel = page.locator('[data-testid="park-preview-panel"]');
@@ -293,7 +310,7 @@ test.describe('Park List Page', () => {
     await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
 
     // Click first row to open panel
-    await page.locator('tbody tr').first().click();
+    await page.locator('[data-testid="park-table-row"]').first().click();
     await page.waitForTimeout(500);
 
     const panel = page.locator('[data-testid="park-preview-panel"]');
@@ -312,5 +329,37 @@ test.describe('Park List Page', () => {
     expect(url).toContain('/assets/facilities/');
 
     await page.screenshot({ path: `${SCREENSHOT_DIR}/park-list-13-facility-nav.png`, fullPage: false });
+  });
+
+  test('14 - Wheel falls through when table cannot scroll', async ({ page }) => {
+    await loginAndNavigate(page, '/assets/parks');
+    await expect(page.getByRole('heading', { name: '公園' })).toBeVisible({ timeout: 10_000 });
+
+    // Filter to a single result so table has no scrollable overflow
+    const searchInput = page.locator('input[placeholder*="No"]');
+    await searchInput.fill('鶴舞公園');
+    await page.waitForTimeout(500);
+
+    const rows = page.locator('[data-testid="park-table-row"]');
+    const count = await rows.count();
+    console.log(`  → Filtered rows: ${count}`);
+    expect(count).toBeLessThanOrEqual(2);
+
+    // Table scroll container should not be scrollable
+    const scrollContainer = page.locator('[data-testid="park-table-scroll"]');
+    const canScroll = await scrollContainer.evaluate(
+      (el) => el.scrollHeight > el.clientHeight + 1,
+    );
+    console.log(`  → Can scroll: ${canScroll}`);
+    expect(canScroll).toBe(false);
+
+    // Dispatch a wheel event — page should handle it (no error, no stuck state)
+    await scrollContainer.dispatchEvent('wheel', { deltaY: 120 });
+    await page.waitForTimeout(200);
+
+    // Table content should remain unchanged
+    expect(await rows.count()).toBe(count);
+
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/park-list-14-no-scroll-fallthrough.png`, fullPage: false });
   });
 });

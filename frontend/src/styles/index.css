@@ -143,6 +143,15 @@ body {
   -ms-overflow-style: none; /* IE/Edge */
 }
 
+/* Completely hidden scrollbar (still scrollable) */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 /* Timeline card hover effect */
 .timeline-card-clickable:hover {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);

@@ -130,64 +130,63 @@ test.describe('Park Facilities', () => {
     const scrollRoot = page.getByTestId('park-detail-scroll-root');
     const leftPanel = page.getByTestId('park-basic-info-scroll');
     const mapPanel = page.getByTestId('park-mini-map-panel');
-    const facilitiesTable = page.getByTestId('park-facilities-table');
 
     await expect(scrollRoot).toBeVisible({ timeout: 10_000 });
     await expect(leftPanel).toBeVisible({ timeout: 10_000 });
     await expect(mapPanel).toBeVisible({ timeout: 10_000 });
-    await expect(facilitiesTable).toBeVisible({ timeout: 10_000 });
 
     // Reset scroll positions
     await scrollRoot.evaluate(el => { el.scrollTop = 0; });
     await leftPanel.evaluate(el => { el.scrollTop = 0; });
 
+    // Force left panel to be short enough to guarantee overflow
+    // (basic info only — may not overflow at default viewport height)
+    await leftPanel.evaluate(el => {
+      el.style.height = '200px';
+      el.style.maxHeight = '200px';
+      el.style.overflowY = 'auto';
+    });
+
     // Confirm left panel is scrollable
     const canScroll = await leftPanel.evaluate(el => el.scrollHeight > el.clientHeight + 1);
     expect(canScroll).toBe(true);
 
-    // Helper: dispatch a cancelable wheel event on an element via DOM
-    async function dispatchWheel(locator: import('@playwright/test').Locator, deltaY: number) {
-      await locator.evaluate((el, dy) => {
-        el.dispatchEvent(new WheelEvent('wheel', {
-          deltaY: dy, deltaX: 0, bubbles: true, cancelable: true,
-        }));
-      }, deltaY);
-    }
-
-    // Dispatch wheel events on the facilities table (outside both panels).
-    // The handler should redirect scroll to the left panel.
+    // Hover the left panel and wheel down — left panel scrolls natively
+    await leftPanel.hover();
     for (let i = 0; i < 3; i++) {
-      await dispatchWheel(facilitiesTable, 60);
+      await page.mouse.wheel(0, 60);
       await page.waitForTimeout(80);
     }
 
-    // Left panel should have scrolled; page root should not
+    // Left panel should have scrolled
     const leftScrollTop = await leftPanel.evaluate(el => el.scrollTop);
-    const rootScrollTop = await scrollRoot.evaluate(el => el.scrollTop);
     expect(leftScrollTop).toBeGreaterThan(0);
-    expect(rootScrollTop).toBe(0);
 
-    // Scroll left panel to the very bottom
-    await leftPanel.evaluate(el => { el.scrollTop = el.scrollHeight; });
-    await page.waitForTimeout(100);
+    // Wheel handler redirects events from top block area (outside left panel and map)
+    await leftPanel.evaluate(el => { el.scrollTop = 0; });
     await scrollRoot.evaluate(el => { el.scrollTop = 0; });
 
-    // Now use real mouse wheel (trusted event) over facilities table.
-    // Left panel is at bottom, so handler returns early → native scroll on page root.
-    await facilitiesTable.hover();
-    for (let i = 0; i < 5; i++) {
-      await page.mouse.wheel(0, 120);
-      await page.waitForTimeout(80);
-    }
-    const rootScrollTopAfter = await scrollRoot.evaluate(el => el.scrollTop);
-    expect(rootScrollTopAfter).toBeGreaterThan(0);
+    // Dispatch a synthetic wheel on the top block (inside top block, outside left panel and map)
+    const topBlock = page.getByTestId('park-detail-top-block');
+    await topBlock.evaluate(el => {
+      el.dispatchEvent(new WheelEvent('wheel', {
+        deltaY: 80, deltaX: 0, bubbles: true, cancelable: true,
+      }));
+    });
+    await page.waitForTimeout(80);
+    const leftAfterRedirect = await leftPanel.evaluate(el => el.scrollTop);
+    const rootAfterRedirect = await scrollRoot.evaluate(el => el.scrollTop);
+    expect(leftAfterRedirect).toBeGreaterThan(0);
+    expect(rootAfterRedirect).toBe(0);
 
     // Dispatch wheel on map panel — left panel scrollTop should stay unchanged
     const leftScrollBefore = await leftPanel.evaluate(el => el.scrollTop);
-    for (let i = 0; i < 3; i++) {
-      await dispatchWheel(mapPanel, 120);
-      await page.waitForTimeout(80);
-    }
+    await mapPanel.evaluate(el => {
+      el.dispatchEvent(new WheelEvent('wheel', {
+        deltaY: 120, deltaX: 0, bubbles: true, cancelable: true,
+      }));
+    });
+    await page.waitForTimeout(80);
     const leftScrollAfter = await leftPanel.evaluate(el => el.scrollTop);
     expect(leftScrollAfter).toBe(leftScrollBefore);
 
@@ -201,11 +200,9 @@ test.describe('Park Facilities', () => {
 
     const scrollRoot = page.getByTestId('park-detail-scroll-root');
     const leftPanel = page.getByTestId('park-basic-info-scroll');
-    const facilitiesTable = page.getByTestId('park-facilities-table');
 
     await expect(scrollRoot).toBeVisible({ timeout: 10_000 });
     await expect(leftPanel).toBeVisible({ timeout: 10_000 });
-    await expect(facilitiesTable).toBeVisible({ timeout: 10_000 });
 
     // Make left panel tall enough that its content doesn't overflow
     await leftPanel.evaluate(el => {
@@ -217,10 +214,9 @@ test.describe('Park Facilities', () => {
     const canScroll = await leftPanel.evaluate(el => el.scrollHeight > el.clientHeight + 1);
     expect(canScroll).toBe(false);
 
-    // Dispatch wheel on facilities table — should NOT be intercepted (left panel too short)
-    // so the event is not prevented and doesn't scroll left panel
-    for (let i = 0; i < 5; i++) {
-      await facilitiesTable.evaluate((el, dy) => {
+    // Dispatch wheel on scroll root — should NOT be redirected (left panel too short)
+    for (let i = 0; i < 3; i++) {
+      await scrollRoot.evaluate((el, dy) => {
         el.dispatchEvent(new WheelEvent('wheel', {
           deltaY: dy, deltaX: 0, bubbles: true, cancelable: true,
         }));
@@ -232,10 +228,35 @@ test.describe('Park Facilities', () => {
     const leftScrollTop = await leftPanel.evaluate(el => el.scrollTop);
     expect(leftScrollTop).toBe(0);
 
-    // Note: DOM-dispatched WheelEvents do not trigger native scroll, so we can't
-    // assert rootScrollTop > 0 here. The key assertion is that the handler does NOT
-    // redirect wheel to the left panel when it can't scroll.
-
     await page.screenshot({ path: `${SCREENSHOT_DIR}/pf-07-short-panel-fallthrough.png`, fullPage: true });
+  });
+
+  test('8 - Facilities section is full-width below top block', async ({ page }) => {
+    await waitForApp(page);
+    await page.goto('/assets/parks/GS-9exy95g1', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const topBlock = page.getByTestId('park-detail-top-block');
+    const facilities = page.getByTestId('park-facilities-section');
+
+    await expect(topBlock).toBeVisible({ timeout: 10_000 });
+    await expect(facilities).toBeVisible({ timeout: 10_000 });
+
+    // Facilities section is NOT inside basic-info-scroll
+    const isInsideLeftPanel = await page.evaluate(() => {
+      const left = document.querySelector('[data-testid="park-basic-info-scroll"]');
+      const fac = document.querySelector('[data-testid="park-facilities-section"]');
+      return left?.contains(fac) ?? false;
+    });
+    expect(isInsideLeftPanel).toBe(false);
+
+    // Facilities section width should span near-full content width
+    const scrollRoot = page.getByTestId('park-detail-scroll-root');
+    const rootBox = await scrollRoot.boundingBox();
+    const facilitiesBox = await facilities.boundingBox();
+    // Facilities should use >80% of the root width (accounting for padding, scrollbars, zoom)
+    expect(facilitiesBox!.width).toBeGreaterThan(rootBox!.width * 0.8);
+
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/pf-08-full-width-facilities.png`, fullPage: true });
   });
 });
