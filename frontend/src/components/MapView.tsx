@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider } from '@mantine/core';
+import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider, ActionIcon, Tooltip } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconX, IconStack2 } from '@tabler/icons-react';
 import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON, useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
@@ -170,6 +170,8 @@ export function MapView() {
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isMapIdle, setIsMapIdle] = useState(true);
+  const [showLayerPanel, setShowLayerPanel] = useState(true);
+  const [showLegendPanel, setShowLegendPanel] = useState(true);
 
   // Viewport-based asset loading state
   const [mapBbox, setMapBbox] = useState<string | null>(null);
@@ -3975,8 +3977,8 @@ export function MapView() {
         </Paper>
       )}
 
-      {/* Layer controls — hidden for demo */}
-      {false && <Paper
+      {/* Layer controls */}
+      {showLayerPanel && <Paper
         shadow="sm"
         p="sm"
         style={{
@@ -3987,7 +3989,12 @@ export function MapView() {
           minWidth: 200,
         }}
       >
-        <Text size="sm" fw={600} mb="xs">Layers</Text>
+        <Group justify="space-between" mb="xs">
+          <Text size="sm" fw={600}>Layers</Text>
+          <ActionIcon variant="subtle" color="gray" size="xs" onClick={() => setShowLayerPanel(false)}>
+            <IconX size={14} />
+          </ActionIcon>
+        </Group>
         <Stack gap="xs">
           
           {/* Events & Activities */}
@@ -4096,8 +4103,8 @@ export function MapView() {
         </Stack>
       </Paper>}
 
-      {/* Legend — hidden for demo */}
-      {false && <Paper
+      {/* Legend */}
+      {showLegendPanel && <Paper
         shadow="sm"
         p="sm"
         style={{
@@ -4108,7 +4115,12 @@ export function MapView() {
           minWidth: 160,
         }}
       >
-        <Text size="sm" fw={600} mb="xs">Event Status</Text>
+        <Group justify="space-between" mb="xs">
+          <Text size="sm" fw={600}>Event Status</Text>
+          <ActionIcon variant="subtle" color="gray" size="xs" onClick={() => setShowLegendPanel(false)}>
+            <IconX size={14} />
+          </ActionIcon>
+        </Group>
         <Stack gap={4}>
           <Group gap="xs">
             <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.planned, borderRadius: 2 }} />
@@ -4210,6 +4222,29 @@ export function MapView() {
           </>
         )}
       </Paper>}
+
+      {/* Toggle button to reopen hidden panels */}
+      {(!showLayerPanel || !showLegendPanel) && (
+        <Tooltip label="Show map panels" position="right">
+          <ActionIcon
+            variant="white"
+            size="lg"
+            style={{
+              position: 'absolute',
+              bottom: 40,
+              left: 10,
+              zIndex: 1,
+              boxShadow: 'var(--mantine-shadow-sm)',
+            }}
+            onClick={() => {
+              setShowLayerPanel(true);
+              setShowLegendPanel(true);
+            }}
+          >
+            <IconStack2 size={18} />
+          </ActionIcon>
+        </Tooltip>
+      )}
 
       {/* Locked tooltip for selected event - stays visible */}
       {lockedEvent && lockedTooltipPosition && (
