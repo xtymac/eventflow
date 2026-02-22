@@ -121,7 +121,7 @@ Three versions are deployed on the same EC2 server with isolated services:
 |--------|---------|--------|---------|------------------|----------|
 | **v1.eventflow.uixai.org** | V1 (Frozen) | `main` (tag: v1.0.0) | Stable production baseline | `nagoya-*-v1` | `nagoya_construction_v1` |
 | **eventflow.uixai.org** | Current | `main` | Active development | `nagoya-*` | `nagoya_construction` |
-| **demo.eventflow.uixai.org** | Auth Demo | `feature/auth-role-system-demo` | Role-based access control demo | `nagoya-demo-*` | `nagoya_construction_demo` |
+| **demo.eventflow.uixai.org** | Auth Demo | `frontend` | Role-based access control demo | `nagoya-demo-*` | `nagoya_construction_demo` |
 
 **Key Features by Version:**
 - **V1**: Original feature set (frozen)
@@ -165,8 +165,8 @@ cd ~/eventflow
 
 # Checkout demo branch
 git fetch origin
-git checkout feature/auth-role-system-demo
-git pull origin feature/auth-role-system-demo
+git checkout frontend
+git pull origin frontend
 
 # Build and start demo services
 docker compose -f docker-compose.demo.yml up -d --build

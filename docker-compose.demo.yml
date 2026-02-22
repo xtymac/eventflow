@@ -1,5 +1,5 @@
 # Docker Compose for Auth Role System Demo (demo.eventflow.uixai.org)
-# This config uses the feature/auth-role-system-demo branch
+# This config uses the frontend branch
 services:
   demo-db:
     image: postgis/postgis:16-3.4

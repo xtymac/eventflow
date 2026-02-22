@@ -106,7 +106,7 @@ v1.eventflow.uixai.org {
     }
 }
 
-# Auth Role System Demo (feature/auth-role-system-demo branch)
+# Auth Role System Demo (frontend branch)
 demo.eventflow.uixai.org {
     # Static PMTiles files - serve from demo web container (long cache)
     handle /tiles/*.pmtiles {

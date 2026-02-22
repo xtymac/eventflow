@@ -60,7 +60,7 @@ ssh -i ~/.ssh/eventflow-prod-key.pem ubuntu@18.177.72.233 "bash ~/eventflow/scri
 
 ## Quick Deploy (Demo Stack)
 
-Deploy from feature branch (e.g., feature/auth-role-system-demo):
+Deploy from feature branch (e.g., frontend):
 
 ### 1. Upload changed files
 ```bash

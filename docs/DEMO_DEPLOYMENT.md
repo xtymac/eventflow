@@ -22,7 +22,7 @@ The demo showcases department-scoped authentication and role-based access contro
 |--------|---------|---------|------------|
 | `v1.eventflow.uixai.org` | V1 (Frozen) | Stable production | `main` (frozen) |
 | `eventflow.uixai.org` | Current | Active development | `main` |
-| `demo.eventflow.uixai.org` | Demo | Auth role system demo | `feature/auth-role-system-demo` |
+| `demo.eventflow.uixai.org` | Demo | Auth role system demo | `frontend` |
 
 ### Demo Services
 
@@ -48,8 +48,8 @@ cd ~/eventflow
 
 ```bash
 git fetch origin
-git checkout feature/auth-role-system-demo
-git pull origin feature/auth-role-system-demo
+git checkout frontend
+git pull origin frontend
 ```
 
 ### 3. Build and Start Demo Services
@@ -132,11 +132,11 @@ docker exec -it nagoya-demo-db psql -U postgres -d nagoya_construction_demo
 
 ## Updating Demo
 
-When the `feature/auth-role-system-demo` branch is updated:
+When the `frontend` branch is updated:
 
 ```bash
 cd ~/eventflow
-git pull origin feature/auth-role-system-demo
+git pull origin frontend
 docker compose -f docker-compose.demo.yml build
 docker compose -f docker-compose.demo.yml up -d
 ```
@@ -150,7 +150,7 @@ To push this demo to the separate repository:
 git remote add demo-repo https://github.com/eukarya-inc/urban-infrastructure-dx-platform-system-demo
 
 # Push demo branch
-git push demo-repo feature/auth-role-system-demo:main
+git push demo-repo frontend:main
 ```
 
 ## Troubleshooting
@@ -191,7 +191,7 @@ cd backend
 npm run dev
 ```
 
-The demo will use the auth role system from the `feature/auth-role-system-demo` branch.
+The demo will use the auth role system from the `frontend` branch.
 
 ## Security Notes
 

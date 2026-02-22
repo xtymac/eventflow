@@ -41,7 +41,7 @@ EC2 Server (18.177.72.233)
 | Aspect | V1 | Main | Demo |
 |--------|-----|------|------|
 | **Domain** | v1.eventflow.uixai.org | eventflow.uixai.org | demo.eventflow.uixai.org |
-| **Branch** | `main` (tag: v1.0.0) | `main` | `feature/auth-role-system-demo` |
+| **Branch** | `main` (tag: v1.0.0) | `main` | `frontend` |
 | **Status** | Frozen ❄️ | Active 🔄 | Demo 🎭 |
 | **Purpose** | Production baseline | Latest features | Auth showcase |
 | **Docker Compose** | `docker-compose.v1.yml` | `docker-compose.yml` | `docker-compose.demo.yml` |
@@ -76,13 +76,13 @@ EC2 Server (18.177.72.233)
 ```bash
 $ git branch -a
   feature/pmtiles-prerender
-* feature/auth-role-system-demo  ← YOU ARE HERE
+* frontend  ← YOU ARE HERE
   main
-  remotes/origin/feature/auth-role-system-demo
+  remotes/origin/frontend
   remotes/origin/main
 ```
 
-All demo-related commits are on `feature/auth-role-system-demo` branch.
+All demo-related commits are on `frontend` branch.
 
 ## Deployment Files
 
@@ -110,8 +110,8 @@ cd ~/eventflow
 
 # Fetch and checkout demo branch
 git fetch origin
-git checkout feature/auth-role-system-demo
-git pull origin feature/auth-role-system-demo
+git checkout frontend
+git pull origin frontend
 
 # Build and start demo services
 docker compose -f docker-compose.demo.yml up -d --build
@@ -158,7 +158,7 @@ cd ~/Business\ Dropbox/Dropbox/Project/Eukarya/Project/EventFlow/nagoya-construc
 git remote add demo-repo https://github.com/eukarya-inc/urban-infrastructure-dx-platform-system-demo
 
 # Push demo branch to demo repo's main branch
-git push demo-repo feature/auth-role-system-demo:main
+git push demo-repo frontend:main
 ```
 
 ## Monitoring
@@ -205,7 +205,7 @@ docker exec -it nagoya-demo-db psql -U postgres -d nagoya_construction_demo
 
 ## Summary of Changes
 
-### Commits on `feature/auth-role-system-demo`:
+### Commits on `frontend`:
 
 1. ✅ Auth system implementation (23 files, 2244+ insertions)
 2. ✅ Caddyfile update for demo.eventflow.uixai.org
@@ -244,5 +244,5 @@ docker restart nagoya-caddy
 ---
 
 **Status**: ✅ Ready to deploy to EC2
-**Branch**: `feature/auth-role-system-demo`
+**Branch**: `frontend`
 **Last Updated**: 2026-02-14
