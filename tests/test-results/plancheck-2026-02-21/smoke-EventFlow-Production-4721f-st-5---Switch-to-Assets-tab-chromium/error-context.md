@@ -1,0 +1,1774 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]
+        - img "EventFlow" [ref=e9]
+        - heading "EventFlow" [level=3] [ref=e10]
+      - generic [ref=e11]:
+        - generic [ref=e13]:
+          - img [ref=e15]
+          - textbox "場所を検索 / 座標入力... ⌘K" [ref=e18]
+          - generic [ref=e20]: K
+        - paragraph [ref=e22]: 「」の検索結果がありません
+      - generic [ref=e23]:
+        - button [ref=e24] [cursor=pointer]:
+          - img [ref=e26]
+        - button [ref=e31] [cursor=pointer]:
+          - img [ref=e33]
+  - navigation [ref=e36]:
+    - radiogroup [ref=e39]:
+      - generic [ref=e41]:
+        - radio "Events"
+        - generic [ref=e42] [cursor=pointer]: Events
+      - generic [ref=e43]:
+        - radio "Assets" [checked] [active]
+        - generic [ref=e44] [cursor=pointer]: Assets
+      - generic [ref=e45]:
+        - radio "Inspections"
+        - generic [ref=e46] [cursor=pointer]: Inspections
+    - generic [ref=e50]:
+      - tablist [ref=e53]:
+        - tab "Roads (381)" [selected] [ref=e54] [cursor=pointer]:
+          - img [ref=e56]
+          - generic [ref=e59]: Roads (381)
+        - tab "Green (0)" [ref=e60] [cursor=pointer]:
+          - img [ref=e62]
+          - generic [ref=e66]: Green (0)
+        - tab "Lights (0)" [ref=e67] [cursor=pointer]:
+          - img [ref=e69]
+          - generic [ref=e72]: Lights (0)
+      - tabpanel "Roads (381)" [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e76]:
+            - img [ref=e78]
+            - textbox "Search by name or ID..." [ref=e81]
+          - button "Filters" [ref=e82] [cursor=pointer]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - img [ref=e85]
+                - paragraph [ref=e87]: Filters
+              - img [ref=e88]
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - paragraph [ref=e92]: Road Type
+              - generic [ref=e93]:
+                - generic [ref=e96] [cursor=pointer]: Arterial
+                - generic [ref=e99] [cursor=pointer]: Collector
+                - generic [ref=e102] [cursor=pointer]: Local
+            - generic [ref=e103]:
+              - paragraph [ref=e104]: Status
+              - generic [ref=e105]:
+                - generic [ref=e108] [cursor=pointer]: Active
+                - generic [ref=e111] [cursor=pointer]: Inactive
+            - generic [ref=e112]:
+              - paragraph [ref=e113]: Ward
+              - generic [ref=e114]:
+                - generic [ref=e117] [cursor=pointer]: Atsuta-ku
+                - generic [ref=e120] [cursor=pointer]: Chikusa-ku
+                - generic [ref=e123] [cursor=pointer]: Higashi-ku
+                - generic [ref=e126] [cursor=pointer]: Kita-ku
+                - generic [ref=e129] [cursor=pointer]: Meito-ku
+                - generic [ref=e132] [cursor=pointer]: Midori-ku
+                - generic [ref=e135] [cursor=pointer]: Minami-ku
+                - generic [ref=e138] [cursor=pointer]: Minato-ku
+                - generic [ref=e141] [cursor=pointer]: Mizuho-ku
+                - generic [ref=e144] [cursor=pointer]: Moriyama-ku
+                - generic [ref=e147] [cursor=pointer]: Naka-ku
+                - generic [ref=e150] [cursor=pointer]: Nakagawa-ku
+                - generic [ref=e153] [cursor=pointer]: Nakamura-ku
+                - generic [ref=e156] [cursor=pointer]: Nishi-ku
+                - generic [ref=e159] [cursor=pointer]: Showa-ku
+                - generic [ref=e162] [cursor=pointer]: Tempaku-ku
+            - generic [ref=e163]:
+              - paragraph [ref=e164]: Special
+              - generic [ref=e168] [cursor=pointer]: Unnamed Only
+          - generic [ref=e169]:
+            - generic [ref=e172] [cursor=pointer]:
+              - generic [ref=e173]:
+                - paragraph [ref=e174]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e176]: Local
+              - generic [ref=e177]:
+                - generic [ref=e179]: active
+                - generic [ref=e181]: 2 lanes
+              - paragraph [ref=e182]: "ID: RA-OSM-1332472294"
+            - generic [ref=e185] [cursor=pointer]:
+              - generic [ref=e186]:
+                - paragraph [ref=e187]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e189]: Arterial
+              - generic [ref=e190]:
+                - generic [ref=e192]: active
+                - generic [ref=e194]: 3 lanes
+              - paragraph [ref=e195]: "ID: RA-OSM-1253674706"
+            - generic [ref=e198] [cursor=pointer]:
+              - generic [ref=e199]:
+                - paragraph [ref=e200]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e202]: Local
+              - generic [ref=e203]:
+                - generic [ref=e205]: active
+                - generic [ref=e207]: 2 lanes
+              - paragraph [ref=e208]: "ID: RA-OSM-1332472295"
+            - generic [ref=e211] [cursor=pointer]:
+              - generic [ref=e212]:
+                - paragraph [ref=e213]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e215]: Arterial
+              - generic [ref=e216]:
+                - generic [ref=e218]: active
+                - generic [ref=e220]: 3 lanes
+              - paragraph [ref=e221]: "ID: RA-OSM-1250257963"
+            - generic [ref=e224] [cursor=pointer]:
+              - generic [ref=e225]:
+                - paragraph [ref=e226]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e228]: Local
+              - generic [ref=e229]:
+                - generic [ref=e231]: active
+                - generic [ref=e233]: 2 lanes
+              - paragraph [ref=e234]: "ID: RA-OSM-1332472296"
+            - generic [ref=e237] [cursor=pointer]:
+              - generic [ref=e238]:
+                - paragraph [ref=e239]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e241]: Local
+              - generic [ref=e242]:
+                - generic [ref=e244]: active
+                - generic [ref=e246]: 2 lanes
+              - paragraph [ref=e247]: "ID: RA-OSM-1316161098"
+            - generic [ref=e250] [cursor=pointer]:
+              - generic [ref=e251]:
+                - paragraph [ref=e252]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e254]: Local
+              - generic [ref=e255]:
+                - generic [ref=e257]: active
+                - generic [ref=e259]: 2 lanes
+              - paragraph [ref=e260]: "ID: RA-OSM-1332472297"
+            - generic [ref=e263] [cursor=pointer]:
+              - generic [ref=e264]:
+                - paragraph [ref=e265]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e267]: Arterial
+              - generic [ref=e268]:
+                - generic [ref=e270]: active
+                - generic [ref=e272]: 2 lanes
+              - paragraph [ref=e273]: "ID: RA-OSM-1250739397"
+            - generic [ref=e276] [cursor=pointer]:
+              - generic [ref=e277]:
+                - paragraph [ref=e278]: 環状線 (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e280]: Arterial
+              - generic [ref=e281]:
+                - generic [ref=e283]: active
+                - generic [ref=e285]: 3 lanes
+              - paragraph [ref=e286]: "ID: RA-OSM-1250257956"
+            - generic [ref=e289] [cursor=pointer]:
+              - generic [ref=e290]:
+                - paragraph [ref=e291]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e293]: Arterial
+              - generic [ref=e294]:
+                - generic [ref=e296]: active
+                - generic [ref=e298]: 2 lanes
+              - paragraph [ref=e299]: "ID: RA-OSM-1250739404"
+            - generic [ref=e302] [cursor=pointer]:
+              - generic [ref=e303]:
+                - paragraph [ref=e304]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e306]: Arterial
+              - generic [ref=e307]:
+                - generic [ref=e309]: active
+                - generic [ref=e311]: 2 lanes
+              - paragraph [ref=e312]: "ID: RA-OSM-1250715445"
+            - generic [ref=e315] [cursor=pointer]:
+              - generic [ref=e316]:
+                - paragraph [ref=e317]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e319]: Local
+              - generic [ref=e320]:
+                - generic [ref=e322]: active
+                - generic [ref=e324]: 2 lanes
+              - paragraph [ref=e325]: "ID: RA-OSM-1253677499"
+            - generic [ref=e328] [cursor=pointer]:
+              - generic [ref=e329]:
+                - paragraph [ref=e330]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e332]: Local
+              - generic [ref=e333]:
+                - generic [ref=e335]: active
+                - generic [ref=e337]: 2 lanes
+              - paragraph [ref=e338]: "ID: RA-OSM-1316161099"
+            - generic [ref=e341] [cursor=pointer]:
+              - generic [ref=e342]:
+                - paragraph [ref=e343]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e345]: Local
+              - generic [ref=e346]:
+                - generic [ref=e348]: active
+                - generic [ref=e350]: 2 lanes
+              - paragraph [ref=e351]: "ID: RA-OSM-1253677508"
+            - generic [ref=e354] [cursor=pointer]:
+              - generic [ref=e355]:
+                - paragraph [ref=e356]: 環状線 (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e358]: Arterial
+              - generic [ref=e359]:
+                - generic [ref=e361]: active
+                - generic [ref=e363]: 3 lanes
+              - paragraph [ref=e364]: "ID: RA-OSM-1253674707"
+            - generic [ref=e367] [cursor=pointer]:
+              - generic [ref=e368]:
+                - paragraph [ref=e369]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e371]: Local
+              - generic [ref=e372]:
+                - generic [ref=e374]: active
+                - generic [ref=e376]: 2 lanes
+              - paragraph [ref=e377]: "ID: RA-OSM-147612422"
+            - generic [ref=e380] [cursor=pointer]:
+              - generic [ref=e381]:
+                - paragraph [ref=e382]: tertiary road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e384]: Collector
+              - generic [ref=e385]:
+                - generic [ref=e387]: active
+                - generic [ref=e389]: 2 lanes
+              - paragraph [ref=e390]: "ID: RA-OSM-1250257962"
+            - generic [ref=e393] [cursor=pointer]:
+              - generic [ref=e394]:
+                - paragraph [ref=e395]: tertiary road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e397]: Collector
+              - generic [ref=e398]:
+                - generic [ref=e400]: active
+                - generic [ref=e402]: 2 lanes
+              - paragraph [ref=e403]: "ID: RA-OSM-1250257961"
+            - generic [ref=e406] [cursor=pointer]:
+              - generic [ref=e407]:
+                - paragraph [ref=e408]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e410]: Local
+              - generic [ref=e411]:
+                - generic [ref=e413]: active
+                - generic [ref=e415]: 2 lanes
+              - paragraph [ref=e416]: "ID: RA-OSM-147612409"
+            - generic [ref=e419] [cursor=pointer]:
+              - generic [ref=e420]:
+                - paragraph [ref=e421]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e423]: Arterial
+              - generic [ref=e424]:
+                - generic [ref=e426]: active
+                - generic [ref=e428]: 3 lanes
+              - paragraph [ref=e429]: "ID: RA-OSM-1250739406"
+            - generic [ref=e432] [cursor=pointer]:
+              - generic [ref=e433]:
+                - paragraph [ref=e434]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e436]: Local
+              - generic [ref=e437]:
+                - generic [ref=e439]: active
+                - generic [ref=e441]: 2 lanes
+              - paragraph [ref=e442]: "ID: RA-OSM-196750785"
+            - generic [ref=e445] [cursor=pointer]:
+              - generic [ref=e446]:
+                - paragraph [ref=e447]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e449]: Local
+              - generic [ref=e450]:
+                - generic [ref=e452]: active
+                - generic [ref=e454]: 2 lanes
+              - paragraph [ref=e455]: "ID: RA-OSM-147612426"
+            - generic [ref=e458] [cursor=pointer]:
+              - generic [ref=e459]:
+                - paragraph [ref=e460]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e462]: Local
+              - generic [ref=e463]:
+                - generic [ref=e465]: active
+                - generic [ref=e467]: 2 lanes
+              - paragraph [ref=e468]: "ID: RA-OSM-1250257958"
+            - generic [ref=e471] [cursor=pointer]:
+              - generic [ref=e472]:
+                - paragraph [ref=e473]: tertiary road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e475]: Collector
+              - generic [ref=e476]:
+                - generic [ref=e478]: active
+                - generic [ref=e480]: 2 lanes
+              - paragraph [ref=e481]: "ID: RA-OSM-147612432"
+            - generic [ref=e484] [cursor=pointer]:
+              - generic [ref=e485]:
+                - paragraph [ref=e486]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e488]: Local
+              - generic [ref=e489]:
+                - generic [ref=e491]: active
+                - generic [ref=e493]: 2 lanes
+              - paragraph [ref=e494]: "ID: RA-OSM-147612456"
+            - generic [ref=e497] [cursor=pointer]:
+              - generic [ref=e498]:
+                - paragraph [ref=e499]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e501]: Arterial
+              - generic [ref=e502]:
+                - generic [ref=e504]: active
+                - generic [ref=e506]: 4 lanes
+              - paragraph [ref=e507]: "ID: RA-OSM-1253531013"
+            - generic [ref=e510] [cursor=pointer]:
+              - generic [ref=e511]:
+                - paragraph [ref=e512]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e514]: Local
+              - generic [ref=e515]:
+                - generic [ref=e517]: active
+                - generic [ref=e519]: 2 lanes
+              - paragraph [ref=e520]: "ID: RA-OSM-147612474"
+            - generic [ref=e523] [cursor=pointer]:
+              - generic [ref=e524]:
+                - paragraph [ref=e525]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e527]: Local
+              - generic [ref=e528]:
+                - generic [ref=e530]: active
+                - generic [ref=e532]: 2 lanes
+              - paragraph [ref=e533]: "ID: RA-OSM-147612477"
+            - generic [ref=e536] [cursor=pointer]:
+              - generic [ref=e537]:
+                - paragraph [ref=e538]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e540]: Collector
+              - generic [ref=e541]:
+                - generic [ref=e543]: active
+                - generic [ref=e545]: 2 lanes
+              - paragraph [ref=e546]: "ID: RA-OSM-279771041"
+            - generic [ref=e549] [cursor=pointer]:
+              - generic [ref=e550]:
+                - paragraph [ref=e551]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e553]: Local
+              - generic [ref=e554]:
+                - generic [ref=e556]: active
+                - generic [ref=e558]: 2 lanes
+              - paragraph [ref=e559]: "ID: RA-OSM-1250257959"
+            - generic [ref=e562] [cursor=pointer]:
+              - generic [ref=e563]:
+                - paragraph [ref=e564]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e566]: Local
+              - generic [ref=e567]:
+                - generic [ref=e569]: active
+                - generic [ref=e571]: 2 lanes
+              - paragraph [ref=e572]: "ID: RA-OSM-1250257957"
+            - generic [ref=e575] [cursor=pointer]:
+              - generic [ref=e576]:
+                - paragraph [ref=e577]: 2号道路 (B574)
+                - generic [ref=e579]: Collector
+              - generic [ref=e580]:
+                - generic [ref=e582]: active
+                - generic [ref=e584]: 2 lanes
+              - paragraph [ref=e585]: "ID: RA-NDR-2gou-708"
+            - generic [ref=e588] [cursor=pointer]:
+              - generic [ref=e589]:
+                - paragraph [ref=e590]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e592]: Local
+              - generic [ref=e593]:
+                - generic [ref=e595]: active
+                - generic [ref=e597]: 2 lanes
+              - paragraph [ref=e598]: "ID: RA-OSM-1250257960"
+            - generic [ref=e601] [cursor=pointer]:
+              - generic [ref=e602]:
+                - paragraph [ref=e603]: "特定通路3号 #104"
+                - generic [ref=e605]: Local
+              - generic [ref=e606]:
+                - generic [ref=e608]: active
+                - generic [ref=e610]: 2 lanes
+              - paragraph [ref=e611]: "ID: RA-NDR-tokute-104"
+            - generic [ref=e614] [cursor=pointer]:
+              - generic [ref=e615]:
+                - paragraph [ref=e616]: "2項建築線 #53"
+                - generic [ref=e618]: Local
+              - generic [ref=e619]:
+                - generic [ref=e621]: active
+                - generic [ref=e623]: 2 lanes
+              - paragraph [ref=e624]: "ID: RA-NDR-2kou_k-53"
+            - generic [ref=e627] [cursor=pointer]:
+              - generic [ref=e628]:
+                - paragraph [ref=e629]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e631]: Local
+              - generic [ref=e632]:
+                - generic [ref=e634]: active
+                - generic [ref=e636]: 2 lanes
+              - paragraph [ref=e637]: "ID: RA-OSM-279771043"
+            - generic [ref=e640] [cursor=pointer]:
+              - generic [ref=e641]:
+                - paragraph [ref=e642]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e644]: Collector
+              - generic [ref=e645]:
+                - generic [ref=e647]: active
+                - generic [ref=e649]: 2 lanes
+              - paragraph [ref=e650]: "ID: RA-OSM-26159692"
+            - generic [ref=e653] [cursor=pointer]:
+              - generic [ref=e654]:
+                - paragraph [ref=e655]: "特定通路3号 #277"
+                - generic [ref=e657]: Local
+              - generic [ref=e658]:
+                - generic [ref=e660]: active
+                - generic [ref=e662]: 2 lanes
+              - paragraph [ref=e663]: "ID: RA-NDR-tokute-277"
+            - generic [ref=e666] [cursor=pointer]:
+              - generic [ref=e667]:
+                - paragraph [ref=e668]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e670]: Arterial
+              - generic [ref=e671]:
+                - generic [ref=e673]: active
+                - generic [ref=e675]: 2 lanes
+              - paragraph [ref=e676]: "ID: RA-OSM-1253674708"
+            - generic [ref=e679] [cursor=pointer]:
+              - generic [ref=e680]:
+                - paragraph [ref=e681]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e683]: Local
+              - generic [ref=e684]:
+                - generic [ref=e686]: active
+                - generic [ref=e688]: 2 lanes
+              - paragraph [ref=e689]: "ID: RA-OSM-279771044"
+            - generic [ref=e692] [cursor=pointer]:
+              - generic [ref=e693]:
+                - paragraph [ref=e694]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e696]: Local
+              - generic [ref=e697]:
+                - generic [ref=e699]: active
+                - generic [ref=e701]: 2 lanes
+              - paragraph [ref=e702]: "ID: RA-OSM-147612467"
+            - generic [ref=e705] [cursor=pointer]:
+              - generic [ref=e706]:
+                - paragraph [ref=e707]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e709]: Collector
+              - generic [ref=e710]:
+                - generic [ref=e712]: active
+                - generic [ref=e714]: 2 lanes
+              - paragraph [ref=e715]: "ID: RA-OSM-1253531014"
+            - generic [ref=e718] [cursor=pointer]:
+              - generic [ref=e719]:
+                - paragraph [ref=e720]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e722]: Local
+              - generic [ref=e723]:
+                - generic [ref=e725]: active
+                - generic [ref=e727]: 2 lanes
+              - paragraph [ref=e728]: "ID: RA-OSM-1302203877"
+            - generic [ref=e731] [cursor=pointer]:
+              - generic [ref=e732]:
+                - paragraph [ref=e733]: "特定通路3号 #392"
+                - generic [ref=e735]: Local
+              - generic [ref=e736]:
+                - generic [ref=e738]: active
+                - generic [ref=e740]: 2 lanes
+              - paragraph [ref=e741]: "ID: RA-NDR-tokute-392"
+            - generic [ref=e744] [cursor=pointer]:
+              - generic [ref=e745]:
+                - paragraph [ref=e746]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e748]: Local
+              - generic [ref=e749]:
+                - generic [ref=e751]: active
+                - generic [ref=e753]: 2 lanes
+              - paragraph [ref=e754]: "ID: RA-OSM-196750790"
+            - generic [ref=e757] [cursor=pointer]:
+              - generic [ref=e758]:
+                - paragraph [ref=e759]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e761]: Local
+              - generic [ref=e762]:
+                - generic [ref=e764]: active
+                - generic [ref=e766]: 2 lanes
+              - paragraph [ref=e767]: "ID: RA-OSM-1257760055"
+            - generic [ref=e770] [cursor=pointer]:
+              - generic [ref=e771]:
+                - paragraph [ref=e772]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e774]: Local
+              - generic [ref=e775]:
+                - generic [ref=e777]: active
+                - generic [ref=e779]: 2 lanes
+              - paragraph [ref=e780]: "ID: RA-OSM-147612468"
+            - generic [ref=e783] [cursor=pointer]:
+              - generic [ref=e784]:
+                - paragraph [ref=e785]: "2項建築線 #52"
+                - generic [ref=e787]: Local
+              - generic [ref=e788]:
+                - generic [ref=e790]: active
+                - generic [ref=e792]: 2 lanes
+              - paragraph [ref=e793]: "ID: RA-NDR-2kou_k-52"
+            - generic [ref=e796] [cursor=pointer]:
+              - generic [ref=e797]:
+                - paragraph [ref=e798]: unclassified road (Showa-ku) · Showa-ku
+                - generic [ref=e800]: Local
+              - generic [ref=e801]:
+                - generic [ref=e803]: active
+                - generic [ref=e805]: 2 lanes
+              - paragraph [ref=e806]: "ID: RA-OSM-26159690"
+            - generic [ref=e809] [cursor=pointer]:
+              - generic [ref=e810]:
+                - paragraph [ref=e811]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e813]: Collector
+              - generic [ref=e814]:
+                - generic [ref=e816]: active
+                - generic [ref=e818]: 2 lanes
+              - paragraph [ref=e819]: "ID: RA-OSM-1253853029"
+            - generic [ref=e822] [cursor=pointer]:
+              - generic [ref=e823]:
+                - paragraph [ref=e824]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e826]: Local
+              - generic [ref=e827]:
+                - generic [ref=e829]: active
+                - generic [ref=e831]: 2 lanes
+              - paragraph [ref=e832]: "ID: RA-OSM-1257760061"
+            - generic [ref=e835] [cursor=pointer]:
+              - generic [ref=e836]:
+                - paragraph [ref=e837]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e839]: Local
+              - generic [ref=e840]:
+                - generic [ref=e842]: active
+                - generic [ref=e844]: 2 lanes
+              - paragraph [ref=e845]: "ID: RA-OSM-1210928559"
+            - generic [ref=e848] [cursor=pointer]:
+              - generic [ref=e849]:
+                - paragraph [ref=e850]: "2項建築線 #51"
+                - generic [ref=e852]: Local
+              - generic [ref=e853]:
+                - generic [ref=e855]: active
+                - generic [ref=e857]: 2 lanes
+              - paragraph [ref=e858]: "ID: RA-NDR-2kou_k-51"
+            - generic [ref=e861] [cursor=pointer]:
+              - generic [ref=e862]:
+                - paragraph [ref=e863]: 塩付通 (Showa-ku) · Showa-ku
+                - generic [ref=e865]: Collector
+              - generic [ref=e866]:
+                - generic [ref=e868]: active
+                - generic [ref=e870]: 2 lanes
+              - paragraph [ref=e871]: "ID: RA-OSM-1253853028"
+            - generic [ref=e874] [cursor=pointer]:
+              - generic [ref=e875]:
+                - paragraph [ref=e876]: 環状線 (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e878]: Arterial
+              - generic [ref=e879]:
+                - generic [ref=e881]: active
+                - generic [ref=e883]: 3 lanes
+              - paragraph [ref=e884]: "ID: RA-OSM-1253551265"
+            - generic [ref=e887] [cursor=pointer]:
+              - generic [ref=e888]:
+                - paragraph [ref=e889]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e891]: Local
+              - generic [ref=e892]:
+                - generic [ref=e894]: active
+                - generic [ref=e896]: 2 lanes
+              - paragraph [ref=e897]: "ID: RA-OSM-147612485"
+            - generic [ref=e900] [cursor=pointer]:
+              - generic [ref=e901]:
+                - paragraph [ref=e902]: tertiary road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e904]: Collector
+              - generic [ref=e905]:
+                - generic [ref=e907]: active
+                - generic [ref=e909]: 2 lanes
+              - paragraph [ref=e910]: "ID: RA-OSM-122790409"
+            - generic [ref=e913] [cursor=pointer]:
+              - generic [ref=e914]:
+                - paragraph [ref=e915]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e917]: Local
+              - generic [ref=e918]:
+                - generic [ref=e920]: active
+                - generic [ref=e922]: 2 lanes
+              - paragraph [ref=e923]: "ID: RA-OSM-100462083"
+            - generic [ref=e926] [cursor=pointer]:
+              - generic [ref=e927]:
+                - paragraph [ref=e928]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e930]: Local
+              - generic [ref=e931]:
+                - generic [ref=e933]: active
+                - generic [ref=e935]: 2 lanes
+              - paragraph [ref=e936]: "ID: RA-OSM-196750789"
+            - generic [ref=e939] [cursor=pointer]:
+              - generic [ref=e940]:
+                - paragraph [ref=e941]: service road (Showa-ku) · Showa-ku
+                - generic [ref=e943]: Local
+              - generic [ref=e944]:
+                - generic [ref=e946]: active
+                - generic [ref=e948]: 2 lanes
+              - paragraph [ref=e949]: "ID: RA-OSM-196731144"
+            - generic [ref=e952] [cursor=pointer]:
+              - generic [ref=e953]:
+                - paragraph [ref=e954]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e956]: Local
+              - generic [ref=e957]:
+                - generic [ref=e959]: active
+                - generic [ref=e961]: 2 lanes
+              - paragraph [ref=e962]: "ID: RA-OSM-231220379"
+            - generic [ref=e965] [cursor=pointer]:
+              - generic [ref=e966]:
+                - paragraph [ref=e967]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e969]: Local
+              - generic [ref=e970]:
+                - generic [ref=e972]: active
+                - generic [ref=e974]: 2 lanes
+              - paragraph [ref=e975]: "ID: RA-OSM-26159691"
+            - generic [ref=e978] [cursor=pointer]:
+              - generic [ref=e979]:
+                - paragraph [ref=e980]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e982]: Local
+              - generic [ref=e983]:
+                - generic [ref=e985]: active
+                - generic [ref=e987]: 2 lanes
+              - paragraph [ref=e988]: "ID: RA-OSM-196750791"
+            - generic [ref=e991] [cursor=pointer]:
+              - generic [ref=e992]:
+                - paragraph [ref=e993]: "特定通路3号 #103"
+                - generic [ref=e995]: Local
+              - generic [ref=e996]:
+                - generic [ref=e998]: active
+                - generic [ref=e1000]: 2 lanes
+              - paragraph [ref=e1001]: "ID: RA-NDR-tokute-103"
+            - generic [ref=e1004] [cursor=pointer]:
+              - generic [ref=e1005]:
+                - paragraph [ref=e1006]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1008]: Local
+              - generic [ref=e1009]:
+                - generic [ref=e1011]: active
+                - generic [ref=e1013]: 2 lanes
+              - paragraph [ref=e1014]: "ID: RA-OSM-147612440"
+            - generic [ref=e1017] [cursor=pointer]:
+              - generic [ref=e1018]:
+                - paragraph [ref=e1019]: unclassified road (Showa-ku) · Showa-ku
+                - generic [ref=e1021]: Local
+              - generic [ref=e1022]:
+                - generic [ref=e1024]: active
+                - generic [ref=e1026]: 2 lanes
+              - paragraph [ref=e1027]: "ID: RA-OSM-1133130364"
+            - generic [ref=e1030] [cursor=pointer]:
+              - generic [ref=e1031]:
+                - paragraph [ref=e1032]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1034]: Local
+              - generic [ref=e1035]:
+                - generic [ref=e1037]: active
+                - generic [ref=e1039]: 2 lanes
+              - paragraph [ref=e1040]: "ID: RA-OSM-147612413"
+            - generic [ref=e1043] [cursor=pointer]:
+              - generic [ref=e1044]:
+                - paragraph [ref=e1045]: 5号道路 (G132)
+                - generic [ref=e1047]: Local
+              - generic [ref=e1048]:
+                - generic [ref=e1050]: active
+                - generic [ref=e1052]: 2 lanes
+              - paragraph [ref=e1053]: "ID: RA-NDR-5gou-1016"
+            - generic [ref=e1056] [cursor=pointer]:
+              - generic [ref=e1057]:
+                - paragraph [ref=e1058]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e1060]: Collector
+              - generic [ref=e1061]:
+                - generic [ref=e1063]: active
+                - generic [ref=e1065]: 2 lanes
+              - paragraph [ref=e1066]: "ID: RA-OSM-26159892"
+            - generic [ref=e1069] [cursor=pointer]:
+              - generic [ref=e1070]:
+                - paragraph [ref=e1071]: 5号道路 (F858)
+                - generic [ref=e1073]: Local
+              - generic [ref=e1074]:
+                - generic [ref=e1076]: active
+                - generic [ref=e1078]: 2 lanes
+              - paragraph [ref=e1079]: "ID: RA-NDR-5gou-303"
+            - generic [ref=e1082] [cursor=pointer]:
+              - generic [ref=e1083]:
+                - paragraph [ref=e1084]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1086]: Local
+              - generic [ref=e1087]:
+                - generic [ref=e1089]: active
+                - generic [ref=e1091]: 2 lanes
+              - paragraph [ref=e1092]: "ID: RA-OSM-100462093"
+            - generic [ref=e1095] [cursor=pointer]:
+              - generic [ref=e1096]:
+                - paragraph [ref=e1097]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1099]: Local
+              - generic [ref=e1100]:
+                - generic [ref=e1102]: active
+                - generic [ref=e1104]: 2 lanes
+              - paragraph [ref=e1105]: "ID: RA-OSM-196750787"
+            - generic [ref=e1108] [cursor=pointer]:
+              - generic [ref=e1109]:
+                - paragraph [ref=e1110]: "特定通路3号 #390"
+                - generic [ref=e1112]: Local
+              - generic [ref=e1113]:
+                - generic [ref=e1115]: active
+                - generic [ref=e1117]: 2 lanes
+              - paragraph [ref=e1118]: "ID: RA-NDR-tokute-390"
+            - generic [ref=e1121] [cursor=pointer]:
+              - generic [ref=e1122]:
+                - paragraph [ref=e1123]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1125]: Local
+              - generic [ref=e1126]:
+                - generic [ref=e1128]: active
+                - generic [ref=e1130]: 2 lanes
+              - paragraph [ref=e1131]: "ID: RA-OSM-196750786"
+            - generic [ref=e1134] [cursor=pointer]:
+              - generic [ref=e1135]:
+                - paragraph [ref=e1136]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1138]: Local
+              - generic [ref=e1139]:
+                - generic [ref=e1141]: active
+                - generic [ref=e1143]: 2 lanes
+              - paragraph [ref=e1144]: "ID: RA-OSM-147612478"
+            - generic [ref=e1147] [cursor=pointer]:
+              - generic [ref=e1148]:
+                - paragraph [ref=e1149]: 5号道路 (F1577)
+                - generic [ref=e1151]: Local
+              - generic [ref=e1152]:
+                - generic [ref=e1154]: active
+                - generic [ref=e1156]: 2 lanes
+              - paragraph [ref=e1157]: "ID: RA-NDR-5gou-909"
+            - generic [ref=e1160] [cursor=pointer]:
+              - generic [ref=e1161]:
+                - paragraph [ref=e1162]: "特定通路3号 #107"
+                - generic [ref=e1164]: Local
+              - generic [ref=e1165]:
+                - generic [ref=e1167]: active
+                - generic [ref=e1169]: 2 lanes
+              - paragraph [ref=e1170]: "ID: RA-NDR-tokute-107"
+            - generic [ref=e1173] [cursor=pointer]:
+              - generic [ref=e1174]:
+                - paragraph [ref=e1175]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1177]: Local
+              - generic [ref=e1178]:
+                - generic [ref=e1180]: active
+                - generic [ref=e1182]: 2 lanes
+              - paragraph [ref=e1183]: "ID: RA-OSM-1248164467"
+            - generic [ref=e1186] [cursor=pointer]:
+              - generic [ref=e1187]:
+                - paragraph [ref=e1188]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1190]: Local
+              - generic [ref=e1191]:
+                - generic [ref=e1193]: active
+                - generic [ref=e1195]: 2 lanes
+              - paragraph [ref=e1196]: "ID: RA-OSM-147612444"
+            - generic [ref=e1199] [cursor=pointer]:
+              - generic [ref=e1200]:
+                - paragraph [ref=e1201]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1203]: Local
+              - generic [ref=e1204]:
+                - generic [ref=e1206]: active
+                - generic [ref=e1208]: 2 lanes
+              - paragraph [ref=e1209]: "ID: RA-OSM-100462092"
+            - generic [ref=e1212] [cursor=pointer]:
+              - generic [ref=e1213]:
+                - paragraph [ref=e1214]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1216]: Local
+              - generic [ref=e1217]:
+                - generic [ref=e1219]: active
+                - generic [ref=e1221]: 2 lanes
+              - paragraph [ref=e1222]: "ID: RA-OSM-147612412"
+            - generic [ref=e1225] [cursor=pointer]:
+              - generic [ref=e1226]:
+                - paragraph [ref=e1227]: 2号道路 (B613)
+                - generic [ref=e1229]: Collector
+              - generic [ref=e1230]:
+                - generic [ref=e1232]: active
+                - generic [ref=e1234]: 2 lanes
+              - paragraph [ref=e1235]: "ID: RA-NDR-2gou-787"
+            - generic [ref=e1238] [cursor=pointer]:
+              - generic [ref=e1239]:
+                - paragraph [ref=e1240]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1242]: Local
+              - generic [ref=e1243]:
+                - generic [ref=e1245]: active
+                - generic [ref=e1247]: 2 lanes
+              - paragraph [ref=e1248]: "ID: RA-OSM-147612537"
+            - generic [ref=e1251] [cursor=pointer]:
+              - generic [ref=e1252]:
+                - paragraph [ref=e1253]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1255]: Local
+              - generic [ref=e1256]:
+                - generic [ref=e1258]: active
+                - generic [ref=e1260]: 2 lanes
+              - paragraph [ref=e1261]: "ID: RA-OSM-1247545303"
+            - generic [ref=e1264] [cursor=pointer]:
+              - generic [ref=e1265]:
+                - paragraph [ref=e1266]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1268]: Local
+              - generic [ref=e1269]:
+                - generic [ref=e1271]: active
+                - generic [ref=e1273]: 2 lanes
+              - paragraph [ref=e1274]: "ID: RA-OSM-1133130366"
+            - generic [ref=e1277] [cursor=pointer]:
+              - generic [ref=e1278]:
+                - paragraph [ref=e1279]: unclassified road (Showa-ku) · Showa-ku
+                - generic [ref=e1281]: Local
+              - generic [ref=e1282]:
+                - generic [ref=e1284]: active
+                - generic [ref=e1286]: 2 lanes
+              - paragraph [ref=e1287]: "ID: RA-OSM-196722808"
+            - generic [ref=e1290] [cursor=pointer]:
+              - generic [ref=e1291]:
+                - paragraph [ref=e1292]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1294]: Local
+              - generic [ref=e1295]:
+                - generic [ref=e1297]: active
+                - generic [ref=e1299]: 2 lanes
+              - paragraph [ref=e1300]: "ID: RA-OSM-231220378"
+            - generic [ref=e1303] [cursor=pointer]:
+              - generic [ref=e1304]:
+                - paragraph [ref=e1305]: 2号道路 (B394)
+                - generic [ref=e1307]: Collector
+              - generic [ref=e1308]:
+                - generic [ref=e1310]: active
+                - generic [ref=e1312]: 2 lanes
+              - paragraph [ref=e1313]: "ID: RA-NDR-2gou-237"
+            - generic [ref=e1316] [cursor=pointer]:
+              - generic [ref=e1317]:
+                - paragraph [ref=e1318]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1320]: Local
+              - generic [ref=e1321]:
+                - generic [ref=e1323]: active
+                - generic [ref=e1325]: 2 lanes
+              - paragraph [ref=e1326]: "ID: RA-OSM-147612529"
+            - generic [ref=e1329] [cursor=pointer]:
+              - generic [ref=e1330]:
+                - paragraph [ref=e1331]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1333]: Local
+              - generic [ref=e1334]:
+                - generic [ref=e1336]: active
+                - generic [ref=e1338]: 2 lanes
+              - paragraph [ref=e1339]: "ID: RA-OSM-147612530"
+            - generic [ref=e1342] [cursor=pointer]:
+              - generic [ref=e1343]:
+                - paragraph [ref=e1344]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1346]: Local
+              - generic [ref=e1347]:
+                - generic [ref=e1349]: active
+                - generic [ref=e1351]: 2 lanes
+              - paragraph [ref=e1352]: "ID: RA-OSM-1247545304"
+            - generic [ref=e1355] [cursor=pointer]:
+              - generic [ref=e1356]:
+                - paragraph [ref=e1357]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1359]: Local
+              - generic [ref=e1360]:
+                - generic [ref=e1362]: active
+                - generic [ref=e1364]: 2 lanes
+              - paragraph [ref=e1365]: "ID: RA-OSM-1302203874"
+            - generic [ref=e1368] [cursor=pointer]:
+              - generic [ref=e1369]:
+                - paragraph [ref=e1370]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1372]: Local
+              - generic [ref=e1373]:
+                - generic [ref=e1375]: active
+                - generic [ref=e1377]: 2 lanes
+              - paragraph [ref=e1378]: "ID: RA-OSM-100462097"
+            - generic [ref=e1381] [cursor=pointer]:
+              - generic [ref=e1382]:
+                - paragraph [ref=e1383]: 5号道路 (F984)
+                - generic [ref=e1385]: Local
+              - generic [ref=e1386]:
+                - generic [ref=e1388]: active
+                - generic [ref=e1390]: 2 lanes
+              - paragraph [ref=e1391]: "ID: RA-NDR-5gou-397"
+            - generic [ref=e1394] [cursor=pointer]:
+              - generic [ref=e1395]:
+                - paragraph [ref=e1396]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1398]: Local
+              - generic [ref=e1399]:
+                - generic [ref=e1401]: active
+                - generic [ref=e1403]: 2 lanes
+              - paragraph [ref=e1404]: "ID: RA-OSM-147612533"
+            - generic [ref=e1407] [cursor=pointer]:
+              - generic [ref=e1408]:
+                - paragraph [ref=e1409]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1411]: Local
+              - generic [ref=e1412]:
+                - generic [ref=e1414]: active
+                - generic [ref=e1416]: 2 lanes
+              - paragraph [ref=e1417]: "ID: RA-OSM-147612513"
+            - generic [ref=e1420] [cursor=pointer]:
+              - generic [ref=e1421]:
+                - paragraph [ref=e1422]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e1424]: Arterial
+              - generic [ref=e1425]:
+                - generic [ref=e1427]: active
+                - generic [ref=e1429]: 2 lanes
+              - paragraph [ref=e1430]: "ID: RA-OSM-231173175"
+            - generic [ref=e1433] [cursor=pointer]:
+              - generic [ref=e1434]:
+                - paragraph [ref=e1435]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1437]: Local
+              - generic [ref=e1438]:
+                - generic [ref=e1440]: active
+                - generic [ref=e1442]: 2 lanes
+              - paragraph [ref=e1443]: "ID: RA-OSM-196743335"
+            - generic [ref=e1446] [cursor=pointer]:
+              - generic [ref=e1447]:
+                - paragraph [ref=e1448]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1450]: Local
+              - generic [ref=e1451]:
+                - generic [ref=e1453]: active
+                - generic [ref=e1455]: 2 lanes
+              - paragraph [ref=e1456]: "ID: RA-OSM-147612531"
+            - generic [ref=e1459] [cursor=pointer]:
+              - generic [ref=e1460]:
+                - paragraph [ref=e1461]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e1463]: Collector
+              - generic [ref=e1464]:
+                - generic [ref=e1466]: active
+                - generic [ref=e1468]: 2 lanes
+              - paragraph [ref=e1469]: "ID: RA-OSM-1253674710"
+            - generic [ref=e1472] [cursor=pointer]:
+              - generic [ref=e1473]:
+                - paragraph [ref=e1474]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1476]: Local
+              - generic [ref=e1477]:
+                - generic [ref=e1479]: active
+                - generic [ref=e1481]: 2 lanes
+              - paragraph [ref=e1482]: "ID: RA-OSM-147612454"
+            - generic [ref=e1485] [cursor=pointer]:
+              - generic [ref=e1486]:
+                - paragraph [ref=e1487]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e1489]: Arterial
+              - generic [ref=e1490]:
+                - generic [ref=e1492]: active
+                - generic [ref=e1494]: 3 lanes
+              - paragraph [ref=e1495]: "ID: RA-OSM-1253531012"
+            - generic [ref=e1498] [cursor=pointer]:
+              - generic [ref=e1499]:
+                - paragraph [ref=e1500]: 環状線 (Showa-ku) · Showa-ku
+                - generic [ref=e1502]: Arterial
+              - generic [ref=e1503]:
+                - generic [ref=e1505]: active
+                - generic [ref=e1507]: 4 lanes
+              - paragraph [ref=e1508]: "ID: RA-OSM-1250739407"
+            - generic [ref=e1511] [cursor=pointer]:
+              - generic [ref=e1512]:
+                - paragraph [ref=e1513]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1515]: Local
+              - generic [ref=e1516]:
+                - generic [ref=e1518]: active
+                - generic [ref=e1520]: 2 lanes
+              - paragraph [ref=e1521]: "ID: RA-OSM-147612525"
+            - generic [ref=e1524] [cursor=pointer]:
+              - generic [ref=e1525]:
+                - paragraph [ref=e1526]: "2項建築線 #54"
+                - generic [ref=e1528]: Local
+              - generic [ref=e1529]:
+                - generic [ref=e1531]: active
+                - generic [ref=e1533]: 2 lanes
+              - paragraph [ref=e1534]: "ID: RA-NDR-2kou_k-54"
+            - generic [ref=e1537] [cursor=pointer]:
+              - generic [ref=e1538]:
+                - paragraph [ref=e1539]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1541]: Local
+              - generic [ref=e1542]:
+                - generic [ref=e1544]: active
+                - generic [ref=e1546]: 2 lanes
+              - paragraph [ref=e1547]: "ID: RA-OSM-196722807"
+            - generic [ref=e1550] [cursor=pointer]:
+              - generic [ref=e1551]:
+                - paragraph [ref=e1552]: "2項建築線 #76"
+                - generic [ref=e1554]: Local
+              - generic [ref=e1555]:
+                - generic [ref=e1557]: active
+                - generic [ref=e1559]: 2 lanes
+              - paragraph [ref=e1560]: "ID: RA-NDR-2kou_k-76"
+            - generic [ref=e1563] [cursor=pointer]:
+              - generic [ref=e1564]:
+                - paragraph [ref=e1565]: "2項建築線 #75"
+                - generic [ref=e1567]: Local
+              - generic [ref=e1568]:
+                - generic [ref=e1570]: active
+                - generic [ref=e1572]: 2 lanes
+              - paragraph [ref=e1573]: "ID: RA-NDR-2kou_k-75"
+            - generic [ref=e1576] [cursor=pointer]:
+              - generic [ref=e1577]:
+                - paragraph [ref=e1578]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1580]: Local
+              - generic [ref=e1581]:
+                - generic [ref=e1583]: active
+                - generic [ref=e1585]: 2 lanes
+              - paragraph [ref=e1586]: "ID: RA-OSM-100462099"
+            - generic [ref=e1589] [cursor=pointer]:
+              - generic [ref=e1590]:
+                - paragraph [ref=e1591]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1593]: Local
+              - generic [ref=e1594]:
+                - generic [ref=e1596]: active
+                - generic [ref=e1598]: 2 lanes
+              - paragraph [ref=e1599]: "ID: RA-OSM-1133130367"
+            - generic [ref=e1602] [cursor=pointer]:
+              - generic [ref=e1603]:
+                - paragraph [ref=e1604]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1606]: Local
+              - generic [ref=e1607]:
+                - generic [ref=e1609]: active
+                - generic [ref=e1611]: 2 lanes
+              - paragraph [ref=e1612]: "ID: RA-OSM-1133130365"
+            - generic [ref=e1615] [cursor=pointer]:
+              - generic [ref=e1616]:
+                - paragraph [ref=e1617]: unclassified road (Showa-ku) · Showa-ku
+                - generic [ref=e1619]: Local
+              - generic [ref=e1620]:
+                - generic [ref=e1622]: active
+                - generic [ref=e1624]: 2 lanes
+              - paragraph [ref=e1625]: "ID: RA-OSM-196743340"
+            - generic [ref=e1628] [cursor=pointer]:
+              - generic [ref=e1629]:
+                - paragraph [ref=e1630]: 5号道路 (F1653)
+                - generic [ref=e1632]: Local
+              - generic [ref=e1633]:
+                - generic [ref=e1635]: active
+                - generic [ref=e1637]: 2 lanes
+              - paragraph [ref=e1638]: "ID: RA-NDR-5gou-69"
+            - generic [ref=e1641] [cursor=pointer]:
+              - generic [ref=e1642]:
+                - paragraph [ref=e1643]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1645]: Local
+              - generic [ref=e1646]:
+                - generic [ref=e1648]: active
+                - generic [ref=e1650]: 2 lanes
+              - paragraph [ref=e1651]: "ID: RA-OSM-147612416"
+            - generic [ref=e1654] [cursor=pointer]:
+              - generic [ref=e1655]:
+                - paragraph [ref=e1656]: 5号道路 (G10)
+                - generic [ref=e1658]: Local
+              - generic [ref=e1659]:
+                - generic [ref=e1661]: active
+                - generic [ref=e1663]: 2 lanes
+              - paragraph [ref=e1664]: "ID: RA-NDR-5gou-964"
+            - generic [ref=e1667] [cursor=pointer]:
+              - generic [ref=e1668]:
+                - paragraph [ref=e1669]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1671]: Local
+              - generic [ref=e1672]:
+                - generic [ref=e1674]: active
+                - generic [ref=e1676]: 2 lanes
+              - paragraph [ref=e1677]: "ID: RA-OSM-147612446"
+            - generic [ref=e1680] [cursor=pointer]:
+              - generic [ref=e1681]:
+                - paragraph [ref=e1682]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1684]: Local
+              - generic [ref=e1685]:
+                - generic [ref=e1687]: active
+                - generic [ref=e1689]: 2 lanes
+              - paragraph [ref=e1690]: "ID: RA-OSM-147612534"
+            - generic [ref=e1693] [cursor=pointer]:
+              - generic [ref=e1694]:
+                - paragraph [ref=e1695]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1697]: Local
+              - generic [ref=e1698]:
+                - generic [ref=e1700]: active
+                - generic [ref=e1702]: 2 lanes
+              - paragraph [ref=e1703]: "ID: RA-OSM-1316161090"
+            - generic [ref=e1706] [cursor=pointer]:
+              - generic [ref=e1707]:
+                - paragraph [ref=e1708]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1710]: Local
+              - generic [ref=e1711]:
+                - generic [ref=e1713]: active
+                - generic [ref=e1715]: 2 lanes
+              - paragraph [ref=e1716]: "ID: RA-OSM-147612511"
+            - generic [ref=e1719] [cursor=pointer]:
+              - generic [ref=e1720]:
+                - paragraph [ref=e1721]: 塩付通 (Showa-ku) · Showa-ku
+                - generic [ref=e1723]: Collector
+              - generic [ref=e1724]:
+                - generic [ref=e1726]: active
+                - generic [ref=e1728]: 2 lanes
+              - paragraph [ref=e1729]: "ID: RA-OSM-122670312"
+            - generic [ref=e1732] [cursor=pointer]:
+              - generic [ref=e1733]:
+                - paragraph [ref=e1734]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1736]: Local
+              - generic [ref=e1737]:
+                - generic [ref=e1739]: active
+                - generic [ref=e1741]: 2 lanes
+              - paragraph [ref=e1742]: "ID: RA-OSM-1133130368"
+            - generic [ref=e1745] [cursor=pointer]:
+              - generic [ref=e1746]:
+                - paragraph [ref=e1747]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1749]: Local
+              - generic [ref=e1750]:
+                - generic [ref=e1752]: active
+                - generic [ref=e1754]: 2 lanes
+              - paragraph [ref=e1755]: "ID: RA-OSM-1370480193"
+            - generic [ref=e1758] [cursor=pointer]:
+              - generic [ref=e1759]:
+                - paragraph [ref=e1760]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1762]: Local
+              - generic [ref=e1763]:
+                - generic [ref=e1765]: active
+                - generic [ref=e1767]: 2 lanes
+              - paragraph [ref=e1768]: "ID: RA-OSM-147612402"
+            - generic [ref=e1771] [cursor=pointer]:
+              - generic [ref=e1772]:
+                - paragraph [ref=e1773]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1775]: Local
+              - generic [ref=e1776]:
+                - generic [ref=e1778]: active
+                - generic [ref=e1780]: 2 lanes
+              - paragraph [ref=e1781]: "ID: RA-OSM-147612491"
+            - generic [ref=e1784] [cursor=pointer]:
+              - generic [ref=e1785]:
+                - paragraph [ref=e1786]: 5号道路 (F607-1)
+                - generic [ref=e1788]: Local
+              - generic [ref=e1789]:
+                - generic [ref=e1791]: active
+                - generic [ref=e1793]: 2 lanes
+              - paragraph [ref=e1794]: "ID: RA-NDR-5gou-144"
+            - generic [ref=e1797] [cursor=pointer]:
+              - generic [ref=e1798]:
+                - paragraph [ref=e1799]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1801]: Local
+              - generic [ref=e1802]:
+                - generic [ref=e1804]: active
+                - generic [ref=e1806]: 2 lanes
+              - paragraph [ref=e1807]: "ID: RA-OSM-100462075"
+            - generic [ref=e1810] [cursor=pointer]:
+              - generic [ref=e1811]:
+                - paragraph [ref=e1812]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1814]: Local
+              - generic [ref=e1815]:
+                - generic [ref=e1817]: active
+                - generic [ref=e1819]: 2 lanes
+              - paragraph [ref=e1820]: "ID: RA-OSM-1370480191"
+            - generic [ref=e1823] [cursor=pointer]:
+              - generic [ref=e1824]:
+                - paragraph [ref=e1825]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1827]: Local
+              - generic [ref=e1828]:
+                - generic [ref=e1830]: active
+                - generic [ref=e1832]: 2 lanes
+              - paragraph [ref=e1833]: "ID: RA-OSM-1316161097"
+            - generic [ref=e1836] [cursor=pointer]:
+              - generic [ref=e1837]:
+                - paragraph [ref=e1838]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1840]: Local
+              - generic [ref=e1841]:
+                - generic [ref=e1843]: active
+                - generic [ref=e1845]: 2 lanes
+              - paragraph [ref=e1846]: "ID: RA-OSM-147612476"
+            - generic [ref=e1849] [cursor=pointer]:
+              - generic [ref=e1850]:
+                - paragraph [ref=e1851]: 5号道路 (F607-2)
+                - generic [ref=e1853]: Local
+              - generic [ref=e1854]:
+                - generic [ref=e1856]: active
+                - generic [ref=e1858]: 2 lanes
+              - paragraph [ref=e1859]: "ID: RA-NDR-5gou-145"
+            - generic [ref=e1862] [cursor=pointer]:
+              - generic [ref=e1863]:
+                - paragraph [ref=e1864]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1866]: Local
+              - generic [ref=e1867]:
+                - generic [ref=e1869]: active
+                - generic [ref=e1871]: 2 lanes
+              - paragraph [ref=e1872]: "ID: RA-OSM-1316161091"
+            - generic [ref=e1875] [cursor=pointer]:
+              - generic [ref=e1876]:
+                - paragraph [ref=e1877]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1879]: Local
+              - generic [ref=e1880]:
+                - generic [ref=e1882]: active
+                - generic [ref=e1884]: 2 lanes
+              - paragraph [ref=e1885]: "ID: RA-OSM-194057647"
+            - generic [ref=e1888] [cursor=pointer]:
+              - generic [ref=e1889]:
+                - paragraph [ref=e1890]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1892]: Local
+              - generic [ref=e1893]:
+                - generic [ref=e1895]: active
+                - generic [ref=e1897]: 2 lanes
+              - paragraph [ref=e1898]: "ID: RA-OSM-147612516"
+            - generic [ref=e1901] [cursor=pointer]:
+              - generic [ref=e1902]:
+                - paragraph [ref=e1903]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1905]: Local
+              - generic [ref=e1906]:
+                - generic [ref=e1908]: active
+                - generic [ref=e1910]: 2 lanes
+              - paragraph [ref=e1911]: "ID: RA-OSM-1370480190"
+            - generic [ref=e1914] [cursor=pointer]:
+              - generic [ref=e1915]:
+                - paragraph [ref=e1916]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e1918]: Collector
+              - generic [ref=e1919]:
+                - generic [ref=e1921]: active
+                - generic [ref=e1923]: 2 lanes
+              - paragraph [ref=e1924]: "ID: RA-OSM-147608247"
+            - generic [ref=e1927] [cursor=pointer]:
+              - generic [ref=e1928]:
+                - paragraph [ref=e1929]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e1931]: Collector
+              - generic [ref=e1932]:
+                - generic [ref=e1934]: active
+                - generic [ref=e1936]: 2 lanes
+              - paragraph [ref=e1937]: "ID: RA-OSM-1107272789"
+            - generic [ref=e1940] [cursor=pointer]:
+              - generic [ref=e1941]:
+                - paragraph [ref=e1942]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e1944]: Local
+              - generic [ref=e1945]:
+                - generic [ref=e1947]: active
+                - generic [ref=e1949]: 2 lanes
+              - paragraph [ref=e1950]: "ID: RA-OSM-194057648"
+            - generic [ref=e1953] [cursor=pointer]:
+              - generic [ref=e1954]:
+                - paragraph [ref=e1955]: 2号道路 (B232)
+                - generic [ref=e1957]: Collector
+              - generic [ref=e1958]:
+                - generic [ref=e1960]: active
+                - generic [ref=e1962]: 2 lanes
+              - paragraph [ref=e1963]: "ID: RA-NDR-2gou-236"
+            - generic [ref=e1966] [cursor=pointer]:
+              - generic [ref=e1967]:
+                - paragraph [ref=e1968]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1970]: Local
+              - generic [ref=e1971]:
+                - generic [ref=e1973]: active
+                - generic [ref=e1975]: 2 lanes
+              - paragraph [ref=e1976]: "ID: RA-OSM-147612489"
+            - generic [ref=e1979] [cursor=pointer]:
+              - generic [ref=e1980]:
+                - paragraph [ref=e1981]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1983]: Local
+              - generic [ref=e1984]:
+                - generic [ref=e1986]: active
+                - generic [ref=e1988]: 2 lanes
+              - paragraph [ref=e1989]: "ID: RA-OSM-1370480195"
+            - generic [ref=e1992] [cursor=pointer]:
+              - generic [ref=e1993]:
+                - paragraph [ref=e1994]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e1996]: Local
+              - generic [ref=e1997]:
+                - generic [ref=e1999]: active
+                - generic [ref=e2001]: 2 lanes
+              - paragraph [ref=e2002]: "ID: RA-OSM-1370480194"
+            - generic [ref=e2005] [cursor=pointer]:
+              - generic [ref=e2006]:
+                - paragraph [ref=e2007]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2009]: Local
+              - generic [ref=e2010]:
+                - generic [ref=e2012]: active
+                - generic [ref=e2014]: 2 lanes
+              - paragraph [ref=e2015]: "ID: RA-OSM-147612438"
+            - generic [ref=e2018] [cursor=pointer]:
+              - generic [ref=e2019]:
+                - paragraph [ref=e2020]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2022]: Local
+              - generic [ref=e2023]:
+                - generic [ref=e2025]: active
+                - generic [ref=e2027]: 2 lanes
+              - paragraph [ref=e2028]: "ID: RA-OSM-147612437"
+            - generic [ref=e2031] [cursor=pointer]:
+              - generic [ref=e2032]:
+                - paragraph [ref=e2033]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2035]: Local
+              - generic [ref=e2036]:
+                - generic [ref=e2038]: active
+                - generic [ref=e2040]: 2 lanes
+              - paragraph [ref=e2041]: "ID: RA-OSM-147612505"
+            - generic [ref=e2044] [cursor=pointer]:
+              - generic [ref=e2045]:
+                - paragraph [ref=e2046]: 2号道路 (B125)
+                - generic [ref=e2048]: Collector
+              - generic [ref=e2049]:
+                - generic [ref=e2051]: active
+                - generic [ref=e2053]: 2 lanes
+              - paragraph [ref=e2054]: "ID: RA-NDR-2gou-275"
+            - generic [ref=e2057] [cursor=pointer]:
+              - generic [ref=e2058]:
+                - paragraph [ref=e2059]: 2号道路 (B570)
+                - generic [ref=e2061]: Collector
+              - generic [ref=e2062]:
+                - generic [ref=e2064]: active
+                - generic [ref=e2066]: 2 lanes
+              - paragraph [ref=e2067]: "ID: RA-NDR-2gou-712"
+            - generic [ref=e2070] [cursor=pointer]:
+              - generic [ref=e2071]:
+                - paragraph [ref=e2072]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2074]: Local
+              - generic [ref=e2075]:
+                - generic [ref=e2077]: active
+                - generic [ref=e2079]: 2 lanes
+              - paragraph [ref=e2080]: "ID: RA-OSM-1370480192"
+            - generic [ref=e2083] [cursor=pointer]:
+              - generic [ref=e2084]:
+                - paragraph [ref=e2085]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2087]: Local
+              - generic [ref=e2088]:
+                - generic [ref=e2090]: active
+                - generic [ref=e2092]: 2 lanes
+              - paragraph [ref=e2093]: "ID: RA-OSM-147612492"
+            - generic [ref=e2096] [cursor=pointer]:
+              - generic [ref=e2097]:
+                - paragraph [ref=e2098]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2100]: Local
+              - generic [ref=e2101]:
+                - generic [ref=e2103]: active
+                - generic [ref=e2105]: 2 lanes
+              - paragraph [ref=e2106]: "ID: RA-OSM-1301926232"
+            - generic [ref=e2109] [cursor=pointer]:
+              - generic [ref=e2110]:
+                - paragraph [ref=e2111]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2113]: Local
+              - generic [ref=e2114]:
+                - generic [ref=e2116]: active
+                - generic [ref=e2118]: 2 lanes
+              - paragraph [ref=e2119]: "ID: RA-OSM-1301926231"
+            - generic [ref=e2122] [cursor=pointer]:
+              - generic [ref=e2123]:
+                - paragraph [ref=e2124]: 2号道路 (B526)
+                - generic [ref=e2126]: Collector
+              - generic [ref=e2127]:
+                - generic [ref=e2129]: active
+                - generic [ref=e2131]: 2 lanes
+              - paragraph [ref=e2132]: "ID: RA-NDR-2gou-638"
+            - generic [ref=e2135] [cursor=pointer]:
+              - generic [ref=e2136]:
+                - paragraph [ref=e2137]: "2項建築線 #74"
+                - generic [ref=e2139]: Local
+              - generic [ref=e2140]:
+                - generic [ref=e2142]: active
+                - generic [ref=e2144]: 2 lanes
+              - paragraph [ref=e2145]: "ID: RA-NDR-2kou_k-74"
+            - generic [ref=e2148] [cursor=pointer]:
+              - generic [ref=e2149]:
+                - paragraph [ref=e2150]: "特定通路3号 #237"
+                - generic [ref=e2152]: Local
+              - generic [ref=e2153]:
+                - generic [ref=e2155]: active
+                - generic [ref=e2157]: 2 lanes
+              - paragraph [ref=e2158]: "ID: RA-NDR-tokute-237"
+            - generic [ref=e2161] [cursor=pointer]:
+              - generic [ref=e2162]:
+                - paragraph [ref=e2163]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2165]: Local
+              - generic [ref=e2166]:
+                - generic [ref=e2168]: active
+                - generic [ref=e2170]: 2 lanes
+              - paragraph [ref=e2171]: "ID: RA-OSM-100462111"
+            - generic [ref=e2174] [cursor=pointer]:
+              - generic [ref=e2175]:
+                - paragraph [ref=e2176]: "特定通路3号 #274"
+                - generic [ref=e2178]: Local
+              - generic [ref=e2179]:
+                - generic [ref=e2181]: active
+                - generic [ref=e2183]: 2 lanes
+              - paragraph [ref=e2184]: "ID: RA-NDR-tokute-274"
+            - generic [ref=e2187] [cursor=pointer]:
+              - generic [ref=e2188]:
+                - paragraph [ref=e2189]: 5号道路 (F1642)
+                - generic [ref=e2191]: Local
+              - generic [ref=e2192]:
+                - generic [ref=e2194]: active
+                - generic [ref=e2196]: 2 lanes
+              - paragraph [ref=e2197]: "ID: RA-NDR-5gou-961"
+            - generic [ref=e2200] [cursor=pointer]:
+              - generic [ref=e2201]:
+                - paragraph [ref=e2202]: 八熊通 (Showa-ku) · Showa-ku
+                - generic [ref=e2204]: Arterial
+              - generic [ref=e2205]:
+                - generic [ref=e2207]: active
+                - generic [ref=e2209]: 2 lanes
+              - paragraph [ref=e2210]: "ID: RA-OSM-310480086"
+            - generic [ref=e2213] [cursor=pointer]:
+              - generic [ref=e2214]:
+                - paragraph [ref=e2215]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2217]: Local
+              - generic [ref=e2218]:
+                - generic [ref=e2220]: active
+                - generic [ref=e2222]: 2 lanes
+              - paragraph [ref=e2223]: "ID: RA-OSM-1301926234"
+            - generic [ref=e2226] [cursor=pointer]:
+              - generic [ref=e2227]:
+                - paragraph [ref=e2228]: 5号道路 (F1178)
+                - generic [ref=e2230]: Local
+              - generic [ref=e2231]:
+                - generic [ref=e2233]: active
+                - generic [ref=e2235]: 2 lanes
+              - paragraph [ref=e2236]: "ID: RA-NDR-5gou-576"
+            - generic [ref=e2239] [cursor=pointer]:
+              - generic [ref=e2240]:
+                - paragraph [ref=e2241]: tertiary road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2243]: Collector
+              - generic [ref=e2244]:
+                - generic [ref=e2246]: active
+                - generic [ref=e2248]: 2 lanes
+              - paragraph [ref=e2249]: "ID: RA-OSM-122790405"
+            - generic [ref=e2252] [cursor=pointer]:
+              - generic [ref=e2253]:
+                - paragraph [ref=e2254]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2256]: Local
+              - generic [ref=e2257]:
+                - generic [ref=e2259]: active
+                - generic [ref=e2261]: 2 lanes
+              - paragraph [ref=e2262]: "ID: RA-OSM-147612493"
+            - generic [ref=e2265] [cursor=pointer]:
+              - generic [ref=e2266]:
+                - paragraph [ref=e2267]: service road (Showa-ku) · Showa-ku
+                - generic [ref=e2269]: Local
+              - generic [ref=e2270]:
+                - generic [ref=e2272]: active
+                - generic [ref=e2274]: 2 lanes
+              - paragraph [ref=e2275]: "ID: RA-OSM-1133132323"
+            - generic [ref=e2278] [cursor=pointer]:
+              - generic [ref=e2279]:
+                - paragraph [ref=e2280]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2282]: Local
+              - generic [ref=e2283]:
+                - generic [ref=e2285]: active
+                - generic [ref=e2287]: 2 lanes
+              - paragraph [ref=e2288]: "ID: RA-OSM-147612404"
+            - generic [ref=e2291] [cursor=pointer]:
+              - generic [ref=e2292]:
+                - paragraph [ref=e2293]: 2号道路 (B655)
+                - generic [ref=e2295]: Collector
+              - generic [ref=e2296]:
+                - generic [ref=e2298]: active
+                - generic [ref=e2300]: 2 lanes
+              - paragraph [ref=e2301]: "ID: RA-NDR-2gou-854"
+            - generic [ref=e2304] [cursor=pointer]:
+              - generic [ref=e2305]:
+                - paragraph [ref=e2306]: "特定通路3号 #238"
+                - generic [ref=e2308]: Local
+              - generic [ref=e2309]:
+                - generic [ref=e2311]: active
+                - generic [ref=e2313]: 2 lanes
+              - paragraph [ref=e2314]: "ID: RA-NDR-tokute-238"
+            - generic [ref=e2317] [cursor=pointer]:
+              - generic [ref=e2318]:
+                - paragraph [ref=e2319]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2321]: Local
+              - generic [ref=e2322]:
+                - generic [ref=e2324]: active
+                - generic [ref=e2326]: 1 lanes
+              - paragraph [ref=e2327]: "ID: RA-OSM-122790394"
+            - generic [ref=e2330] [cursor=pointer]:
+              - generic [ref=e2331]:
+                - paragraph [ref=e2332]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e2334]: Collector
+              - generic [ref=e2335]:
+                - generic [ref=e2337]: active
+                - generic [ref=e2339]: 2 lanes
+              - paragraph [ref=e2340]: "ID: RA-OSM-196731138"
+            - generic [ref=e2343] [cursor=pointer]:
+              - generic [ref=e2344]:
+                - paragraph [ref=e2345]: 2号道路 (B272)
+                - generic [ref=e2347]: Collector
+              - generic [ref=e2348]:
+                - generic [ref=e2350]: active
+                - generic [ref=e2352]: 2 lanes
+              - paragraph [ref=e2353]: "ID: RA-NDR-2gou-276"
+            - generic [ref=e2356] [cursor=pointer]:
+              - generic [ref=e2357]:
+                - paragraph [ref=e2358]: "3号修辞 #132"
+                - generic [ref=e2360]: Local
+              - generic [ref=e2361]:
+                - generic [ref=e2363]: active
+                - generic [ref=e2365]: 2 lanes
+              - paragraph [ref=e2366]: "ID: RA-NDR-3gou_s-132"
+            - generic [ref=e2369] [cursor=pointer]:
+              - generic [ref=e2370]:
+                - paragraph [ref=e2371]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2373]: Local
+              - generic [ref=e2374]:
+                - generic [ref=e2376]: active
+                - generic [ref=e2378]: 1 lanes
+              - paragraph [ref=e2379]: "ID: RA-OSM-1107272790"
+            - generic [ref=e2382] [cursor=pointer]:
+              - generic [ref=e2383]:
+                - paragraph [ref=e2384]: "特定通路3号 #105"
+                - generic [ref=e2386]: Local
+              - generic [ref=e2387]:
+                - generic [ref=e2389]: active
+                - generic [ref=e2391]: 2 lanes
+              - paragraph [ref=e2392]: "ID: RA-NDR-tokute-105"
+            - generic [ref=e2395] [cursor=pointer]:
+              - generic [ref=e2396]:
+                - paragraph [ref=e2397]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2399]: Local
+              - generic [ref=e2400]:
+                - generic [ref=e2402]: active
+                - generic [ref=e2404]: 2 lanes
+              - paragraph [ref=e2405]: "ID: RA-OSM-100462094"
+            - generic [ref=e2408] [cursor=pointer]:
+              - generic [ref=e2409]:
+                - paragraph [ref=e2410]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2412]: Local
+              - generic [ref=e2413]:
+                - generic [ref=e2415]: active
+                - generic [ref=e2417]: 2 lanes
+              - paragraph [ref=e2418]: "ID: RA-OSM-1133126949"
+            - generic [ref=e2421] [cursor=pointer]:
+              - generic [ref=e2422]:
+                - paragraph [ref=e2423]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2425]: Local
+              - generic [ref=e2426]:
+                - generic [ref=e2428]: active
+                - generic [ref=e2430]: 1 lanes
+              - paragraph [ref=e2431]: "ID: RA-OSM-122790412"
+            - generic [ref=e2434] [cursor=pointer]:
+              - generic [ref=e2435]:
+                - paragraph [ref=e2436]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2438]: Local
+              - generic [ref=e2439]:
+                - generic [ref=e2441]: active
+                - generic [ref=e2443]: 2 lanes
+              - paragraph [ref=e2444]: "ID: RA-OSM-1133134315"
+            - generic [ref=e2447] [cursor=pointer]:
+              - generic [ref=e2448]:
+                - paragraph [ref=e2449]: 2号道路 (B689)
+                - generic [ref=e2451]: Collector
+              - generic [ref=e2452]:
+                - generic [ref=e2454]: active
+                - generic [ref=e2456]: 2 lanes
+              - paragraph [ref=e2457]: "ID: RA-NDR-2gou-919"
+            - generic [ref=e2460] [cursor=pointer]:
+              - generic [ref=e2461]:
+                - paragraph [ref=e2462]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2464]: Local
+              - generic [ref=e2465]:
+                - generic [ref=e2467]: active
+                - generic [ref=e2469]: 2 lanes
+              - paragraph [ref=e2470]: "ID: RA-OSM-196750788"
+            - generic [ref=e2473] [cursor=pointer]:
+              - generic [ref=e2474]:
+                - paragraph [ref=e2475]: "3号修辞 #145"
+                - generic [ref=e2477]: Local
+              - generic [ref=e2478]:
+                - generic [ref=e2480]: active
+                - generic [ref=e2482]: 2 lanes
+              - paragraph [ref=e2483]: "ID: RA-NDR-3gou_s-145"
+            - generic [ref=e2486] [cursor=pointer]:
+              - generic [ref=e2487]:
+                - paragraph [ref=e2488]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2490]: Local
+              - generic [ref=e2491]:
+                - generic [ref=e2493]: active
+                - generic [ref=e2495]: 2 lanes
+              - paragraph [ref=e2496]: "ID: RA-OSM-100462069"
+            - generic [ref=e2499] [cursor=pointer]:
+              - generic [ref=e2500]:
+                - paragraph [ref=e2501]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2503]: Local
+              - generic [ref=e2504]:
+                - generic [ref=e2506]: active
+                - generic [ref=e2508]: 2 lanes
+              - paragraph [ref=e2509]: "ID: RA-OSM-194057645"
+            - generic [ref=e2512] [cursor=pointer]:
+              - generic [ref=e2513]:
+                - paragraph [ref=e2514]: service road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2516]: Local
+              - generic [ref=e2517]:
+                - generic [ref=e2519]: active
+                - generic [ref=e2521]: 1 lanes
+              - paragraph [ref=e2522]: "ID: RA-OSM-122790398"
+            - generic [ref=e2525] [cursor=pointer]:
+              - generic [ref=e2526]:
+                - paragraph [ref=e2527]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2529]: Local
+              - generic [ref=e2530]:
+                - generic [ref=e2532]: active
+                - generic [ref=e2534]: 1 lanes
+              - paragraph [ref=e2535]: "ID: RA-OSM-122790406"
+            - generic [ref=e2538] [cursor=pointer]:
+              - generic [ref=e2539]:
+                - paragraph [ref=e2540]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2542]: Local
+              - generic [ref=e2543]:
+                - generic [ref=e2545]: active
+                - generic [ref=e2547]: 2 lanes
+              - paragraph [ref=e2548]: "ID: RA-OSM-1133134314"
+            - generic [ref=e2551] [cursor=pointer]:
+              - generic [ref=e2552]:
+                - paragraph [ref=e2553]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2555]: Local
+              - generic [ref=e2556]:
+                - generic [ref=e2558]: active
+                - generic [ref=e2560]: 2 lanes
+              - paragraph [ref=e2561]: "ID: RA-OSM-100462087"
+            - generic [ref=e2564] [cursor=pointer]:
+              - generic [ref=e2565]:
+                - paragraph [ref=e2566]: "2項建築線 #80"
+                - generic [ref=e2568]: Local
+              - generic [ref=e2569]:
+                - generic [ref=e2571]: active
+                - generic [ref=e2573]: 2 lanes
+              - paragraph [ref=e2574]: "ID: RA-NDR-2kou_k-80"
+            - generic [ref=e2577] [cursor=pointer]:
+              - generic [ref=e2578]:
+                - paragraph [ref=e2579]: "2項建築線 #79"
+                - generic [ref=e2581]: Local
+              - generic [ref=e2582]:
+                - generic [ref=e2584]: active
+                - generic [ref=e2586]: 2 lanes
+              - paragraph [ref=e2587]: "ID: RA-NDR-2kou_k-79"
+            - generic [ref=e2590] [cursor=pointer]:
+              - generic [ref=e2591]:
+                - paragraph [ref=e2592]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2594]: Local
+              - generic [ref=e2595]:
+                - generic [ref=e2597]: active
+                - generic [ref=e2599]: 1 lanes
+              - paragraph [ref=e2600]: "ID: RA-OSM-122790399"
+            - generic [ref=e2603] [cursor=pointer]:
+              - generic [ref=e2604]:
+                - paragraph [ref=e2605]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2607]: Local
+              - generic [ref=e2608]:
+                - generic [ref=e2610]: active
+                - generic [ref=e2612]: 1 lanes
+              - paragraph [ref=e2613]: "ID: RA-OSM-122790401"
+            - generic [ref=e2616] [cursor=pointer]:
+              - generic [ref=e2617]:
+                - paragraph [ref=e2618]: tertiary road (Showa-ku) · Showa-ku
+                - generic [ref=e2620]: Collector
+              - generic [ref=e2621]:
+                - generic [ref=e2623]: active
+                - generic [ref=e2625]: 2 lanes
+              - paragraph [ref=e2626]: "ID: RA-OSM-1107272791"
+            - generic [ref=e2629] [cursor=pointer]:
+              - generic [ref=e2630]:
+                - paragraph [ref=e2631]: residential road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2633]: Local
+              - generic [ref=e2634]:
+                - generic [ref=e2636]: active
+                - generic [ref=e2638]: 2 lanes
+              - paragraph [ref=e2639]: "ID: RA-OSM-147612520"
+            - generic [ref=e2642] [cursor=pointer]:
+              - generic [ref=e2643]:
+                - paragraph [ref=e2644]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2646]: Local
+              - generic [ref=e2647]:
+                - generic [ref=e2649]: active
+                - generic [ref=e2651]: 2 lanes
+              - paragraph [ref=e2652]: "ID: RA-OSM-194057649"
+            - generic [ref=e2655] [cursor=pointer]:
+              - generic [ref=e2656]:
+                - paragraph [ref=e2657]: "2項建築線 #78"
+                - generic [ref=e2659]: Local
+              - generic [ref=e2660]:
+                - generic [ref=e2662]: active
+                - generic [ref=e2664]: 2 lanes
+              - paragraph [ref=e2665]: "ID: RA-NDR-2kou_k-78"
+            - generic [ref=e2668] [cursor=pointer]:
+              - generic [ref=e2669]:
+                - paragraph [ref=e2670]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2672]: Local
+              - generic [ref=e2673]:
+                - generic [ref=e2675]: active
+                - generic [ref=e2677]: 1 lanes
+              - paragraph [ref=e2678]: "ID: RA-OSM-122790397"
+            - generic [ref=e2681] [cursor=pointer]:
+              - generic [ref=e2682]:
+                - paragraph [ref=e2683]: "2項建築線 #77"
+                - generic [ref=e2685]: Local
+              - generic [ref=e2686]:
+                - generic [ref=e2688]: active
+                - generic [ref=e2690]: 2 lanes
+              - paragraph [ref=e2691]: "ID: RA-NDR-2kou_k-77"
+            - generic [ref=e2694] [cursor=pointer]:
+              - generic [ref=e2695]:
+                - paragraph [ref=e2696]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2698]: Local
+              - generic [ref=e2699]:
+                - generic [ref=e2701]: active
+                - generic [ref=e2703]: 2 lanes
+              - paragraph [ref=e2704]: "ID: RA-OSM-1328564742"
+            - generic [ref=e2707] [cursor=pointer]:
+              - generic [ref=e2708]:
+                - paragraph [ref=e2709]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2711]: Local
+              - generic [ref=e2712]:
+                - generic [ref=e2714]: active
+                - generic [ref=e2716]: 1 lanes
+              - paragraph [ref=e2717]: "ID: RA-OSM-122790411"
+            - generic [ref=e2720] [cursor=pointer]:
+              - generic [ref=e2721]:
+                - paragraph [ref=e2722]: residential road (Showa-ku) · Showa-ku
+                - generic [ref=e2724]: Local
+              - generic [ref=e2725]:
+                - generic [ref=e2727]: active
+                - generic [ref=e2729]: 2 lanes
+              - paragraph [ref=e2730]: "ID: RA-OSM-194943179"
+            - generic [ref=e2733] [cursor=pointer]:
+              - generic [ref=e2734]:
+                - paragraph [ref=e2735]: 2号道路 (B304)
+                - generic [ref=e2737]: Collector
+              - generic [ref=e2738]:
+                - generic [ref=e2740]: active
+                - generic [ref=e2742]: 2 lanes
+              - paragraph [ref=e2743]: "ID: RA-NDR-2gou-278"
+            - generic [ref=e2746] [cursor=pointer]:
+              - generic [ref=e2747]:
+                - paragraph [ref=e2748]: unclassified road (Mizuho-ku) · Mizuho-ku
+                - generic [ref=e2750]: Local
+              - generic [ref=e2751]:
+                - generic [ref=e2753]: active
+                - generic [ref=e2755]: 1 lanes
+              - paragraph [ref=e2756]: "ID: RA-OSM-122790408"
+            - generic [ref=e2759] [cursor=pointer]:
+              - generic [ref=e2760]:
+                - paragraph [ref=e2761]: 2号道路 (B106)
+                - generic [ref=e2763]: Collector
+              - generic [ref=e2764]:
+                - generic [ref=e2766]: active
+                - generic [ref=e2768]: 2 lanes
+              - paragraph [ref=e2769]: "ID: RA-NDR-2gou-274"
+            - button "Load more (200 of 381)" [ref=e2770] [cursor=pointer]:
+              - generic [ref=e2772]: Load more (200 of 381)
+  - main [ref=e2774]:
+    - generic [ref=e2775]:
+      - generic [ref=e2776]:
+        - region "Map" [ref=e2777]
+        - generic:
+          - generic [ref=e2778]:
+            - button "Zoom in" [ref=e2779] [cursor=pointer]
+            - button "Zoom out" [ref=e2781] [cursor=pointer]
+            - button "Reset bearing to north" [ref=e2783]
+          - generic:
+            - generic [ref=e2785]: 300 m
+            - group [ref=e2786]:
+              - generic "Toggle attribution" [ref=e2787] [cursor=pointer]
+              - generic [ref=e2788]:
+                - link "MapLibre" [ref=e2789] [cursor=pointer]:
+                  - /url: https://maplibre.org/
+                - text: "| ©"
+                - link "OpenStreetMap" [ref=e2790] [cursor=pointer]:
+                  - /url: https://www.openstreetmap.org/copyright
+                - text: ©
+                - link "CARTO" [ref=e2791] [cursor=pointer]:
+                  - /url: https://carto.com/attributions
+      - generic:
+        - paragraph: All road types (selectable)
+      - generic [ref=e2792]:
+        - paragraph [ref=e2793]: Layers
+        - generic [ref=e2794]:
+          - generic [ref=e2795]:
+            - paragraph [ref=e2796]: Events & Activities
+            - generic [ref=e2797]:
+              - generic [ref=e2799]:
+                - switch "Events" [checked]
+                - generic [ref=e2804]: Events
+              - generic [ref=e2806]:
+                - switch "Inspections" [checked]
+                - generic [ref=e2811]: Inspections
+          - separator [ref=e2812]
+          - generic [ref=e2813]:
+            - paragraph [ref=e2814]: Map Features
+            - generic [ref=e2815]:
+              - generic [ref=e2817]:
+                - switch "Road Assets" [checked]
+                - generic [ref=e2822]: Road Assets
+              - generic [ref=e2824]:
+                - switch "Street Lights"
+                - generic [ref=e2829]: Street Lights
+              - generic [ref=e2831]:
+                - switch "Rivers" [checked]
+                - generic [ref=e2836]: Rivers
+              - generic [ref=e2838]:
+                - switch "Green Spaces" [checked]
+                - generic [ref=e2843]: Green Spaces
+          - separator [ref=e2844]
+          - generic [ref=e2845]:
+            - paragraph [ref=e2846]: Reference Data
+            - generic [ref=e2847]:
+              - generic [ref=e2849]:
+                - switch "指定道路 (Official)"
+                - generic [ref=e2854]: 指定道路 (Official)
+              - generic [ref=e2856]:
+                - switch "建築情報 (Building)"
+                - generic [ref=e2861]: 建築情報 (Building)
+      - generic [ref=e2862]:
+        - paragraph [ref=e2863]: Event Status
+        - generic [ref=e2864]:
+          - paragraph [ref=e2867]: Planned
+          - paragraph [ref=e2870]: Active
+          - paragraph [ref=e2873]: Ended
+        - paragraph [ref=e2874]: Road Types
+        - generic [ref=e2875]:
+          - paragraph [ref=e2878]: Arterial
+          - paragraph [ref=e2881]: Collector
+          - paragraph [ref=e2884]: Local
+        - paragraph [ref=e2885]: Rivers
+        - paragraph [ref=e2889]: River/Stream
+        - paragraph [ref=e2890]: Green Spaces
+        - paragraph [ref=e2894]: Park/Garden
+  - complementary [ref=e2895]:
+    - generic [ref=e2897]:
+      - paragraph [ref=e2898]: Event Details
+      - button [ref=e2899] [cursor=pointer]:
+        - img [ref=e2901]
+```

@@ -1277,6 +1277,7 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         return {
           data: {
             ...updatedAsset,
+            sublocality: null,
             status: updatedAsset.status as 'active' | 'inactive' | 'removed',
             condition: updatedAsset.condition ?? null,
             riskLevel: updatedAsset.riskLevel ?? null,
