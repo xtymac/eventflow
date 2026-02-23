@@ -77,6 +77,7 @@ services:
     volumes:
       - ./backend/src:/app/src:ro
       - ./backend/uploads:/app/uploads
+      - ./shared:/shared:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s

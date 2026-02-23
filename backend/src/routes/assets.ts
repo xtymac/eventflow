@@ -14,9 +14,9 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Phase 0: Road assets are frozen (read-only) by default
-// Set ROAD_ASSETS_FROZEN=false to re-enable write operations
-const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN !== 'false';
+// V1: Road assets are writable by default (Google API renaming, manual edits)
+// Set ROAD_ASSETS_FROZEN=true to lock down write operations
+const ROAD_ASSETS_FROZEN = process.env.ROAD_ASSETS_FROZEN === 'true';
 
 // Regenerate PMTiles in the background
 // Runs: export-road-assets.ts then tiles:generate
@@ -1070,6 +1070,8 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         geometry: fromGeomSql(roadAssets.geometry),
         roadType: roadAssets.roadType,
         lanes: roadAssets.lanes,
+        width: roadAssets.width,
+        widthSource: roadAssets.widthSource,
         direction: roadAssets.direction,
         status: roadAssets.status,
         condition: roadAssets.condition,
@@ -1080,6 +1082,15 @@ export async function assetsRoutes(fastify: FastifyInstance) {
         ownerDepartment: roadAssets.ownerDepartment,
         ward: roadAssets.ward,
         landmark: roadAssets.landmark,
+        sublocality: roadAssets.sublocality,
+        crossSection: roadAssets.crossSection,
+        managingDept: roadAssets.managingDept,
+        intersection: roadAssets.intersection,
+        pavementState: roadAssets.pavementState,
+        dataSource: roadAssets.dataSource,
+        sourceVersion: roadAssets.sourceVersion,
+        sourceDate: roadAssets.sourceDate,
+        lastVerifiedAt: roadAssets.lastVerifiedAt,
         updatedAt: roadAssets.updatedAt,
       };
 
@@ -1089,8 +1100,15 @@ export async function assetsRoutes(fastify: FastifyInstance) {
       return {
         data: {
           ...asset,
+          sublocality: null,
+          status: asset.status as 'active' | 'inactive' | 'removed',
+          condition: asset.condition ?? null,
+          riskLevel: asset.riskLevel ?? null,
+          dataSource: asset.dataSource as 'osm_test' | 'official_ledger' | 'manual' | 'osm',
           validFrom: asset.validFrom.toISOString(),
-          validTo: asset.validTo?.toISOString(),
+          validTo: asset.validTo?.toISOString() ?? null,
+          sourceDate: asset.sourceDate?.toISOString() ?? null,
+          lastVerifiedAt: asset.lastVerifiedAt?.toISOString() ?? null,
           updatedAt: asset.updatedAt.toISOString(),
         },
       };

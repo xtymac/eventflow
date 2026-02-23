@@ -175,7 +175,7 @@ export function MapPage() {
   }, [selectedAssetId, openSidebar]);
 
   const showLeftSidebar = !isFullScreenMap && effectiveSidebarOpen;
-  const showRightAside = detailModalEventId || selectedAssetId || isHistoricalPreviewMode;
+  const showRightAside = detailModalEventId || (selectedAssetId && selectedAssetType) || isHistoricalPreviewMode;
 
   const renderSidebarContent = () => {
     switch (currentView) {

@@ -56,10 +56,9 @@ export function NotificationSidebar() {
 
   // Click handler - fly to road, select it, mark as read
   const handleRoadClick = async (edit: RecentEdit) => {
-    // Helper to mark as viewed (use setTimeout to avoid render cascade)
-    const markViewed = () => {
-      setTimeout(() => markAsViewed(edit.id), 0);
-    };
+    // Close sidebar and mark as viewed immediately (don't wait for fetch)
+    markAsViewed(edit.id);
+    closeSidebar();
 
     // For deleted roads, use bbox directly (road no longer exists)
     if (edit.editType === 'delete') {
@@ -68,8 +67,6 @@ export function NotificationSidebar() {
         selectAsset(edit.roadAssetId, null, bboxGeometry);
         setFlyToGeometry(bboxGeometry, true);
       }
-      markViewed();
-      closeSidebar();
       return;
     }
 
@@ -80,12 +77,8 @@ export function NotificationSidebar() {
         const result = (await response.json()) as { data: RoadAsset };
         const asset = result.data;
         if (asset?.geometry) {
-          // Select with actual road geometry for highlighting
           selectAsset(edit.roadAssetId, null, asset.geometry);
-          // Fly to the road
           setFlyToGeometry(asset.geometry, true);
-          markViewed();
-          closeSidebar();
           return;
         }
       }
@@ -99,9 +92,6 @@ export function NotificationSidebar() {
       selectAsset(edit.roadAssetId, null, bboxGeometry);
       setFlyToGeometry(bboxGeometry, true);
     }
-
-    markViewed();
-    closeSidebar();
   };
 
   const getDisplayName = (edit: RecentEdit) => {
