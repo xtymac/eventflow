@@ -20,6 +20,10 @@ export interface DummyRepair {
   description: string;
   status: string;
   caseId?: string; // links to /cases/:id (construction event)
+  mainParts?: string; // 主な交換部材
+  repairer?: string; // 補修業者
+  repairNotes?: string; // 補修備考
+  designDocNumber?: string; // 設計書番号
 }
 
 export const DUMMY_REPAIRS: DummyRepair[] = [
@@ -29,6 +33,13 @@ export const DUMMY_REPAIRS: DummyRepair[] = [
   { id: 'REP-003', facilityId: 'PF-demo-004', date: '2025-10-05', type: '部品交換', description: 'すべり台の踊り場デッキ交換', status: '対応中', caseId: 'EVT-demo-003' },
   { id: 'REP-004', facilityId: 'PF-demo-004', date: '2025-01-15', type: '安全対策', description: 'すべり台の手すり補強', status: '完了', caseId: 'EVT-demo-004' },
   { id: 'REP-005', facilityId: 'PF-demo-002', date: '2025-06-20', type: '塗装', description: 'ベンチ表面の再塗装', status: '完了', caseId: 'EVT-demo-018' },
+
+  // ── 名城公園 テーブル (PF-demo-011) — Figma reference ──
+  { id: 'REP-101', facilityId: 'PF-demo-011', date: '2025-07-29', type: '消耗部材交換', description: '消耗部材交換', status: '完了', mainParts: '銀、座板、吊金具', repairer: 'OO造園土木', repairNotes: '定期点検（C判定）対応', designDocNumber: '24-0015-K' },
+  { id: 'REP-102', facilityId: 'PF-demo-011', date: '2025-07-29', type: '消耗部材交換', description: '消耗部材交換', status: '完了', mainParts: '木製座板、塗料', repairer: 'OO造園土木', repairNotes: '定期点検（C判定）対応', designDocNumber: '24-0015-K' },
+
+  // ── 名城公園 ベンチ (PF-demo-012) ──
+  { id: 'REP-103', facilityId: 'PF-demo-012', date: '2025-07-29', type: '消耗部材交換', description: '消耗部材交換', status: '完了', mainParts: '再生木材座板', repairer: 'OO造園土木', repairNotes: '定期点検（D判定）対応', designDocNumber: '24-0016-K' },
 
   // ── 名城公園 (PF-demo-006~009) ──
   { id: 'REP-011', facilityId: 'PF-demo-006', date: '2025-05-12', type: '部品交換', description: '複合遊具の劣化パネル交換', status: '完了', caseId: 'EVT-demo-005' },

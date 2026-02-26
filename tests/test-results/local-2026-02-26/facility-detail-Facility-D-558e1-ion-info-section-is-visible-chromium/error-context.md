@@ -1,0 +1,165 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "地図に戻る" [ref=e7] [cursor=pointer]:
+            - /url: /map
+            - img "地図に戻る" [ref=e8]
+          - button "公園管理" [ref=e9] [cursor=pointer]:
+            - generic [ref=e10]: 公園管理
+            - img [ref=e11]
+        - navigation [ref=e13]:
+          - button "地図" [ref=e14] [cursor=pointer]:
+            - img [ref=e15]
+            - generic [ref=e18]: 地図
+          - button "資産台帳" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+            - generic [ref=e24]: 資産台帳
+          - button "公園" [ref=e25] [cursor=pointer]:
+            - generic [ref=e29]: 公園
+          - button "施設" [ref=e30] [cursor=pointer]:
+            - generic [ref=e34]: 施設
+          - button "案件管理" [ref=e35] [cursor=pointer]:
+            - img [ref=e36]
+            - generic [ref=e42]: 案件管理
+          - button "未確認 12" [ref=e43] [cursor=pointer]:
+            - generic [ref=e46]:
+              - generic [ref=e47]: 未確認
+              - generic [ref=e48]: "12"
+          - button "差戻 3" [ref=e49] [cursor=pointer]:
+            - generic [ref=e52]:
+              - generic [ref=e53]: 差戻
+              - generic [ref=e54]: "3"
+          - button "確認済" [ref=e55] [cursor=pointer]:
+            - generic [ref=e59]: 確認済
+          - button "業者管理" [ref=e60] [cursor=pointer]:
+            - img [ref=e61]
+            - generic [ref=e65]: 業者管理
+        - generic [ref=e66]:
+          - generic [ref=e70]: 最近
+          - button "東山動植物園 すべり台 01" [ref=e71] [cursor=pointer]:
+            - generic [ref=e72]: 東山動植物園 すべり台 01
+    - generic [ref=e73]:
+      - banner [ref=e74]:
+        - button "テ テストユーザー 管理者" [ref=e75] [cursor=pointer]:
+          - generic [ref=e76]: テ
+          - generic [ref=e77]:
+            - paragraph [ref=e78]: テストユーザー
+            - paragraph [ref=e79]: 管理者
+          - img [ref=e80]
+      - main [ref=e82]:
+        - generic [ref=e87]:
+          - navigation "breadcrumb" [ref=e88]:
+            - list [ref=e89]:
+              - listitem [ref=e90]:
+                - generic [ref=e91] [cursor=pointer]: 施設
+              - listitem [ref=e92]:
+                - img [ref=e93]
+              - listitem [ref=e95]:
+                - link "東山動植物園 すべり台 01" [disabled] [ref=e96]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - generic [ref=e101]:
+                    - generic:
+                      - region "Map" [ref=e102]
+                      - generic "Map marker" [ref=e103]:
+                        - img [ref=e104]
+                    - generic [ref=e122]:
+                      - button "Zoom in" [ref=e123] [cursor=pointer]
+                      - button "Zoom out" [ref=e125] [cursor=pointer]
+                  - button "公園に戻る" [ref=e127] [cursor=pointer]:
+                    - img [ref=e128]
+                - button [disabled]:
+                  - img
+              - generic [ref=e132]:
+                - img [ref=e133]
+                - paragraph [ref=e137]: 写真なし
+            - generic [ref=e138]:
+              - generic [ref=e139]:
+                - generic [ref=e140] [cursor=pointer]:
+                  - paragraph [ref=e141]: 基本情報
+                  - img [ref=e142]
+                - button [disabled]:
+                  - img
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - paragraph [ref=e149]: 名称
+                    - paragraph [ref=e150]: 東山動植物園 すべり台 01
+                  - generic [ref=e151]:
+                    - paragraph [ref=e152]: 管理番号
+                    - paragraph [ref=e153]: FAC-0011
+                  - generic [ref=e154]:
+                    - paragraph [ref=e155]: 種別
+                    - paragraph [ref=e156]: 遊具
+                  - generic [ref=e157]:
+                    - paragraph [ref=e158]: 副種別
+                    - paragraph [ref=e159]: すべり台
+                  - generic [ref=e160]:
+                    - paragraph [ref=e161]: 説明
+                    - paragraph [ref=e162]: すべり台（東山動植物園内）
+                - generic [ref=e163]:
+                  - generic [ref=e164]:
+                    - paragraph [ref=e165]: 材質
+                    - paragraph [ref=e166]: ステンレス
+                  - generic [ref=e167]:
+                    - paragraph [ref=e168]: 数量
+                    - paragraph [ref=e169]: "1"
+                  - generic [ref=e170]:
+                    - paragraph [ref=e171]: 設置日
+                    - paragraph [ref=e172]: 2015/4/1
+                  - generic [ref=e173]:
+                    - paragraph [ref=e174]: 設計供用年数
+                    - paragraph [ref=e175]: 30 年
+                  - generic [ref=e176]:
+                    - paragraph [ref=e177]: 評価
+                    - paragraph [ref=e178]:
+                      - generic [ref=e179]: B
+                  - generic [ref=e180]:
+                    - paragraph [ref=e181]: 安全懸念
+                    - paragraph [ref=e182]:
+                      - generic [ref=e183]: なし
+            - generic [ref=e184]:
+              - generic [ref=e185] [cursor=pointer]:
+                - paragraph [ref=e186]: 補修履歴
+                - img [ref=e187]
+              - table [ref=e192]:
+                - rowgroup [ref=e193]:
+                  - row "補修日 種別 内容 状態" [ref=e194]:
+                    - columnheader "補修日" [ref=e195]
+                    - columnheader "種別" [ref=e196]
+                    - columnheader "内容" [ref=e197]
+                    - columnheader "状態" [ref=e198]
+                - rowgroup [ref=e199]:
+                  - row "2025/2/28 部品交換 すべり台の着地部衝撃吸収材交換 完了" [ref=e200] [cursor=pointer]:
+                    - cell "2025/2/28" [ref=e201]
+                    - cell "部品交換" [ref=e202]
+                    - cell "すべり台の着地部衝撃吸収材交換" [ref=e203]
+                    - cell "完了" [ref=e204]:
+                      - generic [ref=e205]: 完了
+            - generic [ref=e206]:
+              - generic [ref=e207] [cursor=pointer]:
+                - paragraph [ref=e208]: 点検履歴
+                - img [ref=e209]
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - generic [ref=e214]:
+                    - paragraph [ref=e215]: 最終点検
+                    - paragraph [ref=e216]: 2025/1/8
+                  - generic [ref=e217]:
+                    - paragraph [ref=e218]: 次回点検
+                    - paragraph [ref=e219]: 未定
+                - paragraph [ref=e220]: 点検履歴データはありません
+            - generic [ref=e221]:
+              - generic [ref=e222] [cursor=pointer]:
+                - paragraph [ref=e223]: 長寿命化計画
+                - img [ref=e224]
+              - paragraph [ref=e228]: 長寿命化計画データはありません
+```

@@ -1,10 +1,29 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+// Reject requests with malformed URIs before Vite's static middleware calls decodeURI()
+function rejectMalformedUris(): Plugin {
+  return {
+    name: 'reject-malformed-uris',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        try {
+          decodeURI(req.url!);
+        } catch {
+          res.statusCode = 400;
+          res.end('Bad Request');
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [rejectMalformedUris(), react(), tailwindcss()],
   server: {
     host: '0.0.0.0',
     port: 5173,
