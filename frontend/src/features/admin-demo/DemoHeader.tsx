@@ -35,7 +35,7 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
     const tabs: { label: string; to?: string; matchPaths: string[] }[] = [
       { label: '地図', to: '/map', matchPaths: ['/map'] },
       { label: '資産台帳', to: currentDept === 'tree' ? '/assets/park-trees' : '/assets/parks', matchPaths: ['/assets'] },
-      { label: '案件管理', to: '/cases', matchPaths: ['/cases', '/inspections'] },
+      { label: '案件管理', to: '/cases/inspections', matchPaths: ['/cases', '/inspections'] },
       isAdmin
         ? { label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] }
         : { label: '業者管理', matchPaths: ['/vendors'] },
@@ -46,7 +46,7 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
         {/* Left: Logo + Department dropdown */}
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => navigate('/map')} className="border-0 appearance-none bg-transparent cursor-pointer">
-            <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
+            <img src="/logo.svg" alt="EventFlow" width={32} height={32} />
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -148,7 +148,7 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
   if (canAssets) {
     demoTabs.push({ label: '資産台帳', to: currentDeptObj.route, matchPaths: ['/assets'] });
   }
-  demoTabs.push({ label: '案件管理', to: '/cases', matchPaths: ['/cases', '/inspections'] });
+  demoTabs.push({ label: '案件管理', to: '/cases/inspections', matchPaths: ['/cases', '/inspections'] });
   if (hasRole(['admin'])) {
     demoTabs.push({ label: '業者管理', to: '/vendors', matchPaths: ['/vendors'] });
   }
@@ -163,7 +163,7 @@ export function DemoHeader({ sidebarOpen, onToggleSidebar }: DemoHeaderProps) {
           </Button>
         )}
         <button type="button" onClick={() => navigate('/map')} className="border-0 appearance-none bg-transparent cursor-pointer">
-          <img src="/favicon.svg" alt="EventFlow" width={32} height={32} />
+          <img src="/logo.svg" alt="EventFlow" width={32} height={32} />
         </button>
 
         {canAssets && (

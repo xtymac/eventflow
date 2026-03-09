@@ -5,43 +5,46 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MiniMap } from '@/components/MiniMap';
 import { useNavigate } from 'react-router-dom';
 import { useGreenSpace, useParkFacilitiesByPark } from '../../hooks/useApi';
-import { getDummyFacilitiesByPark, FACILITY_CATEGORY_LABELS, FACILITY_STATUS_CONFIG } from '../../data/dummyFacilities';
+import { getDummyFacilitiesByPark, FACILITY_CLASSIFICATION_LABELS, FACILITY_STATUS_CONFIG } from '../../data/dummyFacilities';
+import { FacilityPlaceholderImage } from '@/components/facility/FacilityPlaceholderImage';
 import type { CuratedPark } from '../../data/curatedParks';
 
 interface ParkPreviewPanelProps {
   park: CuratedPark;
   onClose: () => void;
   onNavigateToDetail: () => void;
+  /** Tab values to hide (e.g. ['map'] to omit the 地図 tab) */
+  hiddenTabs?: string[];
 }
 
 const fieldRowCls = 'flex items-start justify-between py-2.5 border-b border-[#f5f5f5] text-sm';
 const fieldLabelCls = 'text-[#737373] shrink-0';
 const fieldValueCls = 'text-right text-[#0a0a0a] ml-4 font-medium';
-const sectionTitleCls = 'text-sm font-normal text-[#737373] mt-6 mb-2';
+const sectionTitleCls = 'font-mono text-base font-normal leading-6 tracking-normal text-[#171717] mt-6 mb-2';
 
-/** Center coordinates for parks (used for dummy geometry when API is unavailable) */
-const PARK_CENTERS: Record<string, { center: [number, number]; areaM2: number }> = {
-  'GS-zxpnkee2': { center: [136.9213, 35.1575], areaM2: 236537 },
-  'GS-nliigh01': { center: [136.9050, 35.1860], areaM2: 205208 },
-  'GS-4g77l6x7': { center: [136.9740, 35.1570], areaM2: 894903 },
-  'GS-es1u7z8r': { center: [136.8980, 35.1650], areaM2: 89299 },
-  'GS-9ego0pvp': { center: [136.8780, 35.2010], areaM2: 426621 },
-  'GS-auy42b1p': { center: [136.9410, 35.0780], areaM2: 1102426 },
-  'GS-gs3xyhbw': { center: [136.8640, 35.1170], areaM2: 237208 },
-  'GS-3d67hwf5': { center: [136.8350, 35.0970], areaM2: 364075 },
-  'GS-byrogagk': { center: [136.9110, 35.1720], areaM2: 105736 },
-  'GS-ful7d9lw': { center: [136.9340, 35.1870], areaM2: 55029 },
-  'GS-7f2voyoy': { center: [137.0100, 35.1780], areaM2: 631296 },
-  'GS-x1q5e2te': { center: [137.0200, 35.1650], areaM2: 1351901 },
-  'GS-ldnfwyur': { center: [136.9780, 35.2050], areaM2: 131662 },
-  'GS-9exy95g1': { center: [136.9370, 35.1060], areaM2: 65235 },
-  'GS-xk4kyf2q': { center: [136.9100, 35.2020], areaM2: 51705 },
-  'GS-cfam78i3': { center: [136.9370, 35.1350], areaM2: 239836 },
-  'GS-gul3d3ul': { center: [136.9080, 35.1280], areaM2: 78109 },
-  'GS-rtljov09': { center: [136.9430, 35.1710], areaM2: 58659 },
+/** Center coordinates from ST_PointOnSurface — guaranteed inside each park polygon */
+export const PARK_CENTERS: Record<string, { center: [number, number]; areaM2: number }> = {
+  'GS-zxpnkee2': { center: [136.919915, 35.155046], areaM2: 236537 },
+  'GS-nliigh01': { center: [136.901605, 35.188603], areaM2: 205208 },
+  'GS-4g77l6x7': { center: [136.981820, 35.156527], areaM2: 894903 },
+  'GS-es1u7z8r': { center: [136.899989, 35.164484], areaM2: 89299 },
+  'GS-9ego0pvp': { center: [136.882604, 35.211721], areaM2: 426621 },
+  'GS-auy42b1p': { center: [136.954263, 35.064370], areaM2: 1102426 },
+  'GS-gs3xyhbw': { center: [136.862510, 35.099133], areaM2: 237208 },
+  'GS-3d67hwf5': { center: [136.811570, 35.116685], areaM2: 364075 },
+  'GS-byrogagk': { center: [136.908829, 35.167366], areaM2: 105736 },
+  'GS-ful7d9lw': { center: [136.932935, 35.184774], areaM2: 55029 },
+  'GS-7f2voyoy': { center: [137.021558, 35.163867], areaM2: 631296 },
+  'GS-x1q5e2te': { center: [137.007153, 35.144465], areaM2: 1351901 },
+  'GS-ldnfwyur': { center: [136.975538, 35.210151], areaM2: 131662 },
+  'GS-9exy95g1': { center: [136.940503, 35.099819], areaM2: 65235 },
+  'GS-xk4kyf2q': { center: [136.904724, 35.202371], areaM2: 51705 },
+  'GS-cfam78i3': { center: [136.942583, 35.124602], areaM2: 239836 },
+  'GS-gul3d3ul': { center: [136.902459, 35.131117], areaM2: 78109 },
+  'GS-rtljov09': { center: [136.943482, 35.176277], areaM2: 58659 },
 };
 
-function makeApproxPolygon(center: [number, number], areaM2: number) {
+export function makeApproxPolygon(center: [number, number], areaM2: number) {
   const side = Math.sqrt(areaM2);
   const latDeg = (side / 2) / 111000;
   const lngDeg = (side / 2) / (111000 * Math.cos((center[1] * Math.PI) / 180));
@@ -59,10 +62,10 @@ function makeApproxPolygon(center: [number, number], areaM2: number) {
 }
 
 const MARKER_OFFSETS: Array<[number, number]> = [
-  [0.0003, 0.0002], [-0.0002, 0.0003], [0.0002, -0.0002],
-  [-0.0003, -0.0002], [0.0004, 0.0001], [-0.0001, 0.0004],
-  [0.0003, -0.0003], [-0.0004, 0.0003], [0.0005, 0.0002],
-  [-0.0002, -0.0004], [0.0001, 0.0005], [-0.0005, 0.0001],
+  [0.0002, 0.0001], [-0.0001, 0.0002], [0.0001, -0.0001],
+  [-0.0002, -0.0001], [0.0003, 0.0001], [-0.0001, 0.0003],
+  [0.0002, -0.0002], [-0.0003, 0.0002], [0.0003, 0.0001],
+  [-0.0001, -0.0003], [0.0001, 0.0003], [-0.0003, 0.0001],
 ];
 
 function FieldRow({ label, value, multiline }: { label: string; value: string | number | null | undefined; multiline?: boolean }) {
@@ -100,7 +103,7 @@ function ParkMapTab({ parkId }: { parkId: string }) {
       ],
     },
   }));
-  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
+  const facilities = dummyFacilities.length > 0 ? dummyFacilities : apiFacilities;
 
   const facilityMarkers = useMemo(() => {
     return facilities
@@ -108,7 +111,6 @@ function ParkMapTab({ parkId }: { parkId: string }) {
       .map((f: any) => ({
         lng: f.geometry.coordinates[0],
         lat: f.geometry.coordinates[1],
-        color: '#3B82F6',
       }));
   }, [facilities]);
 
@@ -137,7 +139,6 @@ function ParkMapTab({ parkId }: { parkId: string }) {
         height="100%"
         fillColor="#3B82F6"
         fillOpacity={0.3}
-        markerType="circle"
       />
     </div>
   );
@@ -154,25 +155,17 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function FacilityPlaceholderImage({ category }: { category: string }) {
-  const label = FACILITY_CATEGORY_LABELS[category]?.[0] || '?';
-  return (
-    <div className="flex size-10 shrink-0 items-center justify-center rounded bg-[#f0f0f0] text-xs text-[#737373]">
-      {label}
-    </div>
-  );
-}
 
-function ParkFacilitiesTab({ parkId, parkName }: { parkId: string; parkName: string }) {
+export function ParkFacilitiesTab({ parkId, parkName, onFacilityClick }: { parkId: string; parkName: string; onFacilityClick?: (facilityId: string) => void }) {
   const navigate = useNavigate();
   const { data: facilitiesData, isLoading } = useParkFacilitiesByPark(parkId);
 
   const apiFacilities = facilitiesData?.features || [];
   const dummyFacilities = getDummyFacilitiesByPark(parkId);
 
-  const facilities = apiFacilities.length > 0
-    ? apiFacilities.map((f: any) => f.properties)
-    : dummyFacilities;
+  const facilities = dummyFacilities.length > 0
+    ? dummyFacilities
+    : apiFacilities.map((f: any) => f.properties);
 
   if (isLoading && apiFacilities.length === 0 && dummyFacilities.length === 0) {
     return (
@@ -195,64 +188,79 @@ function ParkFacilitiesTab({ parkId, parkName }: { parkId: string; parkName: str
       <div className="px-3">
         {/* Header row */}
         <div className="flex items-center border-b border-[#f5f5f5]">
-          <div className="w-14 shrink-0" />
+          <div className="w-[52px] shrink-0" />
           <div className="min-w-0 flex-1" />
-          <div className={`${facilityHeaderCls} w-[72px] shrink-0 text-center`}>状態</div>
-          <div className={`${facilityHeaderCls} w-[64px] shrink-0`}>施設ID</div>
-          <div className={`${facilityHeaderCls} w-[64px] shrink-0`}>施設分類</div>
-          <div className="w-9 shrink-0" />
+          <div className={`${facilityHeaderCls} w-[80px] shrink-0 text-center`}>状態</div>
+          <div className={`${facilityHeaderCls} w-[72px] shrink-0`}>施設ID</div>
+          <div className={`${facilityHeaderCls} w-[72px] shrink-0 whitespace-nowrap`}>施設分類</div>
+          <div className="w-8 shrink-0" />
         </div>
 
         {/* Facility rows */}
-        {facilities.map((f: any) => (
-          <div
-            key={f.id}
-            className="flex items-center border-b border-[#f5f5f5] py-2.5 px-2 cursor-pointer hover:bg-[#f9f9f9] transition-colors"
-            data-testid="facility-row"
-            onClick={() => navigate(`/assets/facilities/${f.id}`, {
-              state: { breadcrumbFrom: { to: '/assets/parks', label: parkName } },
-            })}
-          >
-            <div className="w-14 shrink-0 flex items-center justify-center">
-              <FacilityPlaceholderImage category={f.category} />
-            </div>
-            <div className="min-w-0 flex-1 px-1">
-              <span className="text-xs text-[#0a0a0a] truncate block">{f.name}</span>
-            </div>
-            <div className="w-[72px] shrink-0 flex items-center justify-center">
-              <StatusBadge status={f.status} />
-            </div>
-            <div className="w-[64px] shrink-0 text-xs text-[#0a0a0a] truncate px-2">
-              {f.facilityId || '—'}
-            </div>
-            <div className="w-[64px] shrink-0 text-xs text-[#0a0a0a] truncate px-2">
-              {FACILITY_CATEGORY_LABELS[f.category] || f.category}
-            </div>
-            <div className="w-9 shrink-0 flex items-center justify-center">
-              <CircleArrowRight
-                className="size-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
+        {facilities.map((f: any) => {
+          const classLabel = FACILITY_CLASSIFICATION_LABELS[f.facilityClassification] || f.facilityClassification || '—';
+          const shortClassLabel = classLabel.replace(/施設$/, '');
+          return (
+            <div
+              key={f.id}
+              className="flex items-center border-b border-[#f5f5f5] h-[60px] px-2 cursor-pointer hover:bg-[#f9f9f9] transition-colors"
+              data-testid="facility-row"
+              onClick={() => {
+                if (onFacilityClick) {
+                  onFacilityClick(f.id);
+                } else {
                   navigate(`/assets/facilities/${f.id}`, {
                     state: { breadcrumbFrom: { to: '/assets/parks', label: parkName } },
                   });
-                }}
-              />
+                }
+              }}
+            >
+              <div className="w-[52px] shrink-0 flex items-center justify-center">
+                <FacilityPlaceholderImage category={f.category} size={44} />
+              </div>
+              <div className="min-w-0 flex-1 px-1">
+                <span className="text-xs text-[#0a0a0a] truncate block">{f.name}</span>
+              </div>
+              <div className="w-[80px] shrink-0 flex items-center justify-center">
+                <StatusBadge status={f.status} />
+              </div>
+              <div className="w-[72px] shrink-0 text-xs text-[#0a0a0a] truncate px-1">
+                {f.facilityId || '—'}
+              </div>
+              <div className="w-[72px] shrink-0 text-xs text-[#0a0a0a] truncate px-1">
+                {shortClassLabel}
+              </div>
+              <div className="w-8 shrink-0 flex items-center justify-center">
+                <CircleArrowRight
+                  className="size-5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onFacilityClick) {
+                      onFacilityClick(f.id);
+                    } else {
+                      navigate(`/assets/facilities/${f.id}`, {
+                        state: { breadcrumbFrom: { to: '/assets/parks', label: parkName } },
+                      });
+                    }
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ScrollArea>
   );
 }
 
-export function ParkPreviewPanel({ park, onClose, onNavigateToDetail }: ParkPreviewPanelProps) {
+export function ParkPreviewPanel({ park, onClose, onNavigateToDetail, hiddenTabs = [] }: ParkPreviewPanelProps) {
+  const hidden = new Set(hiddenTabs);
   return (
     <Tabs defaultValue="info" className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[#e5e5e5] px-5 shrink-0">
         <TabsList variant="line" className="h-auto gap-6 p-0">
           <TabsTrigger value="info" className="px-0 py-2 text-sm">情報</TabsTrigger>
-          <TabsTrigger value="map" className="px-0 py-2 text-sm">地図</TabsTrigger>
+          {!hidden.has('map') && <TabsTrigger value="map" className="px-0 py-2 text-sm">地図</TabsTrigger>}
           <TabsTrigger value="facilities" className="px-0 py-2 text-sm">施設</TabsTrigger>
         </TabsList>
         <button
@@ -270,11 +278,11 @@ export function ParkPreviewPanel({ park, onClose, onNavigateToDetail }: ParkPrev
           <div className="px-5 py-4">
             {/* 基本情報 */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-[#0a0a0a]">基本情報</span>
+              <span className="font-mono text-base font-normal leading-6 tracking-normal text-[#171717]">基本情報</span>
               <button
                 type="button"
                 onClick={onNavigateToDetail}
-                className="inline-flex items-center gap-1 rounded-full bg-[#215042] px-2.5 py-0.5 text-xs font-medium text-white hover:bg-[#2a6554] transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border-none bg-[#215042] px-2.5 py-0.5 text-xs font-medium text-white hover:bg-[#2a6554] transition-colors"
                 data-testid="park-detail-link"
               >
                 公園詳細
@@ -307,9 +315,11 @@ export function ParkPreviewPanel({ park, onClose, onNavigateToDetail }: ParkPrev
         </ScrollArea>
       </TabsContent>
 
-      <TabsContent value="map" className="flex-1 mt-0 overflow-hidden">
-        <ParkMapTab parkId={park.id} />
-      </TabsContent>
+      {!hidden.has('map') && (
+        <TabsContent value="map" className="flex-1 mt-0 overflow-hidden">
+          <ParkMapTab parkId={park.id} />
+        </TabsContent>
+      )}
 
       <TabsContent value="facilities" className="flex-1 mt-0 overflow-hidden">
         <ParkFacilitiesTab parkId={park.id} parkName={park.displayName} />

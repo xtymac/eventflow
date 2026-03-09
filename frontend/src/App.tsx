@@ -38,7 +38,6 @@ const VIEW_OPTIONS = [
 ];
 
 const SIDEBAR_WIDTH_KEY = 'eventflow-sidebar-width';
-const SIDEBAR_HINT_SHOWN_KEY = 'eventflow-sidebar-hint-shown';
 const DEFAULT_SIDEBAR_WIDTH = 400;
 const MIN_SIDEBAR_WIDTH = 280;
 const MAX_SIDEBAR_WIDTH = 600;
@@ -53,17 +52,13 @@ function App() {
   const [showResizeHint, setShowResizeHint] = useState(false);
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  // Show hint animation once per page refresh
+  // Show hint animation once on mount
   useEffect(() => {
-    const hintShown = sessionStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
-    if (!hintShown) {
-      const timer = setTimeout(() => {
-        setShowResizeHint(true);
-        sessionStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
-        setTimeout(() => setShowResizeHint(false), 1200);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      setShowResizeHint(true);
+      setTimeout(() => setShowResizeHint(false), 1200);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -110,7 +105,6 @@ function App() {
     closeEventForm,
     detailModalEventId,
     closeEventDetailModal,
-    isRoadUpdateModeActive,
     isInspectionFormOpen,
     selectedInspectionForEdit,
     inspectionFormEventId,
@@ -131,7 +125,6 @@ function App() {
     closeEventForm: state.closeEventForm,
     detailModalEventId: state.detailModalEventId,
     closeEventDetailModal: state.closeEventDetailModal,
-    isRoadUpdateModeActive: state.isRoadUpdateModeActive,
     isInspectionFormOpen: state.isInspectionFormOpen,
     selectedInspectionForEdit: state.selectedInspectionForEdit,
     inspectionFormEventId: state.inspectionFormEventId,
@@ -149,7 +142,7 @@ function App() {
   const { unreadCount } = useNotifications();
   const toggleSidebar = useNotificationStore((s) => s.toggleSidebar);
   const toggleImportExportSidebar = useUIStore((s) => s.toggleImportExportSidebar);
-  const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
+  const isEditing = isEventFormOpen || isInspectionFormOpen;
   const isFullScreenMap = isEditing || isHistoricalPreviewMode;
   const prevDetailModalEventId = useRef(detailModalEventId);
   const prevSelectedAssetId = useRef(selectedAssetId);
@@ -198,7 +191,7 @@ function App() {
           <Button variant="ghost" size="icon" onClick={toggleMobile} className="sm:hidden">
             <IconMenu2 size={20} />
           </Button>
-          <img src="/favicon.svg" alt="EventFlow" width={44} height={44} className="ml-2" />
+          <img src="/logo.svg" alt="EventFlow" width={44} height={44} className="ml-2" />
           <h3 className="text-lg font-semibold">EventFlow</h3>
         </Group>
 

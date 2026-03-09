@@ -1,6 +1,6 @@
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Box, Text, Group, Paper, SimpleGrid, Stack } from '@/components/shims';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,14 +10,11 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { IconPhoto } from '@tabler/icons-react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useInspection, useEvent } from '../../hooks/useApi';
+import { useScrollRestore } from '../../hooks/useScrollRestore';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
-
-const INSPECTION_TYPE_LABELS: Record<string, string> = {
-  routine: '定期', detailed: '詳細', emergency: '緊急', diagnostic: '診断',
-};
 
 const CONDITION_COLORS: Record<string, string> = {
   A: 'bg-green-600 text-white', B: 'bg-yellow-500 text-white', C: 'bg-orange-500 text-white', D: 'bg-red-600 text-white', S: 'bg-red-600 text-white',
@@ -39,6 +36,11 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function InspectionDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const locationState = location.state as { breadcrumbFrom?: { to?: string; label?: string } } | null;
+  const breadcrumbTo = locationState?.breadcrumbFrom?.to || '/inspections';
+  const breadcrumbLabel = locationState?.breadcrumbFrom?.label || '点検一覧';
 
   const { data: inspData, isLoading, isError } = useInspection(id ?? null);
   const insp = inspData?.data;
@@ -48,14 +50,39 @@ export function InspectionDetailPage() {
 
   const photos = insp?.mediaUrls || [];
 
+  // Breadcrumb shadow on scroll
+  const pageScrollRef = useRef<HTMLDivElement>(null);
+  useScrollRestore(pageScrollRef as RefObject<HTMLElement>);
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const el = pageScrollRef.current;
+    if (!el) return;
+    const onScroll = () => setIsScrolled(el.scrollTop > 0);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <ScrollArea style={{ height: 'calc(100vh - 60px)' }}>
-      <Box p="lg" style={{ maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
-        <Breadcrumb className="mb-4">
+    <div ref={pageScrollRef} className="h-[calc(100vh-60px)] w-full overflow-y-auto scrollbar-hidden">
+      {/* Sticky breadcrumb bar */}
+      <div
+        className="sticky top-0 z-10 px-6 py-3 transition-shadow duration-200"
+        style={{
+          background: '#FFF',
+          boxShadow: isScrolled ? '0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10)' : 'none',
+        }}
+      >
+        <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/inspections">点検一覧</Link>
+              <BreadcrumbLink
+                onClick={() => {
+                  if (location.key !== 'default') navigate(-1);
+                  else navigate(breadcrumbTo);
+                }}
+                className="cursor-pointer"
+              >
+                {breadcrumbLabel}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -68,7 +95,9 @@ export function InspectionDetailPage() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
 
+      <Box p="lg" style={{ maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
         <PageState loading={isLoading} error={isError} empty={!insp} emptyMessage="点検が見つかりません">
           {insp && (
             <Stack gap="lg">
@@ -83,14 +112,6 @@ export function InspectionDetailPage() {
                     <InfoRow
                       label="点検日"
                       value={new Date(insp.inspectionDate).toLocaleDateString('ja-JP')}
-                    />
-                    <InfoRow
-                      label="種別"
-                      value={
-                        insp.inspectionType
-                          ? INSPECTION_TYPE_LABELS[insp.inspectionType] || insp.inspectionType
-                          : null
-                      }
                     />
                     <InfoRow
                       label="結果"
@@ -168,6 +189,6 @@ export function InspectionDetailPage() {
           )}
         </PageState>
       </Box>
-    </ScrollArea>
+    </div>
   );
 }

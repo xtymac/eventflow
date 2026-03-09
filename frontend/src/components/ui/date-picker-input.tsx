@@ -1,12 +1,11 @@
 import { useState, forwardRef } from 'react';
 import { format } from 'date-fns';
-import { DayPicker } from 'react-day-picker';
 import { CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import 'react-day-picker/style.css';
 
 interface DatePickerInputProps {
   label?: string;
@@ -18,17 +17,18 @@ interface DatePickerInputProps {
   value: Date | null | undefined;
   onChange: (date: Date | null) => void;
   popoverProps?: { zIndex?: number };
+  className?: string;
 }
 
-export const DatePickerInput = forwardRef<HTMLButtonElement, DatePickerInputProps>(
+export const DatePickerInput = forwardRef<HTMLDivElement, DatePickerInputProps>(
   function DatePickerInput(
-    { label, placeholder = 'Select date', description, required, clearable, error, value, onChange, popoverProps },
+    { label, placeholder = 'Select date', description, required, clearable, error, value, onChange, popoverProps, className },
     ref
   ) {
     const [open, setOpen] = useState(false);
 
     return (
-      <div className="flex flex-col gap-1">
+      <div ref={ref} className={cn("flex flex-col gap-1", className)}>
         {label && (
           <Label className="text-sm font-medium">
             {label}
@@ -39,23 +39,27 @@ export const DatePickerInput = forwardRef<HTMLButtonElement, DatePickerInputProp
         <Popover open={open} onOpenChange={setOpen}>
           <div className="relative">
             <PopoverTrigger asChild>
-              <Button
-                ref={ref}
-                variant="outline"
-                className={cn(
-                  'w-full justify-start text-left font-normal',
-                  !value && 'text-muted-foreground',
-                  error && 'border-destructive'
-                )}
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(true); }}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {value ? format(value, 'yyyy/MM/dd') : placeholder}
-              </Button>
+                <Input
+                  readOnly
+                  value={value ? format(value, 'yyyy/MM/dd') : ''}
+                  placeholder={placeholder}
+                  className={cn(
+                    'cursor-pointer pr-9',
+                    error && 'border-destructive'
+                  )}
+                />
+                <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </PopoverTrigger>
             {clearable && value && (
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
                   onChange(null);
@@ -70,7 +74,7 @@ export const DatePickerInput = forwardRef<HTMLButtonElement, DatePickerInputProp
             align="start"
             style={popoverProps?.zIndex ? { zIndex: popoverProps.zIndex } : undefined}
           >
-            <DayPicker
+            <Calendar
               mode="single"
               selected={value ?? undefined}
               onSelect={(date) => {

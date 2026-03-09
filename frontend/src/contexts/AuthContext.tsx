@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-export type UserRole = 'admin' | 'park_manager' | 'tree_manager' | 'user';
+export type UserRole = 'admin' | 'park_manager' | 'tree_manager' | 'user' | 'contractor';
 
 export type Scope = 'parks' | 'facilities' | 'park-trees' | 'street-trees' | 'green-lands';
 
@@ -72,6 +72,13 @@ const ROLE_CONFIG: Record<UserRole, {
     roleLabel: '利用者',
     department: '緑地部・公園緑地課',
     allowedSections: ['map', 'cases', 'park-mgmt'],
+    allowedScopes: ['parks', 'facilities'],
+    defaultScope: 'parks',
+  },
+  contractor: {
+    roleLabel: '委託事業者',
+    department: '委託事業者',
+    allowedSections: ['contractor-map', 'contractor-inspections', 'contractor-repairs'],
     allowedScopes: ['parks', 'facilities'],
     defaultScope: 'parks',
   },

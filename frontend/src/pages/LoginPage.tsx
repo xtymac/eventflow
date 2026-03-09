@@ -19,7 +19,17 @@ export function LoginPage() {
     const u = username || '\u30C6\u30B9\u30C8\u30E6\u30FC\u30B6\u30FC';
     login(u, password, 'admin');
     const next = searchParams.get('next');
-    navigate(next && next.startsWith('/') ? next : '/map');
+    // Only redirect to real staff pages — skip contractor routes and error pages
+    const blocked = ['/contractor', '/403', '/404', '/500', '/login'];
+    const validNext = next && next.startsWith('/') && !blocked.some(p => next.startsWith(p));
+    navigate(validNext ? next : '/map');
+  };
+
+  const handleContractorLogin = () => {
+    const u = username || '株式会社〇〇';
+    login(u, password, 'contractor');
+    const next = searchParams.get('next');
+    navigate(next && next.startsWith('/contractor') ? next : '/contractor/map');
   };
 
   return (
@@ -112,6 +122,25 @@ export function LoginPage() {
                 className="w-full mt-2 rounded"
               >
                 ログイン
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">または</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded"
+                onClick={handleContractorLogin}
+                data-testid="contractor-login-button"
+              >
+                委託事業者ログイン
               </Button>
             </Stack>
           </form>

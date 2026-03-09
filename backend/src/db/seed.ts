@@ -224,10 +224,13 @@ async function seed() {
       createdBy: constructionEvents.createdBy,
       updatedAt: constructionEvents.updatedAt,
       geometrySource: constructionEvents.geometrySource,
+      refAssetId: constructionEvents.refAssetId,
+      refAssetType: constructionEvents.refAssetType,
       // Phase 1: Close tracking fields
       closedBy: constructionEvents.closedBy,
       closedAt: constructionEvents.closedAt,
       closeNotes: constructionEvents.closeNotes,
+      externalCaseId: constructionEvents.externalCaseId,
     };
     const allEvents = await db.select(eventSelect).from(constructionEvents);
     for (const event of allEvents) {

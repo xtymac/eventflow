@@ -9,6 +9,7 @@ import { readFileSync } from 'fs';
 import { eventsRoutes } from './routes/events.js';
 import { assetsRoutes } from './routes/assets.js';
 import { inspectionsRoutes } from './routes/inspections.js';
+import { repairsRoutes } from './routes/repairs.js';
 import { importExportRoutes } from './routes/import-export.js';
 import { osmSyncRoutes } from './routes/osm-sync.js';
 import { sseRoutes } from './routes/sse.js';
@@ -28,6 +29,7 @@ import { parkFacilitiesRoutes } from './routes/park-facilities.js';
 import { pavementSectionsRoutes } from './routes/pavement-sections.js';
 import { pumpStationsRoutes } from './routes/pump-stations.js';
 import { lifecyclePlansRoutes } from './routes/lifecycle-plans.js';
+import { parkSearchRoutes } from './routes/park-search.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -119,6 +121,7 @@ async function main() {
   await fastify.register(assetsRoutes, { prefix: '/assets' });
   await fastify.register(workordersRoutes, { prefix: '/workorders' });
   await fastify.register(inspectionsRoutes, { prefix: '/inspections' });
+  await fastify.register(repairsRoutes, { prefix: '/repairs' });
   await fastify.register(importExportRoutes, { prefix: '/import' });
   await fastify.register(importExportRoutes, { prefix: '/export' });
   await fastify.register(importVersionsRoutes, { prefix: '/import/versions' });
@@ -139,6 +142,9 @@ async function main() {
 
   // Search routes (Google Maps + local data)
   await fastify.register(searchRoutes, { prefix: '/search' });
+
+  // Park search MVP routes
+  await fastify.register(parkSearchRoutes, { prefix: '/api/park-search' });
 
   // Nagoya designated road sync routes
   await fastify.register(nagoyaSyncRoutes);

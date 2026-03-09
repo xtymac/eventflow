@@ -172,7 +172,7 @@ const UnifiedSearchResponseSchema = Type.Object({
   }),
 });
 
-const DEFAULT_TARGETS: SearchTarget[] = ['places', 'events', 'roads'];
+const DEFAULT_TARGETS: SearchTarget[] = ['places', 'events', 'roads', 'greenspaces', 'park-facilities'];
 const MAX_STREETLIGHT_BBOX_M2 = 2_000_000;
 
 function normalizeIntent(raw: unknown, fallbackQuery: string): SearchIntent {
@@ -873,6 +873,7 @@ async function searchParkFacilities(
 
   type ParkFacilityRow = {
     id: string;
+    facilityId: string | null;
     name: string | null;
     category: string | null;
     conditionGrade: string | null;
@@ -884,6 +885,7 @@ async function searchParkFacilities(
   const rows = await db.execute<ParkFacilityRow>(sql`
     SELECT
       id,
+      facility_id as "facilityId",
       name,
       category,
       condition_grade as "conditionGrade",
@@ -906,6 +908,7 @@ async function searchParkFacilities(
       geometry: asset.geometry ?? undefined,
       sourceId: asset.id,
       metadata: {
+        facilityId: asset.facilityId,
         category: asset.category,
         conditionGrade: asset.conditionGrade,
         ward: asset.ward,

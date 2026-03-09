@@ -36,107 +36,107 @@ type FacDef = [string, string, string | null, string, string | null];
 
 const FACILITY_DEFS: Record<string, FacDef[]> = {
   'GS-zxpnkee2': [
-    ['複合遊具 01', 'playground', '複合遊具', 'B', '鉄・FRP'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'B', '鉄・FRP'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'A', '木'],
-    ['すべり台 01', 'playground', 'すべり台', 'B', 'ステンレス'],
-    ['砂場 01', 'playground', '砂場', 'A', null],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'A', '木'],
+    ['すべり台 01', 'slide', 'すべり台', 'B', 'ステンレス'],
+    ['砂場 01', 'sandbox', '砂場', 'A', null],
   ],
   'GS-nliigh01': [
-    ['複合遊具 01', 'playground', '複合遊具', 'A', '鉄・FRP'],
-    ['シェルター 01', 'shelter', 'シェルター', 'B', '鉄'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'A', '鉄・FRP'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'B', '鉄'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['鉄棒 01', 'playground', '鉄棒', 'B', '鉄'],
+    ['鉄棒 01', 'healthExercise', '鉄棒', 'B', '鉄'],
   ],
   'GS-4g77l6x7': [
-    ['野外卓 01', 'bench', '野外卓', 'A', '木'],
-    ['すべり台 01', 'playground', 'すべり台', 'B', 'ステンレス'],
+    ['野外卓 01', 'picnicTable', '野外卓', 'A', '木'],
+    ['すべり台 01', 'slide', 'すべり台', 'B', 'ステンレス'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['シェルター 01', 'shelter', 'シェルター', 'A', '鉄'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'A', '鉄'],
     ['舗装 01', 'pavement', '舗装', 'B', 'アスファルト'],
   ],
   'GS-es1u7z8r': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
     ['舗装 01', 'pavement', '舗装', 'A', 'インターロッキング'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'B', '木'],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'B', '木'],
   ],
   'GS-9ego0pvp': [
-    ['複合遊具 01', 'playground', '複合遊具', 'B', '鉄・FRP'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'B', '鉄・FRP'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['健康器具 01', 'playground', '健康器具', 'A', '鉄'],
-    ['シェルター 01', 'shelter', 'シェルター', 'B', '鉄'],
+    ['健康器具 01', 'healthExercise', '健康器具', 'A', '鉄'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'B', '鉄'],
   ],
   'GS-auy42b1p': [
-    ['すべり台 01', 'playground', 'すべり台', 'C', 'ステンレス'],
-    ['ブランコ 01', 'playground', 'ブランコ', 'B', '鉄'],
+    ['すべり台 01', 'slide', 'すべり台', 'C', 'ステンレス'],
+    ['ブランコ 01', 'swing', 'ブランコ', 'B', '鉄'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'B', '木'],
-    ['砂場 01', 'playground', '砂場', 'B', null],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'B', '木'],
+    ['砂場 01', 'sandbox', '砂場', 'B', null],
   ],
   'GS-gs3xyhbw': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['鉄棒 01', 'playground', '鉄棒', 'B', '鉄'],
-    ['シェルター 01', 'shelter', 'シェルター', 'A', '鉄'],
+    ['鉄棒 01', 'healthExercise', '鉄棒', 'B', '鉄'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'A', '鉄'],
     ['舗装 01', 'pavement', '舗装', 'A', 'アスファルト'],
   ],
   'GS-3d67hwf5': [
-    ['複合遊具 01', 'playground', '複合遊具', 'A', '鉄・FRP'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'A', '鉄・FRP'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['シーソー 01', 'playground', 'シーソー', 'B', '鉄'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'A', '木'],
+    ['シーソー 01', 'combinedPlay', 'シーソー', 'B', '鉄'],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'A', '木'],
   ],
   'GS-byrogagk': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
     ['舗装 01', 'pavement', '舗装', 'A', 'インターロッキング'],
-    ['野外卓 01', 'bench', '野外卓', 'A', '木'],
+    ['野外卓 01', 'picnicTable', '野外卓', 'A', '木'],
   ],
   'GS-ful7d9lw': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
     ['舗装 01', 'pavement', '舗装', 'A', '石畳'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'A', '木'],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'A', '木'],
   ],
   'GS-7f2voyoy': [
-    ['シェルター 01', 'shelter', 'シェルター', 'B', '鉄'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'B', '鉄'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['築山 01', 'playground', '築山', 'A', null],
+    ['築山 01', 'flowerBed', '築山', 'A', null],
     ['舗装 01', 'pavement', '舗装', 'B', 'アスファルト'],
   ],
   'GS-x1q5e2te': [
-    ['すべり台 01', 'playground', 'すべり台', 'B', 'ステンレス'],
+    ['すべり台 01', 'slide', 'すべり台', 'B', 'ステンレス'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['シェルター 01', 'shelter', 'シェルター', 'B', '鉄'],
-    ['砂場 01', 'playground', '砂場', 'A', null],
+    ['シェルター 01', 'gazebo', 'シェルター', 'B', '鉄'],
+    ['砂場 01', 'sandbox', '砂場', 'A', null],
   ],
   'GS-ldnfwyur': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['鉄棒 01', 'playground', '鉄棒', 'B', '鉄'],
-    ['スプリング遊具 01', 'playground', 'スプリング遊具', 'A', '鉄・FRP'],
+    ['鉄棒 01', 'healthExercise', '鉄棒', 'B', '鉄'],
+    ['スプリング遊具 01', 'combinedPlay', 'スプリング遊具', 'A', '鉄・FRP'],
   ],
   'GS-9exy95g1': [
-    ['複合遊具 01', 'playground', '複合遊具', 'B', '鉄・FRP'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'B', '鉄・FRP'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['砂場 01', 'playground', '砂場', 'A', null],
+    ['砂場 01', 'sandbox', '砂場', 'A', null],
   ],
   'GS-xk4kyf2q': [
-    ['すべり台 01', 'playground', 'すべり台', 'B', 'ステンレス'],
+    ['すべり台 01', 'slide', 'すべり台', 'B', 'ステンレス'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['ジャングルジム 01', 'playground', 'ジャングルジム', 'C', '鉄'],
+    ['ジャングルジム 01', 'climbingGym', 'ジャングルジム', 'C', '鉄'],
   ],
   'GS-cfam78i3': [
-    ['健康器具 01', 'playground', '健康器具', 'A', '鉄'],
+    ['健康器具 01', 'healthExercise', '健康器具', 'A', '鉄'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['パーゴラ 01', 'shelter', 'パーゴラ', 'A', '木'],
-    ['ラダー 01', 'playground', 'ラダー', 'B', '鉄'],
+    ['パーゴラ 01', 'pergola', 'パーゴラ', 'A', '木'],
+    ['ラダー 01', 'healthExercise', 'ラダー', 'B', '鉄'],
   ],
   'GS-gul3d3ul': [
     ['ベンチ 01', 'bench', null, 'A', '木'],
     ['舗装 01', 'pavement', '舗装', 'A', '石畳'],
-    ['シェルター 01', 'shelter', 'シェルター', 'A', '鉄'],
+    ['シェルター 01', 'gazebo', 'シェルター', 'A', '鉄'],
   ],
   'GS-rtljov09': [
-    ['複合遊具 01', 'playground', '複合遊具', 'B', '鉄・FRP'],
+    ['複合遊具 01', 'combinedPlay', '複合遊具', 'B', '鉄・FRP'],
     ['ベンチ 01', 'bench', null, 'A', '木'],
-    ['シーソー 01', 'playground', 'シーソー', 'B', '鉄'],
+    ['シーソー 01', 'combinedPlay', 'シーソー', 'B', '鉄'],
   ],
 };
 
@@ -156,12 +156,12 @@ const INSPECTION_DATES = [
 const INSTALL_YEARS = [2005, 2008, 2012, 2015, 2018, 2010, 2003, 2020];
 const DESIGN_LIVES = [15, 20, 25, 30];
 const STATUSES: Array<ParkFacilityAsset['status']> = [
-  'active', 'underRepair', 'suspended', 'active', 'active', 'underRepair', 'active', 'suspended',
+  'active', 'inactive', 'removed', 'active', 'active', 'inactive', 'active', 'removed',
 ];
 
 function buildFeatures(): FacilityFeature[] {
   const features: FacilityFeature[] = [];
-  let counter = 1;
+  let counter = 200;
 
   for (const [parkId, parkName, ward, centerLng, centerLat] of PARKS) {
     const defs = FACILITY_DEFS[parkId];
@@ -185,7 +185,7 @@ function buildFeatures(): FacilityFeature[] {
         properties: {
           id,
           facilityId,
-          name: `${parkName} ${facName}`,
+          name: facName,
           description: subCategory ? `${subCategory}（${parkName}内）` : undefined,
           category: category as ParkFacilityAsset['category'],
           subCategory: subCategory ?? undefined,

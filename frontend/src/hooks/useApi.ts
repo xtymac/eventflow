@@ -8,6 +8,7 @@ import type {
   GreenSpaceAsset,
   StreetLightAsset,
   InspectionRecord,
+  RepairRecord,
   EventFilters,
   AssetFilters,
   RiverFilters,
@@ -19,6 +20,7 @@ import type {
 import type { FeatureCollection, Geometry, Point } from 'geojson';
 import { DUMMY_PARK_FACILITIES, getDummyParkFacilities } from '../data/dummyParkFacilities';
 import { getDummyRepairsByFacility, type DummyRepair } from '../data/dummyRepairs';
+import { type DummyInspection } from '../data/dummyInspections';
 import { DUMMY_EVENTS, getDummyEvent } from '../data/dummyEvents';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -59,14 +61,37 @@ export function useEvents(filters?: EventFilters, options?: { enabled?: boolean 
   return useQuery({
     queryKey: ['events', filters],
     queryFn: async () => {
-      // Only show dummy events (real API events hidden for demo)
+      // Build query params from filters
+      const params = new URLSearchParams();
+      if (filters?.status) params.set('status', filters.status);
+      if (filters?.department) params.set('department', filters.department);
+      if (filters?.name) params.set('name', filters.name);
+      if (filters?.ward) params.set('ward', filters.ward);
+      if (filters?.startDateFrom) params.set('startDateFrom', filters.startDateFrom);
+      if (filters?.startDateTo) params.set('startDateTo', filters.startDateTo);
+      if (filters?.endDateFrom) params.set('endDateFrom', filters.endDateFrom);
+      if (filters?.endDateTo) params.set('endDateTo', filters.endDateTo);
+      if (filters?.includeArchived) params.set('includeArchived', 'true');
+
+      const qs = params.toString();
+      const apiResult = await fetchApi<{ data: ConstructionEvent[]; meta: { total: number; archivedCount: number } }>(
+        `/events${qs ? `?${qs}` : ''}`,
+      );
+
+      // Merge dummy events with API events (dummy events provide demo content)
       let dummyFiltered = DUMMY_EVENTS;
       if (filters?.status) {
         dummyFiltered = dummyFiltered.filter((e) => e.status === filters.status);
       }
+      const apiIds = new Set(apiResult.data.map((e) => e.id));
+      const uniqueDummy = dummyFiltered.filter((e) => !apiIds.has(e.id));
+
       return {
-        data: dummyFiltered,
-        meta: { total: dummyFiltered.length, archivedCount: 0 },
+        data: [...apiResult.data, ...uniqueDummy],
+        meta: {
+          total: apiResult.meta.total + uniqueDummy.length,
+          archivedCount: apiResult.meta.archivedCount,
+        },
       };
     },
     enabled: options?.enabled ?? true,
@@ -83,7 +108,8 @@ export function useEvent(id: string | null) {
         if (event) return { data: event };
         throw new Error('Event not found');
       }
-      return fetchApi<{ data: ConstructionEvent }>(`/events/${id}`);
+      // API resolves by internal ID or external_case_id
+      return fetchApi<{ data: ConstructionEvent }>(`/events/${encodeURIComponent(id!)}`);
     },
     enabled: !!id,
   });
@@ -365,11 +391,19 @@ export function useCreateInspection() {
   });
 }
 
-export function useInspection(id: string | null) {
+export function useInspection(id: string | null, opts?: { probe?: boolean }) {
   return useQuery({
     queryKey: ['inspection', id],
-    queryFn: () => fetchApi<{ data: InspectionRecord }>(`/inspections/${id}`),
+    queryFn: async () => {
+      try {
+        return await fetchApi<{ data: InspectionRecord }>(`/inspections/${id}`);
+      } catch {
+        if (opts?.probe) return null;
+        throw new Error('Not found');
+      }
+    },
     enabled: !!id,
+    retry: opts?.probe ? false : undefined,
   });
 }
 
@@ -403,24 +437,142 @@ export function useDeleteInspection() {
   });
 }
 
-// Inspection by asset hooks
+// Inspection by asset hooks - fetches from real API, maps to DummyInspection shape
 export function useInspectionsByAsset(assetType: string | null, assetId: string | null) {
-  return useQuery({
-    queryKey: ['inspections', 'byAsset', assetType, assetId],
-    queryFn: () => fetchApi<{ data: InspectionRecord[]; meta: { total: number } }>(
-      `/inspections?assetType=${assetType}&assetId=${assetId}`
-    ),
+  const params = new URLSearchParams();
+  if (assetType) params.append('assetType', assetType);
+  if (assetId) params.append('assetId', assetId);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  const query = useQuery({
+    queryKey: ['inspections', 'by-asset', assetType, assetId],
+    queryFn: async () => {
+      const result = await fetchApi<{ data: InspectionRecord[]; meta: { total: number } }>(
+        `/inspections${queryString}`
+      );
+      // Map InspectionRecord → DummyInspection shape for UI consumers
+      const mapped: DummyInspection[] = result.data.map((rec) => {
+        const m = rec.measurements as Record<string, unknown> | null | undefined;
+        return {
+          id: rec.id,
+          facilityId: rec.assetId ?? '',
+          date: rec.inspectionDate,
+          inspector: rec.inspector ?? '',
+          content: rec.result ?? '',
+          structureRank: (m?.structureRank as string) ?? rec.conditionGrade ?? undefined,
+          structureMaterialNotes: (m?.structureMaterialNotes as string) ?? rec.findings ?? undefined,
+          wearRank: (m?.wearRank as string) ?? undefined,
+          wearMaterialNotes: (m?.wearMaterialNotes as string) ?? rec.notes ?? undefined,
+          eventId: rec.eventId ?? undefined,
+        };
+      });
+      return { data: mapped, meta: result.meta };
+    },
     enabled: !!assetType && !!assetId,
+  });
+
+  return {
+    data: query.data ?? { data: [], meta: { total: 0 } },
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+}
+
+// Repairs hooks (EC2 PostgreSQL)
+export function useRepairs() {
+  return useQuery({
+    queryKey: ['repairs'],
+    queryFn: () => fetchApi<{ data: RepairRecord[]; meta: { total: number } }>('/repairs'),
   });
 }
 
-// Repair history hook - returns dummy data for park-facility, empty for others
-export function useRepairsByAsset(_assetType: string | null, assetId: string | null) {
-  const repairs: DummyRepair[] = assetId ? getDummyRepairsByFacility(assetId) : [];
+export function useRepair(id: string | null, opts?: { probe?: boolean }) {
+  return useQuery({
+    queryKey: ['repair', id],
+    queryFn: async () => {
+      try {
+        return await fetchApi<{ data: RepairRecord }>(`/repairs/${id}`);
+      } catch {
+        if (opts?.probe) return null;
+        throw new Error('Not found');
+      }
+    },
+    enabled: !!id,
+    retry: opts?.probe ? false : undefined,
+  });
+}
+
+export function useCreateRepair() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<RepairRecord>) =>
+      fetchApi<{ data: RepairRecord }>('/repairs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['repairs'] });
+    },
+  });
+}
+
+export function useUpdateRepair() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<RepairRecord> }) =>
+      fetchApi<{ data: RepairRecord }>(`/repairs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['repairs'] });
+      queryClient.invalidateQueries({ queryKey: ['repair', variables.id] });
+    },
+  });
+}
+
+// Repair history hook - fetches from real API, falls back to dummy data
+export function useRepairsByAsset(assetType: string | null, assetId: string | null) {
+  const params = new URLSearchParams();
+  if (assetType) params.append('assetType', assetType);
+  if (assetId) params.append('assetId', assetId);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+
+  const query = useQuery({
+    queryKey: ['repairs', 'by-asset', assetType, assetId],
+    queryFn: async () => {
+      const result = await fetchApi<{ data: RepairRecord[]; meta: { total: number } }>(
+        `/repairs${queryString}`
+      );
+      // Map RepairRecord → DummyRepair shape for UI consumers
+      const mapped: DummyRepair[] = result.data.map((rec) => ({
+        id: rec.id,
+        facilityId: rec.assetId ?? '',
+        date: rec.repairDate,
+        type: rec.repairType ?? '',
+        description: rec.description ?? '',
+        conditionGrade: rec.conditionGrade ?? undefined,
+        mainReplacementParts: rec.mainReplacementParts ?? undefined,
+        repairNotes: rec.repairNotes ?? undefined,
+        designDocNumber: rec.designDocNumber ?? undefined,
+        vendor: rec.vendor ?? undefined,
+      }));
+      return { data: mapped, meta: result.meta };
+    },
+    enabled: !!assetType && !!assetId,
+  });
+
+  // Merge with dummy data as fallback
+  const dummyRepairs: DummyRepair[] = assetId ? getDummyRepairsByFacility(assetId) : [];
+  const apiRepairs = query.data?.data ?? [];
+  const allRepairs = [...apiRepairs, ...dummyRepairs];
+
   return {
-    data: { data: repairs, meta: { total: repairs.length } },
-    isLoading: false,
-    isError: false,
+    data: { data: allRepairs, meta: { total: allRepairs.length } },
+    isLoading: query.isLoading,
+    isError: query.isError,
   };
 }
 
@@ -635,6 +787,25 @@ export function useGreenSpaceWards() {
   return useQuery({
     queryKey: ['greenspace-wards'],
     queryFn: () => fetchApi<{ data: string[] }>('/greenspaces/wards'),
+  });
+}
+
+export function usePatchGreenSpace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, geometry }: { id: string; geometry: Geometry }) =>
+      fetchApi<{ type: 'Feature'; properties: GreenSpaceAsset; geometry: Geometry }>(
+        `/greenspaces/${id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ geometry }),
+        }
+      ),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['greenspace', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['greenspaces'] });
+    },
   });
 }
 
@@ -1096,7 +1267,7 @@ export function useCloseEvent() {
 const NAGOYA_BBOX = '136.7,35.0,137.2,35.4';
 
 export function useAllGreenSpaces(filters?: Omit<GreenSpaceFilters, 'bbox'>) {
-  return useGreenSpacesInBbox(NAGOYA_BBOX, { ...filters, limit: 5000 } as Omit<GreenSpaceFilters, 'bbox'>, { enabled: true });
+  return useGreenSpacesInBbox(NAGOYA_BBOX, { ...filters, limit: 1000 } as Omit<GreenSpaceFilters, 'bbox'>, { enabled: true });
 }
 
 export function useAllParkFacilities(filters?: Omit<ParkFacilityFilters, 'bbox'>) {

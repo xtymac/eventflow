@@ -278,6 +278,11 @@ interface UIState {
   demoSidebarOpen: boolean;
   toggleDemoSidebar: () => void;
   setDemoSidebarOpen: (open: boolean) => void;
+
+  // Mobile app sidebar
+  mobileMenuOpen: boolean;
+  toggleMobileMenu: () => void;
+  setMobileMenuOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -905,4 +910,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   demoSidebarOpen: true,
   toggleDemoSidebar: () => set((s) => ({ demoSidebarOpen: !s.demoSidebarOpen })),
   setDemoSidebarOpen: (open) => set({ demoSidebarOpen: open }),
+
+  // Mobile app sidebar
+  mobileMenuOpen: false,
+  toggleMobileMenu: () => set((s) => ({ mobileMenuOpen: !s.mobileMenuOpen })),
+  setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
 }));

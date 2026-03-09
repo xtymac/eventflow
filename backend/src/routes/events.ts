@@ -75,6 +75,7 @@ const EventSchema = Type.Object({
   // Reference to a related asset (singular)
   refAssetId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   refAssetType: Type.Optional(Type.Union([RefAssetTypeEnum, Type.Null()])),
+  externalCaseId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   updatedAt: Type.String({ format: 'date-time' }),
 });
 
@@ -91,6 +92,8 @@ const CreateEventSchema = Type.Object({
   // Reference to a related asset (singular)
   refAssetId: Type.Optional(Type.String()),
   refAssetType: Type.Optional(RefAssetTypeEnum),
+  // External case ID for contractor-created cases
+  externalCaseId: Type.Optional(Type.String()),
 });
 
 const UpdateEventSchema = Type.Partial(Type.Object({
@@ -211,6 +214,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -292,6 +296,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
           startDate: e.startDate.toISOString(),
           endDate: e.endDate.toISOString(),
           archivedAt: e.archivedAt?.toISOString() ?? null,
+          externalCaseId: e.externalCaseId ?? null,
           updatedAt: e.updatedAt.toISOString(),
           roadAssets: eventAssets,
         };
@@ -330,10 +335,16 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
-    const events = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+    // Resolution order: exact id match first, then fallback to external_case_id
+    let events = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.id, id));
+
+    if (events.length === 0) {
+      events = await db.select(eventSelect).from(constructionEvents).where(eq(constructionEvents.externalCaseId, id));
+    }
 
     if (events.length === 0) {
       return reply.status(404).send({ error: 'Event not found' });
@@ -341,8 +352,8 @@ export async function eventsRoutes(fastify: FastifyInstance) {
 
     const event = events[0];
 
-    // Fetch related road assets
-    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, id));
+    // Fetch related road assets using canonical internal ID
+    const relations = await db.select().from(eventRoadAssets).where(eq(eventRoadAssets.eventId, event.id));
     const assetIds = relations.map(r => r.roadAssetId);
 
     const assetSelect = {
@@ -379,6 +390,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -420,6 +432,18 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Enforce external case ID uniqueness
+    if (body.externalCaseId) {
+      const existing = await db.select({ id: constructionEvents.id })
+        .from(constructionEvents)
+        .where(eq(constructionEvents.externalCaseId, body.externalCaseId));
+      if (existing.length > 0) {
+        return reply.status(400).send({
+          error: `externalCaseId '${body.externalCaseId}' is already in use by event ${existing[0].id}`,
+        });
+      }
+    }
+
     const geometrySource: 'manual' | 'auto' = 'manual';
     const eventGeometry = body.geometry;
 
@@ -428,11 +452,11 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       INSERT INTO construction_events (
         id, name, status, start_date, end_date, restriction_type,
         geometry, geometry_source, post_end_decision, department, ward,
-        ref_asset_id, ref_asset_type, updated_at
+        ref_asset_id, ref_asset_type, external_case_id, updated_at
       ) VALUES (
         ${id}, ${body.name}, 'planned', ${startDate}, ${endDate}, ${body.restrictionType},
         ${toGeomSql(eventGeometry)}, ${geometrySource}, 'pending', ${body.department}, ${body.ward ?? null},
-        ${body.refAssetId ?? null}, ${body.refAssetType ?? null}, ${now}
+        ${body.refAssetId ?? null}, ${body.refAssetType ?? null}, ${body.externalCaseId ?? null}, ${now}
       )
     `);
 
@@ -461,6 +485,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       // Reference to related asset (singular)
       refAssetId: body.refAssetId ?? null,
       refAssetType: body.refAssetType ?? null,
+      externalCaseId: body.externalCaseId ?? null,
       updatedAt: now,
     };
 
@@ -473,6 +498,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         archivedAt: null,
+        externalCaseId: body.externalCaseId ?? null,
         updatedAt: now.toISOString(),
         refAssetId: body.refAssetId ?? null,
         refAssetType: body.refAssetType ?? null,
@@ -585,6 +611,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -634,6 +661,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets, // Historical relations only
       },
@@ -712,6 +740,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -759,6 +788,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -1040,6 +1070,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1087,6 +1118,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -1154,6 +1186,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1198,6 +1231,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -1259,6 +1293,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       createdBy: constructionEvents.createdBy,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1303,6 +1338,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         startDate: event.startDate.toISOString(),
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },
@@ -1440,6 +1476,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
       closeNotes: constructionEvents.closeNotes,
       refAssetId: constructionEvents.refAssetId,
       refAssetType: constructionEvents.refAssetType,
+      externalCaseId: constructionEvents.externalCaseId,
       updatedAt: constructionEvents.updatedAt,
     };
 
@@ -1496,6 +1533,7 @@ export async function eventsRoutes(fastify: FastifyInstance) {
         endDate: event.endDate.toISOString(),
         archivedAt: event.archivedAt?.toISOString() ?? null,
         closedAt: event.closedAt?.toISOString() ?? null,
+        externalCaseId: event.externalCaseId ?? null,
         updatedAt: event.updatedAt.toISOString(),
         roadAssets: eventAssets,
       },

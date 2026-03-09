@@ -4,7 +4,7 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { db } from '../db/index.js';
 import { greenSpaceAssets } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
-import { fromGeomSql } from '../db/geometry.js';
+import { fromGeomSql, toGeomSql } from '../db/geometry.js';
 
 // BBOX validation helper
 function parseBbox(bbox: string): { minLng: number; minLat: number; maxLng: number; maxLat: number } | null {
@@ -297,5 +297,95 @@ export async function greenspacesRoutes(fastify: FastifyInstance) {
       .sort();
 
     return { data: wards };
+  });
+
+  // PATCH /greenspaces/:id - Update green space geometry
+  app.patch('/:id', {
+    schema: {
+      params: Type.Object({
+        id: Type.String(),
+      }),
+      body: Type.Object({
+        geometry: Type.Optional(GeometrySchema),
+      }),
+      response: {
+        200: Type.Object({
+          type: Type.Literal('Feature'),
+          properties: Type.Omit(GreenSpaceAssetSchema, ['geometry']),
+          geometry: GeometrySchema,
+        }),
+        404: Type.Object({ error: Type.String() }),
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+    const { geometry } = request.body;
+
+    // Check existence
+    const existing = await db.execute(sql`
+      SELECT id FROM greenspace_assets WHERE id = ${id}
+    `);
+    if (existing.rows.length === 0) {
+      return reply.status(404).send({ error: 'Green space asset not found' });
+    }
+
+    // Build SET clauses
+    const setClauses: ReturnType<typeof sql>[] = [
+      sql`updated_at = NOW()`,
+    ];
+    if (geometry) {
+      setClauses.push(sql`geometry = ${toGeomSql(geometry)}`);
+      // Recompute area from the new geometry
+      setClauses.push(sql`area_m2 = ST_Area(${toGeomSql(geometry)}::geography)::int`);
+    }
+
+    await db.execute(sql`
+      UPDATE greenspace_assets
+      SET ${sql.join(setClauses, sql`, `)}
+      WHERE id = ${id}
+    `);
+
+    // Return updated feature
+    const result = await db.execute(sql`
+      SELECT
+        id, name, name_ja as "nameJa", display_name as "displayName",
+        ST_AsGeoJSON(geometry)::json as geometry,
+        green_space_type as "greenSpaceType",
+        leisure_type as "leisureType", landuse_type as "landuseType",
+        natural_type as "naturalType", area_m2 as "areaM2",
+        vegetation_type as "vegetationType", operator,
+        data_source as "dataSource", osm_type as "osmType", osm_id as "osmId",
+        status, condition, risk_level as "riskLevel", ward, updated_at as "updatedAt"
+      FROM greenspace_assets
+      WHERE id = ${id}
+    `);
+
+    const row = result.rows[0] as Record<string, unknown>;
+
+    return {
+      type: 'Feature' as const,
+      properties: {
+        id: row.id as string,
+        name: row.name as string | null,
+        nameJa: row.nameJa as string | null,
+        displayName: row.displayName as string | null,
+        greenSpaceType: row.greenSpaceType as string,
+        leisureType: row.leisureType as string | null,
+        landuseType: row.landuseType as string | null,
+        naturalType: row.naturalType as string | null,
+        areaM2: row.areaM2 as number | null,
+        vegetationType: row.vegetationType as string | null,
+        operator: row.operator as string | null,
+        dataSource: row.dataSource as string | null,
+        osmType: row.osmType as string | null,
+        osmId: row.osmId as string | null,
+        status: row.status as string,
+        condition: row.condition as string | null,
+        riskLevel: row.riskLevel as string | null,
+        ward: row.ward as string | null,
+        updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
+      },
+      geometry: row.geometry,
+    };
   });
 }

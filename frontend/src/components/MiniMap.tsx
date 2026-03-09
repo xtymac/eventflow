@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import type * as GeoJSONTypes from 'geojson';
+import type { DummyFacility } from '../data/dummyFacilities';
+import { FACILITY_CLASSIFICATION_LABELS, FACILITY_STATUS_CONFIG } from '../data/dummyFacilities';
 
 interface MiniMapProps {
   geometry?: GeoJSONTypes.Geometry | null;
@@ -15,8 +17,12 @@ interface MiniMapProps {
   highlightedMarkerIndex?: number | null;
   /** When true, center/zoom on markers instead of fitting full geometry bounds */
   focusOnMarkers?: boolean;
-  /** 'pin' (default MapLibre markers) or 'circle' (SVG circle dot) */
-  markerType?: 'pin' | 'circle';
+  /** Full facility data for popups — parallel to markers array */
+  facilityData?: DummyFacility[];
+  /** Callback when a marker is clicked */
+  onMarkerClick?: (index: number) => void;
+  /** Index of currently selected/clicked marker (shows popup) */
+  selectedMarkerIndex?: number | null;
 }
 
 // Same raster basemap as main MapView (CARTO Voyager @2x for HiDPI)
@@ -34,10 +40,75 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', fillOpacity = 0.15, highlightedMarkerIndex, focusOnMarkers, markerType = 'pin' }: MiniMapProps) {
+function buildFacilityPopupHTML(f: DummyFacility): string {
+  const statusConfig = FACILITY_STATUS_CONFIG[f.status] || { label: f.status, className: '' };
+  const statusBg = f.status === 'active' ? '#dcfce7' : f.status === 'suspended' || f.status === 'removed' ? '#fee2e2' : '#fef9c3';
+  const statusColor = f.status === 'active' ? '#22c55e' : f.status === 'suspended' || f.status === 'removed' ? '#ef4444' : '#ca8a04';
+  const classLabel = f.facilityClassification ? (FACILITY_CLASSIFICATION_LABELS[f.facilityClassification] || f.facilityClassification) : '-';
+  const rankColor = (r?: string) => {
+    if (!r) return '#e5e7eb';
+    const map: Record<string, string> = { A: '#22c55e', B: '#facc15', C: '#f87171', D: '#6b7280' };
+    return map[r] || '#e5e7eb';
+  };
+  const rankTextColor = (r?: string) => r === 'B' ? '#713F12' : '#fff';
+  const imgSrc = `/facilities/${f.category === 'restFacility' ? 'bench-park.jpg' : f.category === 'playEquipment' ? 'playground-composite.jpg' : f.category === 'sportsFacility' ? 'sports-ground.jpg' : 'park-default.jpg'}`;
+
+  return `
+    <div style="font-family:'Noto Sans JP',sans-serif;min-width:280px;max-width:340px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:12px;font-weight:500;color:#0a0a0a;">${f.name}</span>
+          <span style="font-size:12px;font-weight:500;color:${statusColor};background:${statusBg};border-radius:9999px;padding:1px 8px;">${statusConfig.label}</span>
+        </div>
+      </div>
+      <img src="${imgSrc}" alt="${f.name}" style="width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:8px;" onerror="this.style.display='none'" />
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:11px;color:#737373;">施設ID</div>
+          <div style="font-size:12px;font-weight:500;color:#0a0a0a;">${f.facilityId || '-'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#737373;">施設分類</div>
+          <div style="font-size:12px;font-weight:500;color:#0a0a0a;">${classLabel}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#737373;">数量</div>
+          <div style="font-size:12px;font-weight:500;color:#0a0a0a;">${f.quantity ? f.quantity + ' 基' : '-'}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:11px;color:#737373;">構造ランク</div>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;background:${rankColor(f.structureRank)};color:${rankTextColor(f.structureRank)};font-size:11px;font-weight:700;">${f.structureRank || '-'}</span>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#737373;">消耗ランク</div>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;background:${rankColor(f.wearRank)};color:${rankTextColor(f.wearRank)};font-size:11px;font-weight:700;">${f.wearRank || '-'}</span>
+        </div>
+      </div>
+      <div style="border-top:1px solid #f0f0f0;padding-top:6px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:#737373;">設置年</span>
+          <span style="color:#0a0a0a;">${f.dateInstalled || '-'}</span>
+        </div>
+        <div style="border-top:1px solid #f0f0f0;padding-top:6px;display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:#737373;">詳細・規格</span>
+          <span style="color:#0a0a0a;">${f.description || '-'}</span>
+        </div>
+        <div style="border-top:1px solid #f0f0f0;padding-top:6px;display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:#737373;">主要部材</span>
+          <span style="color:#0a0a0a;">${f.mainMaterial || '-'}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function MiniMap({ geometry, markers, height = 300, center, zoom, fillColor = '#228be6', fillOpacity = 0.15, highlightedMarkerIndex, focusOnMarkers, facilityData, onMarkerClick, selectedMarkerIndex }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerEls = useRef<HTMLElement[]>([]);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
   const initialBounds = useRef<[[number, number], [number, number]] | null>(null);
   const initialCenter = useRef<[number, number] | null>(null);
   const initialZoom = useRef<number | null>(null);
@@ -135,23 +206,42 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
         } catch { /* ignore invalid geometry */ }
       }
 
-      // Add markers
+      // Add markers using teardrop pin shape
       markerEls.current = [];
       if (markers) {
-        markers.forEach((m) => {
-          let marker: maplibregl.Marker;
-          if (markerType === 'circle') {
-            const el = document.createElement('div');
-            el.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="6" fill="white"/><circle cx="6" cy="6" r="4" fill="${m.color || '#3B82F6'}"/></svg>`;
-            el.style.cursor = 'pointer';
-            marker = new maplibregl.Marker({ element: el, anchor: 'center' })
-              .setLngLat([m.lng, m.lat])
-              .addTo(map);
-          } else {
-            marker = new maplibregl.Marker({ color: m.color || '#e03131' })
-              .setLngLat([m.lng, m.lat])
-              .addTo(map);
-          }
+        markers.forEach((m, markerIdx) => {
+          const el = document.createElement('div');
+          const color = m.color || '#3B82F6';
+          const svgNs = 'http://www.w3.org/2000/svg';
+          const svg = document.createElementNS(svgNs, 'svg');
+          svg.setAttribute('width', '24');
+          svg.setAttribute('height', '32');
+          svg.setAttribute('viewBox', '0 0 24 32');
+          // Teardrop body
+          const path = document.createElementNS(svgNs, 'path');
+          path.setAttribute('d', 'M12 0C5.373 0 0 5.373 0 12c0 9 12 20 12 20s12-11 12-20C24 5.373 18.627 0 12 0z');
+          path.setAttribute('fill', 'white');
+          path.setAttribute('stroke', '#d4d4d4');
+          path.setAttribute('stroke-width', '1');
+          // Inner circle
+          const circle = document.createElementNS(svgNs, 'circle');
+          circle.setAttribute('cx', '12');
+          circle.setAttribute('cy', '11');
+          circle.setAttribute('r', '5');
+          circle.setAttribute('fill', color);
+          svg.appendChild(path);
+          svg.appendChild(circle);
+          el.appendChild(svg);
+          el.style.cursor = 'pointer';
+
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onMarkerClick?.(markerIdx);
+          });
+
+          const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([m.lng, m.lat])
+            .addTo(map);
           markerEls.current.push(marker.getElement());
         });
       }
@@ -161,25 +251,67 @@ export function MiniMap({ geometry, markers, height = 300, center, zoom, fillCol
     return () => { map.remove(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Highlight marker on hover — target inner SVG to avoid conflicting with
-  // MapLibre's position transform on the outer container element.
+  // Show/hide popup when selectedMarkerIndex changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !facilityData || !markers) return;
+
+    // Remove existing popup
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
+
+    if (selectedMarkerIndex == null || selectedMarkerIndex < 0 || selectedMarkerIndex >= markers.length) return;
+
+    const f = facilityData[selectedMarkerIndex];
+    if (!f) return;
+
+    const m = markers[selectedMarkerIndex];
+    const popup = new maplibregl.Popup({ closeOnClick: true, closeButton: true, maxWidth: '360px', offset: [0, -30] })
+      .setLngLat([m.lng, m.lat])
+      .setHTML(buildFacilityPopupHTML(f))
+      .addTo(map);
+
+    popup.on('close', () => {
+      popupRef.current = null;
+      onMarkerClick?.(-1); // signal deselection
+    });
+
+    popupRef.current = popup;
+  }, [selectedMarkerIndex, facilityData, markers, onMarkerClick]);
+
+  // Highlight marker on hover / selected state
   useEffect(() => {
     markerEls.current.forEach((el, i) => {
       const svg = el.querySelector('svg');
       if (!svg) return;
-      if (i === highlightedMarkerIndex) {
+      const path = svg.querySelector('path');
+      const circle = svg.querySelector('circle');
+      if (i === selectedMarkerIndex) {
+        if (path) { path.setAttribute('fill', '#3B82F6'); path.setAttribute('stroke', '#2563EB'); }
+        if (circle) circle.setAttribute('fill', 'white');
+        svg.style.transform = 'scale(1.3)';
+        svg.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))';
+        svg.style.transition = 'transform 0.15s ease, filter 0.15s ease';
+        el.style.zIndex = '10';
+      } else if (i === highlightedMarkerIndex) {
+        if (path) { path.setAttribute('fill', 'white'); path.setAttribute('stroke', '#d4d4d4'); }
+        if (circle) circle.setAttribute('fill', markers?.[i]?.color || '#3B82F6');
         svg.style.transform = 'scale(1.5)';
         svg.style.filter = 'drop-shadow(0 0 6px rgba(255,180,0,0.9))';
         svg.style.transition = 'transform 0.15s ease, filter 0.15s ease';
         el.style.zIndex = '10';
       } else {
+        if (path) { path.setAttribute('fill', 'white'); path.setAttribute('stroke', '#d4d4d4'); }
+        if (circle) circle.setAttribute('fill', markers?.[i]?.color || '#3B82F6');
         svg.style.transform = '';
         svg.style.filter = '';
         svg.style.transition = 'transform 0.15s ease, filter 0.15s ease';
         el.style.zIndex = '';
       }
     });
-  }, [highlightedMarkerIndex]);
+  }, [highlightedMarkerIndex, selectedMarkerIndex, markers]);
 
   const handleRefocus = useCallback(() => {
     const map = mapRef.current;

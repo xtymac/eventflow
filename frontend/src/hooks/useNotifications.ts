@@ -1,6 +1,5 @@
 import { useRecentEdits, useRoadEditSSE } from './useApi';
 import { useNotificationStore } from '../stores/notificationStore';
-import { useMapStore } from '../stores/mapStore';
 
 /**
  * Shared hook for notification state used by both App.tsx (for badge)
@@ -9,12 +8,11 @@ import { useMapStore } from '../stores/mapStore';
 export function useNotifications() {
   const { data, isLoading, refetch } = useRecentEdits({ limit: 50 });
   const viewedEditIds = useNotificationStore((s) => s.viewedEditIds);
-  const refreshRoadTiles = useMapStore((s) => s.refreshRoadTiles);
 
-  // SSE for real-time updates (invalidates query cache + refreshes map tiles)
+  // SSE for real-time updates (invalidates query cache)
   useRoadEditSSE({
     onEdit: () => {
-      refreshRoadTiles();
+      // no-op: SSE auto-invalidates query cache
     },
   });
 

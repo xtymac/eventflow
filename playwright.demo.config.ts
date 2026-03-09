@@ -7,7 +7,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   use: {
-    baseURL: process.env.DEMO_BASE_URL || 'https://eventflow.uixai.org',
+    baseURL: process.env.DEMO_BASE_URL || 'https://nagoya.uixai.org',
     viewport: { width: 1920, height: 1080 },
     deviceScaleFactor: 1,
     video: {

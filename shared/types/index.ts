@@ -131,13 +131,6 @@ export type PumpStationCategory = 'stormwater' | 'sewage' | 'irrigation' | 'comb
 // Pump equipment status
 export type PumpEquipmentStatus = 'operational' | 'standby' | 'underMaintenance' | 'outOfService';
 
-// ============================================
-// NEW: Inspection Types (RFI: 点検・診断 expanded)
-// ============================================
-
-// Inspection type classification
-export type InspectionType = 'routine' | 'detailed' | 'emergency' | 'diagnostic';
-
 // Inspection result summary
 export type InspectionResult = 'pass' | 'minor' | 'needsRepair' | 'critical';
 
@@ -187,6 +180,8 @@ export interface ConstructionEvent {
   // Reference to a related asset (singular)
   refAssetId?: string | null;
   refAssetType?: AssetTypeRef | null;
+  // External case ID for contractor-created cases
+  externalCaseId?: string | null;
   // Populated from JOINs (Phase 1)
   workOrders?: WorkOrder[];
   updatedAt: string; // ISO 8601 timestamp
@@ -484,7 +479,6 @@ export interface InspectionRecord {
   assetId?: string | null;        // Reference to any asset table's id
   // Core inspection fields
   inspectionDate: string;         // ISO 8601 date
-  inspectionType?: InspectionType | null;
   result: string;
   conditionGrade?: ConditionGrade | null;
   findings?: string | null;
@@ -501,6 +495,27 @@ export interface InspectionRecord {
   refWorkOrderId?: string | null;
   createdAt: string;              // ISO 8601 timestamp
   updatedAt: string;              // ISO 8601 timestamp
+  status: 'draft' | 'submitted' | 'confirmed' | 'returned';
+}
+
+// Repair record (mirrors inspection_records with repair-specific fields)
+export interface RepairRecord {
+  id: string;
+  assetType?: string | null;
+  assetId?: string | null;
+  repairDate: string;           // ISO 8601 date
+  repairType?: string | null;
+  description?: string | null;
+  conditionGrade?: string | null;
+  mainReplacementParts?: string | null;
+  repairNotes?: string | null;
+  designDocNumber?: string | null;
+  vendor?: string | null;
+  measurements?: Record<string, unknown> | null;
+  mediaUrls?: string[] | null;   // Photo/document URLs (base64 data URLs for demo)
+  geometry: Point;
+  createdAt: string;            // ISO 8601 timestamp
+  status: 'draft' | 'submitted' | 'confirmed' | 'returned';
 }
 
 // ============================================
@@ -633,6 +648,8 @@ export interface CreateEventRequest {
   // Reference to a related asset (singular, optional)
   refAssetId?: string;
   refAssetType?: AssetTypeRef;
+  // External case ID for contractor-created cases
+  externalCaseId?: string;
 }
 
 export interface UpdateEventRequest {
@@ -909,7 +926,6 @@ export interface PumpStationFilters {
 
 export interface InspectionRecordFilters {
   bbox?: string;               // Optional for inspection records
-  inspectionType?: InspectionType | InspectionType[];
   result?: InspectionResult | InspectionResult[];
   conditionGrade?: ConditionGrade | ConditionGrade[];
   assetType?: string;
@@ -952,7 +968,6 @@ export type SearchResultType =
   | 'place'
   | 'coordinate'
   | 'event'
-  | 'road'
   | 'greenspace'
   | 'streetlight'
   | 'river'

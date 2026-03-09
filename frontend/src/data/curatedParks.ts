@@ -1,4 +1,4 @@
-// Curated list of 18 major parks for the demo
+// Curated list of 22 major parks for the demo
 // IDs match real DB records (greenspace_assets)
 // Used in ParkListPage (park management) and MapView (greenspace polygon filter)
 // Ledger fields based on Nagoya City park management ledger (公園台帳)
@@ -190,6 +190,42 @@ export const CURATED_PARKS: readonly CuratedPark[] = [
     category: '近', schoolDistrict: '守山土木事務所', paidFacility: 'ソ',
     disasterFacility: '防水', managementOffice: '守山土木事務所',
     notes: '中土木管理(5.94ha)<br>住宅都市局管理(7.77ha)',
+  },
+  {
+    id: 'GS-m3k7np2q', no: '5.5.19', displayName: '中村公園', ward: '中村区',
+    address: '名古屋市中村区中村町高畑68', areaHa: 11.30, greenSpaceType: 'park', areaM2: 113000, status: 'active',
+    openingYear: 'T3', establishedDate: 'T03.10.01', planNumber: '5.5.19', plannedAreaHa: 11.30,
+    urbanPlanNumber: '16.31', planDecisionDate: 'T02.08.01', acquisitionMethod: '復寄',
+    category: '近', schoolDistrict: '中村土木事務所', paidFacility: '野',
+    disasterFacility: '防水', managementOffice: '中村土木事務所',
+    notes: '豊國神社隣接',
+  },
+  {
+    id: 'GS-h8r2vt5x', no: '5.5.20', displayName: '呼続公園', ward: '南区',
+    address: '名古屋市南区呼続四丁目', areaHa: 3.47, greenSpaceType: 'park', areaM2: 34700, status: 'active',
+    openingYear: 'S27', establishedDate: 'S27.04.01', planNumber: '5.5.20', plannedAreaHa: 3.47,
+    urbanPlanNumber: '5.25', planDecisionDate: 'S26.06.01', acquisitionMethod: '借復',
+    category: '近', schoolDistrict: '南土木事務所', paidFacility: '野',
+    disasterFacility: '防水', managementOffice: '南土木事務所',
+    notes: '昭和土木管理',
+  },
+  {
+    id: 'GS-t4w9bk6j', no: '5.5.21', displayName: '天白公園', ward: '天白区',
+    address: '名古屋市天白区天白町大字島田', areaHa: 14.84, greenSpaceType: 'park', areaM2: 148400, status: 'active',
+    openingYear: 'S50', establishedDate: 'S50.04.01', planNumber: '5.5.21', plannedAreaHa: 14.84,
+    urbanPlanNumber: '24.46', planDecisionDate: 'S48.09.01', acquisitionMethod: '買復',
+    category: '近', schoolDistrict: '天白土木事務所', paidFacility: '野',
+    disasterFacility: '防水', managementOffice: '天白土木事務所',
+    notes: 'ゲートボール場1<br>室内広場1',
+  },
+  {
+    id: 'GS-s6p1ym3d', no: '5.5.22', displayName: '白鳥公園', ward: '熱田区',
+    address: '名古屋市熱田区熱田西町二丁目', areaHa: 6.30, greenSpaceType: 'park', areaM2: 63000, status: 'active',
+    openingYear: 'H3', establishedDate: 'H03.04.01', planNumber: '5.5.22', plannedAreaHa: 6.30,
+    urbanPlanNumber: '7.94', planDecisionDate: 'H02.06.01', acquisitionMethod: '買寄',
+    category: '総', schoolDistrict: '熱田土木事務所', paidFacility: '庭',
+    disasterFacility: '応給', managementOffice: '熱田土木事務所',
+    notes: '白鳥庭園隣接',
   },
 ] as const;
 

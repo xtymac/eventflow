@@ -148,7 +148,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
     geometryColumn: 'geometry',
     idColumn: 'id',
     writeable: true,
-    queryables: ['id', 'inspectionType', 'result', 'conditionGrade', 'assetType', 'assetId', 'ward'],
+    queryables: ['id', 'result', 'conditionGrade', 'assetType', 'assetId', 'ward'],
     propertyMap: {
       id: 'id',
       eventId: 'event_id',
@@ -156,7 +156,6 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       assetType: 'asset_type',
       assetId: 'asset_id',
       inspectionDate: 'inspection_date',
-      inspectionType: 'inspection_type',
       result: 'result',
       conditionGrade: 'condition_grade',
       findings: 'findings',
@@ -167,7 +166,6 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
     temporalProperty: 'inspection_date',
     propertyTypes: {
       id: { type: 'string', title: 'Feature ID' },
-      inspectionType: { type: 'string', title: 'Inspection Type', enum: ['routine', 'detailed', 'emergency', 'diagnostic'] },
       result: { type: 'string', title: 'Result', enum: ['pass', 'minor', 'needsRepair', 'critical'] },
       conditionGrade: { type: 'string', title: 'Condition Grade', enum: ['A', 'B', 'C', 'D', 'S'] },
       assetType: { type: 'string', title: 'Asset Type' },

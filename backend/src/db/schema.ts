@@ -67,6 +67,8 @@ export const constructionEvents = pgTable('construction_events', {
   // Reference to a related asset (singular, any type) - per Event Creation spec
   refAssetId: varchar('ref_asset_id', { length: 50 }),
   refAssetType: varchar('ref_asset_type', { length: 50 }), // road | river | streetlight | greenspace | street_tree | park_facility | pavement_section | pump_station
+  // External case ID for contractor-created cases (e.g., "30010")
+  externalCaseId: varchar('external_case_id', { length: 50 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   statusIdx: index('idx_events_status').on(table.status),
@@ -178,7 +180,6 @@ export const inspectionRecords = pgTable('inspection_records', {
   assetId: varchar('asset_id', { length: 50 }),  // Reference to any asset table's id
   // Core inspection fields
   inspectionDate: timestamp('inspection_date', { mode: 'date' }).notNull(),
-  inspectionType: varchar('inspection_type', { length: 50 }),  // 'routine' | 'detailed' | 'emergency' | 'diagnostic'
   result: varchar('result', { length: 100 }).notNull(),
   conditionGrade: varchar('condition_grade', { length: 10 }),  // 'A' | 'B' | 'C' | 'D' | 'S'
   findings: text('findings'),
@@ -195,14 +196,37 @@ export const inspectionRecords = pgTable('inspection_records', {
   refWorkOrderId: varchar('ref_work_order_id', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  status: varchar('status', { length: 20 }).notNull().default('submitted'),
 }, (table) => ({
   eventIdIdx: index('idx_inspections_event_id').on(table.eventId),
   roadAssetIdIdx: index('idx_inspections_road_asset_id').on(table.roadAssetId),
   inspectionDateIdx: index('idx_inspections_inspection_date').on(table.inspectionDate),
   assetTypeAssetIdIdx: index('idx_inspections_asset_type_id').on(table.assetType, table.assetId),
-  inspectionTypeIdx: index('idx_inspections_type').on(table.inspectionType),
   resultIdx: index('idx_inspections_result').on(table.result),
   conditionGradeIdx: index('idx_inspections_condition_grade').on(table.conditionGrade),
+}));
+
+// Repair records table — mirrors inspection_records with repair-specific fields
+export const repairRecords = pgTable('repair_records', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  assetType: varchar('asset_type', { length: 50 }),
+  assetId: varchar('asset_id', { length: 50 }),
+  repairDate: timestamp('repair_date', { mode: 'date' }).notNull(),
+  repairType: varchar('repair_type', { length: 50 }),
+  description: varchar('description', { length: 255 }),
+  conditionGrade: varchar('condition_grade', { length: 10 }),
+  mainReplacementParts: text('main_replacement_parts'),
+  repairNotes: text('repair_notes'),
+  designDocNumber: varchar('design_doc_number', { length: 100 }),
+  vendor: varchar('vendor', { length: 100 }),
+  measurements: jsonbColumn('measurements'),
+  mediaUrls: jsonbColumn('media_urls'),  // string[] of photo/document URLs
+  geometry: pointColumn('geometry').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  status: varchar('status', { length: 20 }).notNull().default('submitted'),
+}, (table) => ({
+  assetIdx: index('idx_repairs_asset').on(table.assetType, table.assetId),
 }));
 
 // OSM sync logs table (uses jsonbColumn defined at top)
@@ -574,6 +598,9 @@ export type NewRoadAssetChange = typeof roadAssetChanges.$inferInsert;
 
 export type InspectionRecord = typeof inspectionRecords.$inferSelect;
 export type NewInspectionRecord = typeof inspectionRecords.$inferInsert;
+
+export type RepairRecord = typeof repairRecords.$inferSelect;
+export type NewRepairRecord = typeof repairRecords.$inferInsert;
 
 export type OsmSyncLog = typeof osmSyncLogs.$inferSelect;
 export type NewOsmSyncLog = typeof osmSyncLogs.$inferInsert;

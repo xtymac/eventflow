@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import {
   type ColumnDef,
   type VisibilityState,
@@ -7,18 +8,17 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Search, Ellipsis, CircleArrowRight, Plus, CalendarIcon } from 'lucide-react';
+import { Search, Ellipsis, CircleArrowRight, Plus, FileInput, Printer, Pencil, LandPlot, CircleMinus } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useScrollRestore } from '../../hooks/useScrollRestore';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -28,6 +28,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -46,6 +52,9 @@ import {
 import { DataTableViewOptions, type FilterOption } from '@/components/ui/data-table-view-options';
 import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
 import { ParkPreviewPanel } from './ParkPreviewPanel';
+import type { DateRange } from 'react-day-picker';
+import { DateRangePickerInput } from '@/components/ui/date-range-picker-input';
+import { parseJapaneseEraDate, toUTCMidnight } from '@/utils/japaneseEraDate';
 
 /* ── Style tokens ── */
 const headerCls = 'h-10 px-2 text-xs font-medium text-muted-foreground border-b border-[#f5f5f5]';
@@ -79,52 +88,6 @@ const stickyRightStyle: React.CSSProperties = {
   backgroundColor: 'white',
   boxShadow: '-4px 0 8px -4px rgba(0,0,0,0.08)',
 };
-
-type ColumnPreset = 'standard' | 'compact';
-
-const ALL_COLUMN_IDS: readonly string[] = [
-  'no',
-  'displayName',
-  'ward',
-  'address',
-  'areaHa',
-  'openingYear',
-  'establishedDate',
-  'planNumber',
-  'plannedAreaHa',
-  'urbanPlanNumber',
-  'planDecisionDate',
-  'acquisitionMethod',
-  'category',
-  'schoolDistrict',
-  'paidFacility',
-  'disasterFacility',
-  'managementOffice',
-  'notes',
-  'actions',
-];
-
-const COMPACT_COLUMN_IDS = new Set<string>([
-  'no',
-  'displayName',
-  'ward',
-  'address',
-  'areaHa',
-  'openingYear',
-  'establishedDate',
-  'planNumber',
-  'plannedAreaHa',
-  'urbanPlanNumber',
-  'actions',
-]);
-
-function buildColumnVisibility(preset: ColumnPreset): VisibilityState {
-  const next: VisibilityState = {};
-  for (const id of ALL_COLUMN_IDS) {
-    next[id] = preset === 'standard' ? true : COMPACT_COLUMN_IDS.has(id);
-  }
-  return next;
-}
 
 /* ── Toolbar filter options (for 表示するフィルター tab) ── */
 const TOOLBAR_FILTER_OPTIONS: FilterOption[] = [
@@ -162,14 +125,39 @@ const sortedData: CuratedPark[] = [...CURATED_PARKS].sort((a, b) => {
   return aNum - bNum;
 });
 
+/* ── CSV export helpers ── */
+function escapeCsvCell(value: string): string {
+  if (value.includes('"') || value.includes(',') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function formatColumnValue(row: CuratedPark, columnId: string): string {
+  const value = row[columnId as keyof CuratedPark];
+  if (columnId === 'areaHa' || columnId === 'plannedAreaHa') {
+    return typeof value === 'number' ? value.toFixed(2) : String(value ?? '');
+  }
+  return String(value ?? '');
+}
+
+function downloadCsv(csvText: string, filename: string) {
+  const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ParkListPage() {
   const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = useState('');
   const [wardFilter, setWardFilter] = useState<string | undefined>(undefined);
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [acquisitionFilter, setAcquisitionFilter] = useState<string | undefined>(undefined);
-  const [columnPreset, setColumnPreset] = useState<ColumnPreset>('standard');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => buildColumnVisibility('standard'));
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [visibleFilters, setVisibleFilters] = useState<string[]>(DEFAULT_VISIBLE_FILTERS);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedParkId = searchParams.get('selected');
@@ -323,7 +311,41 @@ export function ParkListPage() {
       header: '',
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-3">
-          <Ellipsis className="size-4 text-muted-foreground" />
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-md p-1 border border-[#e5e5e5] bg-[#f5f5f5] text-[#595959] hover:bg-[#ececec] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        data-testid="park-row-actions-trigger"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Ellipsis className="size-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[180px]" data-testid="park-row-actions-menu">
+                      <DropdownMenuItem data-testid="park-row-action-edit">
+                        <Pencil className="size-4" />
+                        編集
+                      </DropdownMenuItem>
+                      <DropdownMenuItem data-testid="park-row-action-area-change">
+                        <LandPlot className="size-4" />
+                        区域変更
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" data-testid="park-row-action-retire">
+                        <CircleMinus className="size-4" />
+                        廃止
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>操作</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <CircleArrowRight
             className="size-4 text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={(e) => {
@@ -347,6 +369,9 @@ export function ParkListPage() {
   const [areaHaFilter, setAreaHaFilter] = useState('');
   const [planNumberFilter, setPlanNumberFilter] = useState('');
   const [plannedAreaHaFilter, setPlannedAreaHaFilter] = useState('');
+  const [openingYearRange, setOpeningYearRange] = useState<DateRange | undefined>();
+  const [establishedDateRange, setEstablishedDateRange] = useState<DateRange | undefined>();
+  const [planDecisionDateRange, setPlanDecisionDateRange] = useState<DateRange | undefined>();
 
   // Draft state for the advanced search dialog
   const [draft, setDraft] = useState({
@@ -361,6 +386,9 @@ export function ParkListPage() {
     acquisitionMethod: undefined as string | undefined,
     paidFacility: undefined as string | undefined,
     disasterFacility: undefined as string | undefined,
+    openingYearRange: undefined as DateRange | undefined,
+    establishedDateRange: undefined as DateRange | undefined,
+    planDecisionDateRange: undefined as DateRange | undefined,
   });
 
   function openAdvancedSearch() {
@@ -376,6 +404,9 @@ export function ParkListPage() {
       acquisitionMethod: acquisitionFilter,
       paidFacility: paidFacilityFilter,
       disasterFacility: disasterFacilityFilter,
+      openingYearRange,
+      establishedDateRange,
+      planDecisionDateRange,
     });
     setAdvancedSearchOpen(true);
   }
@@ -392,6 +423,11 @@ export function ParkListPage() {
     setAcquisitionFilter(draft.acquisitionMethod);
     setPaidFacilityFilter(draft.paidFacility);
     setDisasterFacilityFilter(draft.disasterFacility);
+
+    setOpeningYearRange(draft.openingYearRange);
+    setEstablishedDateRange(draft.establishedDateRange);
+    setPlanDecisionDateRange(draft.planDecisionDateRange);
+
     setAdvancedSearchOpen(false);
   }
 
@@ -408,16 +444,60 @@ export function ParkListPage() {
       acquisitionMethod: undefined,
       paidFacility: undefined,
       disasterFacility: undefined,
+      openingYearRange: undefined,
+      establishedDateRange: undefined,
+      planDecisionDateRange: undefined,
     });
   }
+
+  const hasColumnVisibilityChanges = Object.keys(columnVisibility).length > 0;
+  const hasVisibleFilterChanges =
+    visibleFilters.length !== DEFAULT_VISIBLE_FILTERS.length ||
+    visibleFilters.some((f) => !DEFAULT_VISIBLE_FILTERS.includes(f));
 
   const hasFilters =
     !!wardFilter || !!categoryFilter || !!acquisitionFilter || globalFilter !== '' ||
     !!schoolDistrictFilter || !!managementOfficeFilter || !!paidFacilityFilter ||
-    !!disasterFacilityFilter || !!areaHaFilter || !!planNumberFilter || !!plannedAreaHaFilter;
+    !!disasterFacilityFilter || !!areaHaFilter || !!planNumberFilter || !!plannedAreaHaFilter ||
+    !!openingYearRange?.from || !!openingYearRange?.to ||
+    !!establishedDateRange?.from || !!establishedDateRange?.to ||
+    !!planDecisionDateRange?.from || !!planDecisionDateRange?.to ||
+    hasColumnVisibilityChanges || hasVisibleFilterChanges;
+
+  const activeFilterCount = [
+    globalFilter,
+    wardFilter,
+    categoryFilter,
+    acquisitionFilter,
+    schoolDistrictFilter,
+    managementOfficeFilter,
+    paidFacilityFilter,
+    disasterFacilityFilter,
+    areaHaFilter,
+    planNumberFilter,
+    plannedAreaHaFilter,
+    openingYearRange?.from || openingYearRange?.to ? 'set' : '',
+    establishedDateRange?.from || establishedDateRange?.to ? 'set' : '',
+    planDecisionDateRange?.from || planDecisionDateRange?.to ? 'set' : '',
+  ].filter(Boolean).length;
+
+  // Precompute Gregorian dates from Japanese era strings once
+  const parksWithDates = useMemo(() => {
+    return sortedData.map((p) => {
+      const oy = parseJapaneseEraDate(p.openingYear);
+      const ed = parseJapaneseEraDate(p.establishedDate);
+      const pd = parseJapaneseEraDate(p.planDecisionDate);
+      return {
+        ...p,
+        _openingGregorianYear: isNaN(oy.year) ? null : oy.year,
+        _establishedGregorianDate: ed.date,
+        _planDecisionGregorianDate: pd.date,
+      };
+    });
+  }, [sortedData]);
 
   const filteredData = useMemo(() => {
-    return sortedData.filter((p) => {
+    return parksWithDates.filter((p) => {
       if (wardFilter && p.ward !== wardFilter) return false;
       if (categoryFilter && p.category !== categoryFilter) return false;
       if (acquisitionFilter && p.acquisitionMethod !== acquisitionFilter) return false;
@@ -434,14 +514,46 @@ export function ParkListPage() {
         const target = parseFloat(plannedAreaHaFilter);
         if (!isNaN(target) && p.plannedAreaHa !== target) return false;
       }
+
+      // Opening year: compare integer years (inclusive bounds)
+      if (openingYearRange?.from || openingYearRange?.to) {
+        const gy = p._openingGregorianYear;
+        if (gy != null) {
+          if (openingYearRange.from && gy < openingYearRange.from.getFullYear()) return false;
+          if (openingYearRange.to && gy > openingYearRange.to.getFullYear()) return false;
+        }
+      }
+
+      // Established date: compare date-only (inclusive bounds, UTC midnight)
+      if (establishedDateRange?.from || establishedDateRange?.to) {
+        const ed = p._establishedGregorianDate;
+        if (ed != null) {
+          if (establishedDateRange.from && ed < toUTCMidnight(establishedDateRange.from)) return false;
+          if (establishedDateRange.to && ed > toUTCMidnight(establishedDateRange.to)) return false;
+        }
+      }
+
+      // Plan decision date: compare date-only (inclusive bounds, UTC midnight)
+      if (planDecisionDateRange?.from || planDecisionDateRange?.to) {
+        const pd = p._planDecisionGregorianDate;
+        if (pd != null) {
+          if (planDecisionDateRange.from && pd < toUTCMidnight(planDecisionDateRange.from)) return false;
+          if (planDecisionDateRange.to && pd > toUTCMidnight(planDecisionDateRange.to)) return false;
+        }
+      }
+
       return true;
     });
-  }, [wardFilter, categoryFilter, acquisitionFilter, schoolDistrictFilter, managementOfficeFilter, paidFacilityFilter, disasterFacilityFilter, areaHaFilter, planNumberFilter, plannedAreaHaFilter]);
+  }, [parksWithDates, wardFilter, categoryFilter, acquisitionFilter, schoolDistrictFilter, managementOfficeFilter, paidFacilityFilter, disasterFacilityFilter, areaHaFilter, planNumberFilter, plannedAreaHaFilter, openingYearRange, establishedDateRange, planDecisionDateRange]);
 
   // Lazy row reveal: show rows in viewport-sized batches
+  const scrollRef = useRef<HTMLDivElement>(null);
   const TABLE_ROW_H = 41; // h-10 (40px) + 1px border
   const TABLE_HEADER_H = 41;
-  const [visibleRowCount, setVisibleRowCount] = useState(16);
+  const savedScrollTop = useScrollRestore(scrollRef as RefObject<HTMLElement>, { manualRestore: true });
+  const [visibleRowCount, setVisibleRowCount] = useState(() =>
+    savedScrollTop != null ? Math.ceil((savedScrollTop + 1000) / TABLE_ROW_H) : 16,
+  );
   const [batchSize, setBatchSize] = useState(16);
 
   useEffect(() => {
@@ -499,8 +611,20 @@ export function ParkListPage() {
     return () => observer.disconnect();
   }, [batchSize, allRows.length]);
 
-  // Reset visible rows and scroll position on filter changes
+  // Scroll restoration for back/forward navigation
   useEffect(() => {
+    if (savedScrollTop == null) return;
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: savedScrollTop });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reset visible rows and scroll position only on actual filter changes
+  const prevFilteredData = useRef(filteredData);
+  useEffect(() => {
+    if (prevFilteredData.current === filteredData) return;
+    prevFilteredData.current = filteredData;
     setVisibleRowCount(batchSize);
     scrollRef.current?.scrollTo({ top: 0 });
   }, [filteredData, batchSize]);
@@ -537,7 +661,6 @@ export function ParkListPage() {
   const totalWidth = table.getVisibleLeafColumns().reduce((sum, c) => sum + (c.getSize() ?? 100), 0);
 
   // Auto-show scrollbar while scrolling, hide after idle
-  const scrollRef = useRef<HTMLDivElement>(null);
   const scrollTimer = useRef<ReturnType<typeof setTimeout>>();
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -559,7 +682,39 @@ export function ParkListPage() {
     setAreaHaFilter('');
     setPlanNumberFilter('');
     setPlannedAreaHaFilter('');
+    setOpeningYearRange(undefined);
+    setEstablishedDateRange(undefined);
+    setPlanDecisionDateRange(undefined);
+    setColumnVisibility({});
+    setVisibleFilters(DEFAULT_VISIBLE_FILTERS);
   }
+
+  const getExportableColumns = useCallback(() => {
+    return table.getVisibleLeafColumns()
+      .filter(col => col.id !== 'actions')
+      .map(col => ({
+        id: col.id,
+        header: typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
+      }));
+  }, [table]);
+
+  const handleExportCsv = useCallback(() => {
+    const cols = getExportableColumns();
+    const rows = table.getRowModel().rows;
+    const bom = '\uFEFF';
+    const header = cols.map(c => escapeCsvCell(c.header)).join(',');
+    const dataRows = rows.map(row =>
+      cols.map(col => escapeCsvCell(formatColumnValue(row.original, col.id))).join(',')
+    );
+    const csv = bom + [header, ...dataRows].join('\r\n');
+    const now = new Date();
+    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+    downloadCsv(csv, `parks_export_${ts}.csv`);
+  }, [table, getExportableColumns]);
+
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
 
   // Close preview panel when selected park is filtered out
   useEffect(() => {
@@ -568,24 +723,20 @@ export function ParkListPage() {
     }
   }, [filteredData, selectedParkId]);
 
-  function applyColumnPreset(preset: ColumnPreset) {
-    setColumnPreset(preset);
-    setColumnVisibility(buildColumnVisibility(preset));
-  }
-
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '12px 24px 16px', height: 'calc(100% - 32px)' }} onClick={() => setSelectedParkId(null)}>
-      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+    <div className="flex min-h-0 flex-col overflow-hidden" style={{ margin: 16, padding: '0 24px 16px', height: 'calc(100% - 32px)' }} onClick={() => setSelectedParkId(null)}>
+      <div className="flex items-center justify-between" style={{ margin: '4px 0 20px' }}>
         <h1 className="text-3xl font-semibold leading-none tracking-tight">公園</h1>
         <Button size="icon-sm" className="size-9 rounded-full border-0 bg-[#215042] hover:bg-[#2a6554]">
           <Plus className="size-4" />
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 16 }}>
+      <div className="flex flex-wrap items-start gap-3" style={{ marginBottom: 16 }}>
+        <div className="flex min-w-[320px] flex-1 flex-wrap items-center gap-3">
         {visibleFilters.includes('search') && (
           <div
-            className="flex h-9 w-[316px] items-center gap-3 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+            className="flex h-9 w-full sm:w-[316px] items-center gap-3 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
             style={{ padding: '0 16px' }}
           >
             <Search className="size-4 shrink-0 text-muted-foreground" />
@@ -600,11 +751,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('ward') && (
           <Select value={wardFilter ?? '__all__'} onValueChange={(v) => setWardFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="区" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="区 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">区 (すべて)</SelectItem>
               {wards.map((w) => (
                 <SelectItem key={w} value={w}>{w}</SelectItem>
               ))}
@@ -614,11 +765,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('category') && (
           <Select value={categoryFilter ?? '__all__'} onValueChange={(v) => setCategoryFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="種別" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="種別 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">種別 (すべて)</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -628,11 +779,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('schoolDistrict') && (
           <Select value={schoolDistrictFilter || '__all__'} onValueChange={(v) => setSchoolDistrictFilter(v === '__all__' ? '' : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="学区名" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="学区名 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">学区名 (すべて)</SelectItem>
               {schoolDistricts.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -642,11 +793,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('managementOffice') && (
           <Select value={managementOfficeFilter ?? '__all__'} onValueChange={(v) => setManagementOfficeFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="管理公所" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="管理公所 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">管理公所 (すべて)</SelectItem>
               {managementOffices.map((m) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
@@ -654,13 +805,85 @@ export function ParkListPage() {
           </Select>
         )}
 
+        {visibleFilters.includes('areaHa') && (
+          <div
+            className="flex h-9 w-full sm:w-[200px] items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+            style={{ padding: '0 16px' }}
+          >
+            <Input
+              placeholder="面積, ha"
+              value={areaHaFilter}
+              onChange={(e) => setAreaHaFilter(e.target.value)}
+              className="h-auto min-h-0 flex-1 border-0 p-0 text-sm text-muted-foreground shadow-none focus-visible:ring-0 focus-visible:border-0"
+            />
+          </div>
+        )}
+
+        {visibleFilters.includes('openingYear') && (
+          <DateRangePickerInput
+            placeholder="開園年度"
+            value={openingYearRange}
+            onChange={setOpeningYearRange}
+            clearable
+            className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-sm text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+          />
+        )}
+
+        {visibleFilters.includes('establishedDate') && (
+          <DateRangePickerInput
+            placeholder="設置年月日"
+            value={establishedDateRange}
+            onChange={setEstablishedDateRange}
+            clearable
+            className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-sm text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+          />
+        )}
+
+        {visibleFilters.includes('planNumber') && (
+          <div
+            className="flex h-9 w-full sm:w-[200px] items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+            style={{ padding: '0 16px' }}
+          >
+            <Input
+              placeholder="計画番号"
+              value={planNumberFilter}
+              onChange={(e) => setPlanNumberFilter(e.target.value)}
+              className="h-auto min-h-0 flex-1 border-0 p-0 text-sm text-muted-foreground shadow-none focus-visible:ring-0 focus-visible:border-0"
+            />
+          </div>
+        )}
+
+        {visibleFilters.includes('plannedAreaHa') && (
+          <div
+            className="flex h-9 w-full sm:w-[200px] items-center gap-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+            style={{ padding: '0 16px' }}
+          >
+            <Input
+              placeholder="計画面積, ha"
+              value={plannedAreaHaFilter}
+              onChange={(e) => setPlannedAreaHaFilter(e.target.value)}
+              className="h-auto min-h-0 flex-1 border-0 p-0 text-sm text-muted-foreground shadow-none focus-visible:ring-0 focus-visible:border-0"
+            />
+          </div>
+        )}
+
+        {visibleFilters.includes('planDecisionDate') && (
+          <DateRangePickerInput
+            placeholder="計画決定日"
+            value={planDecisionDateRange}
+            onChange={setPlanDecisionDateRange}
+            clearable
+            className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-sm text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]"
+          />
+        )}
+
         {visibleFilters.includes('acquisitionMethod') && (
           <Select value={acquisitionFilter ?? '__all__'} onValueChange={(v) => setAcquisitionFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="取得方法" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="取得方法 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">取得方法 (すべて)</SelectItem>
               {acquisitionMethods.map((m) => (
                 <SelectItem key={m} value={m}>{m}</SelectItem>
               ))}
@@ -670,11 +893,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('paidFacility') && (
           <Select value={paidFacilityFilter ?? '__all__'} onValueChange={(v) => setPaidFacilityFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="有料施設" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="有料施設 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">有料施設 (すべて)</SelectItem>
               {paidFacilities.map((f) => (
                 <SelectItem key={f} value={f}>{f}</SelectItem>
               ))}
@@ -684,11 +907,11 @@ export function ParkListPage() {
 
         {visibleFilters.includes('disasterFacility') && (
           <Select value={disasterFacilityFilter ?? '__all__'} onValueChange={(v) => setDisasterFacilityFilter(v === '__all__' ? undefined : v)}>
-            <SelectTrigger className="h-9 w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
-              <SelectValue placeholder="防災施設" />
+            <SelectTrigger className="h-9 w-full sm:w-[200px] rounded-lg border-[#e5e5e5] bg-white text-muted-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.00)]" style={{ paddingLeft: 16 }}>
+              <SelectValue placeholder="防災施設 (すべて)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">すべて</SelectItem>
+              <SelectItem value="__all__">防災施設 (すべて)</SelectItem>
               {disasterFacilities.map((f) => (
                 <SelectItem key={f} value={f}>{f}</SelectItem>
               ))}
@@ -696,44 +919,74 @@ export function ParkListPage() {
           </Select>
         )}
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            className="size-9 border border-[#e5e5e5] bg-[#f5f5f5] text-[#595959] hover:bg-[#ececec]"
-            onClick={openAdvancedSearch}
-          >
-            <AdvancedSearchIcon className="size-4" />
-            <span className="sr-only">詳細検索</span>
-          </Button>
+        </div>
+        <TooltipProvider>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon-sm"
+                  className="size-9 border border-[#e5e5e5] bg-[#f5f5f5] text-[#595959] hover:bg-[#ececec]"
+                  onClick={openAdvancedSearch}
+                >
+                  <AdvancedSearchIcon className="size-4" />
+                  <span className="sr-only">詳細フィルター</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>詳細フィルター</TooltipContent>
+            </Tooltip>
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex size-[18px] items-center justify-center rounded-full bg-[#215042] text-[10px] font-bold leading-none text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </div>
           <DataTableViewOptions
             table={table}
             filterOptions={TOOLBAR_FILTER_OPTIONS}
             visibleFilters={visibleFilters}
             onVisibleFiltersChange={setVisibleFilters}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon-sm"
-                className="size-9 border border-[#e5e5e5] bg-[#f5f5f5] text-[#595959] hover:bg-[#ececec]"
-              >
-                <Ellipsis className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>表示プリセット</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={columnPreset}
-                onValueChange={(value) => applyColumnPreset(value as ColumnPreset)}
-              >
-                <DropdownMenuRadioItem value="standard">標準</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="compact">コンパクト</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon-sm"
+                      className="size-9 border border-[#e5e5e5] bg-[#f5f5f5] text-[#595959] hover:bg-[#ececec]"
+                    >
+                      <Ellipsis className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[200px]">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      テーブル操作
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={handleExportCsv}
+                      disabled={table.getRowModel().rows.length === 0}
+                      data-testid="csv-export-button"
+                    >
+                      <FileInput className="size-4" />
+                      CSVエクスポート
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handlePrint}
+                      data-testid="print-button"
+                    >
+                      <Printer className="size-4" />
+                      印刷
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>テーブル操作</TooltipContent>
+          </Tooltip>
           <Button
             variant="ghost"
             size="sm"
@@ -744,6 +997,7 @@ export function ParkListPage() {
             すべてクリア
           </Button>
         </div>
+        </TooltipProvider>
       </div>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg" style={{ boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10)' }}>
@@ -835,6 +1089,7 @@ export function ParkListPage() {
         <DialogContent
           className="flex flex-col w-[700px] max-w-[calc(100vw-32px)] sm:max-w-[700px] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden rounded-xl border border-[#e5e5e5] bg-white p-0 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] [&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]]:border-0 [&_[data-slot=dialog-close]]:bg-transparent [&_[data-slot=dialog-close]_svg]:size-6"
           showCloseButton
+          onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="p-4 items-start self-stretch">
             <DialogTitle className="text-xl font-bold leading-6 tracking-normal text-[#0a0a0a]">詳細検索</DialogTitle>
@@ -930,21 +1185,25 @@ export function ParkListPage() {
                   </div>
                   <div>
                     <label className={modalLabelCls}>開園年度</label>
-                    <div className="relative mt-1">
-                      <Input
-                        className={`${modalInputCls} pr-9`}
-                      />
-                      <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-                    </div>
+                    <DateRangePickerInput
+                      placeholder="期間を選択"
+                      value={draft.openingYearRange}
+                      onChange={(r) => setDraft((prev) => ({ ...prev, openingYearRange: r }))}
+                      clearable
+                      popoverProps={{ zIndex: 100 }}
+                      className="mt-1"
+                    />
                   </div>
                   <div>
                     <label className={modalLabelCls}>設置年月日</label>
-                    <div className="relative mt-1">
-                      <Input
-                        className={`${modalInputCls} pr-9`}
-                      />
-                      <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-                    </div>
+                    <DateRangePickerInput
+                      placeholder="期間を選択"
+                      value={draft.establishedDateRange}
+                      onChange={(r) => setDraft((prev) => ({ ...prev, establishedDateRange: r }))}
+                      clearable
+                      popoverProps={{ zIndex: 100 }}
+                      className="mt-1"
+                    />
                   </div>
                 </div>
               </div>
@@ -972,12 +1231,14 @@ export function ParkListPage() {
                     </div>
                     <div>
                       <label className={modalLabelCls}>計画決定日</label>
-                      <div className="relative mt-1">
-                        <Input
-                          className={`${modalInputCls} pr-9`}
-                        />
-                        <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#737373]" />
-                      </div>
+                      <DateRangePickerInput
+                        placeholder="期間を選択"
+                        value={draft.planDecisionDateRange}
+                        onChange={(r) => setDraft((prev) => ({ ...prev, planDecisionDateRange: r }))}
+                        clearable
+                        popoverProps={{ zIndex: 100 }}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                   <div className={modalGridCls}>
@@ -1062,6 +1323,36 @@ export function ParkListPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Print-only table — hidden on screen, visible in @media print */}
+      {createPortal(
+        <div className="print-table-container hidden">
+          <div className="print-header">
+            <h2>公園一覧</h2>
+            <p>{new Date().toLocaleDateString('ja-JP')} {new Date().toLocaleTimeString('ja-JP')}</p>
+            <p>{table.getRowModel().rows.length}件</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                {getExportableColumns().map(col => (
+                  <th key={col.id}>{col.header}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map(row => (
+                <tr key={row.id}>
+                  {getExportableColumns().map(col => (
+                    <td key={col.id}>{formatColumnValue(row.original, col.id)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

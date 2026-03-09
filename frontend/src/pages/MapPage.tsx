@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Burger, Group, SegmentedControl, ActionIcon, Tooltip, ScrollArea, Text, Indicator, Box } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { IconBell, IconX, IconFileImport } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Group, ActionIcon, ScrollArea, Text } from '@mantine/core';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { IconX } from '@tabler/icons-react';
+import { ChevronRight, Printer, FileDown, Send, Layers, Map as MapIcon } from 'lucide-react';
 import { useShallow } from 'zustand/shallow';
-import { isDemoEnvironment, isAdminNavEnabled } from '../utils/environment';
-import { useAuth } from '../contexts/AuthContext';
+import { AnimatePresence, motion } from 'motion/react';
 import { AdminDataNavigationPanel } from '../features/admin-demo/AdminDataNavigationPanel';
-import { EventList } from '../features/events/EventList';
-import { AssetList } from '../features/assets/AssetList';
-import { InspectionList } from '../features/inspections/InspectionList';
 import { EventDetailPanel } from '../features/events/EventDetailPanel';
 import { DecisionModal } from '../features/events/DecisionModal';
 import { MapView } from '../components/MapView';
@@ -16,97 +14,47 @@ import { MapSearch } from '../components/MapSearch';
 import { NotificationSidebar } from '../components/NotificationSidebar';
 import { ImportExportSidebar } from '../components/ImportExportSidebar';
 import { useUIStore } from '../stores/uiStore';
-import { useNotificationStore } from '../stores/notificationStore';
-import { useNotifications } from '../hooks/useNotifications';
+import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { EventEditorOverlay } from '../features/events/EventEditorOverlay';
 import { InspectionEditorOverlay } from '../features/inspections/InspectionEditorOverlay';
 import { InspectionDetailModal } from '../features/inspections/InspectionDetailModal';
 import { AssetDetailPanel } from '../features/assets/AssetDetailPanel';
+import { ParkPreviewPanel } from './parks/ParkPreviewPanel';
+import { CURATED_PARKS } from '../data/curatedParks';
 import { ImportWizard } from '../features/import/ImportWizard';
+
+const PARKS_BY_ID = new Map(CURATED_PARKS.map(p => [p.id, p]));
 import { ExportBboxConfirmOverlay } from '../features/import/components/ExportBboxConfirmOverlay';
 import { ImportPreviewOverlay } from '../features/import/components/ImportPreviewOverlay';
 import { HistoricalPreviewSidebar } from '../features/import/components/HistoricalPreviewSidebar';
 import { useUrlState } from '../hooks/useUrlState';
-
-type View = 'events' | 'assets' | 'inspections';
-
-const VIEW_OPTIONS = [
-  { label: 'Events', value: 'events' },
-  { label: 'Assets', value: 'assets' },
-  { label: 'Inspections', value: 'inspections' },
-];
-
-const SIDEBAR_WIDTH_KEY = 'eventflow-sidebar-width';
-const SIDEBAR_HINT_SHOWN_KEY = 'eventflow-sidebar-hint-shown';
-const DEFAULT_SIDEBAR_WIDTH = 400;
-const MIN_SIDEBAR_WIDTH = 280;
-const MAX_SIDEBAR_WIDTH = 600;
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function MapPage() {
-  // Sidebar resize state
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? Math.min(Math.max(parseInt(saved, 10), MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH) : DEFAULT_SIDEBAR_WIDTH;
-  });
-  const [isResizing, setIsResizing] = useState(false);
-  const [showResizeHint, setShowResizeHint] = useState(false);
-  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
-
-  useEffect(() => {
-    const hintShown = sessionStorage.getItem(SIDEBAR_HINT_SHOWN_KEY);
-    if (!hintShown) {
-      const timer = setTimeout(() => {
-        setShowResizeHint(true);
-        sessionStorage.setItem(SIDEBAR_HINT_SHOWN_KEY, 'true');
-        setTimeout(() => setShowResizeHint(false), 1200);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-    resizeRef.current = { startX: e.clientX, startWidth: sidebarWidth };
-  }, [sidebarWidth]);
-
-  useEffect(() => {
-    if (!isResizing) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!resizeRef.current) return;
-      const delta = e.clientX - resizeRef.current.startX;
-      const newWidth = Math.min(Math.max(resizeRef.current.startWidth + delta, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-      setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-      localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth));
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing, sidebarWidth]);
-
   useUrlState();
+  const navigate = useNavigate();
 
-  const [sidebarOpen, { toggle: toggleSidebar, open: openSidebar }] = useDisclosure(true);
+  const [panelOpen, { toggle: togglePanel, open: openPanel }] = useDisclosure(true);
   const {
-    currentView,
-    setCurrentView,
     isEventFormOpen,
     editingEventId,
     duplicateEventId,
     closeEventForm,
     detailModalEventId,
     closeEventDetailModal,
-    isRoadUpdateModeActive,
     isInspectionFormOpen,
     selectedInspectionForEdit,
     inspectionFormEventId,
@@ -119,15 +67,12 @@ export function MapPage() {
     selectAsset,
     isHistoricalPreviewMode,
   } = useUIStore(useShallow((state) => ({
-    currentView: state.currentView,
-    setCurrentView: state.setCurrentView,
     isEventFormOpen: state.isEventFormOpen,
     editingEventId: state.editingEventId,
     duplicateEventId: state.duplicateEventId,
     closeEventForm: state.closeEventForm,
     detailModalEventId: state.detailModalEventId,
     closeEventDetailModal: state.closeEventDetailModal,
-    isRoadUpdateModeActive: state.isRoadUpdateModeActive,
     isInspectionFormOpen: state.isInspectionFormOpen,
     selectedInspectionForEdit: state.selectedInspectionForEdit,
     inspectionFormEventId: state.inspectionFormEventId,
@@ -141,150 +86,85 @@ export function MapPage() {
     isHistoricalPreviewMode: state.isHistoricalPreviewMode,
   })));
 
-  const { unreadCount } = useNotifications();
-  const toggleNotifications = useNotificationStore((s) => s.toggleSidebar);
-  const toggleImportExportSidebar = useUIStore((s) => s.toggleImportExportSidebar);
-  const isEditing = isEventFormOpen || isRoadUpdateModeActive || isInspectionFormOpen;
+  const mapTheme = useMapStore((s) => s.mapTheme);
+  const setMapTheme = useMapStore((s) => s.setMapTheme);
+
+  const THEME_LABELS: Record<MapTheme, string> = {
+    standard: 'OSM Standard',
+    voyager: 'CARTO Voyager',
+    light: 'CARTO Light',
+    dark: 'CARTO Dark',
+  };
+
+  const isEditing = isEventFormOpen || isInspectionFormOpen;
   const isFullScreenMap = isEditing || isHistoricalPreviewMode;
-
-  // Demo layout guard: feature flag + demo environment (all roles)
-  const isDemoMode = isAdminNavEnabled() && isDemoEnvironment();
-  const { user } = useAuth();
-  const isDemoFixedSidebar = isDemoMode && (user?.role === 'user' || user?.role === 'admin');
-
-  // Demo admin uses store-based sidebar toggle (controlled by DemoHeader hamburger)
-  // 利用者 role: sidebar always visible (no hamburger)
-  const demoSidebarOpen = useUIStore((s) => s.demoSidebarOpen);
-  const effectiveSidebarOpen = isDemoFixedSidebar ? true : isDemoMode ? demoSidebarOpen : sidebarOpen;
 
   const prevDetailModalEventId = useRef(detailModalEventId);
   const prevSelectedAssetId = useRef(selectedAssetId);
 
   useEffect(() => {
     if (prevDetailModalEventId.current && !detailModalEventId) {
-      openSidebar();
+      openPanel();
     }
     prevDetailModalEventId.current = detailModalEventId;
-  }, [detailModalEventId, openSidebar]);
+  }, [detailModalEventId, openPanel]);
 
   useEffect(() => {
-    if (prevSelectedAssetId.current && !selectedAssetId) {
-      openSidebar();
-    }
     prevSelectedAssetId.current = selectedAssetId;
-  }, [selectedAssetId, openSidebar]);
+  }, [selectedAssetId]);
 
-  const showLeftSidebar = !isFullScreenMap && effectiveSidebarOpen;
-  const showRightAside = detailModalEventId || (selectedAssetId && selectedAssetType) || isHistoricalPreviewMode;
+  // Resize state for Right Aside
+  const [asideWidth, setAsideWidth] = useState(() => {
+    const saved = localStorage.getItem('map-right-aside-width');
+    return saved ? Math.min(Math.max(parseInt(saved, 10), 320), 800) : 400;
+  });
+  const [isResizingAside, setIsResizingAside] = useState(false);
+  const asideResizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  const renderSidebarContent = () => {
-    switch (currentView) {
-      case 'events': return <EventList />;
-      case 'assets': return <AssetList />;
-      case 'inspections': return <InspectionList />;
-      default: return <EventList />;
+  const handleAsideResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingAside(true);
+    asideResizeRef.current = { startX: e.clientX, startWidth: asideWidth };
+  }, [asideWidth]);
+
+  useEffect(() => {
+    if (!isResizingAside) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!asideResizeRef.current) return;
+      // For right aside, moving left (smaller clientX) increases width
+      const delta = asideResizeRef.current.startX - e.clientX;
+      const newWidth = Math.min(Math.max(asideResizeRef.current.startWidth + delta, 320), 800);
+      setAsideWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingAside(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingAside]);
+
+  useEffect(() => {
+    if (!isResizingAside) {
+      localStorage.setItem('map-right-aside-width', String(asideWidth));
     }
-  };
+  }, [isResizingAside, asideWidth]);
+
+  const isMobile = useMediaQuery('(max-width: 639px)');
+
+  const showLayerPanel = !isFullScreenMap && panelOpen;
+  const showRightAside = detailModalEventId || (selectedAssetId && selectedAssetType) || isHistoricalPreviewMode;
 
   return (
     <Box style={{ display: 'flex', height: '100%', position: 'relative', overflow: 'hidden' }}>
-      {/* Left Sidebar */}
-      {showLeftSidebar && (
-        <Box
-          style={{
-            width: isDemoFixedSidebar ? 300 : sidebarWidth,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            borderRight: '1px solid var(--mantine-color-gray-3)',
-            height: '100%',
-            overflow: 'hidden',
-          }}
-        >
-          {isDemoMode ? (
-            /* Demo admin sidebar: Search + layer navigation only */
-            <ScrollArea style={{ flex: 1 }} type="hover" scrollbarSize={10} offsetScrollbars>
-              <Box p="md">
-                <MapSearch />
-                <AdminDataNavigationPanel />
-              </Box>
-            </ScrollArea>
-          ) : (
-            /* Standard sidebar: Search + toolbar + SegmentedControl + content list */
-            <>
-              <Box p="md" pb="xs">
-                <Group justify="space-between" mb="xs">
-                  <MapSearch />
-                  <Group gap="xs">
-                    <Tooltip label="Import / Export">
-                      <ActionIcon variant="subtle" onClick={toggleImportExportSidebar}>
-                        <IconFileImport size={20} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Notifications">
-                      <Indicator size={8} disabled={unreadCount === 0} color="red" processing>
-                        <ActionIcon variant="subtle" onClick={toggleNotifications}>
-                          <IconBell size={20} />
-                        </ActionIcon>
-                      </Indicator>
-                    </Tooltip>
-                  </Group>
-                </Group>
-
-                <SegmentedControl
-                  value={currentView}
-                  onChange={(value) => setCurrentView(value as View)}
-                  data={VIEW_OPTIONS}
-                  fullWidth
-                  size="xs"
-                />
-              </Box>
-              <ScrollArea style={{ flex: 1 }} type="hover" scrollbarSize={10} offsetScrollbars>
-                <Box p="md" pt="xs">
-                  {renderSidebarContent()}
-                </Box>
-              </ScrollArea>
-            </>
-          )}
-        </Box>
-      )}
-
-      {/* Resize Handle (hidden for 利用者 — fixed-width sidebar) */}
-      {showLeftSidebar && !isDemoFixedSidebar && (
-        <Box
-          className={`sidebar-resize-handle ${isResizing ? 'active' : ''} ${showResizeHint ? 'hint' : ''}`}
-          onMouseDown={handleResizeStart}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: sidebarWidth - 3,
-            width: 6,
-            height: '100%',
-            cursor: 'col-resize',
-            zIndex: 100,
-            ...(showResizeHint ? {} : {
-              background: isResizing ? 'var(--mantine-color-blue-5)' : 'transparent',
-              transition: isResizing ? 'none' : 'background 0.2s, left 0.1s',
-            }),
-          }}
-        />
-      )}
-
-      {/* Sidebar toggle when collapsed (non-demo only - demo uses header hamburger) */}
-      {!showLeftSidebar && !isFullScreenMap && !isDemoMode && (
-        <Box
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            zIndex: 10,
-          }}
-        >
-          <Burger opened={false} onClick={toggleSidebar} size="sm" />
-        </Box>
-      )}
-
-      {/* Map Area */}
+      {/* Map Area — Full width, panels float over it */}
       <Box style={{ flex: 1, position: 'relative', height: '100%' }}>
         <MapView />
 
@@ -307,24 +187,214 @@ export function MapPage() {
             onClose={closeInspectionForm}
           />
         )}
+
+        {/* Floating layer panel + collapse tab */}
+        <AnimatePresence>
+          {showLayerPanel && (
+            <motion.div
+              initial={{ x: -350, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -350, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute left-4 top-4 z-10 hidden sm:flex items-center"
+            >
+              <div
+                className="flex w-[300px] flex-col rounded-[10px] border border-border bg-background shadow-lg"
+                data-testid="map-layer-panel"
+              >
+                <div className="max-h-[calc(100vh-180px)] overflow-y-auto p-4">
+                  <div className="flex flex-col gap-5">
+                    <MapSearch />
+                    <AdminDataNavigationPanel />
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={togglePanel}
+                className="flex h-[58px] w-[29px] items-center justify-center rounded-r-[10px] border border-l-0 border-border bg-background shadow-md"
+                data-testid="map-panel-toggle"
+              >
+                <ChevronRight size={20} className="text-foreground rotate-180" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile: panel without tab */}
+        <AnimatePresence>
+          {showLayerPanel && (
+            <motion.div
+              initial={{ y: -50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -50, opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute left-4 right-4 top-4 z-10 flex sm:hidden flex-col rounded-[10px] border border-border bg-background shadow-lg"
+              data-testid="map-layer-panel-mobile"
+            >
+              <div className="max-h-[calc(100vh-180px)] overflow-y-auto p-4">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between pb-2 border-b border-border">
+                    <Text fw={600} size="sm">Search & Layers</Text>
+                    <ActionIcon variant="subtle" color="gray" onClick={togglePanel}>
+                      <IconX size={18} />
+                    </ActionIcon>
+                  </div>
+                  <MapSearch />
+                  <AdminDataNavigationPanel />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Collapsed panel tab */}
+        <AnimatePresence>
+          {!isFullScreenMap && !showLayerPanel && (
+            <motion.button
+              type="button"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              onClick={togglePanel}
+              className="absolute left-0 top-4 z-10 hidden sm:flex h-[58px] w-[29px] items-center justify-center rounded-r-[10px] border border-border bg-background shadow-md"
+              data-testid="map-panel-toggle"
+            >
+              <ChevronRight size={20} className="text-foreground" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile collapsed panel button */}
+        <AnimatePresence>
+          {!isFullScreenMap && !showLayerPanel && (
+            <motion.button
+              type="button"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              onClick={togglePanel}
+              className="absolute left-4 top-4 z-10 flex sm:hidden h-10 w-10 items-center justify-center rounded-[10px] border border-border bg-background shadow-md"
+              data-testid="map-panel-toggle-mobile"
+            >
+              <Layers size={20} className="text-foreground" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Action buttons (top-right) — print, download, send */}
+        {!isFullScreenMap && (
+          <TooltipProvider delayDuration={300}>
+            <div
+              className="absolute right-4 top-4 z-10 flex rounded-lg"
+              style={{ boxShadow: 'var(--lg-shadow-1-x, 0) var(--lg-shadow-1-y, 10px) var(--lg-shadow-1-blur, 15px) var(--lg-shadow-1-spread, -3px) var(--lg-color, rgba(0, 0, 0, 0.10)), var(--lg-shadow-2-x, 0) var(--lg-shadow-2-y, 4px) var(--lg-shadow-2-blur, 6px) var(--lg-shadow-2-spread, -4px) var(--lg-color, rgba(0, 0, 0, 0.10))' }}
+              data-testid="map-action-buttons"
+            >
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="border-0 rounded-none rounded-l-lg"
+                        data-testid="map-action-theme"
+                      >
+                        <MapIcon size={20} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{THEME_LABELS[mapTheme]}</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup value={mapTheme} onValueChange={(v) => setMapTheme(v as MapTheme)}>
+                    {(Object.keys(THEME_LABELS) as MapTheme[]).map((key) => (
+                      <DropdownMenuRadioItem key={key} value={key}>
+                        {THEME_LABELS[key]}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="border-0 rounded-none"
+                    data-testid="map-action-print"
+                    onClick={() => window.print()}
+                  >
+                    <Printer size={20} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Map Printing</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="border-0 rounded-none"
+                    data-testid="map-action-download"
+                  >
+                    <FileDown size={20} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Export map as PDF</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="border-0 rounded-none rounded-r-lg"
+                    data-testid="map-action-send"
+                  >
+                    <Send size={20} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Share map view via URL</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        )}
       </Box>
 
       {/* Right Aside */}
       {showRightAside && (
         <Box
+          className="fixed inset-0 z-50 w-full sm:absolute sm:left-auto sm:z-20 bg-background sm:shadow-lg"
           style={{
-            width: 400,
-            flexShrink: 0,
-            borderLeft: '1px solid var(--mantine-color-gray-3)',
-            height: '100%',
+            width: isMobile ? undefined : asideWidth,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
           }}
-          p={isHistoricalPreviewMode ? 0 : 'md'}
+          p={isHistoricalPreviewMode || (selectedAssetType === 'green-space') ? 0 : 'md'}
         >
+          {/* Resize Handle - left edge (visible only on sm+ screens) */}
+          {!isMobile && (
+            <div
+              className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 transition-colors ${isResizingAside ? 'bg-primary' : 'hover:bg-primary/30'}`}
+              onMouseDown={handleAsideResizeStart}
+            />
+          )}
           {isHistoricalPreviewMode ? (
             <HistoricalPreviewSidebar />
+          ) : selectedAssetId && selectedAssetType === 'green-space' && PARKS_BY_ID.has(selectedAssetId) ? (
+            <ParkPreviewPanel
+              park={PARKS_BY_ID.get(selectedAssetId)!}
+              onClose={() => selectAsset(null)}
+              onNavigateToDetail={() => {
+                const id = selectedAssetId;
+                selectAsset(null);
+                navigate(`/assets/parks/${id}`);
+              }}
+              hiddenTabs={['map']}
+            />
           ) : selectedAssetId && selectedAssetType ? (
             <>
               <Group justify="space-between" mb="md">

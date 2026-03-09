@@ -427,12 +427,12 @@ async function seedRfi() {
     await db.execute(sql`
       INSERT INTO inspection_records (
         event_id, road_asset_id, asset_type, asset_id,
-        inspection_date, inspection_type, result, condition_grade,
+        inspection_date, result, condition_grade,
         findings, notes, inspector, inspector_organization,
         geometry
       ) VALUES (
         ${null}, ${null}, ${insp.assetType}, ${insp.assetId},
-        ${new Date(insp.date)}, ${insp.type}, ${insp.result}, ${insp.grade},
+        ${new Date(insp.date)}, ${insp.result}, ${insp.grade},
         ${insp.findings}, ${insp.notes},
         ${insp.inspector}, ${insp.org},
         ${toGeomSql(geom)}

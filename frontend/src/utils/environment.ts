@@ -7,7 +7,7 @@
  *
  * Uses a combination of:
  * 1. Whitelist from VITE_DEMO_DOMAINS (comma-separated, supports domain changes)
- * 2. Hardcoded default hostname (demo.eventflow.uixai.org)
+ * 2. Hardcoded default hostname (nagoya.uixai.org)
  * 3. Build-time flag VITE_IS_DEMO for local development
  *
  * @returns true if running in demo environment
@@ -23,7 +23,7 @@ export function isDemoEnvironment(): boolean {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
 
-    // P1修复: 精确匹配或子域名匹配,防止误匹配 demo.eventflow.uixai.org.evil.com
+    // P1修复: 精确匹配或子域名匹配,防止误匹配 nagoya.uixai.org.evil.com
     if (whitelist.some(domain => {
       const trimmed = domain.trim();
       return hostname === trimmed || hostname.endsWith('.' + trimmed);
@@ -32,7 +32,7 @@ export function isDemoEnvironment(): boolean {
     }
 
     // Default: exact match only
-    return hostname === 'demo.eventflow.uixai.org';
+    return hostname === 'nagoya.uixai.org';
   }
 
   return false;

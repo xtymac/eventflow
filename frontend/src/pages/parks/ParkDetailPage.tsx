@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,20 +15,25 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { IconPencil, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconPencil, IconSearch, IconChevronDown, IconChevronUp, IconMaximize, IconX } from '@tabler/icons-react';
 import { CircleArrowRight } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
 import * as turf from '@turf/turf';
 import { useGreenSpace, useParkFacilitiesByPark } from '../../hooks/useApi';
 import { recordVisit } from '../../hooks/useRecentVisits';
+import { useScrollRestore } from '../../hooks/useScrollRestore';
 import { PageState } from '../../components/PageState';
 import { MiniMap } from '../../components/MiniMap';
 import {
-  getDummyFacilitiesByPark, FACILITY_CLASSIFICATION_LABELS, FACILITY_STATUS_CONFIG,
+  getDummyFacilitiesByPark, FACILITY_CLASSIFICATION_LABELS,
   type DummyFacility,
 } from '../../data/dummyFacilities';
 import { CURATED_PARKS, type CuratedPark } from '../../data/curatedParks';
+import { FacilityPlaceholderImage } from '@/components/facility/FacilityPlaceholderImage';
+import { StatusBadge } from '@/components/facility/StatusBadge';
+import { RankBadge } from '@/components/facility/RankBadge';
+import { UrgencyBadge } from '@/components/facility/UrgencyBadge';
 
 /* ── constants ─────────────────────────────────────────── */
 
@@ -136,6 +141,215 @@ const BUILDING_COVERAGE: Record<string, CoverageCategory[]> = {
       items: [],
     },
   ],
+  'GS-cfam78i3': [
+    {
+      label: '2%物件(A)', buildingArea: 62.18, limitArea: 4797, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(競技場付近)', buildingArea: 28.50, installDate: '1980/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(陸上競技場北)', buildingArea: 18.48, installDate: '1992/03/15', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '器具庫', buildingArea: 15.20, installDate: '2001/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP　野球場横' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 215.00, limitArea: 23984.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-9ego0pvp': [
+    {
+      label: '2%物件(A)', buildingArea: 78.32, limitArea: 8532, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(バラ園付近)', buildingArea: 24.80, installDate: '1983/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(サイクリングロード)', buildingArea: 19.52, installDate: '1990/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 34.00, installDate: '1982/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 320.00, limitArea: 42662.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-9exy95g1': [
+    {
+      label: '2%物件(A)', buildingArea: 22.40, limitArea: 1305, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(広場付近)', buildingArea: 14.20, installDate: '1988/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '器具庫', buildingArea: 8.20, installDate: '2005/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 58.00, limitArea: 6524.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-rtljov09': [
+    {
+      label: '2%物件(A)', buildingArea: 25.60, limitArea: 1173, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(ユリ園付近)', buildingArea: 16.80, installDate: '1975/04/01', inspectionCert: '有／無', installPermit: '-', notes: '2018/06/10' },
+        { type: '管', property: '倉庫', buildingArea: 8.80, installDate: '2000/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 48.00, limitArea: 5866.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-xk4kyf2q': [
+    {
+      label: '2%物件(A)', buildingArea: 18.90, limitArea: 1034, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(児童遊園)', buildingArea: 12.50, installDate: '1979/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '器具庫', buildingArea: 6.40, installDate: '2003/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 42.00, limitArea: 5171.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-es1u7z8r': [
+    {
+      label: '2%物件(A)', buildingArea: 45.30, limitArea: 1786, coverageRate: 0.03,
+      items: [
+        { type: '便', property: '便所(科学館側)', buildingArea: 20.10, installDate: '1976/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(噴水広場)', buildingArea: 15.20, installDate: '1988/03/31', inspectionCert: '有／無', installPermit: '-', notes: '2016/05/20' },
+        { type: '管', property: '管理事務所', buildingArea: 10.00, installDate: '1995/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 85.00, limitArea: 8930.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-gul3d3ul': [
+    {
+      label: '2%物件(A)', buildingArea: 30.80, limitArea: 1562, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(参道付近)', buildingArea: 18.30, installDate: '1981/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '休憩所', buildingArea: 12.50, installDate: '1996/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 68.00, limitArea: 7811.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-byrogagk': [
+    {
+      label: '2%物件(A)', buildingArea: 52.40, limitArea: 2115, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(テレビ塔付近)', buildingArea: 22.40, installDate: '1978/04/01', inspectionCert: '有／無', installPermit: '-', notes: '2017/09/15' },
+        { type: '便', property: '便所(セントラルパーク側)', buildingArea: 18.00, installDate: '1985/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 12.00, installDate: '2002/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 98.00, limitArea: 10574.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-gs3xyhbw': [
+    {
+      label: '2%物件(A)', buildingArea: 55.20, limitArea: 4744, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(ガーデンプラザ)', buildingArea: 21.60, installDate: '1986/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(多目的広場)', buildingArea: 17.80, installDate: '1993/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 15.80, installDate: '1987/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 195.00, limitArea: 23721.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-auy42b1p': [
+    {
+      label: '2%物件(A)', buildingArea: 120.50, limitArea: 22049, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(若草山)', buildingArea: 28.30, installDate: '1972/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(恐竜広場)', buildingArea: 24.80, installDate: '1985/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(竹林散策路)', buildingArea: 16.40, installDate: '1990/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 35.00, installDate: '1978/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '防災倉庫', buildingArea: 16.00, installDate: '2010/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 580.00, limitArea: 110243.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-3d67hwf5': [
+    {
+      label: '2%物件(A)', buildingArea: 72.60, limitArea: 7282, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(とだがわこどもランド)', buildingArea: 26.80, installDate: '1991/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(フラワーセンター)', buildingArea: 22.40, installDate: '1995/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '器具庫', buildingArea: 23.40, installDate: '1993/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 285.00, limitArea: 36408.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-ful7d9lw': [
+    {
+      label: '2%物件(A)', buildingArea: 20.80, limitArea: 1101, coverageRate: 0.02,
+      items: [
+        { type: '便', property: '便所(黒門付近)', buildingArea: 12.80, installDate: '1983/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '売店', buildingArea: 8.00, installDate: '2004/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 45.00, limitArea: 5503.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-7f2voyoy': [
+    {
+      label: '2%物件(A)', buildingArea: 85.40, limitArea: 12626, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(棚田付近)', buildingArea: 20.60, installDate: '1984/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(展望台付近)', buildingArea: 18.20, installDate: '1991/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 28.60, installDate: '1980/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '防災倉庫', buildingArea: 18.00, installDate: '2008/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 420.00, limitArea: 63130.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
+  'GS-x1q5e2te': [
+    {
+      label: '2%物件(A)', buildingArea: 95.60, limitArea: 27038, coverageRate: 0.00,
+      items: [
+        { type: '便', property: '便所(北入口)', buildingArea: 22.80, installDate: '1982/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(池畔)', buildingArea: 19.60, installDate: '1989/03/31', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '便', property: '便所(南広場)', buildingArea: 15.20, installDate: '1995/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '管理事務所', buildingArea: 22.00, installDate: '1984/04/01', inspectionCert: '有／無', installPermit: '-', notes: '' },
+        { type: '管', property: '器具庫', buildingArea: 16.00, installDate: '2002/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 650.00, limitArea: 135190.00, coverageRate: 0.00,
+      items: [],
+    },
+  ],
+  'GS-ldnfwyur': [
+    {
+      label: '2%物件(A)', buildingArea: 32.40, limitArea: 2633, coverageRate: 0.01,
+      items: [
+        { type: '便', property: '便所(本園)', buildingArea: 18.40, installDate: '1974/04/01', inspectionCert: '有／無', installPermit: '-', notes: '2019/03/20' },
+        { type: '管', property: '器具庫', buildingArea: 14.00, installDate: '1998/03/31', inspectionCert: '有／無', installPermit: '-', notes: 'FRP' },
+      ],
+    },
+    {
+      label: '10%物件(B)', buildingArea: 105.00, limitArea: 13166.00, coverageRate: 0.01,
+      items: [],
+    },
+  ],
 };
 
 /* ── helpers ────────────────────────────────────────────── */
@@ -189,61 +403,7 @@ function FieldRow({ label, value, multiline }: { label: string; value: string | 
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const config = FACILITY_STATUS_CONFIG[status] || { label: status, className: 'bg-gray-400 text-white' };
-  return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${config.className}`}>
-      {config.label}
-    </span>
-  );
-}
-
-function FacilityPlaceholderImage({ category }: { category: string }) {
-  const colors: Record<string, string> = {
-    bench: '#8B5E3C', shelter: '#6B8E23', toilet: '#4682B4', playground: '#FF6347',
-    lighting: '#FFD700', waterFountain: '#00CED1', signBoard: '#708090',
-    pavement: '#A0522D', sportsFacility: '#32CD32', fence: '#808080',
-  };
-  const bg = colors[category] || '#a0a0a0';
-  return (
-    <div
-      className="flex size-[56px] shrink-0 items-center justify-center rounded-md text-white text-[10px] font-medium"
-      style={{ backgroundColor: bg, opacity: 0.8 }}
-    >
-      {category === 'bench' ? '🪑' : category === 'shelter' ? '⛺' : category === 'toilet' ? '🚻'
-        : category === 'playground' ? '🎠' : category === 'lighting' ? '💡' : category === 'waterFountain' ? '🚰'
-        : category === 'signBoard' ? '📋' : category === 'pavement' ? '🛤️' : category === 'sportsFacility' ? '⚽' : '📦'}
-    </div>
-  );
-}
-
-function RankBadge({ rank }: { rank?: string }) {
-  if (!rank) return <span className="text-xs text-[#a3a3a3]">-</span>;
-  const colors: Record<string, string> = {
-    A: 'bg-[#22C55E] text-white', B: 'bg-[#FACC15] text-[#713F12]',
-    C: 'bg-[#F87171] text-white', D: 'bg-[#6B7280] text-white',
-  };
-  return (
-    <span className={`inline-flex items-center justify-center size-6 rounded text-[10px] font-bold ${colors[rank] || 'bg-gray-200 text-gray-700'}`}>
-      {rank}
-    </span>
-  );
-}
-
-function UrgencyBadge({ level }: { level?: string }) {
-  if (!level) return <span className="text-xs text-[#a3a3a3]">-</span>;
-  const cfg: Record<string, { label: string; cls: string }> = {
-    high: { label: '高', cls: 'bg-[#F87171] text-white' },
-    medium: { label: '中', cls: 'bg-[#FACC15] text-[#713F12]' },
-    low: { label: '低', cls: 'bg-[#22C55E] text-white' },
-  };
-  const c = cfg[level] || { label: level, cls: 'bg-gray-200 text-gray-700' };
-  return (
-    <span className={`inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold ${c.cls}`}>
-      {c.label}
-    </span>
-  );
-}
+/* StatusBadge, FacilityPlaceholderImage, RankBadge, UrgencyBadge imported from @/components/facility */
 
 /* ── table column config ───────────────────────────────── */
 
@@ -261,7 +421,7 @@ const stickyRightStyle: React.CSSProperties = {
 /** Column widths – total determines horizontal scroll extent */
 const COL = {
   thumb: 64, name: 80, status: 72, facilityId: 72, classification: 72,
-  parkName: 100, subItem: 72, subItemDetail: 72, quantity: 52, installDate: 92,
+  subItem: 72, subItemDetail: 72, quantity: 52, installDate: 92,
   elapsedYears: 64, manufacturer: 72, installer: 72, mainMaterial: 120,
   designDoc: 80, inspectionDate: 92, structureRank: 72, wearRank: 72,
   repairDate: 92, managementType: 72, urgency: 72, countermeasure: 72,
@@ -276,54 +436,43 @@ export function ParkDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as { breadcrumbFrom?: { to?: string; label?: string } } | null;
+  const breadcrumbTo = locationState?.breadcrumbFrom?.to || '/assets/parks';
+  const breadcrumbLabel = locationState?.breadcrumbFrom?.label || '公園';
 
-  /* Scroll-priority refs */
+  /* Layout refs */
   const pageScrollRef = useRef<HTMLDivElement>(null);
+  useScrollRestore(pageScrollRef as RefObject<HTMLElement>);
   const leftInfoScrollRef = useRef<HTMLDivElement>(null);
   const mapPanelRef = useRef<HTMLDivElement>(null);
   const topBlockRef = useRef<HTMLDivElement>(null);
 
-  /** Outside the map, wheel drives the left info panel first;
-   *  only after it hits its scroll boundary does the page scroll.
-   *  Uses native listener with passive:false so preventDefault() works. */
+  /** Seamless scroll chaining: when the left info panel hits its scroll
+   *  boundary, temporarily disable its overflow so the wheel event
+   *  naturally bubbles to the page scroll container. */
   useEffect(() => {
-    const root = pageScrollRef.current;
-    if (!root) return;
+    const panel = leftInfoScrollRef.current;
+    if (!panel) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     function onWheel(e: WheelEvent) {
-      if (e.deltaY === 0) return;
-      // Inside map → let map handle zoom
-      if (mapPanelRef.current?.contains(e.target as Node)) return;
-      // Inside left panel → browser scrolls it naturally (then chains to page)
-      if (leftInfoScrollRef.current?.contains(e.target as Node)) return;
-      // Outside top block (e.g. facilities/coverage area) → let page scroll naturally
-      if (!topBlockRef.current?.contains(e.target as Node)) return;
-
-      // Cursor is inside top block but outside both left panel and map → redirect to left panel
-      const el = leftInfoScrollRef.current;
-      if (!el) return;
-
       const EPSILON = 1;
-      if (el.scrollHeight <= el.clientHeight + EPSILON) return;
+      const atTop = panel!.scrollTop <= EPSILON;
+      const atBottom = panel!.scrollTop + panel!.clientHeight >= panel!.scrollHeight - EPSILON;
+      const scrollingDown = e.deltaY > 0;
 
-      let dy = e.deltaY;
-      if (e.deltaMode === 1) dy *= 20;
-      else if (e.deltaMode === 2) dy *= el.clientHeight;
-
-      const scrollingDown = dy > 0;
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - EPSILON;
-      const atTop = el.scrollTop <= EPSILON;
-
-      if (scrollingDown && atBottom) return;
-      if (!scrollingDown && atTop) return;
-
-      el.scrollTop += dy;
-      e.preventDefault();
-      e.stopPropagation();
+      if ((scrollingDown && atBottom) || (!scrollingDown && atTop)) {
+        panel!.style.overflowY = 'hidden';
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => { panel!.style.overflowY = 'auto'; }, 80);
+      }
     }
 
-    root.addEventListener('wheel', onWheel, { passive: false, capture: true });
-    return () => root.removeEventListener('wheel', onWheel, { capture: true });
+    panel.addEventListener('wheel', onWheel, { passive: true });
+    return () => {
+      panel.removeEventListener('wheel', onWheel);
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   /* API data */
@@ -362,7 +511,7 @@ export function ParkDetailPage() {
     }));
   }, [id, centroid]);
 
-  const facilities = apiFacilities.length > 0 ? apiFacilities : dummyFacilities;
+  const facilities = dummyFacilities.length > 0 ? dummyFacilities : apiFacilities;
   const parkName = (curatedPark?.displayName || apiPark?.displayName || apiPark?.nameJa || apiPark?.name || '読み込み中...');
 
   /* Record visit */
@@ -373,6 +522,16 @@ export function ParkDetailPage() {
   }, [id, parkName]);
 
   /* Facility filter state */
+  // Breadcrumb shadow on scroll
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const el = pageScrollRef.current;
+    if (!el) return;
+    const onScroll = () => setIsScrolled(el.scrollTop > 0);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClassification, setFilterClassification] = useState('__all__');
   const [filterStructureRank, setFilterStructureRank] = useState('__all__');
@@ -403,12 +562,14 @@ export function ParkDetailPage() {
 
   /* Map markers */
   const [hoveredFacilityIndex, setHoveredFacilityIndex] = useState<number | null>(null);
+  const [selectedFacilityIndex, setSelectedFacilityIndex] = useState<number | null>(null);
+  const [fullscreenMap, setFullscreenMap] = useState(false);
 
   const facilityMarkers = useMemo(() => {
-    const markers: Array<{ lng: number; lat: number; color: string }> = [];
+    const markers: Array<{ lng: number; lat: number }> = [];
     facilities.forEach((f: any) => {
       if (f.geometry?.type !== 'Point') return;
-      markers.push({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], color: '#e03131' });
+      markers.push({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] });
     });
     return markers;
   }, [facilities]);
@@ -421,6 +582,15 @@ export function ParkDetailPage() {
       map.set(i, markerIdx++);
     });
     return map;
+  }, [facilities]);
+
+  const facilityDataForMap = useMemo(() => {
+    const data: DummyFacility[] = [];
+    facilities.forEach((f: any) => {
+      if (f.geometry?.type !== 'Point') return;
+      data.push(f.properties);
+    });
+    return data;
   }, [facilities]);
 
   /* Building coverage */
@@ -446,10 +616,10 @@ export function ParkDetailPage() {
     <div ref={pageScrollRef} data-testid="park-detail-scroll-root" className="h-[calc(100vh-60px)] w-full max-w-full overflow-y-auto overflow-x-hidden scrollbar-hidden">
       {/* Sticky breadcrumb bar */}
       <div
-        className="sticky top-0 z-10 px-6 py-3"
+        className="sticky top-0 z-10 px-6 py-3 transition-shadow duration-200"
         style={{
           background: '#FFF',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10)',
+          boxShadow: isScrolled ? '0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10)' : 'none',
         }}
       >
         <Breadcrumb>
@@ -458,11 +628,11 @@ export function ParkDetailPage() {
               <BreadcrumbLink
                 onClick={() => {
                   if (location.key !== 'default') navigate(-1);
-                  else navigate('/assets/parks');
+                  else navigate(breadcrumbTo);
                 }}
                 className="cursor-pointer"
               >
-                公園
+                {breadcrumbLabel}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -478,9 +648,9 @@ export function ParkDetailPage() {
           {park && (
               <div className="flex flex-col gap-6">
                 {/* ═══ Top block: info + map side-by-side ═══ */}
-                <div ref={topBlockRef} data-testid="park-detail-top-block" className="flex gap-6 items-start">
+                <div ref={topBlockRef} data-testid="park-detail-top-block" className="flex gap-6">
                 {/* Left: Park info sections */}
-                <div ref={leftInfoScrollRef} data-testid="park-basic-info-scroll" className="flex-1 min-w-0 h-[calc(100vh-156px)] overflow-y-auto sticky top-[48px] scrollbar-hidden">
+                <div ref={leftInfoScrollRef} data-testid="park-basic-info-scroll" className="flex-1 min-w-0 max-h-[calc(100vh-156px)] overflow-y-auto sticky top-[48px] scrollbar-hidden">
                   {/* 基本情報 */}
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-[#0a0a0a]">基本情報</span>
@@ -518,7 +688,7 @@ export function ParkDetailPage() {
                 {/* end park-basic-info-scroll */}
 
                 {/* Right: Map */}
-                <div ref={mapPanelRef} data-testid="park-mini-map-panel" className="w-[45%] shrink-0 sticky top-[48px] h-[calc(100vh-156px)]">
+                <div ref={mapPanelRef} data-testid="park-mini-map-panel" className="w-[45%] shrink-0 sticky top-[48px]">
                   {geometry ? (
                     <MiniMap
                       key={`${id}-${usingDummy ? 'dummy' : 'api'}-${facilityMarkers.length}`}
@@ -527,16 +697,41 @@ export function ParkDetailPage() {
                       height="100%"
                       fillColor="#22C55E"
                       highlightedMarkerIndex={hoveredFacilityIndex != null ? facilityToMarkerIdx.get(hoveredFacilityIndex) ?? null : null}
+                      facilityData={facilityDataForMap}
+                      selectedMarkerIndex={selectedFacilityIndex}
+                      onMarkerClick={(idx) => setSelectedFacilityIndex(idx >= 0 ? idx : null)}
                     />
                   ) : centroid ? (
                     <MiniMap
                       center={centroid as [number, number]}
-                      markers={[{ lng: centroid[0], lat: centroid[1], color: '#22C55E' }, ...facilityMarkers]}
+                      markers={[{ lng: centroid[0], lat: centroid[1] }, ...facilityMarkers]}
                       zoom={15}
                       height="100%"
                       highlightedMarkerIndex={hoveredFacilityIndex != null ? (facilityToMarkerIdx.get(hoveredFacilityIndex) ?? -1) + 1 : null}
+                      facilityData={facilityDataForMap}
+                      selectedMarkerIndex={selectedFacilityIndex != null ? selectedFacilityIndex + 1 : null}
+                      onMarkerClick={(idx) => setSelectedFacilityIndex(idx > 0 ? idx - 1 : null)}
                     />
                   ) : null}
+                  {/* Edit + Fullscreen overlay buttons */}
+                  <div className="absolute top-4 right-14 z-[5] flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/assets/parks/${id}/geometry`)}
+                      title="ジオメトリ編集"
+                      className="flex items-center justify-center size-10 rounded-full bg-[#f5f5f5] shadow-lg hover:bg-white transition-colors cursor-pointer"
+                    >
+                      <IconPencil size={16} className="text-[#0a0a0a]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFullscreenMap(true)}
+                      title="全画面表示"
+                      className="flex items-center justify-center size-10 rounded-full bg-[#f5f5f5] shadow-lg hover:bg-white transition-colors cursor-pointer"
+                    >
+                      <IconMaximize size={16} className="text-[#0a0a0a]" />
+                    </button>
+                  </div>
                 </div>
                 </div>
                 {/* end park-detail-top-block */}
@@ -628,7 +823,6 @@ export function ParkDetailPage() {
                           <TableHead className={`${thCls} text-center`} style={{ width: COL.status, minWidth: COL.status }}>状態</TableHead>
                           <TableHead className={thCls} style={{ width: COL.facilityId, minWidth: COL.facilityId }}>施設ID</TableHead>
                           <TableHead className={thCls} style={{ width: COL.classification, minWidth: COL.classification }}>施設分類</TableHead>
-                          <TableHead className={thCls} style={{ width: COL.parkName, minWidth: COL.parkName }}>公園名称</TableHead>
                           <TableHead className={thCls} style={{ width: COL.subItem, minWidth: COL.subItem }}>細目</TableHead>
                           <TableHead className={thCls} style={{ width: COL.subItemDetail, minWidth: COL.subItemDetail }}>細目補足</TableHead>
                           <TableHead className={`${thCls} text-center`} style={{ width: COL.quantity, minWidth: COL.quantity }}>数量</TableHead>
@@ -675,11 +869,6 @@ export function ParkDetailPage() {
                               <TableCell className={`${tdCls} p-2`}>
                                 {p.facilityClassification ? (FACILITY_CLASSIFICATION_LABELS[p.facilityClassification] || p.facilityClassification) : '-'}
                               </TableCell>
-                              <TableCell className="p-2">
-                                <Badge variant="secondary" className="bg-[#22C55E]/15 text-[#15803d] text-[10px] font-semibold px-1.5 py-0 rounded whitespace-nowrap">
-                                  {parkName}
-                                </Badge>
-                              </TableCell>
                               <TableCell className={`${tdCls} p-2`}>{p.subItem || '-'}</TableCell>
                               <TableCell className={`${tdDimCls} p-2`}>{p.subItemDetail || '-'}</TableCell>
                               <TableCell className={`${tdCls} p-2 text-center`}>
@@ -719,8 +908,8 @@ export function ParkDetailPage() {
                 </PageState>
               </div>
 
-              {/* ═══ Building coverage section ═══ */}
-              {coverageData.length > 0 && (
+              {/* ═══ Building coverage section (hidden) ═══ */}
+              {false && coverageData.length > 0 && (
                 <div data-testid="park-coverage-section" className="bg-white border border-[#f5f5f5] rounded-lg shadow-sm p-4 flex flex-col gap-2">
                   <p className="font-mono text-base font-normal text-[#171717]">公園内建ぺい率一覧</p>
                   <div className="flex flex-col gap-4">
@@ -800,6 +989,30 @@ export function ParkDetailPage() {
           )}
         </PageState>
       </div>
+      {/* Fullscreen map overlay */}
+      {fullscreenMap && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="relative w-full h-full">
+            <MiniMap
+              geometry={geometry}
+              markers={facilityMarkers}
+              height="100%"
+              fillColor="#22C55E"
+              highlightedMarkerIndex={null}
+              facilityData={facilityDataForMap}
+              selectedMarkerIndex={selectedFacilityIndex}
+              onMarkerClick={(idx) => setSelectedFacilityIndex(idx >= 0 ? idx : null)}
+            />
+            <button
+              type="button"
+              onClick={() => setFullscreenMap(false)}
+              className="absolute top-4 right-4 z-10 flex items-center justify-center size-10 rounded-full bg-white shadow-lg hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+            >
+              <IconX size={18} className="text-[#0a0a0a]" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

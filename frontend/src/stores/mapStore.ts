@@ -16,7 +16,6 @@ interface MapState {
   bounds: LngLatBoundsLike | null;
   mapTheme: MapTheme;
   showEvents: boolean;
-  showAssets: boolean;
   showInspections: boolean;
   showRivers: boolean;
   showGreenSpaces: boolean;
@@ -27,11 +26,10 @@ interface MapState {
   showPavementSections: boolean;
   showPumpStations: boolean;
   showInspectionRecords: boolean;
-  showNagoyaRoads: boolean;
   showNagoyaBuildingZones: boolean;
+  showNagoyaRoads: boolean;
   highlightedFeatureId: string | null;
   drawnGeometry: GeoJSON.Geometry | null;
-  roadTileVersion: number; // Incremented to force road tile refresh
   importAreaHighlight: ImportAreaHighlight | null; // Highlight for import area preview
 
   // Actions
@@ -40,7 +38,6 @@ interface MapState {
   setBounds: (bounds: LngLatBoundsLike | null) => void;
   setMapTheme: (theme: MapTheme) => void;
   toggleEvents: () => void;
-  toggleAssets: () => void;
   toggleInspections: () => void;
   toggleRivers: () => void;
   toggleGreenSpaces: () => void;
@@ -51,11 +48,10 @@ interface MapState {
   togglePavementSections: () => void;
   togglePumpStations: () => void;
   toggleInspectionRecords: () => void;
-  toggleNagoyaRoads: () => void;
   toggleNagoyaBuildingZones: () => void;
+  toggleNagoyaRoads: () => void;
   setHighlightedFeature: (id: string | null) => void;
   setDrawnGeometry: (geometry: GeoJSON.Geometry | null) => void;
-  refreshRoadTiles: () => void;
   setImportAreaHighlight: (highlight: ImportAreaHighlight | null) => void;
 }
 
@@ -69,9 +65,8 @@ export const useMapStore = create<MapState>()(
       center: NAGOYA_CENTER,
       zoom: DEFAULT_ZOOM,
       bounds: null,
-      mapTheme: 'voyager',
+      mapTheme: 'standard',
       showEvents: false,
-      showAssets: false,
       showInspections: false,
       showRivers: false,
       showGreenSpaces: true,
@@ -82,11 +77,10 @@ export const useMapStore = create<MapState>()(
       showPavementSections: false,
       showPumpStations: false,
       showInspectionRecords: false, // Off by default (opt-in)
-      showNagoyaRoads: false, // Off by default (official designated roads overlay)
-      showNagoyaBuildingZones: false, // Off by default (building regulation zones)
+      showNagoyaBuildingZones: false, // Building regulation zones
+      showNagoyaRoads: false, // Designated roads
       highlightedFeatureId: null,
       drawnGeometry: null,
-      roadTileVersion: 0,
       importAreaHighlight: null,
 
       setCenter: (center) => set({ center }),
@@ -94,7 +88,6 @@ export const useMapStore = create<MapState>()(
       setBounds: (bounds) => set({ bounds }),
       setMapTheme: (theme) => set({ mapTheme: theme }),
       toggleEvents: () => set((state) => ({ showEvents: !state.showEvents })),
-      toggleAssets: () => set((state) => ({ showAssets: !state.showAssets })),
       toggleInspections: () => set((state) => ({ showInspections: !state.showInspections })),
       toggleRivers: () => set((state) => ({ showRivers: !state.showRivers })),
       toggleGreenSpaces: () => set((state) => ({ showGreenSpaces: !state.showGreenSpaces })),
@@ -105,16 +98,15 @@ export const useMapStore = create<MapState>()(
       togglePavementSections: () => set((state) => ({ showPavementSections: !state.showPavementSections })),
       togglePumpStations: () => set((state) => ({ showPumpStations: !state.showPumpStations })),
       toggleInspectionRecords: () => set((state) => ({ showInspectionRecords: !state.showInspectionRecords })),
-      toggleNagoyaRoads: () => set((state) => ({ showNagoyaRoads: !state.showNagoyaRoads })),
       toggleNagoyaBuildingZones: () => set((state) => ({ showNagoyaBuildingZones: !state.showNagoyaBuildingZones })),
+      toggleNagoyaRoads: () => set((state) => ({ showNagoyaRoads: !state.showNagoyaRoads })),
       setHighlightedFeature: (id) => set({ highlightedFeatureId: id }),
       setDrawnGeometry: (geometry) => set({ drawnGeometry: geometry }),
-      refreshRoadTiles: () => set((state) => ({ roadTileVersion: state.roadTileVersion + 1 })),
       setImportAreaHighlight: (highlight) => set({ importAreaHighlight: highlight }),
     }),
     {
       name: 'map-store',
-      version: 2, // Bump to discard old localStorage with stale show* values
+      version: 3, // Bump to discard old localStorage (v2→v3: default theme voyager→standard)
       partialize: (state) => ({
         center: state.center,
         zoom: state.zoom,

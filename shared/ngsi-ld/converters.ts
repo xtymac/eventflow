@@ -793,7 +793,7 @@ export function toNgsiLdInspectionRecord(record: InspectionRecord): NgsiInspecti
     type: 'InspectionRecord',
     '@context': DEFAULT_CONTEXT,
 
-    inspectionType: propRequired(record.inspectionType ?? 'routine') as Property<any>,
+    inspectionType: propRequired('routine') as Property<any>,
     inspectionDate: propRequired(record.inspectionDate),
     result: propRequired(record.result) as Property<any>,
     refInspectedAsset: assetType && assetId

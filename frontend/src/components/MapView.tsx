@@ -2,17 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { Protocol } from 'pmtiles';
-import { Box, Paper, Stack, Switch, Text, Group, Button, Badge, Loader, Progress, Divider, ActionIcon, Tooltip } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
-import { IconTrash, IconX, IconStack2 } from '@tabler/icons-react';
-import { useEvents, useAssets, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON, useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox } from '../hooks/useApi';
+import { Box, Paper, Stack, Text, Group, Button, Badge, Loader } from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
+import { useEvents, useInspections, useEvent, useRiversInBbox, useGreenSpacesInBbox, useStreetLightsInBbox, useWorkOrderLocationsGeoJSON, useStreetTreesInBbox, useParkFacilitiesInBbox, usePavementSectionsInBbox, usePumpStationsInBbox } from '../hooks/useApi';
 import { formatLocalDate } from '../utils/dateFormat';
 import { useMapStore, type MapTheme } from '../stores/mapStore';
 import { useUIStore, type AssetType } from '../stores/uiStore';
 import { useSearchStore } from '../stores/searchStore';
 import { useMapDraw } from '../hooks/useMapDraw';
-import { getRoadAssetLabel, isRoadAssetUnnamed, type RoadAssetLabelFields } from '../utils/roadAssetLabel';
-import type { ConstructionEvent, RoadAsset, InspectionRecord, EventStatus, RoadType, AssetStatus } from '@nagoya/shared';
+import type { ConstructionEvent, InspectionRecord, EventStatus } from '@nagoya/shared';
 import type { Geometry } from 'geojson';
 import { EventMapTooltip } from './EventMapTooltip';
 import { CURATED_PARK_IDS } from '../data/curatedParks';
@@ -88,7 +86,6 @@ interface HoveredEventData {
   endDate?: string;
   department?: string;
   restrictionType?: string;
-  affectedAssetsCount?: number;
 }
 
 // HiDPI/Retina support: CARTO themes use @2x tiles with tileSize 512 for crisp rendering
@@ -132,12 +129,6 @@ const WORKORDER_TYPE_COLORS: Record<string, string> = {
   update: '#10B981', // green
 };
 
-const ROAD_TYPE_COLORS: Record<string, string> = {
-  arterial: '#8B5CF6', // purple
-  collector: '#06B6D4', // cyan
-  local: '#84CC16', // lime
-};
-
 // Helper to truncate bbox to 5 decimal places (reduces refetch on tiny moves)
 const truncateBbox = (bounds: maplibregl.LngLatBounds) => {
   const fix = (n: number) => n.toFixed(5);
@@ -169,9 +160,7 @@ export function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [isMapIdle, setIsMapIdle] = useState(true);
-  const [showLayerPanel, setShowLayerPanel] = useState(true);
-  const [showLegendPanel, setShowLegendPanel] = useState(true);
+
 
   // Viewport-based asset loading state
   const [mapBbox, setMapBbox] = useState<string | null>(null);
@@ -184,7 +173,6 @@ export function MapView() {
     zoom,
     mapTheme,
     showEvents,
-    showAssets,
     showInspections,
     showRivers,
     showGreenSpaces,
@@ -193,23 +181,11 @@ export function MapView() {
     showParkFacilities,
     showPavementSections,
     showPumpStations,
-    showNagoyaRoads,
     showNagoyaBuildingZones,
-    toggleEvents,
-    toggleAssets,
-    toggleInspections,
-    toggleRivers,
-    toggleGreenSpaces,
-    toggleStreetLights,
-    toggleStreetTrees,
-    toggleParkFacilities,
-    togglePavementSections,
-    togglePumpStations,
-    toggleNagoyaRoads,
-    toggleNagoyaBuildingZones,
-    roadTileVersion,
+    showNagoyaRoads,
     importAreaHighlight,
     setImportAreaHighlight,
+    highlightedFeatureId,
   } = useMapStore();
   const {
     selectedEventId,
@@ -217,7 +193,6 @@ export function MapView() {
     selectedAssetGeometry,
     selectEvent,
     selectAsset,
-    currentView,
     setCurrentView,
     previewGeometry,
     isEventFormOpen,
@@ -225,12 +200,9 @@ export function MapView() {
     duplicateEventId,
     openEventDetailModal,
     closeEventDetailModal,
-    hoveredAssetId,
     hoveredGreenspaceId,
     hoveredStreetlightId,
     hoveredEventId,
-    selectedRoadAssetIdsForForm,
-    selectedAssetDetailsCache,
     setMapBbox: setMapBboxStore,
     flyToGeometry,
     flyToCloseUp,
@@ -247,17 +219,12 @@ export function MapView() {
     clearDrawAction,
     shouldZoomToDrawing,
     setShouldZoomToDrawing,
-    // Drawing context (shared between event form, road update, inspection form)
+    // Drawing context (shared between event form and inspection form)
     drawingContext,
     setInspectionDrawnPoint,
-    setRoadUpdateDrawnFeatures,
     selectInspection,
-    // Road update mode
-    isRoadUpdateModeActive,
-    roadUpdateSelectedAssetIds,
     // Filter state
     eventFilters,
-    assetFilters,
     // Import preview mode
     isImportPreviewMode,
     importPreviewFeatures,
@@ -283,11 +250,11 @@ export function MapView() {
   const currentHoveredEventIdRef = useRef<string | null>(null);
   const previewTooltipTimeoutRef = useRef<number | null>(null);
 
-  // Track which asset we've already flown to (prevent repeated fitBounds on assetsData change)
+  // Track which asset we've already flown to (prevent repeated fitBounds)
   const lastFlownAssetIdRef = useRef<string | null>(null);
 
-  // Animation ref for flowing border effect
-  const animationFrameRef = useRef<number | null>(null);
+  // Store greenspace features for full geometry lookup (MapLibre decomposes MultiPolygon into sub-polygons)
+  const greenspaceFeaturesRef = useRef<Map<string, Geometry>>(new Map());
 
   // Track last restored features to prevent duplicate restores
   const lastRestoredFeaturesRef = useRef<string | null>(null);
@@ -308,20 +275,6 @@ export function MapView() {
   const [isGeometryLoadingDelayed, setIsGeometryLoadingDelayed] = useState(false);
   const geometryLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const doubleClickCooldownRef = useRef<number>(0); // Ignore clicks until this timestamp
-  const lastAssetIdsHashRef = useRef<string>(''); // Track rendered asset IDs hash to avoid flickering
-
-  // Debounced asset search (consistent with AssetList behavior)
-  const [debouncedAssetSearch] = useDebouncedValue(assetFilters.search, 300);
-
-  // Check if any asset filters are active
-  const hasActiveAssetFilters = !!(
-    assetFilters.roadType ||
-    assetFilters.status ||
-    assetFilters.ward ||
-    assetFilters.unnamed ||
-    debouncedAssetSearch
-  );
-
   const { data: eventsData } = useEvents({
     name: eventFilters.search || undefined,
     status: eventFilters.status as EventStatus | undefined,
@@ -335,31 +288,6 @@ export function MapView() {
   const { data: duplicateEventResponse } = useEvent(duplicateEventId);
   // Fetch selected event separately (for archived event preview on map)
   const { data: selectedEventResponse } = useEvent(selectedEventId);
-  // Viewport-based asset loading for interaction
-  // - zoom >= 14: load assets in viewport (for selection)
-  // - filters active at low zoom: load ALL filtered assets (no bbox, show globally)
-  // - filters active at high zoom: load filtered assets in viewport (bbox for performance)
-  // PMTiles covers all zoom levels for preview; API enables selection and filtering
-  const useGlobalFilter = hasActiveAssetFilters && currentZoom < 14;
-  // Dynamic limit based on zoom: lower zoom = larger area = need higher limit
-  // Zoom 14: ~9000 roads in viewport, zoom 16+: ~500 roads
-  const assetLimit = currentZoom >= 17 ? 2000 : currentZoom >= 16 ? 5000 : 10000;
-  const { data: assetsData, isLoading: isAssetsLoading, isFetching: isAssetsFetching } = useAssets(
-    {
-      roadType: assetFilters.roadType as RoadType | undefined,
-      status: (assetFilters.status as AssetStatus | undefined) || 'active',  // Default to active
-      ward: assetFilters.ward || undefined,
-      q: debouncedAssetSearch || undefined,
-      unnamed: assetFilters.unnamed || undefined,
-      // At low zoom with filters: skip bbox to show all filtered assets globally
-      // At high zoom or no filters: use bbox for viewport-based loading
-      bbox: useGlobalFilter ? undefined : (mapBbox ?? undefined),
-      limit: assetLimit,
-      includeTotal: false,
-    },
-    // Enable when: showAssets AND (mapBbox exists for viewport mode OR global filter mode)
-    { enabled: showAssets && (!!mapBbox || useGlobalFilter) && (currentZoom >= 14 || hasActiveAssetFilters) }
-  );
   const { data: inspectionsData } = useInspections();
 
   // WorkOrder locations - Phase 1 (displayed as points on the map)
@@ -375,7 +303,7 @@ export function MapView() {
   // Green spaces data - fetch all Nagoya greenspaces so curated parks are always available
   const { data: greenSpacesData } = useGreenSpacesInBbox(
     '136.7,35.0,137.2,35.4', // NAGOYA_BBOX - full city coverage
-    { limit: 5000 } as Parameters<typeof useGreenSpacesInBbox>[1],
+    { limit: 1000 } as Parameters<typeof useGreenSpacesInBbox>[1],
     { enabled: true }
   );
 
@@ -398,7 +326,7 @@ export function MapView() {
   const { data: parkFacilitiesData } = useParkFacilitiesInBbox(
     mapBbox ?? null,
     undefined,
-    { enabled: showParkFacilities && !!mapBbox && currentZoom >= 14 }
+    { enabled: showParkFacilities && !!mapBbox }
   );
 
   // Pavement sections data - load when visible (with zoom for simplification)
@@ -434,12 +362,6 @@ export function MapView() {
     if (drawingContext === 'inspection-form' && geomType === 'Point') {
       // For inspection forms, set the point directly
       setInspectionDrawnPoint(feature.geometry as import('geojson').Point);
-      return;
-    }
-
-    if (drawingContext === 'road-update' && (geomType === 'LineString' || geomType === 'MultiLineString')) {
-      // For road update mode, store in road update features
-      setRoadUpdateDrawnFeatures([feature]);
       return;
     }
 
@@ -621,201 +543,19 @@ export function MapView() {
       zoom: zoom,
     });
 
-    map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.current.addControl(new maplibregl.ScaleControl(), 'bottom-right');
+    map.current.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
+    map.current.addControl(new maplibregl.ScaleControl(), 'bottom-left');
 
     map.current.on('load', () => {
       if (!map.current) return;
 
       // Guard against duplicate execution (can happen when useMapDraw fires 'load' event
       // to force draw library layer creation)
-      if (map.current.getSource('assets')) return;
-
-      // Add direction arrow image for one-way roads
-      // Arrow points RIGHT (east) - MapLibre rotates from this base direction to follow line geometry
-      const arrowSvg = `
-        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 12 L12 6 L12 10 L20 10 L20 14 L12 14 L12 18 Z" fill="#ffffff" stroke="#333333" stroke-width="1"/>
-        </svg>
-      `;
-      const img = new Image(24, 24);
-      img.onload = () => {
-        if (map.current && !map.current.hasImage('direction-arrow')) {
-          map.current.addImage('direction-arrow', img);
-        }
-      };
-      img.src = 'data:image/svg+xml;base64,' + btoa(arrowSvg);
-
-      // Road assets source and layers
-      map.current.addSource('assets', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      });
-
-      // Road assets line layer (renders LineString centerlines with zoom-based width)
-      map.current.addLayer({
-        id: 'assets-line',
-        type: 'line',
-        source: 'assets',
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': [
-            'interpolate', ['linear'], ['zoom'],
-            14, 4,
-            16, 6,
-            18, 8
-          ],
-          'line-opacity': 0.35,
-        },
-      });
-
-      // Separate source for editing/selected assets (independent of zoom level)
-      map.current.addSource('editing-assets', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      });
-
-      // Editing selection - breathing glow effect (animated)
-      map.current.addLayer({
-        id: 'editing-assets-glow',
-        type: 'line',
-        source: 'editing-assets',
-        paint: {
-          'line-color': '#60a5fa',
-          'line-width': 20,
-          'line-blur': 10,
-          'line-opacity': 0.3,
-        },
-      });
-
-      // Editing selection - semi-transparent outline
-      map.current.addLayer({
-        id: 'editing-assets-line',
-        type: 'line',
-        source: 'editing-assets',
-        paint: {
-          'line-color': '#2563eb',
-          'line-width': 3,
-          'line-opacity': 0.7,
-        },
-      });
-
-      // Assets label layer (high zoom: 15+, where API data is available)
-      map.current.addLayer({
-        id: 'assets-label',
-        type: 'symbol',
-        source: 'assets',
-        minzoom: 14,
-        layout: {
-          'text-field': [
-            'get',
-            'labelText',
-          ],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 15, 11, 18, 14],
-          'symbol-placement': 'line',
-          'text-max-angle': 30,
-          'text-allow-overlap': false,
-        },
-        paint: {
-          'text-color': '#1a1a1a',
-          'text-halo-color': 'rgba(255,255,255,0.9)',
-          'text-halo-width': 2,
-        },
-      });
-
-      // Direction arrows for one-way roads
-      map.current.addLayer({
-        id: 'road-direction-arrows',
-        type: 'symbol',
-        source: 'assets',
-        minzoom: 15,  // Only visible at high zoom
-        filter: ['==', ['get', 'direction'], 'one-way'],
-        layout: {
-          'icon-image': 'direction-arrow',
-          'symbol-placement': 'line',
-          'icon-rotation-alignment': 'map',
-          'icon-allow-overlap': false,
-          'symbol-spacing': 100,  // Pixels between arrows
-          'icon-size': [
-            'interpolate', ['linear'], ['zoom'],
-            15, 0.5,
-            17, 0.7,
-            18, 0.9
-          ],
-        },
-        paint: {
-          'icon-opacity': [
-            'interpolate', ['linear'], ['zoom'],
-            14, 0,
-            15, 0.6,
-            16, 0.8
-          ],
-        },
-      });
-
-      // Roads preview source - always use PMTiles for performance
-      // PMTiles are pre-generated with optimized geometry simplification
-      // Martin is available for real-time data needs but slower
-      map.current.addSource('roads-preview', {
-        type: 'vector',
-        url: 'pmtiles:///tiles/roads.pmtiles',
-      });
-
-      // Roads preview layer (PMTiles source layer is 'roads')
-      // Visible at all zoom levels as background; API data overlays on top at zoom >= 14
-      const sourceLayer = 'roads';
-      map.current.addLayer({
-        id: 'roads-preview-line',
-        type: 'line',
-        source: 'roads-preview',
-        'source-layer': sourceLayer,
-        paint: {
-          'line-color': [
-            'match',
-            ['get', 'roadType'],
-            'arterial', '#8B5CF6', // purple
-            'collector', '#06B6D4', // cyan
-            'local', '#84CC16', // lime
-            '#84CC16' // default
-          ],
-          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 2, 14, 4],
-          'line-opacity': 0.35,
-        },
-      }, 'assets-line'); // Insert below assets-line
-
-      // Roads preview label layer (Martin or PMTiles, zoom < 14 only)
-      // At zoom 14+, API data (assets-label) takes over with more accurate labels
-      map.current.addLayer({
-        id: 'roads-preview-label',
-        type: 'symbol',
-        source: 'roads-preview',
-        'source-layer': sourceLayer,
-        maxzoom: 14, // Hide at zoom 14+, where assets-label takes over
-        layout: {
-          'text-field': [
-            'coalesce',
-            ['get', 'displayName'],
-            ['get', 'name'],
-            ['get', 'ref'],
-            '',
-          ],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 10, 9, 14, 11],
-          'symbol-placement': 'line-center',
-          'text-max-angle': 30,
-          'text-allow-overlap': false,
-        },
-        paint: {
-          'text-color': '#333',
-          'text-halo-color': '#fff',
-          'text-halo-width': 1.5,
-        },
-      });
+      if (map.current.getSource('events')) return;
 
       // ============================================
-      // Nagoya Designated Road (指定道路) layers
-      // Source: Official MVT or PMTiles (if generated)
+      // Nagoya Designated Roads (指定道路) layers
+      // Source: Official MVT or PMTiles
       // ============================================
       map.current.addSource('nagoya-shiteidouro', getNagoyaSourceConfig('shiteidouro'));
 
@@ -833,7 +573,7 @@ export function MapView() {
           'line-opacity': 0.8,
         },
         layout: {
-          'visibility': 'none',  // Hidden by default, toggle in layer panel
+          'visibility': 'none',
         },
       });
 
@@ -1248,7 +988,7 @@ export function MapView() {
         filter: ['==', ['get', 'id'], ''], // Initial: match nothing
         paint: {
           'fill-color': '#f59e0b', // Amber/orange
-          'fill-opacity': 0.15, // Low opacity so roads underneath are visible
+          'fill-opacity': 0.15,
         },
       });
 
@@ -1399,8 +1139,6 @@ export function MapView() {
       });
 
       // Rivers fill layer (for polygon rivers - water body areas)
-      // Very low opacity so roads on bridges are still clearly visible
-      // Insert before roads-preview-line so rivers render BELOW roads
       map.current.addLayer({
         id: 'rivers-fill',
         type: 'fill',
@@ -1410,7 +1148,7 @@ export function MapView() {
           'fill-color': '#60A5FA', // Lighter blue for water body
           'fill-opacity': 0.15,   // Very low opacity
         },
-      }, 'roads-preview-line'); // Insert below roads
+      });
 
       // Rivers line layer (for line rivers only - not polygon outlines)
       map.current.addLayer({
@@ -1428,7 +1166,7 @@ export function MapView() {
           ],
           'line-opacity': 0.8,
         },
-      }, 'roads-preview-line'); // Insert below roads
+      });
 
       // Rivers label layer
       map.current.addLayer({
@@ -1457,7 +1195,7 @@ export function MapView() {
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Green spaces fill layer - render below roads
+      // Green spaces fill layer
       map.current.addLayer({
         id: 'greenspaces-fill',
         type: 'fill',
@@ -1469,7 +1207,7 @@ export function MapView() {
           'fill-color': '#22C55E',
           'fill-opacity': 0.4,
         },
-      }, 'roads-preview-line'); // Insert below roads
+      });
 
       // Green spaces outline layer
       map.current.addLayer({
@@ -1484,7 +1222,7 @@ export function MapView() {
           'line-width': 2,
           'line-opacity': 0.8,
         },
-      }, 'roads-preview-line'); // Insert below roads
+      });
 
       // Green spaces label layer
       map.current.addLayer({
@@ -1507,17 +1245,97 @@ export function MapView() {
         },
       });
 
-      // Street lights source and layers (amber for lights)
+      // Street lights source and layers (amber for lights) — clustered
       map.current.addSource('streetlights', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 17,
+        clusterRadius: 60,
       });
 
-      // Street lights circle layer
+      // Street lights cluster glow
+      map.current.addLayer({
+        id: 'streetlights-cluster-glow',
+        type: 'circle',
+        source: 'streetlights',
+        filter: ['has', 'point_count'],
+        minzoom: 14,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            30, 10, 40, 50, 50, 200, 60,
+          ],
+          'circle-color': '#FBBF24',
+          'circle-opacity': 0.25,
+          'circle-blur': 0.8,
+        },
+      });
+
+      // Street lights cluster ring
+      map.current.addLayer({
+        id: 'streetlights-cluster-ring',
+        type: 'circle',
+        source: 'streetlights',
+        filter: ['has', 'point_count'],
+        minzoom: 14,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            20, 10, 26, 50, 32, 200, 38,
+          ],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FBBF24',
+          'circle-stroke-opacity': 0.6,
+        },
+      });
+
+      // Street lights cluster circle
+      map.current.addLayer({
+        id: 'streetlights-cluster',
+        type: 'circle',
+        source: 'streetlights',
+        filter: ['has', 'point_count'],
+        minzoom: 14,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            16, 10, 20, 50, 26, 200, 32,
+          ],
+          'circle-color': '#FBBF24',
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Street lights cluster count label
+      map.current.addLayer({
+        id: 'streetlights-cluster-count',
+        type: 'symbol',
+        source: 'streetlights',
+        filter: ['has', 'point_count'],
+        minzoom: 14,
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 13,
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#78350F',
+          'text-halo-color': '#fff',
+          'text-halo-width': 1,
+        },
+      });
+
+      // Street lights unclustered circle layer
       map.current.addLayer({
         id: 'streetlights-circle',
         type: 'circle',
         source: 'streetlights',
+        filter: ['!', ['has', 'point_count']],
         minzoom: 14,
         layout: {
           'visibility': 'visible',
@@ -1529,7 +1347,7 @@ export function MapView() {
             16, 6,
             18, 10
           ],
-          'circle-color': '#FBBF24', // Default amber for all (lampStatus might not be set)
+          'circle-color': '#FBBF24',
           'circle-stroke-width': 2,
           'circle-stroke-color': '#fff',
           'circle-opacity': 1,
@@ -1540,15 +1358,121 @@ export function MapView() {
       // RFI Asset Layers
       // ============================================
 
-      // Street Trees - circle layer colored by healthStatus
+      // Street Trees — clustered, colored by healthStatus
       map.current.addSource('street-trees', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 19,
+        clusterRadius: 50,
+        clusterProperties: {
+          'healthy_count': ['+', ['case', ['==', ['get', 'healthStatus'], 'healthy'], 1, 0]],
+          'declining_count': ['+', ['case', ['==', ['get', 'healthStatus'], 'declining'], 1, 0]],
+          'hazardous_count': ['+', ['case', ['==', ['get', 'healthStatus'], 'hazardous'], 1, 0]],
+          'dead_count': ['+', ['case', ['==', ['get', 'healthStatus'], 'dead'], 1, 0]],
+        },
       });
+
+      // Street trees cluster glow (worst-status-wins color)
+      map.current.addLayer({
+        id: 'street-trees-cluster-glow',
+        type: 'circle',
+        source: 'street-trees',
+        filter: ['has', 'point_count'],
+        minzoom: 16,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            30, 10, 42, 50, 50, 200, 60,
+          ],
+          'circle-color': [
+            'case',
+            ['>', ['get', 'hazardous_count'], 0], '#EF4444',
+            ['>', ['get', 'dead_count'], 0], '#6B7280',
+            ['>', ['get', 'declining_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-opacity': 0.25,
+          'circle-blur': 0.8,
+        },
+      });
+
+      // Street trees cluster ring
+      map.current.addLayer({
+        id: 'street-trees-cluster-ring',
+        type: 'circle',
+        source: 'street-trees',
+        filter: ['has', 'point_count'],
+        minzoom: 16,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            20, 10, 28, 50, 34, 200, 40,
+          ],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': [
+            'case',
+            ['>', ['get', 'hazardous_count'], 0], '#EF4444',
+            ['>', ['get', 'dead_count'], 0], '#6B7280',
+            ['>', ['get', 'declining_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-stroke-opacity': 0.6,
+        },
+      });
+
+      // Street trees cluster circle (worst-status-wins color)
+      map.current.addLayer({
+        id: 'street-trees-cluster',
+        type: 'circle',
+        source: 'street-trees',
+        filter: ['has', 'point_count'],
+        minzoom: 16,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            16, 10, 22, 50, 28, 200, 34,
+          ],
+          'circle-color': [
+            'case',
+            ['>', ['get', 'hazardous_count'], 0], '#EF4444',
+            ['>', ['get', 'dead_count'], 0], '#6B7280',
+            ['>', ['get', 'declining_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Street trees cluster count label
+      map.current.addLayer({
+        id: 'street-trees-cluster-count',
+        type: 'symbol',
+        source: 'street-trees',
+        filter: ['has', 'point_count'],
+        minzoom: 16,
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 13,
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#fff',
+          'text-halo-color': 'rgba(0,0,0,0.3)',
+          'text-halo-width': 1,
+        },
+      });
+
+      // Street trees unclustered circle layer
       map.current.addLayer({
         id: 'street-trees-circle',
         type: 'circle',
         source: 'street-trees',
+        filter: ['!', ['has', 'point_count']],
         minzoom: 16,
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 16, 5, 18, 10],
@@ -1566,14 +1490,28 @@ export function MapView() {
         },
       });
 
-      // Park Facilities - pin marker using MapLibre's built-in Marker SVG
+      // Street trees highlight ring (for search highlight)
+      map.current.addLayer({
+        id: 'street-trees-highlight',
+        type: 'circle',
+        source: 'street-trees',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 16, 10, 18, 16],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#f59e0b',
+        },
+      });
+
+      // Park Facilities - Facility icon (white circle + colored inner dot)
+      // Same icon as MiniMap markers (design/icon/Facility.svg)
       {
-        const pinColor = '#e03131';
-        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="27" height="41" viewBox="0 0 27 41"><g fill-rule="nonzero"><g fill="${pinColor}"><path d="M27,13.5C27,19.07 20.25,27 14.75,34.5C14.02,35.5 12.98,35.5 12.25,34.5C6.75,27 0,19.22 0,13.5C0,6.04 6.04,0 13.5,0C20.96,0 27,6.04 27,13.5Z"/></g><g transform="translate(6,7)" fill="#fff"><circle cx="7.5" cy="6.5" r="3"/></g></g></svg>`;
+        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="white"/><circle cx="7" cy="7" r="4.667" fill="#3B82F6"/></svg>`;
         const img = new Image();
         img.onload = () => {
           if (map.current && !map.current.hasImage('pf-pin')) {
-            map.current.addImage('pf-pin', img, { pixelRatio: 1 });
+            map.current.addImage('pf-pin', img, { pixelRatio: 2 });
           }
         };
         img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
@@ -1582,16 +1520,107 @@ export function MapView() {
       map.current.addSource('park-facilities', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 15,
+        clusterRadius: 80,
       });
+
+      // Park facilities cluster glow
+      map.current.addLayer({
+        id: 'park-facilities-cluster-glow',
+        type: 'circle',
+        source: 'park-facilities',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            26, 5, 34, 15, 42, 30, 50,
+          ],
+          'circle-color': '#3B82F6',
+          'circle-opacity': 0.25,
+          'circle-blur': 0.8,
+        },
+      });
+
+      // Park facilities cluster ring
+      map.current.addLayer({
+        id: 'park-facilities-cluster-ring',
+        type: 'circle',
+        source: 'park-facilities',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            18, 5, 24, 15, 30, 30, 36,
+          ],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#3B82F6',
+          'circle-stroke-opacity': 0.6,
+        },
+      });
+
+      // Park facilities cluster circle (blue, same color family as Facility icon)
+      map.current.addLayer({
+        id: 'park-facilities-cluster',
+        type: 'circle',
+        source: 'park-facilities',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            14, 5, 18, 15, 22, 30, 26,
+          ],
+          'circle-color': '#3B82F6',
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Park facilities cluster count label
+      map.current.addLayer({
+        id: 'park-facilities-cluster-count',
+        type: 'symbol',
+        source: 'park-facilities',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 12,
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#fff',
+          'text-halo-color': 'rgba(0,0,0,0.2)',
+          'text-halo-width': 1,
+        },
+      });
+
+      // Park facilities highlight ring (rendered below the icon symbol)
+      map.current.addLayer({
+        id: 'park-facilities-highlight',
+        type: 'circle',
+        source: 'park-facilities',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 8, 14, 12, 16, 18, 18, 26],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#f59e0b',
+        },
+      });
+
+      // Park facilities unclustered icon (Facility.svg)
       map.current.addLayer({
         id: 'park-facilities-circle',
         type: 'symbol',
         source: 'park-facilities',
-        minzoom: 14,
+        filter: ['!', ['has', 'point_count']],
         layout: {
           'icon-image': 'pf-pin',
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 16, 0.9, 18, 1.3],
-          'icon-anchor': 'bottom',
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 14, 0.8, 16, 1.2, 18, 1.8],
+          'icon-anchor': 'center',
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
         },
@@ -1619,17 +1648,136 @@ export function MapView() {
           'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3, 16, 6],
           'line-opacity': 0.7,
         },
-      }, 'roads-preview-line');
+      });
 
-      // Pump Stations - circle layer colored by equipmentStatus
+      // Pavement sections highlight line (for search highlight)
+      map.current.addLayer({
+        id: 'pavement-sections-highlight',
+        type: 'line',
+        source: 'pavement-sections',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'line-color': '#f59e0b',
+          'line-width': ['interpolate', ['linear'], ['zoom'], 13, 5, 16, 10],
+          'line-opacity': 0.9,
+        },
+      });
+
+      // Pump Stations — clustered, colored by equipmentStatus
       map.current.addSource('pump-stations', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 17,
+        clusterRadius: 50,
+        clusterProperties: {
+          'operational_count': ['+', ['case', ['==', ['get', 'equipmentStatus'], 'operational'], 1, 0]],
+          'standby_count': ['+', ['case', ['==', ['get', 'equipmentStatus'], 'standby'], 1, 0]],
+          'underMaintenance_count': ['+', ['case', ['==', ['get', 'equipmentStatus'], 'underMaintenance'], 1, 0]],
+          'outOfService_count': ['+', ['case', ['==', ['get', 'equipmentStatus'], 'outOfService'], 1, 0]],
+        },
       });
+
+      // Pump stations cluster glow
+      map.current.addLayer({
+        id: 'pump-stations-cluster-glow',
+        type: 'circle',
+        source: 'pump-stations',
+        filter: ['has', 'point_count'],
+        minzoom: 13,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            30, 5, 40, 20, 50,
+          ],
+          'circle-color': [
+            'case',
+            ['>', ['get', 'outOfService_count'], 0], '#EF4444',
+            ['>', ['get', 'underMaintenance_count'], 0], '#F97316',
+            ['>', ['get', 'standby_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-opacity': 0.25,
+          'circle-blur': 0.8,
+        },
+      });
+
+      // Pump stations cluster ring
+      map.current.addLayer({
+        id: 'pump-stations-cluster-ring',
+        type: 'circle',
+        source: 'pump-stations',
+        filter: ['has', 'point_count'],
+        minzoom: 13,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            20, 5, 26, 20, 32,
+          ],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': [
+            'case',
+            ['>', ['get', 'outOfService_count'], 0], '#EF4444',
+            ['>', ['get', 'underMaintenance_count'], 0], '#F97316',
+            ['>', ['get', 'standby_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-stroke-opacity': 0.6,
+        },
+      });
+
+      // Pump stations cluster circle (worst-status-wins color)
+      map.current.addLayer({
+        id: 'pump-stations-cluster',
+        type: 'circle',
+        source: 'pump-stations',
+        filter: ['has', 'point_count'],
+        minzoom: 13,
+        paint: {
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            16, 5, 20, 20, 26,
+          ],
+          'circle-color': [
+            'case',
+            ['>', ['get', 'outOfService_count'], 0], '#EF4444',
+            ['>', ['get', 'underMaintenance_count'], 0], '#F97316',
+            ['>', ['get', 'standby_count'], 0], '#F59E0B',
+            '#22C55E',
+          ],
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Pump stations cluster count label
+      map.current.addLayer({
+        id: 'pump-stations-cluster-count',
+        type: 'symbol',
+        source: 'pump-stations',
+        filter: ['has', 'point_count'],
+        minzoom: 13,
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 13,
+          'text-allow-overlap': true,
+        },
+        paint: {
+          'text-color': '#fff',
+          'text-halo-color': 'rgba(0,0,0,0.3)',
+          'text-halo-width': 1,
+        },
+      });
+
+      // Pump stations unclustered circle layer
       map.current.addLayer({
         id: 'pump-stations-circle',
         type: 'circle',
         source: 'pump-stations',
+        filter: ['!', ['has', 'point_count']],
         minzoom: 13,
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 5, 16, 8, 18, 12],
@@ -1643,6 +1791,20 @@ export function MapView() {
           ],
           'circle-stroke-width': 2,
           'circle-stroke-color': '#fff',
+        },
+      });
+
+      // Pump stations highlight ring (for search highlight)
+      map.current.addLayer({
+        id: 'pump-stations-highlight',
+        type: 'circle',
+        source: 'pump-stations',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 10, 16, 14, 18, 20],
+          'circle-color': 'transparent',
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#f59e0b',
         },
       });
 
@@ -1720,32 +1882,32 @@ export function MapView() {
         },
       });
 
-      // Fill layer for polygon geometries (selected asset) - more transparent
+      // Fill layer for polygon geometries (selected asset) - below facility pins
       map.current.addLayer({
         id: 'selected-asset-fill',
         type: 'fill',
         source: 'selected-asset',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'fill-color': '#ef4444',
-          'fill-opacity': 0.15,
+          'fill-color': '#6288CA',
+          'fill-opacity': 0.6,
         },
-      });
+      }, 'streetlights-circle');
 
-      // Outline for polygon geometries (selected asset) - semi-transparent
+      // Outline for polygon geometries (selected asset) - below facility pins
       map.current.addLayer({
         id: 'selected-asset-outline',
         type: 'line',
         source: 'selected-asset',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'line-color': '#dc2626',
-          'line-width': 2.5,
-          'line-opacity': 0.8,
+          'line-color': '#16A34A',
+          'line-width': 1,
+          'line-opacity': 1,
         },
-      });
+      }, 'streetlights-circle');
 
-      // Selected asset line layer (for LineString geometries - roads)
+      // Selected asset line layer (for LineString geometries)
       map.current.addLayer({
         id: 'selected-asset-line',
         type: 'line',
@@ -1757,33 +1919,6 @@ export function MapView() {
           'line-opacity': 0.9,
         },
       });
-
-      // Hover highlight glow layer (outer glow for visibility)
-      map.current.addLayer({
-        id: 'hovered-asset-glow',
-        type: 'line',
-        source: 'assets',
-        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
-        paint: {
-          'line-color': '#f59e0b', // Amber/orange glow
-          'line-width': 16,
-          'line-blur': 6,
-          'line-opacity': 0.7,
-        },
-      }, 'selected-asset-glow'); // Insert below selected layer
-
-      // Hover highlight layer (main line)
-      map.current.addLayer({
-        id: 'hovered-asset-line',
-        type: 'line',
-        source: 'assets',
-        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
-        paint: {
-          'line-color': '#f59e0b', // Amber/orange - more visible
-          'line-width': 8,
-          'line-opacity': 1,
-        },
-      }, 'selected-asset-glow'); // Insert below selected layer
 
       // Greenspace hover highlight layers
       map.current.addLayer({
@@ -1809,12 +1944,12 @@ export function MapView() {
         },
       });
 
-      // Streetlight hover highlight layer
+      // Streetlight hover highlight layer (exclude cluster features)
       map.current.addLayer({
         id: 'hovered-streetlight-circle',
         type: 'circle',
         source: 'streetlights',
-        filter: ['==', ['get', 'id'], ''], // Initial: match nothing
+        filter: ['all', ['!', ['has', 'point_count']], ['==', ['get', 'id'], '']], // Exclude clusters
         paint: {
           'circle-radius': 18,
           'circle-color': '#f59e0b', // Amber/orange
@@ -1873,10 +2008,12 @@ export function MapView() {
             'events-closed-fill', 'events-closed-line',
             'events-pending-review-fill', 'events-pending-review-line',
             'events-hit-area-fill', 'events-hit-area-line',
-            'assets-line', 'inspections-point',
+            'inspections-point',
             'street-trees-circle', 'park-facilities-circle',
             'pavement-sections-line', 'pump-stations-circle',
-            'greenspaces-fill'
+            'greenspaces-fill',
+            'streetlights-cluster', 'street-trees-cluster', 'pump-stations-cluster',
+            'park-facilities-cluster'
           ]
         });
 
@@ -1884,9 +2021,11 @@ export function MapView() {
         if (!features || features.length === 0) {
           const state = useUIStore.getState();
           // Don't clear selection during any editor mode
-          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+          if (state.isEventFormOpen || state.drawingContext) return;
           selectEvent(null);
           selectAsset(null);
+          // Clear search highlight
+          useMapStore.getState().setHighlightedFeature(null);
           // Clear both tooltips
           lockedEventIdRef.current = null;
           setLockedEvent(null);
@@ -1897,9 +2036,6 @@ export function MapView() {
           // Don't change currentView to keep context
         }
       });
-
-      // Road interaction is fully disabled - roads are a transparent background layer
-      const shouldAllowRoadInteraction = () => false;
 
       // Event click handler with manual double-click detection
       const handleEventClick = (e: maplibregl.MapLayerMouseEvent) => {
@@ -1913,7 +2049,7 @@ export function MapView() {
           const geometry = e.features[0].geometry as Geometry;
           const state = useUIStore.getState();
           // Don't handle event clicks during any editor mode
-          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+          if (state.isEventFormOpen || state.drawingContext) return;
 
           const now = Date.now();
 
@@ -1997,8 +2133,6 @@ export function MapView() {
         map.current.on('click', layerId, handleEventClick);
       }
 
-      // Road assets click handler removed - roads are now a transparent, non-interactive background layer
-
       // Inspection point click handler
       map.current.on('click', 'inspections-point', (e) => {
         if (e.features && e.features[0]) {
@@ -2008,7 +2142,7 @@ export function MapView() {
 
           const state = useUIStore.getState();
           // Don't handle inspection clicks during any editor mode
-          if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+          if (state.isEventFormOpen || state.drawingContext) return;
 
           e.originalEvent.stopPropagation();
           selectInspection(inspectionId);
@@ -2028,7 +2162,7 @@ export function MapView() {
         map.current.on('click', layerId, (e: maplibregl.MapLayerMouseEvent) => {
           if (e.features && e.features[0]) {
             const state = useUIStore.getState();
-            if (state.isEventFormOpen || state.isRoadUpdateModeActive || state.drawingContext) return;
+            if (state.isEventFormOpen || state.drawingContext) return;
 
             // Events take priority — skip if click also hits an event layer
             const eventFeatures = map.current?.queryRenderedFeatures(e.point, {
@@ -2039,15 +2173,16 @@ export function MapView() {
             e.originalEvent.stopPropagation();
             const id = e.features[0].properties?.id as string;
             if (!id) return;
-            const geometry = e.features[0].geometry as Geometry;
+            // For greenspaces, use cached full geometry (MapLibre decomposes MultiPolygon
+            // into sub-polygons, so e.features[0].geometry may be only a partial polygon)
+            const geometry = (layerId === 'greenspaces-fill'
+              ? greenspaceFeaturesRef.current.get(id)
+              : undefined) ?? e.features[0].geometry as Geometry;
             selectAsset(id, assetType, geometry);
             setCurrentView('assets');
           }
         });
       }
-
-      // Alias for backward compatibility in hover handlers
-      const shouldAllowRoadHover = shouldAllowRoadInteraction;
 
       // Cursor changes for event layers
       const eventCursorLayerIds = [
@@ -2065,18 +2200,43 @@ export function MapView() {
           if (map.current) map.current.getCanvas().style.cursor = '';
         });
       }
-      map.current.on('mouseenter', 'assets-line', () => {
-        if (map.current && shouldAllowRoadHover()) {
-          map.current.getCanvas().style.cursor = 'pointer';
-        }
-      });
-      map.current.on('mouseleave', 'assets-line', () => {
-        if (map.current) map.current.getCanvas().style.cursor = '';
-      });
 
       // Cursor changes for asset layers
       const assetLayerIds = Object.keys(assetLayerMap);
       for (const layerId of assetLayerIds) {
+        map.current.on('mouseenter', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = 'pointer';
+        });
+        map.current.on('mouseleave', layerId, () => {
+          if (map.current) map.current.getCanvas().style.cursor = '';
+        });
+      }
+
+      // Cluster click-to-zoom handlers
+      const clusterLayerIds = [
+        'streetlights-cluster', 'streetlights-cluster-ring', 'streetlights-cluster-glow',
+        'street-trees-cluster', 'street-trees-cluster-ring', 'street-trees-cluster-glow',
+        'pump-stations-cluster', 'pump-stations-cluster-ring', 'pump-stations-cluster-glow',
+        'park-facilities-cluster', 'park-facilities-cluster-ring', 'park-facilities-cluster-glow'
+      ];
+      for (const layerId of clusterLayerIds) {
+        map.current.on('click', layerId, (e: maplibregl.MapLayerMouseEvent) => {
+          if (!e.features || !e.features[0]) return;
+          e.originalEvent.stopPropagation();
+          const feature = e.features[0];
+          const clusterId = feature.properties?.cluster_id as number;
+          const sourceId = feature.source;
+          const source = map.current?.getSource(sourceId) as maplibregl.GeoJSONSource;
+          if (!source || clusterId == null) return;
+          source.getClusterExpansionZoom(clusterId).then((zoom) => {
+            const geometry = feature.geometry as GeoJSON.Point;
+            map.current?.easeTo({
+              center: geometry.coordinates as [number, number],
+              zoom,
+              duration: 500,
+            });
+          });
+        });
         map.current.on('mouseenter', layerId, () => {
           if (map.current) map.current.getCanvas().style.cursor = 'pointer';
         });
@@ -2127,7 +2287,6 @@ export function MapView() {
               endDate: props?.endDate,
               department: props?.department,
               restrictionType: props?.restrictionType,
-              affectedAssetsCount: props?.affectedAssetsCount,
             });
             setPreviewTooltipPosition({ x: viewportX, y: viewportY });
           }
@@ -2159,49 +2318,6 @@ export function MapView() {
         map.current.on('mousemove', layerId, handleEventMouseMove);
         map.current.on('mouseleave', layerId, handleEventMouseLeave);
       }
-
-      // Hover popup for assets
-      map.current.on('mousemove', 'assets-line', (e) => {
-        // Skip hover while actively drawing to avoid interaction interruption
-        // Use getState() to get fresh value and avoid closure staleness
-        if (useUIStore.getState().isDrawingActive) {
-          if (popup.current) popup.current.remove();
-          return;
-        }
-
-        // Skip hover when event is selected (unless in assets view or road update mode)
-        if (!shouldAllowRoadHover()) {
-          if (map.current) map.current.getCanvas().style.cursor = '';
-          if (popup.current) popup.current.remove();
-          return;
-        }
-
-        // Skip hover when mouse is over an event polygon (show event tooltip instead)
-        if (currentHoveredEventIdRef.current || lockedEventIdRef.current) {
-          if (popup.current) popup.current.remove();
-          return;
-        }
-
-        if (map.current && popup.current && e.features && e.features[0]) {
-          const props = e.features[0].properties;
-          const assetLabel = props
-            ? getRoadAssetLabel(props as RoadAssetLabelFields)
-            : 'Unnamed Road';
-          const html = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 2px;">
-              <div style="font-weight: 700; margin-bottom: 4px; font-size: 14px; color: #000;">${assetLabel}</div>
-              <div style="font-size: 12px; color: #222; display: flex; align-items: center;">
-                <span style="display:inline-block; width: 8px; height: 8px; background-color: ${props?.color}; border-radius: 50%; margin-right: 6px;"></span>
-                <span style="text-transform: capitalize; font-weight: 600;">${props?.roadType}</span>
-              </div>
-            </div>
-          `;
-          popup.current.setLngLat(e.lngLat).setHTML(html).addTo(map.current);
-        }
-      });
-      map.current.on('mouseleave', 'assets-line', () => {
-        if (popup.current) popup.current.remove();
-      });
 
       // Mark map as loaded
       setMapLoaded(true);
@@ -2347,7 +2463,7 @@ export function MapView() {
       // If osm is not found, or is the last one, nextLayerId is undefined (adds to top)
       // But we want it at the bottom, so if osm is gone, we might need to find the first layer.
       // If we are replacing, we know where it was.
-      
+
       let nextLayerId: string | undefined;
       if (layers && osmLayerIndex !== undefined && osmLayerIndex !== -1 && osmLayerIndex + 1 < layers.length) {
         nextLayerId = layers[osmLayerIndex + 1].id;
@@ -2361,7 +2477,7 @@ export function MapView() {
       }
       // Source removal might fail if layer is still there, but we removed it.
       if (mapInstance.getSource('osm')) {
-         mapInstance.removeSource('osm');
+        mapInstance.removeSource('osm');
       }
 
       mapInstance.addSource('osm', {
@@ -2378,116 +2494,6 @@ export function MapView() {
       }, nextLayerId);
     }
   }, [mapTheme, mapLoaded]);
-
-  // Track map idle state for loading progress indicator
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    const handleMoveStart = () => setIsMapIdle(false);
-    const handleIdle = () => setIsMapIdle(true);
-
-    map.current.on('movestart', handleMoveStart);
-    map.current.on('idle', handleIdle);
-
-    return () => {
-      map.current?.off('movestart', handleMoveStart);
-      map.current?.off('idle', handleIdle);
-    };
-  }, [mapLoaded]);
-
-  // Road tile refresh when roadTileVersion changes (triggered by SSE road edit events)
-  // Note: Preview layer uses PMTiles (static files) for performance, so real-time refresh
-  // only affects the API-loaded road data at zoom >= 14, not the preview layer.
-  // To update preview layer, regenerate PMTiles with: npm run tiles:roads
-  useEffect(() => {
-    // PMTiles are static - no real-time refresh needed for preview layer
-    // The zoom >= 14 API data already refreshes automatically via React Query
-    // roadTileVersion is kept in the dependency array for future use if needed
-  }, [roadTileVersion, mapLoaded]);
-
-  // Update assets layer (API data for zoom >= 14, or any zoom when filters active)
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    const source = map.current.getSource('assets') as maplibregl.GeoJSONSource;
-    if (!source) return;
-
-    // Clear assets when:
-    // - showAssets is off, OR
-    // - No mapBbox AND not in global filter mode, OR
-    // - zoom < 14 AND no filters active (rely on PMTiles preview instead)
-    const shouldClearAssets = !showAssets || (!mapBbox && !hasActiveAssetFilters) || (currentZoom < 14 && !hasActiveAssetFilters);
-
-    if (shouldClearAssets) {
-      // Only clear if there was data before
-      if (lastAssetIdsHashRef.current !== '') {
-        source.setData({ type: 'FeatureCollection', features: [] });
-        lastAssetIdsHashRef.current = '';
-      }
-      map.current.setLayoutProperty('assets-line', 'visibility', 'none');
-      map.current.setLayoutProperty('assets-label', 'visibility', 'none');
-      map.current.setLayoutProperty('road-direction-arrows', 'visibility', 'none');
-      return;
-    }
-
-    // Get assets data (empty array if no data or loading)
-    const assets = assetsData?.data ?? [];
-
-    // Compare asset IDs using hash string (faster than Set comparison)
-    const newIdsHash = assets.map((a: RoadAsset) => a.id).sort().join(',');
-
-    if (newIdsHash === lastAssetIdsHashRef.current) {
-      // Data is identical, skip setData() to avoid flickering
-      return;
-    }
-
-    // Update ref for next comparison
-    lastAssetIdsHashRef.current = newIdsHash;
-
-    const features = assets.map((asset: RoadAsset) => ({
-      type: 'Feature' as const,
-      geometry: asset.geometry,
-      properties: {
-        id: asset.id,
-        name: asset.name,
-        nameJa: asset.nameJa,
-        ref: asset.ref,
-        localRef: asset.localRef,
-        displayName: asset.displayName,
-        ward: asset.ward,
-        sublocality: asset.sublocality,
-        labelText: (() => {
-          // Show road name if available
-          if (!isRoadAssetUnnamed(asset)) {
-            return getRoadAssetLabel(asset);
-          }
-          // For unnamed roads with sublocality, show enhanced format: "道路 · {sublocality} · #{shortId}"
-          const displayText = getRoadAssetLabel(asset);
-          const isGenericName = displayText === '道路' || displayText === 'Unnamed Road';
-          if (isGenericName && (asset.sublocality || asset.ward)) {
-            const locationLabel = asset.sublocality || asset.ward;
-            const shortId = asset.id.replace(/^RA-/, '').replace(/^[A-Z]+-/, '');
-            return `${displayText} · ${locationLabel} · #${shortId}`;
-          }
-          // Fallback: show simplified ID (e.g., "NISH-4032" instead of "RA-NISH-4032")
-          if (asset.id) {
-            const id = String(asset.id);
-            // Remove "RA-" prefix if present
-            return id.startsWith('RA-') ? id.substring(3) : id;
-          }
-          return '';
-        })(),
-        roadType: asset.roadType,
-        color: ROAD_TYPE_COLORS[asset.roadType] || '#666',
-        direction: asset.direction || 'two-way',
-      },
-    }));
-
-    source.setData({ type: 'FeatureCollection', features });
-    map.current.setLayoutProperty('assets-line', 'visibility', 'visible');
-    map.current.setLayoutProperty('assets-label', 'visibility', 'visible');
-    map.current.setLayoutProperty('road-direction-arrows', 'visibility', 'visible');
-  }, [assetsData, showAssets, mapLoaded, mapBbox, currentZoom, hasActiveAssetFilters]);
 
   // Update rivers layer (API data for zoom >= 12)
   useEffect(() => {
@@ -2531,6 +2537,14 @@ export function MapView() {
       : [];
     source.setData({ type: 'FeatureCollection', features });
 
+    // Cache full geometries so click handler can use the original MultiPolygon
+    const geoMap = new Map<string, Geometry>();
+    for (const f of features) {
+      const fid = f.properties?.id as string | undefined;
+      if (fid) geoMap.set(fid, f.geometry as Geometry);
+    }
+    greenspaceFeaturesRef.current = geoMap;
+
     // Toggle layer visibility based on showGreenSpaces setting
     const visibility = showGreenSpaces ? 'visible' : 'none';
     map.current.setLayoutProperty('greenspaces-fill', 'visibility', visibility);
@@ -2555,6 +2569,10 @@ export function MapView() {
     // Toggle layer visibility based on showStreetLights setting
     const visibility = showStreetLights ? 'visible' : 'none';
     map.current.setLayoutProperty('streetlights-circle', 'visibility', visibility);
+    map.current.setLayoutProperty('streetlights-cluster-glow', 'visibility', visibility);
+    map.current.setLayoutProperty('streetlights-cluster-ring', 'visibility', visibility);
+    map.current.setLayoutProperty('streetlights-cluster', 'visibility', visibility);
+    map.current.setLayoutProperty('streetlights-cluster-count', 'visibility', visibility);
   }, [streetLightsData, showStreetLights, mapLoaded, currentZoom]);
 
   // Update street trees layer
@@ -2578,7 +2596,7 @@ export function MapView() {
     const source = map.current.getSource('park-facilities') as maplibregl.GeoJSONSource;
     if (!source) return;
 
-    if (!showParkFacilities || currentZoom < 14) {
+    if (!showParkFacilities) {
       source.setData({ type: 'FeatureCollection', features: [] });
       return;
     }
@@ -2621,23 +2639,6 @@ export function MapView() {
     source.setData({ type: 'FeatureCollection', features });
   }, [pumpStationsData, showPumpStations, mapLoaded, currentZoom]);
 
-  // Toggle Nagoya designated roads layer visibility
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    // Nagoya designated road layers: zoom depends on source (PMTiles: 8+, MVT: 14+)
-    const visibility = showNagoyaRoads && currentZoom >= NAGOYA_MIN_ZOOM ? 'visible' : 'none';
-
-    try {
-      map.current.setLayoutProperty('nagoya-2gou-roads', 'visibility', visibility);
-      map.current.setLayoutProperty('nagoya-5gou-roads', 'visibility', visibility);
-      map.current.setLayoutProperty('nagoya-1gou-areas', 'visibility', visibility);
-      map.current.setLayoutProperty('nagoya-2gou-areas', 'visibility', visibility);
-    } catch {
-      // Layers may not exist if source failed to load
-    }
-  }, [showNagoyaRoads, mapLoaded, currentZoom]);
-
   // Toggle Nagoya building zones layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -2664,94 +2665,21 @@ export function MapView() {
     }
   }, [showNagoyaBuildingZones, mapLoaded, currentZoom]);
 
-  // Highlight selected assets while editing an event
-  // Uses separate source so it shows at all zoom levels
+  // Toggle Nagoya designated roads layer visibility
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    const source = map.current.getSource('editing-assets') as maplibregl.GeoJSONSource;
-    if (!source) return;
-
-    // Determine which asset IDs to highlight
-    // Event form mode: use selectedRoadAssetIdsForForm
-    // Road update mode: use roadUpdateSelectedAssetIds
-    let assetIds: string[] = [];
-    if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
-      assetIds = selectedRoadAssetIdsForForm;
-    } else if (isRoadUpdateModeActive && roadUpdateSelectedAssetIds.length > 0) {
-      assetIds = roadUpdateSelectedAssetIds;
-    }
-
-    if (assetIds.length > 0) {
-      // Build features from cache (includes geometry) and fallback to assetsData
-      const features: GeoJSON.Feature[] = [];
-
-      for (const assetId of assetIds) {
-        // First check cache (which stores geometry when assets are selected)
-        const cached = selectedAssetDetailsCache[assetId];
-        if (cached?.geometry) {
-          features.push({
-            type: 'Feature',
-            geometry: cached.geometry,
-            properties: { id: assetId },
-          });
-        } else {
-          // Fallback to assetsData (if asset is in current viewport)
-          const asset = assetsData?.data?.find((a: RoadAsset) => a.id === assetId);
-          if (asset?.geometry) {
-            features.push({
-              type: 'Feature',
-              geometry: asset.geometry,
-              properties: { id: assetId },
-            });
-          }
-        }
-      }
-
-      source.setData({ type: 'FeatureCollection', features });
-      map.current.setLayoutProperty('editing-assets-line', 'visibility', 'visible');
-      if (map.current.getLayer('editing-assets-fill')) {
-        map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'visible');
-      }
-      if (map.current.getLayer('editing-assets-glow')) {
-        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'visible');
-      }
-    } else {
-      source.setData({ type: 'FeatureCollection', features: [] });
-      map.current.setLayoutProperty('editing-assets-line', 'visibility', 'none');
-      if (map.current.getLayer('editing-assets-fill')) {
-        map.current.setLayoutProperty('editing-assets-fill', 'visibility', 'none');
-      }
-      if (map.current.getLayer('editing-assets-glow')) {
-        map.current.setLayoutProperty('editing-assets-glow', 'visibility', 'none');
-      }
-    }
-  }, [selectedRoadAssetIdsForForm, isEventFormOpen, isRoadUpdateModeActive, roadUpdateSelectedAssetIds, mapLoaded, selectedAssetDetailsCache, assetsData]);
-
-  // Update roads preview layer visibility and opacity
-  // PMTiles shows all road types at all zoom levels; hidden when filters are active
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    const z = Math.floor(currentZoom);
-
-    // Hide PMTiles preview only when filters are active (PMTiles cannot be filtered)
-    // Road preview is always visible as background context
-    const shouldHidePreview = hasActiveAssetFilters;
-
-    // Opacity: reduce when API asset data is visible (zoom >= 14) to avoid visual clutter
-    const previewOpacity = z >= 14 && showAssets ? 0.25 : 0.35;
+    const visibility = showNagoyaRoads && currentZoom >= NAGOYA_MIN_ZOOM ? 'visible' : 'none';
 
     try {
-      const visibility = shouldHidePreview ? 'none' : 'visible';
-      map.current.setLayoutProperty('roads-preview-line', 'visibility', visibility);
-      map.current.setLayoutProperty('roads-preview-label', 'visibility', visibility);
-      // Apply opacity (no filter - show all road types)
-      map.current.setPaintProperty('roads-preview-line', 'line-opacity', previewOpacity);
+      map.current.setLayoutProperty('nagoya-2gou-roads', 'visibility', visibility);
+      map.current.setLayoutProperty('nagoya-5gou-roads', 'visibility', visibility);
+      map.current.setLayoutProperty('nagoya-1gou-areas', 'visibility', visibility);
+      map.current.setLayoutProperty('nagoya-2gou-areas', 'visibility', visibility);
     } catch {
-      // Layers may not exist if PMTiles file is not available
+      // Layers may not exist if source failed to load
     }
-  }, [currentZoom, showAssets, mapLoaded, hasActiveAssetFilters]);
+  }, [showNagoyaRoads, mapLoaded, currentZoom]);
 
   // Update events layer
   useEffect(() => {
@@ -2793,13 +2721,12 @@ export function MapView() {
         startDate: event.startDate,
         endDate: event.endDate,
         department: event.department,
-        affectedAssetsCount: event.roadAssets?.length || 0,
       },
     }));
 
     source.setData({ type: 'FeatureCollection', features });
 
-    // Hide all events while editing to allow clicking roads underneath
+    // Hide all events while editing
     const eventsVisible = showEvents && !isEventFormOpen;
     const statusLayers = [
       'events-planned-fill', 'events-planned-line',
@@ -2816,35 +2743,6 @@ export function MapView() {
       }
     }
   }, [eventsData, showEvents, mapLoaded, isEventFormOpen, editingEventId, eventFilters.status, selectedEventId, selectedEventResponse, hoveredEventId]);
-
-  // Reduce event polygon opacity in Road Update Mode so roads are visible underneath
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    const fillLayers = [
-      'events-planned-fill',
-      'events-active-fill',
-      'events-closed-fill',
-      'events-pending-review-fill',
-      'selected-event-fill',
-    ];
-
-    const opacity = isRoadUpdateModeActive ? 0.08 : undefined; // Very low opacity in Road Update Mode
-
-    for (const layerId of fillLayers) {
-      if (map.current.getLayer(layerId)) {
-        if (opacity !== undefined) {
-          map.current.setPaintProperty(layerId, 'fill-opacity', opacity);
-        } else {
-          // Reset to original opacity based on layer
-          const originalOpacity = layerId === 'selected-event-fill' ? 0.5 :
-                                  layerId === 'events-active-fill' ? 0.2 :
-                                  layerId === 'events-planned-fill' ? 0.15 : 0.1;
-          map.current.setPaintProperty(layerId, 'fill-opacity', originalOpacity);
-        }
-      }
-    }
-  }, [isRoadUpdateModeActive, mapLoaded]);
 
   // Update inspections layer
   useEffect(() => {
@@ -2903,11 +2801,6 @@ export function MapView() {
     setPreviewEvent(null);
     setPreviewTooltipPosition(null);
     currentHoveredEventIdRef.current = null;
-
-    // Clear road popup when event is selected
-    if (selectedEventId && popup.current) {
-      popup.current.remove();
-    }
 
     if (selectedEventId) {
       // Look for event in main data or selected event response (for archived events)
@@ -3091,47 +2984,6 @@ export function MapView() {
     };
   }, [isEventFormOpen, editingEventId, editingEventResponse, drawnFeatures]);
 
-  // Animated breathing glow effect for selected road assets during editing
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-
-    // Start animation when editing and has selected roads
-    if (isEventFormOpen && selectedRoadAssetIdsForForm.length > 0) {
-      let time = 0;
-
-      const animate = () => {
-        if (!map.current || !map.current.getLayer('editing-assets-glow')) {
-          return;
-        }
-
-        // Breathing/flashing glow effect - more noticeable
-        time += 0.06; // Faster for flashing effect
-        const pulse = 0.5 + 0.5 * Math.sin(time);
-        const glowOpacity = 0.15 + 0.5 * pulse;  // 0.15 to 0.65
-        const glowWidth = 12 + 16 * pulse;       // 12 to 28
-
-        try {
-          map.current.setPaintProperty('editing-assets-glow', 'line-opacity', glowOpacity);
-          map.current.setPaintProperty('editing-assets-glow', 'line-width', glowWidth);
-        } catch {
-          // Layer might not exist
-        }
-
-        animationFrameRef.current = requestAnimationFrame(animate);
-      };
-
-      animationFrameRef.current = requestAnimationFrame(animate);
-    }
-
-    // Cleanup animation when not editing
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isEventFormOpen, selectedRoadAssetIdsForForm.length, mapLoaded]);
-
   // Highlight and fly to selected asset
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -3140,9 +2992,7 @@ export function MapView() {
     if (!source) return;
 
     if (selectedAssetId) {
-      // Try to find asset in viewport data, otherwise use geometry from store
-      const asset = assetsData?.data?.find((a: RoadAsset) => a.id === selectedAssetId);
-      const geometry = asset?.geometry || selectedAssetGeometry;
+      const geometry = selectedAssetGeometry;
 
       if (geometry) {
         // Update highlight source
@@ -3156,9 +3006,8 @@ export function MapView() {
         });
 
         // Only fly to feature when:
-        // 1. Selecting a NEW asset (not when assetsData changes)
+        // 1. Selecting a NEW asset
         // 2. Selection came from sidebar (selectedAssetGeometry is provided)
-        //    - When clicking on map, the road is already visible, no need to zoom
         if (lastFlownAssetIdRef.current !== selectedAssetId && selectedAssetGeometry) {
           lastFlownAssetIdRef.current = selectedAssetId;
           try {
@@ -3174,12 +3023,10 @@ export function MapView() {
               assetBbox[3] <= currentBounds.getNorth();
 
             if (!isInView) {
-              // Calculate road length to determine appropriate zoom
+              // Calculate asset length to determine appropriate zoom
               const feature = turf.feature(geometry);
               const length = turf.length(feature, { units: 'meters' });
 
-              // Smaller roads need higher zoom (closer view)
-              // length < 50m -> zoom 18, length < 150m -> zoom 17, length < 400m -> zoom 16, else 15
               let minZoom = 15;
               if (length < 50) minZoom = 18;
               else if (length < 150) minZoom = 17;
@@ -3199,7 +3046,7 @@ export function MapView() {
       source.setData({ type: 'FeatureCollection', features: [] });
       lastFlownAssetIdRef.current = null; // Reset when asset is deselected
     }
-  }, [selectedAssetId, selectedAssetGeometry, assetsData, mapLoaded]);
+  }, [selectedAssetId, selectedAssetGeometry, mapLoaded]);
 
   // Breathing animation for selected asset glow
   const selectedAssetAnimRef = useRef<number | null>(null);
@@ -3291,22 +3138,6 @@ export function MapView() {
     setShouldZoomToDrawing(false);
   }, [shouldZoomToDrawing, drawnFeatures, setFlyToGeometry, setShouldZoomToDrawing]);
 
-  // Update hover highlight layer filter when hoveredAssetId changes
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-    if (!map.current.getLayer('hovered-asset-line')) return;
-
-    // Show hover highlight only if not already selected
-    const filter: maplibregl.FilterSpecification = hoveredAssetId && hoveredAssetId !== selectedAssetId
-      ? ['==', ['get', 'id'], hoveredAssetId]
-      : ['==', ['get', 'id'], '']; // Match nothing
-
-    map.current.setFilter('hovered-asset-line', filter);
-    if (map.current.getLayer('hovered-asset-glow')) {
-      map.current.setFilter('hovered-asset-glow', filter);
-    }
-  }, [hoveredAssetId, selectedAssetId, mapLoaded]);
-
   // Update hover highlight layer filter when hoveredEventId changes
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -3351,13 +3182,46 @@ export function MapView() {
     if (!map.current.getLayer('hovered-streetlight-circle')) return;
 
     const filter: maplibregl.FilterSpecification = hoveredStreetlightId
-      ? ['==', ['get', 'id'], hoveredStreetlightId]
-      : ['==', ['get', 'id'], '']; // Match nothing
+      ? ['all', ['!', ['has', 'point_count']], ['==', ['get', 'id'], hoveredStreetlightId]]
+      : ['all', ['!', ['has', 'point_count']], ['==', ['get', 'id'], '']]; // Match nothing
 
     map.current.setFilter('hovered-streetlight-circle', filter);
   }, [hoveredStreetlightId, mapLoaded]);
 
-  // Fly to geometry when triggered (e.g., clicking road badge in selector or event in list)
+  // Highlight features from search result hover (via mapStore.highlightedFeatureId)
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Highlight greenspace if the feature id matches
+    if (map.current.getLayer('hovered-greenspace-fill')) {
+      const gsFilter: maplibregl.FilterSpecification = highlightedFeatureId
+        ? ['==', ['get', 'id'], highlightedFeatureId]
+        : hoveredGreenspaceId
+          ? ['==', ['get', 'id'], hoveredGreenspaceId]
+          : ['==', ['get', 'id'], ''];
+      map.current.setFilter('hovered-greenspace-fill', gsFilter);
+      if (map.current.getLayer('hovered-greenspace-line')) {
+        map.current.setFilter('hovered-greenspace-line', gsFilter);
+      }
+    }
+
+    // Highlight other asset layers via their dedicated highlight layers
+    const highlightFilter: maplibregl.FilterSpecification = highlightedFeatureId
+      ? ['==', ['get', 'id'], highlightedFeatureId]
+      : ['==', ['get', 'id'], ''];
+    for (const layerId of [
+      'park-facilities-highlight',
+      'street-trees-highlight',
+      'pavement-sections-highlight',
+      'pump-stations-highlight',
+    ]) {
+      if (map.current.getLayer(layerId)) {
+        map.current.setFilter(layerId, highlightFilter);
+      }
+    }
+  }, [highlightedFeatureId, hoveredGreenspaceId, mapLoaded]);
+
+  // Fly to geometry when triggered (e.g., clicking asset in selector or event in list)
   useEffect(() => {
     console.log('[MapView] flyTo effect triggered:', {
       mapLoaded,
@@ -3642,10 +3506,9 @@ export function MapView() {
       });
     }
 
-    // Line styling (dashed for polygons, solid thick for roads)
-    // For roads: add glow effect for better visibility
+    // Line styling (dashed for polygons, solid thick for lines)
     if (!isPolygonType) {
-      // Outer glow layer for roads
+      // Outer glow layer for line assets
       map.current.addLayer({
         id: lineLayerId + '-glow',
         type: 'line',
@@ -3847,29 +3710,6 @@ export function MapView() {
         </Box>
       )}
 
-      {/* Assets loading progress bar */}
-      {mapLoaded && showAssets && (isAssetsFetching || isAssetsLoading || !isMapIdle) && (
-        <Box
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 20,
-            height: 6,
-          }}
-        >
-          <Progress
-            value={100}
-            animated
-            striped
-            color="cyan"
-            size="sm"
-            style={{ height: '100%', borderRadius: 0 }}
-          />
-        </Box>
-      )}
-
       {/* Geometry loading overlay - shown when editing manual geometry event and draw control hasn't loaded yet */}
       {(() => {
         // Check if we're editing and waiting for data or draw control to load
@@ -3907,28 +3747,6 @@ export function MapView() {
           </Box>
         ) : null;
       })()}
-
-      {/* Road assets zoom/type indicator (hidden on Events tab) */}
-      {showAssets && mapLoaded && currentView !== 'events' && (
-        <Paper
-          shadow="sm"
-          p="xs"
-          style={{
-            position: 'absolute',
-            top: 10,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          <Text size="sm" c="dimmed">
-            {Math.floor(currentZoom) < 14
-              ? 'Preview (not selectable)'
-              : 'All road types (selectable)'}
-          </Text>
-        </Paper>
-      )}
 
       {/* Drawing mode toolbar */}
       {isDrawingEnabled && mapLoaded && (
@@ -3977,274 +3795,6 @@ export function MapView() {
         </Paper>
       )}
 
-      {/* Layer controls */}
-      {showLayerPanel && <Paper
-        shadow="sm"
-        p="sm"
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: 10,
-          zIndex: 1,
-          minWidth: 200,
-        }}
-      >
-        <Group justify="space-between" mb="xs">
-          <Text size="sm" fw={600}>Layers</Text>
-          <ActionIcon variant="subtle" color="gray" size="xs" onClick={() => setShowLayerPanel(false)}>
-            <IconX size={14} />
-          </ActionIcon>
-        </Group>
-        <Stack gap="xs">
-          
-          {/* Events & Activities */}
-          <Box>
-            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
-              Events & Activities
-            </Text>
-            <Stack gap={6}>
-              <Switch
-                label="Events"
-                checked={showEvents}
-                onChange={toggleEvents}
-                size="sm"
-              />
-              <Switch
-                label="Inspections"
-                checked={showInspections}
-                onChange={toggleInspections}
-                size="sm"
-              />
-            </Stack>
-          </Box>
-
-          <Divider my={4} />
-
-          {/* Map Features */}
-          <Box>
-            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
-              Map Features
-            </Text>
-            <Stack gap={6}>
-              <Switch
-                label="Road Assets"
-                checked={showAssets}
-                onChange={toggleAssets}
-                size="sm"
-              />
-              <Switch
-                label="Street Lights"
-                checked={showStreetLights}
-                onChange={toggleStreetLights}
-                size="sm"
-              />
-              <Switch
-                label="Rivers"
-                checked={showRivers}
-                onChange={toggleRivers}
-                size="sm"
-              />
-              <Switch
-                label="Green Spaces"
-                checked={showGreenSpaces}
-                onChange={toggleGreenSpaces}
-                size="sm"
-              />
-              <Switch
-                label="Street Trees"
-                checked={showStreetTrees}
-                onChange={toggleStreetTrees}
-                size="sm"
-              />
-              <Switch
-                label="Park Facilities"
-                checked={showParkFacilities}
-                onChange={toggleParkFacilities}
-                size="sm"
-              />
-              <Switch
-                label="Pavement"
-                checked={showPavementSections}
-                onChange={togglePavementSections}
-                size="sm"
-              />
-              <Switch
-                label="Pump Stations"
-                checked={showPumpStations}
-                onChange={togglePumpStations}
-                size="sm"
-              />
-            </Stack>
-          </Box>
-
-          <Divider my={4} />
-
-          {/* Reference Data */}
-          <Box>
-            <Text size="xs" c="dimmed" fw={500} mb={4} style={{ textTransform: 'uppercase' }}>
-              Reference Data
-            </Text>
-            <Stack gap={6}>
-              <Switch
-                label="指定道路 (Official)"
-                checked={showNagoyaRoads}
-                onChange={toggleNagoyaRoads}
-                size="sm"
-              />
-              <Switch
-                label="建築情報 (Building)"
-                checked={showNagoyaBuildingZones}
-                onChange={toggleNagoyaBuildingZones}
-                size="sm"
-              />
-            </Stack>
-          </Box>
-
-        </Stack>
-      </Paper>}
-
-      {/* Legend */}
-      {showLegendPanel && <Paper
-        shadow="sm"
-        p="sm"
-        style={{
-          position: 'absolute',
-          bottom: 40,
-          left: 10,
-          zIndex: 1,
-          minWidth: 160,
-        }}
-      >
-        <Group justify="space-between" mb="xs">
-          <Text size="sm" fw={600}>Event Status</Text>
-          <ActionIcon variant="subtle" color="gray" size="xs" onClick={() => setShowLegendPanel(false)}>
-            <IconX size={14} />
-          </ActionIcon>
-        </Group>
-        <Stack gap={4}>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.planned, borderRadius: 2 }} />
-            <Text size="xs">Planned</Text>
-          </Group>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.active, borderRadius: 2 }} />
-            <Text size="xs">Active</Text>
-          </Group>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 12, backgroundColor: STATUS_COLORS.closed, borderRadius: 2 }} />
-            <Text size="xs">Closed</Text>
-          </Group>
-        </Stack>
-
-        <Text size="sm" fw={600} mt="sm" mb="xs">Road Types</Text>
-        <Stack gap={4}>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 3, backgroundColor: ROAD_TYPE_COLORS.arterial }} />
-            <Text size="xs">Arterial</Text>
-          </Group>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 3, backgroundColor: ROAD_TYPE_COLORS.collector }} />
-            <Text size="xs">Collector</Text>
-          </Group>
-          <Group gap="xs">
-            <Box style={{ width: 12, height: 3, backgroundColor: ROAD_TYPE_COLORS.local }} />
-            <Text size="xs">Local</Text>
-          </Group>
-        </Stack>
-
-        {showRivers && (
-          <>
-            <Text size="sm" fw={600} mt="sm" mb="xs">Rivers</Text>
-            <Stack gap={4}>
-              <Group gap="xs">
-                <Box style={{ width: 12, height: 3, backgroundColor: '#3B82F6' }} />
-                <Text size="xs">River/Stream</Text>
-              </Group>
-            </Stack>
-          </>
-        )}
-
-        {showGreenSpaces && (
-          <>
-            <Text size="sm" fw={600} mt="sm" mb="xs">Green Spaces</Text>
-            <Stack gap={4}>
-              <Group gap="xs">
-                <Box style={{ width: 12, height: 12, backgroundColor: '#22C55E', opacity: 0.5, borderRadius: 2 }} />
-                <Text size="xs">Park/Garden</Text>
-              </Group>
-            </Stack>
-          </>
-        )}
-
-        {showStreetLights && (
-          <>
-            <Text size="sm" fw={600} mt="sm" mb="xs">Street Lights</Text>
-            <Stack gap={4}>
-              <Group gap="xs">
-                <Box style={{ width: 10, height: 10, backgroundColor: '#FBBF24', borderRadius: '50%' }} />
-                <Text size="xs">Operational</Text>
-              </Group>
-              <Group gap="xs">
-                <Box style={{ width: 10, height: 10, backgroundColor: '#F97316', borderRadius: '50%' }} />
-                <Text size="xs">Maintenance</Text>
-              </Group>
-              <Group gap="xs">
-                <Box style={{ width: 10, height: 10, backgroundColor: '#EF4444', borderRadius: '50%' }} />
-                <Text size="xs">Damaged</Text>
-              </Group>
-            </Stack>
-          </>
-        )}
-
-        {isEventFormOpen && (
-          <>
-            <Text size="sm" fw={600} mt="sm" mb="xs">Editing</Text>
-            <Stack gap={4}>
-              {editingEventId && (
-                <Group gap="xs">
-                  <Box style={{ width: 12, height: 12, backgroundColor: '#ffffff', opacity: 0.7, borderRadius: 2, border: '2px solid #3B82F6' }} />
-                  <Text size="xs">Event Area</Text>
-                </Group>
-              )}
-              {selectedRoadAssetIdsForForm.length > 0 && (
-                <Group gap="xs">
-                  <Box style={{ width: 12, height: 3, backgroundColor: '#2563eb', boxShadow: '0 0 4px #2563eb' }} />
-                  <Text size="xs">Selected Roads (pulsing)</Text>
-                </Group>
-              )}
-              {previewGeometry && (
-                <Group gap="xs">
-                  <Box style={{ width: 12, height: 12, backgroundColor: '#06B6D4', opacity: 0.5, borderRadius: 2, border: '1px dashed #06B6D4' }} />
-                  <Text size="xs">Corridor (15m buffer)</Text>
-                </Group>
-              )}
-            </Stack>
-          </>
-        )}
-      </Paper>}
-
-      {/* Toggle button to reopen hidden panels */}
-      {(!showLayerPanel || !showLegendPanel) && (
-        <Tooltip label="Show map panels" position="right">
-          <ActionIcon
-            variant="white"
-            size="lg"
-            style={{
-              position: 'absolute',
-              bottom: 40,
-              left: 10,
-              zIndex: 1,
-              boxShadow: 'var(--mantine-shadow-sm)',
-            }}
-            onClick={() => {
-              setShowLayerPanel(true);
-              setShowLegendPanel(true);
-            }}
-          >
-            <IconStack2 size={18} />
-          </ActionIcon>
-        </Tooltip>
-      )}
 
       {/* Locked tooltip for selected event - stays visible */}
       {lockedEvent && lockedTooltipPosition && (
