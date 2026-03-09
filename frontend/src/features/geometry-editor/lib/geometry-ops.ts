@@ -311,6 +311,77 @@ export function clipPolygon(
 }
 
 /**
+ * Split a polygon into two separate features using a cutter polygon.
+ *
+ * Returns two features:
+ * 1. The original feature with the cutter area removed (difference)
+ * 2. A NEW feature containing the intersection area
+ *
+ * Both features keep the same layer and properties (except the new one gets a new id).
+ *
+ * @returns [updatedOriginal, newIntersection] or null if split fails
+ */
+export function splitPolygon(
+  feature: ParkFeature,
+  cutter: Feature<Polygon | MultiPolygon>
+): [ParkFeature, ParkFeature] | null {
+  if (
+    feature.geometry.type !== "Polygon" &&
+    feature.geometry.type !== "MultiPolygon"
+  ) {
+    return null;
+  }
+
+  try {
+    const source =
+      feature.geometry.type === "Polygon"
+        ? turf.polygon((feature.geometry as Polygon).coordinates)
+        : turf.multiPolygon((feature.geometry as MultiPolygon).coordinates);
+
+    // Part 1: original minus cutter
+    const diffResult = turf.difference(turf.featureCollection([source, cutter]));
+    if (!diffResult) return null;
+
+    const diffGeom = normalizeToPolygonGeometry(diffResult.geometry);
+    if (!diffGeom) return null;
+
+    // Part 2: intersection of original and cutter
+    const interResult = turf.intersect(turf.featureCollection([source, cutter]));
+    if (!interResult) return null;
+
+    const interGeom = normalizeToPolygonGeometry(interResult.geometry);
+    if (!interGeom) return null;
+
+    const updatedOriginal: ParkFeature = {
+      ...feature,
+      geometry: diffGeom,
+      properties: {
+        ...feature.properties,
+        type: diffGeom.type === "MultiPolygon" ? "multipolygon" : "polygon",
+      },
+    };
+
+    const newFeature: ParkFeature = {
+      id: uuidv4(),
+      type: "Feature",
+      geometry: interGeom,
+      properties: {
+        ...feature.properties,
+        type: interGeom.type === "MultiPolygon" ? "multipolygon" : "polygon",
+        label: feature.properties.label
+          ? `${feature.properties.label} (分割)`
+          : undefined,
+      },
+    };
+
+    return [updatedOriginal, newFeature];
+  } catch (e) {
+    console.error("Failed to split polygon:", e);
+    return null;
+  }
+}
+
+/**
  * Create a new empty feature with default properties.
  */
 export function createDefaultFeature(

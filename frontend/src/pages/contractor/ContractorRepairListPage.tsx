@@ -144,6 +144,13 @@ function buildContractorRepairRows(): ContractorRepairRow[] {
 // NOTE: computed inside component via useMemo so newly added records appear after navigation
 
 /* ── Style tokens ── */
+const stickyRightStyle: import('react').CSSProperties = {
+  position: 'sticky',
+  right: 0,
+  backgroundColor: 'white',
+  boxShadow: '-4px 0 8px -4px rgba(0,0,0,0.08)',
+};
+
 const headerCls = 'h-10 px-2 text-xs font-medium text-muted-foreground border-b border-[#f5f5f5]';
 const cellCls = 'px-2 text-sm max-w-0 truncate';
 
@@ -803,6 +810,7 @@ export function ContractorRepairListPage() {
                           style={{
                             width: header.getSize(),
                             minWidth: header.getSize(),
+                            ...(header.column.id === 'actions' ? { ...stickyRightStyle, zIndex: 20 } : {}),
                           }}
                         >
                           {header.isPlaceholder
@@ -836,6 +844,7 @@ export function ContractorRepairListPage() {
                             style={{
                               width: cell.column.getSize(),
                               minWidth: cell.column.getSize(),
+                              ...(cell.column.id === 'actions' ? stickyRightStyle : {}),
                             }}
                           >
                             {flexRender(

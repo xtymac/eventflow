@@ -22,6 +22,7 @@ import { StatusBar } from '@/features/geometry-editor/components/status-bar';
 import { CoordinateInputDialog } from '@/features/geometry-editor/components/coordinate-input-dialog';
 import { flyToLayer } from '@/features/geometry-editor/lib/camera';
 import { findContainingPark } from '@/features/geometry-editor/lib/spatial-utils';
+import { getEditorModeConfig } from '@/features/geometry-editor/editor-mode-config';
 import { MOCK_FEATURES } from '@/features/geometry-editor/mock-data';
 import type { ParkFeature, ParkFeatureCollection } from '@/features/geometry-editor/types';
 import {
@@ -89,6 +90,7 @@ function facilityToParkFeature(f: Feature<Point>): ParkFeature {
 export function ParkEditPage() {
   const { id: parkId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const modeConfig = useMemo(() => getEditorModeConfig("park"), []);
 
   // ─── API queries ──────────────────────────────────────────
   const parkQuery = useGreenSpace(parkId ?? null);
@@ -487,33 +489,14 @@ export function ParkEditPage() {
       return allPolygons || allLines;
     })();
 
-  // ─── Merge parts check (single MultiPolygon with 2+ parts) ─
-  const canMergeParts =
-    state.selectedFeatureIds.length === 1 &&
-    (() => {
-      const feat = editor.selectedFeatures[0];
-      return (
-        feat?.geometry.type === 'MultiPolygon' &&
-        (feat.geometry as import('geojson').MultiPolygon).coordinates.length >= 2
-      );
-    })();
-
-  const handleMergeParts = useCallback(() => {
-    if (state.activeTool === 'merge_parts') {
-      if (state.selectedPartIndices.length >= 2 && state.selectedFeatureIds[0]) {
-        editor.mergeParts(state.selectedFeatureIds[0], state.selectedPartIndices);
-        editor.setTool('select');
-      } else {
-        editor.setTool('select');
-      }
-    } else {
-      editor.setTool('merge_parts');
-      toast.info('パーツ結合モード', {
-        description:
-          '結合するパーツをクリックして選択し、Enterで確定（2つ以上選択）',
-      });
+  // ─── Fly to all features ───────────────────────────────────
+  const handleFlyToAll = useCallback(() => {
+    if (mapInstance && state.features.features.length > 0) {
+      flyToLayer(mapInstance, state.features.features);
     }
-  }, [editor, state.activeTool, state.selectedPartIndices, state.selectedFeatureIds]);
+  }, [mapInstance, state.features.features]);
+
+  const flyToDisabled = state.features.features.length === 0;
 
   // ─── Loading state ────────────────────────────────────────
   if (parkQuery.isLoading || facilitiesQuery.isLoading) {
@@ -620,11 +603,9 @@ export function ParkEditPage() {
           hasSelection={state.selectedFeatureIds.length > 0}
           selectionCount={state.selectedFeatureIds.length}
           canMerge={canMerge}
-          canMergeParts={canMergeParts}
           onDuplicate={editor.duplicateSelected}
           onDelete={editor.deleteSelected}
           onMerge={editor.mergeSelected}
-          onMergeParts={handleMergeParts}
           onSplit={handleSplit}
           snappingEnabled={state.snappingEnabled}
           onToggleSnapping={editor.toggleSnapping}
@@ -634,6 +615,10 @@ export function ParkEditPage() {
             !!state.measurementState &&
             state.measurementState.points.length >= 2
           }
+          modeConfig={modeConfig}
+          featureCount={state.features.features.length}
+          onFlyTo={handleFlyToAll}
+          flyToDisabled={flyToDisabled}
         />
 
         {/* Continue drawing actions (floating above toolbar) */}

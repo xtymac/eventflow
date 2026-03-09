@@ -1,5 +1,8 @@
 import type { Point, LineString, MultiLineString, Polygon, MultiPolygon, Position } from "geojson";
 
+// ─── Editor Modes ───────────────────────────────────────────
+export type EditorMode = "full" | "park" | "facility";
+
 // ─── Tool Modes ──────────────────────────────────────────────
 export type ToolMode =
   | "select"

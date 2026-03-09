@@ -47,7 +47,7 @@ import {
   VERTEX_EDIT_SELECTED_VERTEX_LAYER,
   VERTEX_EDIT_MIDPOINT_LAYER,
 } from "../constants";
-import { clipPolygon } from "../lib/geometry-ops";
+import { splitPolygon } from "../lib/geometry-ops";
 import type { Feature, LineString, Polygon as GeoPolygon, Position } from "geojson";
 import { toast } from "sonner";
 import { booleanPointInPolygon, point as turfPoint, polygon as turfPolygon } from "@turf/turf";
@@ -221,18 +221,20 @@ export function MapEditor({
               geometry: feature.geometry as GeoPolygon,
               properties: {},
             };
-            const result = clipPolygon(targetFeature, cutter);
+            const result = splitPolygon(targetFeature, cutter);
             if (result) {
-              editor.updateFeature(result);
+              const [updatedOriginal, newPart] = result;
+              editor.updateFeature(updatedOriginal);
+              editor.addFeature(newPart);
               editor.setTool("select");
-              toast.success("クリップ完了", {
-                description: "ポリゴンのジオメトリを更新しました",
+              toast.success("分割完了", {
+                description: "ポリゴンを2つに分割しました",
               });
               return;
             } else {
-              toast.error("クリップに失敗しました", {
+              toast.error("分割に失敗しました", {
                 description:
-                  "クリップ領域がポリゴンと重なっていることを確認してください",
+                  "分割領域がポリゴンと重なっていることを確認してください",
               });
             }
           }
@@ -1184,40 +1186,63 @@ export function MapEditor({
   }, [mapLoaded, activeTool, features.features, editor]);
 
   // ─── Cursor style based on tool ───────────────────────────
+  // We inject a <style> tag to force the cursor via !important,
+  // because MapboxDraw sets its own cursor on the canvas.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    const canvas = map.getCanvasContainer();
+    let cursor = "";
     switch (activeTool) {
       case "draw_point":
       case "coordinate_input":
-        canvas.style.cursor = "crosshair";
+        cursor = "crosshair";
         break;
       case "draw_line":
       case "draw_polygon":
       case "draw_clip_polygon":
       case "measure_distance":
       case "measure_area":
-        canvas.style.cursor = "crosshair";
+        cursor = "crosshair";
         break;
       case "pan":
-        canvas.style.cursor = "grab";
+        cursor = "grab";
         break;
       case "move":
-        canvas.style.cursor = "move";
+        cursor = "move";
         break;
       case "vertex_edit":
       case "continue_drawing":
-        canvas.style.cursor = "crosshair";
+        cursor = "crosshair";
         break;
       case "merge_parts":
-        canvas.style.cursor = "pointer";
+        cursor = "pointer";
         break;
       default:
-        canvas.style.cursor = "";
+        cursor = "";
         break;
     }
+
+    const canvas = map.getCanvasContainer();
+    canvas.style.cursor = cursor;
+
+    // MapboxDraw and MapLibre GL set their own cursor via CSS classes.
+    // For tools that need a specific cursor (pan, move, select), we inject
+    // a style that overrides them. We skip draw tools since MapboxDraw's
+    // built-in crosshair cursor is correct for those.
+    const needsOverride = ["pan", "move", "merge_parts", "select"].includes(activeTool);
+    let styleEl: HTMLStyleElement | null = null;
+    if (needsOverride) {
+      const overrideCursor = cursor || "default";
+      styleEl = document.createElement("style");
+      styleEl.setAttribute("data-tool-cursor", "true");
+      styleEl.textContent = `.maplibregl-canvas-container.maplibregl-interactive:not(.maplibregl-track-pointer) { cursor: ${overrideCursor} !important; }`;
+      document.head.appendChild(styleEl);
+    }
+
+    return () => {
+      if (styleEl) styleEl.remove();
+    };
   }, [activeTool]);
 
   // ─── Expand selection to include park children for moves ────
@@ -1485,9 +1510,6 @@ export function MapEditor({
             break;
           case "p":
             editor.setTool("draw_point");
-            break;
-          case "l":
-            editor.setTool("draw_line");
             break;
           case "g":
             editor.setTool("draw_polygon");

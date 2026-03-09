@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Map as MaplibreMap } from "maplibre-gl";
 import type { ParkFeature, ParkFeatureProperties, ToolMode, ParkLayer } from "../types";
 
-// Custom draw styles matching our park theme
+// Custom draw styles — high-contrast orange/red so they stand out against any background
 const DRAW_STYLES = [
   // Polygon fill
   {
@@ -14,8 +14,8 @@ const DRAW_STYLES = [
     type: "fill",
     filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
     paint: {
-      "fill-color": "#4a7c59",
-      "fill-outline-color": "#4a7c59",
+      "fill-color": "#ef4444",
+      "fill-outline-color": "#ef4444",
       "fill-opacity": 0.15,
     },
   },
@@ -25,7 +25,7 @@ const DRAW_STYLES = [
     type: "line",
     filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#3d6b4f", "line-dasharray": [0.2, 2], "line-width": 2 },
+    paint: { "line-color": "#ef4444", "line-dasharray": [0.2, 2], "line-width": 2.5 },
   },
   // Line - active
   {
@@ -33,28 +33,28 @@ const DRAW_STYLES = [
     type: "line",
     filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#3d6b4f", "line-dasharray": [0.2, 2], "line-width": 2 },
+    paint: { "line-color": "#ef4444", "line-dasharray": [0.2, 2], "line-width": 2.5 },
   },
   // Vertex points
   {
     id: "gl-draw-polygon-and-line-vertex-active",
     type: "circle",
     filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
-    paint: { "circle-radius": 5, "circle-color": "#fff", "circle-stroke-color": "#3d6b4f", "circle-stroke-width": 2 },
+    paint: { "circle-radius": 6, "circle-color": "#fff", "circle-stroke-color": "#ef4444", "circle-stroke-width": 2.5 },
   },
   // Midpoints
   {
     id: "gl-draw-polygon-midpoint",
     type: "circle",
     filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
-    paint: { "circle-radius": 3, "circle-color": "#3d6b4f" },
+    paint: { "circle-radius": 4, "circle-color": "#ef4444" },
   },
   // Point
   {
     id: "gl-draw-point",
     type: "circle",
     filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["!=", "mode", "static"]],
-    paint: { "circle-radius": 6, "circle-color": "#3d6b4f" },
+    paint: { "circle-radius": 7, "circle-color": "#ef4444" },
   },
 ];
 
