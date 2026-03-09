@@ -40,7 +40,6 @@ const FULL_MODE_CONFIG: EditorModeConfig = {
     "select",
     "pan",
     "draw_point",
-    "draw_line",
     "draw_polygon",
     "move",
     "vertex_edit",
